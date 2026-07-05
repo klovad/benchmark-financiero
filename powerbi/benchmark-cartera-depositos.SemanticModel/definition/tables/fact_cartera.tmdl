@@ -1,0 +1,135 @@
+table fact_cartera
+	lineageTag: 10000000-0000-0000-0000-000000000050
+
+	measure 'Saldo Cartera' = SUM(fact_cartera[saldo])
+		formatString: #,##0
+		lineageTag: 10000000-0000-0000-0000-0000000000a1
+
+	measure 'Saldo Cartera Vencida' = ```
+			CALCULATE(
+			    [Saldo Cartera],
+			    dim_producto_cartera[estado_cartera] = "vencida"
+			)
+			```
+		formatString: #,##0
+		lineageTag: 10000000-0000-0000-0000-0000000000a2
+
+	measure 'Morosidad %' = ```
+			DIVIDE(
+			    CALCULATE(
+			        [Saldo Cartera],
+			        dim_producto_cartera[estado_cartera] IN {"no_devenga_intereses", "vencida"}
+			    ),
+			    [Saldo Cartera]
+			)
+			```
+		formatString: 0.00%
+		lineageTag: 10000000-0000-0000-0000-0000000000a3
+
+	measure 'Market Share Banco (Cartera)' = ```
+			DIVIDE(
+			    [Saldo Cartera],
+			    CALCULATE([Saldo Cartera], ALL(dim_banco))
+			)
+			```
+		formatString: 0.00%
+		lineageTag: 10000000-0000-0000-0000-0000000000a4
+
+	measure 'HHI Cartera' = ```
+			SUMX(
+			    VALUES(dim_banco[banco]),
+			    [Market Share Banco (Cartera)] ^ 2
+			) * 10000
+			```
+		formatString: #,##0
+		lineageTag: 10000000-0000-0000-0000-0000000000a5
+
+	measure 'Variacion Cartera MoM' = ```
+			VAR Actual = [Saldo Cartera]
+			VAR Anterior = CALCULATE([Saldo Cartera], DATEADD(dim_fecha[fecha], -1, MONTH))
+			RETURN DIVIDE(Actual - Anterior, Anterior)
+			```
+		formatString: 0.00%
+		lineageTag: 10000000-0000-0000-0000-0000000000a6
+
+	measure 'Variacion Cartera YoY' = ```
+			VAR Actual = [Saldo Cartera]
+			VAR Anterior = CALCULATE([Saldo Cartera], DATEADD(dim_fecha[fecha], -12, MONTH))
+			RETURN DIVIDE(Actual - Anterior, Anterior)
+			```
+		formatString: 0.00%
+		lineageTag: 10000000-0000-0000-0000-0000000000a7
+
+	column fact_cartera_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 10000000-0000-0000-0000-000000000051
+		summarizeBy: none
+		sourceColumn: fact_cartera_id
+		isHidden
+
+	column fecha_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 10000000-0000-0000-0000-000000000052
+		summarizeBy: none
+		sourceColumn: fecha_id
+		isHidden
+
+	column banco_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 10000000-0000-0000-0000-000000000053
+		summarizeBy: none
+		sourceColumn: banco_id
+		isHidden
+
+	column canton_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 10000000-0000-0000-0000-000000000054
+		summarizeBy: none
+		sourceColumn: canton_id
+		isHidden
+
+	column producto_cartera_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 10000000-0000-0000-0000-000000000055
+		summarizeBy: none
+		sourceColumn: producto_cartera_id
+		isHidden
+
+	column saldo
+		dataType: double
+		formatString: #,##0.00
+		lineageTag: 10000000-0000-0000-0000-000000000056
+		summarizeBy: sum
+		sourceColumn: saldo
+
+	column saldo_x_tasa
+		dataType: double
+		formatString: #,##0.00
+		lineageTag: 10000000-0000-0000-0000-000000000057
+		summarizeBy: sum
+		sourceColumn: saldo_x_tasa
+		isHidden
+
+	column tasa_ponderada
+		dataType: double
+		formatString: 0.0000
+		lineageTag: 10000000-0000-0000-0000-000000000058
+		summarizeBy: none
+		sourceColumn: tasa_ponderada
+		isHidden
+
+	partition fact_cartera = m
+		mode: import
+		source =
+				let
+					Source = PostgreSQL.Database("localhost", "benchmark_cartera_depositos"),
+					marts_fact_cartera = Source{[Schema="marts",Item="fact_cartera"]}[Data]
+				in
+					marts_fact_cartera
+
+	annotation PBI_ResultType = Table

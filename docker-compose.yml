@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: bp_benchmark_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: benchmark_cartera_depositos
+      POSTGRES_USER: bp_etl
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5432:5432"
+    volumes:
+      - bp_benchmark_pgdata:/var/lib/postgresql/data
+      - ./sql/01_schema_raw.sql:/docker-entrypoint-initdb.d/01_schema_raw.sql:ro
+      - ./sql/02_schema_staging.sql:/docker-entrypoint-initdb.d/02_schema_staging.sql:ro
+      - ./sql/03_schema_marts.sql:/docker-entrypoint-initdb.d/03_schema_marts.sql:ro
+      - ./sql/04_indexes_views.sql:/docker-entrypoint-initdb.d/04_indexes_views.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bp_etl -d benchmark_cartera_depositos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  bp_benchmark_pgdata:

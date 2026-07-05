@@ -1,0 +1,32 @@
+# Datos crudos descargados de la fuente (se regeneran con el ETL, no se versionan)
+data/raw/**
+!data/raw/.gitkeep
+data/_tmp_extract/
+data/_tmp_inspect/
+
+# Credenciales y configuración local
+.env
+*.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Power BI
+powerbi/**/.pbi/localSettings.json
+powerbi/**/cache.abf
+*.pbix
+
+# Playwright
+playwright/.cache/
+
+# OS / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/

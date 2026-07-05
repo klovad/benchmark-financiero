@@ -1,0 +1,26 @@
+table dim_producto_deposito
+	lineageTag: 10000000-0000-0000-0000-000000000040
+
+	column producto_deposito_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 10000000-0000-0000-0000-000000000041
+		summarizeBy: none
+		sourceColumn: producto_deposito_id
+
+	column tipo_deposito
+		dataType: string
+		lineageTag: 10000000-0000-0000-0000-000000000042
+		summarizeBy: none
+		sourceColumn: tipo_deposito
+
+	partition dim_producto_deposito = m
+		mode: import
+		source =
+				let
+					Source = PostgreSQL.Database("localhost", "benchmark_cartera_depositos"),
+					marts_dim_producto_deposito = Source{[Schema="marts",Item="dim_producto_deposito"]}[Data]
+				in
+					marts_dim_producto_deposito
+
+	annotation PBI_ResultType = Table

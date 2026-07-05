@@ -1,0 +1,31 @@
+relationship r-cartera-fecha
+	fromColumn: fact_cartera.fecha_id
+	toColumn: dim_fecha.fecha_id
+
+relationship r-cartera-banco
+	fromColumn: fact_cartera.banco_id
+	toColumn: dim_banco.banco_id
+
+relationship r-cartera-canton
+	fromColumn: fact_cartera.canton_id
+	toColumn: dim_canton.canton_id
+
+relationship r-cartera-producto
+	fromColumn: fact_cartera.producto_cartera_id
+	toColumn: dim_producto_cartera.producto_cartera_id
+
+relationship r-depositos-fecha
+	fromColumn: fact_depositos.fecha_id
+	toColumn: dim_fecha.fecha_id
+
+relationship r-depositos-banco
+	fromColumn: fact_depositos.banco_id
+	toColumn: dim_banco.banco_id
+
+relationship r-depositos-canton
+	fromColumn: fact_depositos.canton_id
+	toColumn: dim_canton.canton_id
+
+relationship r-depositos-producto
+	fromColumn: fact_depositos.producto_deposito_id
+	toColumn: dim_producto_deposito.producto_deposito_id
