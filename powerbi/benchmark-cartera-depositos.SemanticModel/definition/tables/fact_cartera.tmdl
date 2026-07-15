@@ -5,6 +5,27 @@ table fact_cartera
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000a1
 
+	measure 'Saldo Cartera (Ultimo Mes)' = ```
+			VAR UltimaFecha = CALCULATE(MAX(dim_fecha[fecha]), ALL(dim_fecha))
+			RETURN CALCULATE([Saldo Cartera], dim_fecha[fecha] = UltimaFecha)
+			```
+		formatString: #,##0
+		lineageTag: 10000000-0000-0000-0000-0000000000a8
+
+	measure 'HHI Cartera (Ultimo Mes)' = ```
+			VAR UltimaFecha = CALCULATE(MAX(dim_fecha[fecha]), ALL(dim_fecha))
+			RETURN CALCULATE([HHI Cartera], dim_fecha[fecha] = UltimaFecha)
+			```
+		formatString: #,##0
+		lineageTag: 10000000-0000-0000-0000-0000000000a9
+
+	measure 'Morosidad % (Ultimo Mes)' = ```
+			VAR UltimaFecha = CALCULATE(MAX(dim_fecha[fecha]), ALL(dim_fecha))
+			RETURN CALCULATE([Morosidad %], dim_fecha[fecha] = UltimaFecha)
+			```
+		formatString: 0.00%
+		lineageTag: 10000000-0000-0000-0000-0000000000aa
+
 	measure 'Saldo Cartera Vencida' = ```
 			CALCULATE(
 			    [Saldo Cartera],

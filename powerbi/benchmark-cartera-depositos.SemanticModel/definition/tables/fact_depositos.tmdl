@@ -5,6 +5,13 @@ table fact_depositos
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000b1
 
+	measure 'Saldo Depositos (Ultimo Mes)' = ```
+			VAR UltimaFecha = CALCULATE(MAX(dim_fecha[fecha]), ALL(dim_fecha))
+			RETURN CALCULATE([Saldo Depositos], dim_fecha[fecha] = UltimaFecha)
+			```
+		formatString: #,##0
+		lineageTag: 10000000-0000-0000-0000-0000000000b9
+
 	measure 'Numero Clientes' = SUM(fact_depositos[numero_clientes])
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000b2
