@@ -11,6 +11,8 @@ from pathlib import Path
 import openpyxl
 import pandas as pd
 
+from etl.transform.banco_matching import resolver_banco_codigo
+from etl.transform.categoria_deposito_matching import resolver_categoria_deposito
 from etl.transform.common import (
     extract_single_xlsx,
     find_base_sheets,
@@ -57,14 +59,21 @@ def parse_depositos_file(source_path: Path, extract_dir: Path) -> pd.DataFrame:
         provincia = normalize_text(get(row, "PROVINCIA"))
         numero_cuentas = get(row, "NUMERO DE CUENTAS")
         numero_clientes = get(row, "NUMERO DE CLIENTES")
+        banco = normalize_banco(get(row, "ENTIDAD"))
+        tipo_deposito = normalize_text(get(row, "TIPO DE DEPOSITO"))
+        categoria_deposito, plazo_dias_desde, plazo_dias_hasta = resolver_categoria_deposito(tipo_deposito)
         records.append({
             "fecha": month_end_date(fecha),
             "tipo_entidad": "BANCO PRIVADO",
-            "banco": normalize_banco(get(row, "ENTIDAD")),
+            "banco": banco,
+            "banco_codigo": resolver_banco_codigo(banco, "CAPCOL"),
             "region": normalize_text(get(row, "REGION")) or region_for_provincia(provincia),
             "provincia": provincia,
             "canton": normalize_text(get(row, "CANTON")),
-            "tipo_deposito": normalize_text(get(row, "TIPO DE DEPOSITO")),
+            "tipo_deposito": tipo_deposito,
+            "categoria_deposito": categoria_deposito,
+            "plazo_dias_desde": plazo_dias_desde,
+            "plazo_dias_hasta": plazo_dias_hasta,
             "saldo": float(saldo),
             "numero_cuentas": int(numero_cuentas) if numero_cuentas is not None else None,
             "numero_clientes": int(numero_clientes) if numero_clientes is not None else None,
@@ -78,11 +87,14 @@ def parse_depositos_file(source_path: Path, extract_dir: Path) -> pd.DataFrame:
     # El origen trae una fila por cuenta contable (columna CUENTA, no conservada aquí);
     # varias cuentas comparten (fecha, banco, canton, tipo_deposito) y deben sumarse,
     # no sobrescribirse, para no perder saldo al cargar a staging.
-    key_cols = ["fecha", "tipo_entidad", "banco", "region", "provincia", "canton", "tipo_deposito"]
+    key_cols = ["fecha", "tipo_entidad", "banco", "banco_codigo", "region", "provincia", "canton", "tipo_deposito"]
     df = df.groupby(key_cols, dropna=False, as_index=False).agg(
         saldo=("saldo", "sum"),
         numero_cuentas=("numero_cuentas", "sum"),
         numero_clientes=("numero_clientes", "sum"),
+        categoria_deposito=("categoria_deposito", "first"),
+        plazo_dias_desde=("plazo_dias_desde", "first"),
+        plazo_dias_hasta=("plazo_dias_hasta", "first"),
         source_file=("source_file", "first"),
         source_hash=("source_hash", "first"),
     )

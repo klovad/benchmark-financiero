@@ -2,24 +2,95 @@
 
 ## Flujo de datos
 
+El proyecto integra **3 fuentes independientes** en un único esquema estrella conformado.
+Cada fuente tiene su propio extractor/parser, pero todas convergen en la misma capa
+`marts.*` — la identidad de banco y los catálogos de producto/plazo son compartidos
+(resueltos en Python antes de `staging.*`, ver sección "Catálogos conformados" abajo).
+
 ```
-Superbancos (portal CAPCOL, plugin OneDrive/SharePoint vía WordPress)
-        │  Playwright (etl/extract/scrape_superbancos.py)
+CAPCOL (cartera/depósitos)          BCE tsp/tsa (tasas semanales)      TasasHistorico.htm       Boletín (BALANCE/PYG)
+Playwright, plugin OneDrive         descarga directa (urllib)          descarga directa          Playwright, plugin OneDrive
+scrape_superbancos.py               download_bce.py                    download_tasas_           scrape_boletin.py
+        │                                   │                          historicas.py                     │
+        ▼                                   ▼                                │                           ▼
+data/raw/{anio}/*.zip           data/raw/bce/ts{p,a}_*.zip          data/raw/bce/historico/*.htm   data/raw/{anio}/boletin/*.zip
+        │  parse_cartera.py/                │  parse_bce_tasas.py           │  parse_tasas_             │  parse_boletin.py
+        │  parse_depositos.py               │                               │  historicas.py            │
+        ▼                                   ▼                               ▼                           ▼
+raw.cartera / raw.depositos      raw.bce_tasas_pasivas/activas    raw.tasas_referenciales    raw.boletin_balance/pyg
+        │  upsert por llave natural (ON CONFLICT DO UPDATE ... WHERE row_hash IS DISTINCT — ver "Carga incremental")
         ▼
-data/raw/{anio}/{cartera|depositos}/*.zip   (no versionado en git)
-        │  parsers (etl/transform/parse_cartera.py, parse_depositos.py)
+staging.*   (tipado, banco_codigo/categoria/segmento ya resueltos, columnas fecha_carga/fecha_actualizacion/row_hash)
+        │  refresh_marts() (SQL puro, INSERT...SELECT...ON CONFLICT, idempotente)
         ▼
-raw.cartera / raw.depositos   (JSONB tal cual, + hash de archivo para idempotencia)
-        │  upsert por llave natural
-        ▼
-staging.cartera / staging.depositos   (tipado, estandarizado, agregado)
-        │  refresh_marts() (SQL puro, INSERT...SELECT...ON CONFLICT)
-        ▼
-marts.dim_* / marts.fact_*   (esquema estrella)
+marts.dim_* / marts.fact_*   (esquema estrella conformado — 5 dimensiones + 9 tablas de hechos)
         │
         ▼
 Power BI (.pbip, Import desde Postgres)
 ```
+
+## Catálogos conformados (identidad compartida entre fuentes)
+
+La identidad de banco (`banco_codigo`) y los catálogos de segmento de crédito/categoría de
+depósito/plazo se resuelven **en Python, en la capa `transform`, antes de que el dato
+llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
+
+- `etl/transform/banco_matching.py`: `resolver_banco_codigo(nombre, fuente)`. Reglas
+  determinísticas (tildes, mayúsculas, prefijos `BP `/`BANCO`, sufijos legales) resuelven
+  variaciones triviales; lo que la regla no cubre (nombre legal completo de BCE vs. código
+  corto de CAPCOL/Boletín, o los 2 renames reales de CAPCOL) se resuelve contra
+  `etl/seeds/banco_crosswalk.csv`, sembrado a mano y versionado en git. Un nombre no
+  resuelto **falla fuerte** (`BancoNoResueltoError`) — nunca se autogenera un banco nuevo
+  silenciosamente.
+- `etl/transform/categoria_deposito_matching.py` y `bce_plazo_matching.py`: mismo patrón
+  para separar categoría/plazo (CAPCOL mezclaba ambos conceptos en `tipo_deposito`) y para
+  resolver los buckets de plazo con prefijo ordinal de BCE (`a. MENOS DE 30 DIAS`, etc.).
+- `dim_segmento_credito` (26 valores, universo completo de BCE) y `dim_categoria_deposito`
+  (12 valores) **no se filtran por tipo de entidad** — el filtro a bancos privados se
+  aplica solo al cargar las tablas de hechos, para que el catálogo quede listo si el
+  proyecto se extiende a cooperativas/mutualistas/banca pública.
+- `dim_plazo` es un catálogo abierto por rango numérico de días, auto-descubierto por cada
+  fuente (`INSERT ... ON CONFLICT DO NOTHING`) — **no se fuerza una equivalencia entre
+  convenciones distintas** (ej. CAPCOL "DE MÁS DE 361 DÍAS" y BCE tsp "MAS DE 360 DIAS"
+  quedan como filas distintas, cada una con el límite real de su fuente).
+
+## Carga incremental (CDC) — no full refresh
+
+`staging.*` y los `fact_*`/`dim_banco` de `marts` tienen 3 columnas de control:
+`fecha_carga` (se pone una vez), `fecha_actualizacion` (solo se mueve si el dato
+realmente cambió) y `row_hash` (columna `GENERATED ALWAYS AS (...) STORED`, cubre solo
+las columnas mutables, no la llave natural). El patrón de carga es:
+
+```sql
+INSERT INTO staging.tabla (...) VALUES (...)
+ON CONFLICT (llave_natural)
+DO UPDATE SET col = EXCLUDED.col, fecha_actualizacion = now()
+WHERE staging.tabla.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+```
+
+Correr el pipeline dos veces seguidas sin datos nuevos no genera ningún `UPDATE` real —
+verificado explícitamente para cada fuente (`fecha_actualizacion` sin cambios en la
+segunda corrida). `raw.*` sigue siendo append-only, idempotente por `source_hash` a nivel
+de archivo (vía `raw.source_files`).
+
+**¿Por qué no Data Vault?** Data Vault (Hub/Link/Satellite) resuelve integrar muchas
+fuentes de alta velocidad de cambio con auditoría regulatoria estricta, normalmente como
+capa de integración *debajo* de un modelo Kimball. Con 3 fuentes y cadencia
+mensual/semanal, sería sobre-ingeniería — la capa `raw.*` (JSONB + `source_hash`) ya da la
+parte valiosa de esa filosofía (nunca se pierde el dato original) sin el formalismo
+completo de Hub/Link/Satellite.
+
+### Bug real encontrado y corregido: NULL en `UNIQUE`/`ON CONFLICT`
+
+SQL trata `NULL <> NULL` **incluso bajo una restricción `UNIQUE`**, así que
+`UNIQUE (a, b)` con `b` nullable no detecta conflicto entre dos filas `(1, NULL)` — cada
+corrida de `refresh_marts()` insertaba una fila "nueva" para el bucket de plazo sin límite
+superior (`dias_hasta IS NULL`), duplicando `dim_plazo` y produciendo fan-out en el JOIN
+de `fact_depositos`. Fix (ver `sql/10_fix_null_unique_constraints.sql`): reemplazar el
+`UNIQUE` plano por un índice único sobre `COALESCE(col, sentinela)`, y apuntar
+`ON CONFLICT` a esa misma expresión — verificado que `ON CONFLICT (a, COALESCE(b, -1))`
+sí detecta el conflicto. Este mismo patrón se aplicó preventivamente a toda columna
+nullable dentro de una llave natural nueva (`plazo_id`, `provincia`, `dias_hasta`).
 
 ## Por qué Playwright y no requests/httpx
 
@@ -58,9 +129,13 @@ simple.
 
 ## Evaluación de escalabilidad
 
-- **Volumen no es el riesgo**: ~336k filas en `fact_cartera` y ~229k en `fact_depositos`
-  para 5 años x ~28 bancos x ~130 cantones x productos. Postgres lo maneja sin
-  particionar ni tuning especial. Ampliar el histórico a más años solo crece linealmente.
+- **Volumen no es el riesgo**: ~336k filas en `fact_cartera`, ~229k en `fact_depositos`
+  (CAPCOL, 2021-2025); ~486k en `fact_tasas_pasivas` y ~1.46M en `fact_tasas_activas` (BCE
+  semanal, histórico completo 2008-2026); ~2.18M en `fact_balance` y ~192k en `fact_pyg`
+  (Boletín, 2021-2026). El BCE semanal es el volumen dominante — se cargó vía `COPY`
+  (no `executemany`) por esa razón, ~10-100x más rápido para cientos de miles de filas.
+  Postgres lo maneja sin particionar ni tuning especial; `refresh_marts()` completo sobre
+  todo el dataset acumulado toma ~1-2 minutos.
 - **El riesgo real es el *schema drift* de la fuente**: ya se observó un cambio de
   nomenclatura de carpetas/archivos en 2024. Mitigación: `raw.*` preserva el archivo tal
   cual (JSONB) para poder reprocesar sin volver a descargar si un parser cambia; la

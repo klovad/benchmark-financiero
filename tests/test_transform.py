@@ -9,13 +9,13 @@ RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
 EXTRACT_DIR = Path(__file__).resolve().parent.parent / "data" / "_tmp_extract"
 
 CARTERA_COLUMNS = {
-    "fecha", "tipo_entidad", "banco", "region", "provincia", "canton",
+    "fecha", "tipo_entidad", "banco", "banco_codigo", "region", "provincia", "canton",
     "tipo_credito", "estado_cartera", "saldo", "source_file", "source_hash",
 }
 DEPOSITOS_COLUMNS = {
-    "fecha", "tipo_entidad", "banco", "region", "provincia", "canton",
-    "tipo_deposito", "saldo", "numero_cuentas", "numero_clientes",
-    "source_file", "source_hash",
+    "fecha", "tipo_entidad", "banco", "banco_codigo", "region", "provincia", "canton",
+    "tipo_deposito", "categoria_deposito", "plazo_dias_desde", "plazo_dias_hasta",
+    "saldo", "numero_cuentas", "numero_clientes", "source_file", "source_hash",
 }
 
 

@@ -1,24 +1,34 @@
-# Benchmark de cartera y depósitos — bancos privados del Ecuador
+# Benchmark de cartera, depósitos y tasas — bancos privados del Ecuador
 
-Proyecto de analítica end-to-end (ingeniería de datos + BI) sobre los saldos de cartera
-y depósitos de los bancos privados del Ecuador, con el fin de identificar oportunidades
-de mercado (banco / producto / cantón) y proponer un monitoreo continuo. Fuente:
-[portal CAPCOL de la Superintendencia de Bancos](https://www.superbancos.gob.ec/estadisticas/portalestudios/capcol-bancos/).
+Proyecto de analítica end-to-end (ingeniería de datos + BI) sobre cartera, depósitos,
+tasas de interés y estados financieros de los bancos privados del Ecuador, con el fin de
+identificar oportunidades de mercado (banco / producto / cantón / tasa) y proponer un
+monitoreo continuo. 4 fuentes integradas en un único esquema estrella conformado:
+
+- [Portal CAPCOL](https://www.superbancos.gob.ec/estadisticas/portalestudios/capcol-bancos/) (Superbancos) — cartera y depósitos, mensual.
+- [Tasas de interés del BCE](https://contenido.bce.fin.ec/documentos/Estadisticas/SectorMonFin/TasasInteres/) — tasas activas/pasivas por banco (semanal) y techos/referenciales regulatorios (mensual).
+- [Boletín Financiero Mensual](https://www.superbancos.gob.ec/estadisticas/portalestudios/bancos/) (Superbancos) — balance y estado de resultados por banco, mensual.
 
 > Repositorio pensado para publicarse como `benchmark-depositos-cartera-bp`.
 
 ## Qué incluye
 
-1. **ETL** (`etl/`): scraper con Playwright (el portal renderiza los archivos vía un
-   plugin de OneDrive/SharePoint, no son links HTML estáticos) → parsers Python/pandas →
-   carga idempotente a Postgres en 3 capas (`raw` → `staging` → `marts`, esquema estrella).
-2. **Base de datos** (`sql/`): scripts para crear rol, base y esquemas, tanto en un
-   Postgres local como vía `docker-compose.yml` (reproducible sin instalar nada).
+1. **ETL** (`etl/`): extractores por fuente (Playwright para los 2 portales de
+   Superbancos que renderizan vía plugin OneDrive/SharePoint; descarga directa para BCE,
+   que sí es HTML/CSV estático) → parsers Python/pandas → carga idempotente a Postgres en
+   3 capas (`raw` → `staging` → `marts`, esquema estrella), con carga incremental por hash
+   (CDC) en vez de full refresh.
+2. **Base de datos** (`sql/`): scripts para crear rol, base, esquemas y las migraciones
+   incrementales de cada fuente, tanto en un Postgres local como vía `docker-compose.yml`.
 3. **Power BI** (`powerbi/`): proyecto `.pbip` (formato texto, versionable en git) con el
-   modelo semántico completo (relaciones, medidas DAX) conectado a `marts.*`.
+   modelo semántico conectado a `marts.*` — **cubre el esquema original de CAPCOL**; las
+   tablas de BCE/Boletín añadidas después aún no están incorporadas al modelo semántico
+   (ver "Estado del proyecto" abajo).
 
-Ver `docs/architecture.md` para el diseño completo (incluyendo la evaluación de
-escalabilidad) y `docs/data_dictionary.md` para el detalle de cada tabla.
+Ver `docs/architecture.md` para el diseño completo (catálogos conformados, patrón de CDC,
+evaluación de escalabilidad) y `docs/data_dictionary.md` para el detalle de cada tabla.
+`docs/fuentes_datos.md` documenta la estructura real de cada fuente (no solo la ficha
+metodológica) y `docs/metricas_financieras.md` el catálogo de indicadores del Boletín.
 
 ## Quickstart
 
@@ -39,32 +49,69 @@ python -m venv .venv
 # 3. Variables de entorno
 copy .env.example .env    # ajustar credenciales si no usaste las de ejemplo
 
-# 4. Pipeline completo (descarga + carga) para 2021-2025
+# 4. Migraciones incrementales (además de 00-04, agregadas al expandir a BCE/Boletín)
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U bp_etl -d benchmark_cartera_depositos -f sql/05_dim_banco_rework.sql
+# ... 06 a 13, en orden (ver sql/*.sql) ...
+
+# 5. Pipeline CAPCOL (descarga + carga) para 2021-2025
 .venv\Scripts\python -m etl.pipeline all --years 2021 2022 2023 2024 2025
 
-# 5. Power BI: abrir powerbi/benchmark-cartera-depositos.pbip en Power BI Desktop
+# 6. BCE (tasas semanales tsp/tsa + techos/referenciales TasasHistorico.htm)
+.venv\Scripts\python -m etl.pipeline bce
+.venv\Scripts\python -m etl.pipeline tasas-historicas
+
+# 7. Boletín Financiero Mensual (balance/PyG)
+.venv\Scripts\python -m etl.pipeline boletin --years 2021 2022 2023 2024 2025 2026
+
+# 8. Power BI: abrir powerbi/benchmark-cartera-depositos.pbip en Power BI Desktop
 ```
 
 ## Estructura
 
 ```
-etl/                  extract (Playwright) / transform (parsers) / load (Postgres)
-sql/                  DDL: roles, esquemas raw/staging/marts, vistas de sanity
+etl/
+  extract/            scrape_superbancos.py, scrape_boletin.py (Playwright);
+                       download_bce.py, download_tasas_historicas.py (descarga directa)
+  transform/           parsers por fuente + *_matching.py (identidad de banco/categoría/
+                       plazo, resuelta en Python antes de staging -- ver architecture.md)
+  load/                load_postgres.py: raw -> staging -> marts, upserts con CDC
+  seeds/                banco_maestro.csv / banco_crosswalk.csv (catálogos sembrados)
+sql/                  DDL: roles, esquemas raw/staging/marts + migraciones 05-13
+                       (dim_banco/dim_fecha rework, catálogos conformados, BCE, Boletín)
 docker-compose.yml    Postgres reproducible para quien clone el repo
-powerbi/              proyecto .pbip (modelo semántico + reporte)
-docs/                 arquitectura, diccionario de datos
-tests/                pruebas de los parsers
+powerbi/              proyecto .pbip (modelo semántico + reporte) -- cubre CAPCOL v1
+docs/                 arquitectura, diccionario de datos, catálogo de fuentes, métricas
+tests/                pruebas de los parsers y módulos de resolución de identidad
 data/raw/             archivos descargados (no versionado; se regenera con el ETL)
 ```
 
 ## Alcance de los datos
 
-Bancos privados del Ecuador, 2021-01 a 2025-12 (mensual). Cartera por tipo de crédito
-(comercial, consumo, inmobiliario, microcrédito, vivienda de interés público, educativo)
-y estado (por vencer / no devenga intereses / vencida). Depósitos por tipo (monetarios,
-ahorro, plazo por rango de días, garantía, restringidos, etc.). Ambos con desagregación
-geográfica (cantón/provincia/región).
+- **CAPCOL** (cartera/depósitos): bancos privados, 2021-01 a 2025-12, mensual. Cartera por
+  tipo de crédito (comercial, consumo, inmobiliario, microcrédito, vivienda de interés
+  público, educativo) y estado (por vencer / no devenga intereses / vencida). Depósitos
+  por categoría (monetarios, ahorro, plazo por rango de días, garantía, restringidos,
+  etc.). Ambos con desagregación geográfica (cantón/provincia/región). **No trae tasa de
+  interés** (verificado contra archivos reales) — de ahí la fuente BCE.
+- **BCE tsp/tsa** (tasas semanales por banco): histórico completo 2008-01 a la fecha,
+  bancos privados. Activas por segmento de crédito (26 valores), pasivas por categoría de
+  depósito, ambas por plazo y provincia.
+- **BCE `TasasHistorico.htm`** (techos y referenciales, nivel sistema): 2022-04 a
+  2026-06 (páginas anteriores usan un layout HTML distinto, no soportado por el parser
+  actual). Tasas activas máximas/referenciales por segmento, pasivas por instrumento y
+  plazo, TPR/TAR/Tasa Legal/Tasa Máxima Convencional.
+- **Boletín Financiero Mensual** (balance/PyG por banco): 2021-01 a 2026-06. Plan de
+  cuentas jerárquico completo (Catálogo Único de Cuentas), valores en USD (fuente reporta
+  en miles, normalizado al cargar).
 
-**Nota**: la fuente CAPCOL no reporta tasas de interés (verificado contra archivos reales
-y la ficha metodológica de Superbancos); las columnas de tasa quedan reservadas y
-nulas en v1 — ver `docs/architecture.md` para el detalle y cómo extenderlo.
+## Estado del proyecto
+
+- ✅ ETL de las 4 fuentes completo y verificado (conteos `staging` = `marts` exactos, CDC
+  sin updates espurios en una segunda corrida, ver `docs/data_dictionary.md` y
+  `docs/architecture.md`).
+- ⏳ **Power BI (`.pbip`) pendiente de actualizar**: el modelo semántico actual solo
+  conecta a las tablas de CAPCOL (`fact_cartera`/`fact_depositos` y sus dimensiones);
+  incorporar las tablas nuevas de BCE/Boletín es el siguiente paso natural, no hecho
+  todavía.
+- ⏳ `RK`/`INDICADORES` del Boletín están documentados (`docs/metricas_financieras.md`)
+  pero no cargados como tabla — son ratios recalculables desde `fact_balance`/`fact_pyg`.

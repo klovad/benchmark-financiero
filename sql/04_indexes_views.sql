@@ -49,24 +49,25 @@ FROM marts.vw_depositos_market_share
 GROUP BY fecha_id, fecha;
 
 -- Tasa ponderada correctamente reagregada (numerador saldo*tasa / saldo), no promedio simple de tasas.
+-- tipo_credito es columna directa en fact_cartera (dimensión degenerada, ver
+-- sql/09_fact_cartera_depositos_rework.sql) -- no hace falta join a un catálogo de producto.
 CREATE OR REPLACE VIEW marts.vw_cartera_tasa_ponderada AS
 SELECT
     d.fecha,
-    pc.tipo_credito,
+    f.tipo_credito,
     ROUND(SUM(f.saldo_x_tasa) / NULLIF(SUM(f.saldo), 0), 4) AS tasa_ponderada
 FROM marts.fact_cartera f
 JOIN marts.dim_fecha d ON d.fecha_id = f.fecha_id
-JOIN marts.dim_producto_cartera pc ON pc.producto_cartera_id = f.producto_cartera_id
 WHERE f.saldo_x_tasa IS NOT NULL
-GROUP BY d.fecha, pc.tipo_credito;
+GROUP BY d.fecha, f.tipo_credito;
 
 CREATE OR REPLACE VIEW marts.vw_depositos_tasa_ponderada AS
 SELECT
     d.fecha,
-    pd.tipo_deposito,
+    cd.categoria AS categoria_deposito,
     ROUND(SUM(f.saldo_x_tasa) / NULLIF(SUM(f.saldo), 0), 4) AS tasa_ponderada
 FROM marts.fact_depositos f
 JOIN marts.dim_fecha d ON d.fecha_id = f.fecha_id
-JOIN marts.dim_producto_deposito pd ON pd.producto_deposito_id = f.producto_deposito_id
+JOIN marts.dim_categoria_deposito cd ON cd.categoria_deposito_id = f.categoria_deposito_id
 WHERE f.saldo_x_tasa IS NOT NULL
-GROUP BY d.fecha, pd.tipo_deposito;
+GROUP BY d.fecha, cd.categoria;

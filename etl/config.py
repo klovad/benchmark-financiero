@@ -9,6 +9,17 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = PROJECT_ROOT / os.getenv("SCRAPER_DOWNLOAD_DIR", "data/raw")
 
 CAPCOL_URL = "https://www.superbancos.gob.ec/estadisticas/portalestudios/capcol-bancos/"
+BOLETIN_URL = "https://www.superbancos.gob.ec/estadisticas/portalestudios/bancos/"
+
+# BCE: tasas de interés semanales por banco. Convención de nombres t{s|m}{p|a} = tasas +
+# (semanal|mensual) + (pasiva|activa); solo se integran las semanales (tsp/tsa) --
+# decisión explícita del usuario, ver docs/fuentes_datos.md sección 2.
+BCE_BASE_URL = "https://contenido.bce.fin.ec/documentos/Estadisticas/SectorMonFin/TasasInteres"
+BCE_URLS = {
+    "tsp": f"{BCE_BASE_URL}/tsp_desde_200801.zip",
+    "tsa": f"{BCE_BASE_URL}/tsa_desde_200801.zip",
+}
+BCE_DIR = RAW_DIR / "bce"
 
 DB_CONFIG = {
     "host": os.getenv("POSTGRES_HOST", "localhost"),

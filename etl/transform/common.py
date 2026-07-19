@@ -22,12 +22,14 @@ def sha256_file(path: Path) -> str:
 
 
 def extract_single_xlsx(zip_path: Path, extract_dir: Path) -> Path:
-    """Los ZIP de Superbancos contienen exactamente un .xlsx."""
+    """Los ZIP de Superbancos contienen exactamente un .xlsx -- salvo boletines
+    antiguos (~2021-2022) que traen .xlsm (macro-enabled), mismo formato para
+    openpyxl."""
     extract_dir.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(zip_path) as zf:
-        xlsx_names = [n for n in zf.namelist() if n.lower().endswith(".xlsx")]
+        xlsx_names = [n for n in zf.namelist() if n.lower().endswith((".xlsx", ".xlsm"))]
         if len(xlsx_names) != 1:
-            raise ValueError(f"{zip_path.name}: se esperaba 1 .xlsx dentro del zip, se encontraron {len(xlsx_names)}")
+            raise ValueError(f"{zip_path.name}: se esperaba 1 .xlsx/.xlsm dentro del zip, se encontraron {len(xlsx_names)}")
         zf.extract(xlsx_names[0], extract_dir)
         return extract_dir / xlsx_names[0]
 

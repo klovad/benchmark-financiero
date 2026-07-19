@@ -15,6 +15,7 @@ import openpyxl
 import pandas as pd
 
 from etl.config import TIPO_CREDITO_KEYWORDS
+from etl.transform.banco_matching import resolver_banco_codigo
 from etl.transform.common import (
     extract_single_xlsx,
     find_base_sheets,
@@ -64,10 +65,12 @@ def _parse_sheet(ws, tipo_credito: str) -> list[dict]:
         if fecha is None:
             continue
         provincia = normalize_text(get(row, "PROVINCIA"))
+        banco = normalize_banco(get(row, "ENTIDAD"))
         base = {
             "fecha": month_end_date(fecha),
             "tipo_entidad": "BANCO PRIVADO",
-            "banco": normalize_banco(get(row, "ENTIDAD")),
+            "banco": banco,
+            "banco_codigo": resolver_banco_codigo(banco, "CAPCOL"),
             "region": region_for_provincia(provincia),
             "provincia": provincia,
             "canton": normalize_text(get(row, "CANTON")),
@@ -103,7 +106,7 @@ def parse_cartera_file(source_path: Path, extract_dir: Path) -> pd.DataFrame:
     # El origen trae detalle a nivel de oficina/cuenta contable: varias filas pueden
     # compartir (fecha, banco, canton, tipo_credito, estado_cartera) y deben sumarse,
     # no sobrescribirse, para no perder saldo al cargar a staging.
-    key_cols = ["fecha", "tipo_entidad", "banco", "region", "provincia", "canton", "tipo_credito", "estado_cartera"]
+    key_cols = ["fecha", "tipo_entidad", "banco", "banco_codigo", "region", "provincia", "canton", "tipo_credito", "estado_cartera"]
     df = df.groupby(key_cols, dropna=False, as_index=False).agg(
         saldo=("saldo", "sum"),
         source_file=("source_file", "first"),

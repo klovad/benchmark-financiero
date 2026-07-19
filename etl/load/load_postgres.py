@@ -3,13 +3,21 @@ Carga idempotente a Postgres: raw (JSONB tal cual) -> staging (tipado) -> marts 
 
 Idempotencia:
 - raw.source_files evita reprocesar un archivo cuyo hash ya fue cargado.
-- staging.* tiene UNIQUE en la llave natural -> INSERT ... ON CONFLICT DO UPDATE.
+- staging.* tiene UNIQUE en la llave natural -> INSERT ... ON CONFLICT DO UPDATE, con un
+  guard `WHERE row_hash IS DISTINCT FROM EXCLUDED.row_hash` para que una fila sin cambios
+  reales no dispare un UPDATE (row_hash es una columna GENERATED que cubre solo las
+  columnas mutables, no la llave natural -- ver sql/05_dim_banco_rework.sql).
 - marts.* se reconstruye desde staging con la misma técnica, así que correr el
   pipeline varias veces (o solo para un año) siempre converge al mismo resultado.
+- La identidad de banco (banco_codigo) se resuelve en etl/transform/banco_matching.py
+  ANTES de llegar a staging -- marts.dim_banco no es más que un catálogo poblado desde
+  staging.banco_maestro (sembrado desde etl/seeds/banco_maestro.csv), sin tabla de alias.
 """
 
+import csv
 import json
 import logging
+from pathlib import Path
 
 import pandas as pd
 import psycopg
@@ -17,6 +25,8 @@ import psycopg
 from etl.config import DB_CONFIG
 
 log = logging.getLogger(__name__)
+
+_SEEDS_DIR = Path(__file__).resolve().parent.parent / "seeds"
 
 
 def get_connection() -> psycopg.Connection:
@@ -71,10 +81,29 @@ def load_raw(conn, table: str, df: pd.DataFrame, anio: int) -> None:
     log.info("raw.%s: %d filas insertadas", table, len(rows))
 
 
+def load_banco_maestro_seed(conn) -> None:
+    """Siembra staging.banco_maestro desde etl/seeds/banco_maestro.csv -- el nombre a
+    mostrar y tipo_entidad de cada banco_codigo, determinista sin importar qué variante
+    de texto llegó primero durante la carga."""
+    with open(_SEEDS_DIR / "banco_maestro.csv", encoding="utf-8") as f:
+        rows = [(r["banco_codigo"], r["banco"], r["tipo_entidad"]) for r in csv.DictReader(f)]
+    with conn.cursor() as cur:
+        cur.executemany(
+            """
+            INSERT INTO staging.banco_maestro (banco_codigo, banco, tipo_entidad)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (banco_codigo) DO UPDATE SET
+                banco = EXCLUDED.banco, tipo_entidad = EXCLUDED.tipo_entidad
+            """,
+            rows,
+        )
+    log.info("staging.banco_maestro: %d filas sembradas", len(rows))
+
+
 def upsert_staging_cartera(conn, df: pd.DataFrame) -> None:
     rows = [
         tuple(_clean(v) for v in (
-            r.fecha, r.tipo_entidad, r.banco, r.region, r.provincia, r.canton,
+            r.fecha, r.tipo_entidad, r.banco, r.banco_codigo, r.region, r.provincia, r.canton,
             r.tipo_credito, r.estado_cartera, r.saldo, r.source_file,
         ))
         for r in df.itertuples(index=False)
@@ -83,12 +112,13 @@ def upsert_staging_cartera(conn, df: pd.DataFrame) -> None:
         cur.executemany(
             """
             INSERT INTO staging.cartera
-                (fecha, tipo_entidad, banco, region, provincia, canton, tipo_credito, estado_cartera, saldo, source_file)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (fecha, tipo_entidad, banco, banco_codigo, region, provincia, canton, tipo_credito, estado_cartera, saldo, source_file)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (fecha, tipo_entidad, banco, canton, tipo_credito, estado_cartera)
             DO UPDATE SET saldo = EXCLUDED.saldo, region = EXCLUDED.region,
                           provincia = EXCLUDED.provincia, source_file = EXCLUDED.source_file,
-                          loaded_at = now()
+                          banco_codigo = EXCLUDED.banco_codigo, fecha_actualizacion = now()
+            WHERE staging.cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash
             """,
             rows,
         )
@@ -98,8 +128,9 @@ def upsert_staging_cartera(conn, df: pd.DataFrame) -> None:
 def upsert_staging_depositos(conn, df: pd.DataFrame) -> None:
     rows = [
         tuple(_clean(v) for v in (
-            r.fecha, r.tipo_entidad, r.banco, r.region, r.provincia, r.canton,
-            r.tipo_deposito, r.saldo, r.numero_clientes, r.numero_cuentas, r.source_file,
+            r.fecha, r.tipo_entidad, r.banco, r.banco_codigo, r.region, r.provincia, r.canton,
+            r.tipo_deposito, r.categoria_deposito, r.plazo_dias_desde, r.plazo_dias_hasta,
+            r.saldo, r.numero_clientes, r.numero_cuentas, r.source_file,
         ))
         for r in df.itertuples(index=False)
     ]
@@ -107,38 +138,273 @@ def upsert_staging_depositos(conn, df: pd.DataFrame) -> None:
         cur.executemany(
             """
             INSERT INTO staging.depositos
-                (fecha, tipo_entidad, banco, region, provincia, canton, tipo_deposito, saldo, numero_clientes, numero_cuentas, source_file)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (fecha, tipo_entidad, banco, banco_codigo, region, provincia, canton, tipo_deposito,
+                 categoria_deposito, plazo_dias_desde, plazo_dias_hasta, saldo, numero_clientes, numero_cuentas, source_file)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (fecha, tipo_entidad, banco, canton, tipo_deposito)
             DO UPDATE SET saldo = EXCLUDED.saldo, numero_clientes = EXCLUDED.numero_clientes,
                           numero_cuentas = EXCLUDED.numero_cuentas, region = EXCLUDED.region,
                           provincia = EXCLUDED.provincia, source_file = EXCLUDED.source_file,
-                          loaded_at = now()
+                          banco_codigo = EXCLUDED.banco_codigo,
+                          categoria_deposito = EXCLUDED.categoria_deposito,
+                          plazo_dias_desde = EXCLUDED.plazo_dias_desde,
+                          plazo_dias_hasta = EXCLUDED.plazo_dias_hasta,
+                          fecha_actualizacion = now()
+            WHERE staging.depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash
             """,
             rows,
         )
     log.info("staging.depositos: %d filas upsert", len(rows))
 
 
+def _copy_rows(conn, copy_sql: str, rows) -> int:
+    """COPY es ~10-100x más rápido que executemany para los volúmenes de BCE (cientos de
+    miles de filas por archivo, todo el histórico semanal 2008-2026 en un solo CSV)."""
+    n = 0
+    with conn.cursor() as cur:
+        with cur.copy(copy_sql) as copy:
+            for row in rows:
+                copy.write_row(row)
+                n += 1
+    return n
+
+
+def load_raw_bce(conn, table: str, df: pd.DataFrame, payload_cols: list[str]) -> None:
+    rows = (
+        (
+            r.source_file,
+            r.source_hash,
+            r.fecha.year,
+            r.fecha.month,
+            json.dumps({c: _clean(getattr(r, c)) for c in payload_cols}, default=str),
+        )
+        for r in df.itertuples(index=False)
+    )
+    n = _copy_rows(
+        conn,
+        f"COPY raw.{table} (source_file, source_hash, anio, mes, data) FROM STDIN",
+        rows,
+    )
+    log.info("raw.%s: %d filas insertadas", table, n)
+
+
+_BCE_INT_COLS = {"plazo_dias_desde", "plazo_dias_hasta", "numero_operaciones"}
+
+
+def _upsert_bce_via_temp(conn, df: pd.DataFrame, table: str, cols: list[str], key_cols: list[str]) -> None:
+    """COPY a una tabla temporal (misma sesión, se descarta sola) y de ahí INSERT ...
+    ON CONFLICT DO UPDATE con guard de row_hash -- COPY no soporta ON CONFLICT
+    directamente, así que no se puede COPY directo a staging.*."""
+    df = df.copy()
+    for c in _BCE_INT_COLS & set(cols):
+        df[c] = df[c].astype("Int64")  # nullable -- evita que NaN vuelva float la columna (COPY rechaza '60.0' en INT)
+
+    with conn.cursor() as cur:
+        cur.execute(f"CREATE TEMP TABLE _tmp_{table} (LIKE staging.{table} INCLUDING DEFAULTS) ON COMMIT DROP")
+        cur.execute(f"ALTER TABLE _tmp_{table} DROP COLUMN IF EXISTS id")
+
+    rows = (tuple(_clean(getattr(r, c)) for c in cols) for r in df.itertuples(index=False))
+    cols_sql = ", ".join(cols)
+    _copy_rows(conn, f"COPY _tmp_{table} ({cols_sql}) FROM STDIN", rows)
+
+    set_cols = [c for c in cols if c not in key_cols]
+    set_clause = ", ".join(f"{c} = EXCLUDED.{c}" for c in set_cols) + ", fecha_actualizacion = now()"
+    key_expr = ", ".join(
+        f"COALESCE({c}, -1)" if c in ("plazo_dias_hasta",) else (f"COALESCE({c}, '')" if c == "provincia" else c)
+        for c in key_cols
+    )
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""
+            INSERT INTO staging.{table} ({cols_sql})
+            SELECT {cols_sql} FROM _tmp_{table}
+            ON CONFLICT ({key_expr})
+            DO UPDATE SET {set_clause}
+            WHERE staging.{table}.row_hash IS DISTINCT FROM EXCLUDED.row_hash
+            """
+        )
+    log.info("staging.%s: %d filas upsert", table, len(df))
+
+
+_BCE_TASAS_PASIVAS_COLS = [
+    "fecha", "banco_codigo", "categoria_deposito", "plazo_dias_desde", "plazo_dias_hasta",
+    "plazo_codigo", "provincia", "monto_total", "numero_operaciones",
+    "tasa_pasiva_efectiva", "tasa_nominal", "source_file",
+]
+_BCE_TASAS_ACTIVAS_COLS = [
+    "fecha", "banco_codigo", "segmento_credito", "plazo_dias_desde", "plazo_dias_hasta",
+    "plazo_codigo", "provincia", "monto_total", "numero_operaciones",
+    "tasa_activa_efectiva", "tasa_nominal", "source_file",
+]
+
+
+def load_raw_tasas_referenciales(conn, df: pd.DataFrame, source_hash: str) -> None:
+    """Volumen pequeño (~40 filas/mes x ~222 meses -- miles, no millones), executemany
+    alcanza sin necesidad de COPY como en BCE tsp/tsa. A diferencia de tsp/tsa (un solo
+    archivo acumulativo), acá cada mes es un archivo separado -- source_hash se calcula
+    por archivo en el llamador (igual que CAPCOL)."""
+    payload_cols = [c for c in df.columns if c != "source_file"]
+    rows = [
+        (r.source_file, source_hash, r.fecha.year, r.fecha.month,
+         json.dumps({c: _clean(getattr(r, c)) for c in payload_cols}, default=str))
+        for r in df.itertuples(index=False)
+    ]
+    with conn.cursor() as cur:
+        cur.executemany(
+            "INSERT INTO raw.tasas_referenciales (source_file, source_hash, anio, mes, data) VALUES (%s, %s, %s, %s, %s)",
+            rows,
+        )
+    log.info("raw.tasas_referenciales: %d filas insertadas", len(rows))
+
+
+def upsert_staging_tasas_referenciales(conn, df: pd.DataFrame) -> None:
+    rows = [
+        tuple(_clean(v) for v in (
+            r.fecha, r.seccion, r.dimension_valor, r.plazo_dias_desde, r.plazo_dias_hasta,
+            r.metrica, r.valor, r.source_file,
+        ))
+        for r in df.itertuples(index=False)
+    ]
+    with conn.cursor() as cur:
+        cur.executemany(
+            """
+            INSERT INTO staging.tasas_referenciales
+                (fecha, seccion, dimension_valor, plazo_dias_desde, plazo_dias_hasta, metrica, valor, source_file)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (fecha, seccion, COALESCE(dimension_valor, ''), COALESCE(plazo_dias_desde, -1), COALESCE(plazo_dias_hasta, -1), metrica)
+            DO UPDATE SET valor = EXCLUDED.valor, source_file = EXCLUDED.source_file, fecha_actualizacion = now()
+            WHERE staging.tasas_referenciales.row_hash IS DISTINCT FROM EXCLUDED.row_hash
+            """,
+            rows,
+        )
+    log.info("staging.tasas_referenciales: %d filas upsert", len(rows))
+
+
+def upsert_staging_bce_tasas_pasivas(conn, df: pd.DataFrame) -> None:
+    key_cols = ["fecha", "banco_codigo", "categoria_deposito", "plazo_dias_desde", "plazo_dias_hasta", "provincia"]
+    _upsert_bce_via_temp(conn, df, "bce_tasas_pasivas", _BCE_TASAS_PASIVAS_COLS, key_cols)
+
+
+def upsert_staging_bce_tasas_activas(conn, df: pd.DataFrame) -> None:
+    key_cols = ["fecha", "banco_codigo", "segmento_credito", "plazo_dias_desde", "plazo_dias_hasta", "provincia"]
+    _upsert_bce_via_temp(conn, df, "bce_tasas_activas", _BCE_TASAS_ACTIVAS_COLS, key_cols)
+
+
+def upsert_dim_cuenta_contable(conn, cuentas_df: pd.DataFrame) -> None:
+    """Plan de cuentas descubierto en cada archivo del Boletín -- volumen pequeño
+    (~1500 cuentas), executemany alcanza. grupo_met se actualiza si el archivo nuevo trae
+    un valor donde antes no había (no se pisa un grupo ya conocido con NULL)."""
+    rows = [
+        tuple(_clean(v) for v in (r.reporte, r.codigo, r.cuenta, r.nivel, r.codigo_padre, r.seccion, r.grupo_met))
+        for r in cuentas_df.itertuples(index=False)
+    ]
+    with conn.cursor() as cur:
+        cur.executemany(
+            """
+            INSERT INTO marts.dim_cuenta_contable (reporte, codigo, cuenta, nivel, codigo_padre, seccion, grupo_met)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (reporte, codigo) DO UPDATE SET
+                cuenta = EXCLUDED.cuenta, nivel = EXCLUDED.nivel, codigo_padre = EXCLUDED.codigo_padre,
+                seccion = EXCLUDED.seccion,
+                grupo_met = COALESCE(marts.dim_cuenta_contable.grupo_met, EXCLUDED.grupo_met)
+            """,
+            rows,
+        )
+    log.info("marts.dim_cuenta_contable: %d filas upsert", len(rows))
+
+
+def load_raw_boletin(conn, table: str, df: pd.DataFrame, source_hash: str) -> None:
+    payload_cols = [c for c in df.columns if c not in ("source_file",)]
+    rows = (
+        (r.source_file, source_hash, r.fecha.year, r.fecha.month,
+         json.dumps({c: _clean(getattr(r, c)) for c in payload_cols}, default=str))
+        for r in df.itertuples(index=False)
+    )
+    n = _copy_rows(conn, f"COPY raw.{table} (source_file, source_hash, anio, mes, data) FROM STDIN", rows)
+    log.info("raw.%s: %d filas insertadas", table, n)
+
+
+def _upsert_boletin_via_temp(conn, df: pd.DataFrame, table: str, cols: list[str], valor_col: str) -> None:
+    with conn.cursor() as cur:
+        cur.execute(f"CREATE TEMP TABLE _tmp_{table} (LIKE staging.{table} INCLUDING DEFAULTS) ON COMMIT DROP")
+        cur.execute(f"ALTER TABLE _tmp_{table} DROP COLUMN IF EXISTS id")
+
+    rows = (tuple(_clean(getattr(r, c)) for c in cols) for r in df.itertuples(index=False))
+    cols_sql = ", ".join(cols)
+    _copy_rows(conn, f"COPY _tmp_{table} ({cols_sql}) FROM STDIN", rows)
+
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""
+            INSERT INTO staging.{table} ({cols_sql})
+            SELECT {cols_sql} FROM _tmp_{table}
+            ON CONFLICT (fecha, banco_codigo, codigo)
+            DO UPDATE SET {valor_col} = EXCLUDED.{valor_col}, source_file = EXCLUDED.source_file, fecha_actualizacion = now()
+            WHERE staging.{table}.row_hash IS DISTINCT FROM EXCLUDED.row_hash
+            """
+        )
+    log.info("staging.%s: %d filas upsert", table, len(df))
+
+
+_BOLETIN_BALANCE_COLS = ["fecha", "banco", "banco_codigo", "codigo", "saldo_usd", "source_file"]
+_BOLETIN_PYG_COLS = ["fecha", "banco", "banco_codigo", "codigo", "valor_usd", "source_file"]
+
+
+def upsert_staging_boletin_balance(conn, df: pd.DataFrame) -> None:
+    _upsert_boletin_via_temp(conn, df, "boletin_balance", _BOLETIN_BALANCE_COLS, "saldo_usd")
+
+
+def upsert_staging_boletin_pyg(conn, df: pd.DataFrame) -> None:
+    _upsert_boletin_via_temp(conn, df, "boletin_pyg", _BOLETIN_PYG_COLS, "valor_usd")
+
+
 _REFRESH_MARTS_SQL = """
-INSERT INTO marts.dim_fecha (fecha_id, fecha, anio, mes, trimestre, nombre_mes)
+-- dim_fecha: grano día (fecha_id = YYYYMMDD), conformed dimension única para grano
+-- mensual (CAPCOL/Boletín) y semanal (BCE, cuando se sumen sus fact tables). anio_mes
+-- es la llave de roll-up para comparar ambos grano sin joins adicionales.
+INSERT INTO marts.dim_fecha (fecha_id, fecha, anio, mes, dia, trimestre, nombre_mes, anio_mes)
 SELECT DISTINCT
-    (EXTRACT(YEAR FROM fecha) * 100 + EXTRACT(MONTH FROM fecha))::INT,
+    TO_CHAR(fecha, 'YYYYMMDD')::INT,
     fecha,
     EXTRACT(YEAR FROM fecha)::INT,
     EXTRACT(MONTH FROM fecha)::INT,
+    EXTRACT(DAY FROM fecha)::INT,
     EXTRACT(QUARTER FROM fecha)::INT,
-    TO_CHAR(fecha, 'TMMonth')
-FROM (SELECT fecha FROM staging.cartera UNION SELECT fecha FROM staging.depositos) f
+    TO_CHAR(fecha, 'TMMonth'),
+    (EXTRACT(YEAR FROM fecha) * 100 + EXTRACT(MONTH FROM fecha))::INT
+FROM (
+    SELECT fecha FROM staging.cartera
+    UNION SELECT fecha FROM staging.depositos
+    UNION SELECT fecha FROM staging.bce_tasas_pasivas
+    UNION SELECT fecha FROM staging.bce_tasas_activas
+    UNION SELECT fecha FROM staging.tasas_referenciales
+    UNION SELECT fecha FROM staging.boletin_balance
+    UNION SELECT fecha FROM staging.boletin_pyg
+) f
 ON CONFLICT (fecha_id) DO NOTHING;
 
-INSERT INTO marts.dim_banco (banco)
-SELECT DISTINCT banco FROM (
-    SELECT banco FROM staging.cartera WHERE tipo_entidad = 'BANCO PRIVADO'
+-- dim_banco: identidad ya resuelta en staging.banco_codigo (etl/transform/banco_matching.py);
+-- el nombre a mostrar y tipo_entidad vienen de staging.banco_maestro (sembrado desde
+-- etl/seeds/banco_maestro.csv), no de cualquier texto crudo que haya llegado primero.
+INSERT INTO marts.dim_banco (banco_codigo, banco, tipo_entidad)
+SELECT bm.banco_codigo, bm.banco, bm.tipo_entidad
+FROM staging.banco_maestro bm
+WHERE bm.banco_codigo IN (
+    SELECT DISTINCT banco_codigo FROM staging.cartera WHERE tipo_entidad = 'BANCO PRIVADO'
     UNION
-    SELECT banco FROM staging.depositos WHERE tipo_entidad = 'BANCO PRIVADO'
-) b
-ON CONFLICT (banco) DO NOTHING;
+    SELECT DISTINCT banco_codigo FROM staging.depositos WHERE tipo_entidad = 'BANCO PRIVADO'
+    UNION
+    SELECT DISTINCT banco_codigo FROM staging.bce_tasas_pasivas
+    UNION
+    SELECT DISTINCT banco_codigo FROM staging.bce_tasas_activas
+    UNION
+    SELECT DISTINCT banco_codigo FROM staging.boletin_balance
+    UNION
+    SELECT DISTINCT banco_codigo FROM staging.boletin_pyg
+)
+ON CONFLICT (banco_codigo) DO UPDATE SET
+    banco = EXCLUDED.banco, tipo_entidad = EXCLUDED.tipo_entidad, fecha_actualizacion = now()
+WHERE marts.dim_banco.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
 INSERT INTO marts.dim_canton (canton, provincia, region)
 SELECT DISTINCT canton, provincia, region FROM (
@@ -149,51 +415,216 @@ SELECT DISTINCT canton, provincia, region FROM (
 WHERE canton IS NOT NULL
 ON CONFLICT (canton, provincia) DO NOTHING;
 
-INSERT INTO marts.dim_producto_cartera (tipo_credito, estado_cartera)
-SELECT DISTINCT tipo_credito, estado_cartera FROM staging.cartera
-ON CONFLICT (tipo_credito, estado_cartera) DO NOTHING;
+-- dim_plazo: catálogo abierto por rango numérico, auto-descubierto desde cada fuente.
+-- No se fuerza una equivalencia falsa entre esquemas de plazo que no calzan entre
+-- fuentes (ej. CAPCOL "DE MÁS DE 361 DÍAS" vs. tsp "g. MAS DE 360 DIAS" quedan como
+-- filas distintas, cada una con su propio límite real).
+INSERT INTO marts.dim_plazo (dias_desde, dias_hasta, plazo_codigo)
+SELECT DISTINCT plazo_dias_desde, plazo_dias_hasta, tipo_deposito
+FROM staging.depositos
+WHERE plazo_dias_desde IS NOT NULL
+ON CONFLICT (dias_desde, COALESCE(dias_hasta, -1)) DO NOTHING;
 
-INSERT INTO marts.dim_producto_deposito (tipo_deposito)
-SELECT DISTINCT tipo_deposito FROM staging.depositos
-ON CONFLICT (tipo_deposito) DO NOTHING;
+INSERT INTO marts.dim_plazo (dias_desde, dias_hasta, plazo_codigo)
+SELECT DISTINCT plazo_dias_desde, plazo_dias_hasta, plazo_codigo FROM staging.bce_tasas_pasivas
+ON CONFLICT (dias_desde, COALESCE(dias_hasta, -1)) DO NOTHING;
 
-INSERT INTO marts.fact_cartera (fecha_id, banco_id, canton_id, producto_cartera_id, saldo)
+INSERT INTO marts.dim_plazo (dias_desde, dias_hasta, plazo_codigo)
+SELECT DISTINCT plazo_dias_desde, plazo_dias_hasta, plazo_codigo FROM staging.bce_tasas_activas
+ON CONFLICT (dias_desde, COALESCE(dias_hasta, -1)) DO NOTHING;
+
+INSERT INTO marts.dim_plazo (dias_desde, dias_hasta, plazo_codigo)
+SELECT DISTINCT plazo_dias_desde, plazo_dias_hasta, NULL FROM staging.tasas_referenciales
+WHERE seccion = 'pasiva_plazo'
+ON CONFLICT (dias_desde, COALESCE(dias_hasta, -1)) DO NOTHING;
+
+INSERT INTO marts.fact_cartera (fecha_id, banco_id, canton_id, tipo_credito, estado_cartera, saldo)
 SELECT
-    (EXTRACT(YEAR FROM s.fecha) * 100 + EXTRACT(MONTH FROM s.fecha))::INT,
+    TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     b.banco_id,
     c.canton_id,
-    p.producto_cartera_id,
+    s.tipo_credito,
+    s.estado_cartera,
     s.saldo
 FROM staging.cartera s
-JOIN marts.dim_banco b ON b.banco = s.banco
+JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
 LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia = s.provincia
-JOIN marts.dim_producto_cartera p ON p.tipo_credito = s.tipo_credito AND p.estado_cartera = s.estado_cartera
 WHERE s.tipo_entidad = 'BANCO PRIVADO'
-ON CONFLICT (fecha_id, banco_id, canton_id, producto_cartera_id)
-DO UPDATE SET saldo = EXCLUDED.saldo;
+ON CONFLICT (fecha_id, banco_id, canton_id, tipo_credito, estado_cartera)
+DO UPDATE SET saldo = EXCLUDED.saldo, fecha_actualizacion = now()
+WHERE marts.fact_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
-INSERT INTO marts.fact_depositos (fecha_id, banco_id, canton_id, producto_deposito_id, saldo, numero_clientes, numero_cuentas)
+INSERT INTO marts.fact_depositos (fecha_id, banco_id, canton_id, categoria_deposito_id, plazo_id, saldo, numero_clientes, numero_cuentas)
 SELECT
-    (EXTRACT(YEAR FROM s.fecha) * 100 + EXTRACT(MONTH FROM s.fecha))::INT,
+    TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     b.banco_id,
     c.canton_id,
-    p.producto_deposito_id,
+    cd.categoria_deposito_id,
+    pl.plazo_id,
     s.saldo,
     s.numero_clientes,
     s.numero_cuentas
 FROM staging.depositos s
-JOIN marts.dim_banco b ON b.banco = s.banco
+JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
 LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia = s.provincia
-JOIN marts.dim_producto_deposito p ON p.tipo_deposito = s.tipo_deposito
+JOIN marts.dim_categoria_deposito cd ON cd.categoria = s.categoria_deposito
+LEFT JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
+    AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
 WHERE s.tipo_entidad = 'BANCO PRIVADO'
-ON CONFLICT (fecha_id, banco_id, canton_id, producto_deposito_id)
+ON CONFLICT (fecha_id, banco_id, canton_id, categoria_deposito_id, COALESCE(plazo_id, -1))
 DO UPDATE SET saldo = EXCLUDED.saldo,
               numero_clientes = EXCLUDED.numero_clientes,
-              numero_cuentas = EXCLUDED.numero_cuentas;
+              numero_cuentas = EXCLUDED.numero_cuentas,
+              fecha_actualizacion = now()
+WHERE marts.fact_depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+
+INSERT INTO marts.fact_tasas_pasivas
+    (fecha_id, banco_id, categoria_deposito_id, plazo_id, provincia, monto_total, numero_operaciones, tasa_pasiva_efectiva, tasa_nominal)
+SELECT
+    TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
+    b.banco_id,
+    cd.categoria_deposito_id,
+    pl.plazo_id,
+    s.provincia,
+    s.monto_total,
+    s.numero_operaciones,
+    s.tasa_pasiva_efectiva,
+    s.tasa_nominal
+FROM staging.bce_tasas_pasivas s
+JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
+JOIN marts.dim_categoria_deposito cd ON cd.categoria = s.categoria_deposito
+JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
+    AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
+ON CONFLICT (fecha_id, banco_id, categoria_deposito_id, plazo_id, COALESCE(provincia, ''))
+DO UPDATE SET monto_total = EXCLUDED.monto_total,
+              numero_operaciones = EXCLUDED.numero_operaciones,
+              tasa_pasiva_efectiva = EXCLUDED.tasa_pasiva_efectiva,
+              tasa_nominal = EXCLUDED.tasa_nominal,
+              fecha_actualizacion = now()
+WHERE marts.fact_tasas_pasivas.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+
+INSERT INTO marts.fact_tasas_activas
+    (fecha_id, banco_id, segmento_id, plazo_id, provincia, monto_total, numero_operaciones, tasa_activa_efectiva, tasa_nominal)
+SELECT
+    TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
+    b.banco_id,
+    sg.segmento_id,
+    pl.plazo_id,
+    s.provincia,
+    s.monto_total,
+    s.numero_operaciones,
+    s.tasa_activa_efectiva,
+    s.tasa_nominal
+FROM staging.bce_tasas_activas s
+JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
+JOIN marts.dim_segmento_credito sg ON sg.segmento = s.segmento_credito
+JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
+    AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
+ON CONFLICT (fecha_id, banco_id, segmento_id, plazo_id, COALESCE(provincia, ''))
+DO UPDATE SET monto_total = EXCLUDED.monto_total,
+              numero_operaciones = EXCLUDED.numero_operaciones,
+              tasa_activa_efectiva = EXCLUDED.tasa_activa_efectiva,
+              tasa_nominal = EXCLUDED.tasa_nominal,
+              fecha_actualizacion = now()
+WHERE marts.fact_tasas_activas.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+
+-- TasasHistorico.htm: 4 tablas anchas, una por sección real (activa_maxima +
+-- activa_referencial comparten grano segmento -> misma tabla). staging.tasas_referenciales
+-- es la única tabla "larga" del proyecto (por sección/métrica) -- ver sql/12_schema_tasas_historicas.sql.
+INSERT INTO marts.fact_tasas_referenciales_credito (fecha_id, segmento_id, tasa_activa_maxima, tasa_activa_referencial)
+SELECT
+    TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
+    sg.segmento_id,
+    MAX(s.valor) FILTER (WHERE s.seccion = 'activa_maxima'),
+    MAX(s.valor) FILTER (WHERE s.seccion = 'activa_referencial')
+FROM staging.tasas_referenciales s
+JOIN marts.dim_segmento_credito sg ON sg.segmento = s.dimension_valor
+WHERE s.seccion IN ('activa_maxima', 'activa_referencial')
+GROUP BY TO_CHAR(s.fecha, 'YYYYMMDD')::INT, sg.segmento_id
+ON CONFLICT (fecha_id, segmento_id)
+DO UPDATE SET tasa_activa_maxima = EXCLUDED.tasa_activa_maxima,
+              tasa_activa_referencial = EXCLUDED.tasa_activa_referencial,
+              fecha_actualizacion = now()
+WHERE marts.fact_tasas_referenciales_credito.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+
+INSERT INTO marts.fact_tasas_pasivas_instrumento (fecha_id, categoria_deposito_id, tasa_pasiva_promedio)
+SELECT
+    TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
+    cd.categoria_deposito_id,
+    s.valor
+FROM staging.tasas_referenciales s
+JOIN marts.dim_categoria_deposito cd ON cd.categoria = s.dimension_valor
+WHERE s.seccion = 'pasiva_instrumento'
+ON CONFLICT (fecha_id, categoria_deposito_id)
+DO UPDATE SET tasa_pasiva_promedio = EXCLUDED.tasa_pasiva_promedio, fecha_actualizacion = now()
+WHERE marts.fact_tasas_pasivas_instrumento.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+
+INSERT INTO marts.fact_tasas_pasivas_plazo (fecha_id, plazo_id, tasa_pasiva_referencial)
+SELECT
+    TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
+    pl.plazo_id,
+    s.valor
+FROM staging.tasas_referenciales s
+JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
+    AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
+WHERE s.seccion = 'pasiva_plazo'
+ON CONFLICT (fecha_id, plazo_id)
+DO UPDATE SET tasa_pasiva_referencial = EXCLUDED.tasa_pasiva_referencial, fecha_actualizacion = now()
+WHERE marts.fact_tasas_pasivas_plazo.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+
+INSERT INTO marts.fact_tasas_referenciales_sistema
+    (fecha_id, tasa_pasiva_referencial_sistema, tasa_activa_referencial_sistema, tasa_legal, tasa_maxima_convencional)
+SELECT
+    TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
+    MAX(s.valor) FILTER (WHERE s.metrica = 'tasa_pasiva_referencial_sistema'),
+    MAX(s.valor) FILTER (WHERE s.metrica = 'tasa_activa_referencial_sistema'),
+    MAX(s.valor) FILTER (WHERE s.metrica = 'tasa_legal'),
+    MAX(s.valor) FILTER (WHERE s.metrica = 'tasa_maxima_convencional')
+FROM staging.tasas_referenciales s
+WHERE s.seccion = 'sistema'
+GROUP BY TO_CHAR(s.fecha, 'YYYYMMDD')::INT
+ON CONFLICT (fecha_id)
+DO UPDATE SET tasa_pasiva_referencial_sistema = EXCLUDED.tasa_pasiva_referencial_sistema,
+              tasa_activa_referencial_sistema = EXCLUDED.tasa_activa_referencial_sistema,
+              tasa_legal = EXCLUDED.tasa_legal,
+              tasa_maxima_convencional = EXCLUDED.tasa_maxima_convencional,
+              fecha_actualizacion = now()
+WHERE marts.fact_tasas_referenciales_sistema.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+
+-- Boletín BALANCE/PYG -- dim_cuenta_contable se puebla directo desde Python
+-- (upsert_dim_cuenta_contable, antes de refresh_marts) porque su llave (reporte, codigo)
+-- no es un valor que se pueda derivar por SELECT DISTINCT de una sola columna staging
+-- como el resto de catálogos auto-descubiertos.
+INSERT INTO marts.fact_balance (fecha_id, banco_id, cuenta_id, saldo_usd)
+SELECT
+    TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
+    b.banco_id,
+    cc.cuenta_id,
+    s.saldo_usd
+FROM staging.boletin_balance s
+JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
+JOIN marts.dim_cuenta_contable cc ON cc.reporte = 'BALANCE' AND cc.codigo = s.codigo
+ON CONFLICT (fecha_id, banco_id, cuenta_id)
+DO UPDATE SET saldo_usd = EXCLUDED.saldo_usd, fecha_actualizacion = now()
+WHERE marts.fact_balance.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+
+INSERT INTO marts.fact_pyg (fecha_id, banco_id, cuenta_id, valor_usd)
+SELECT
+    TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
+    b.banco_id,
+    cc.cuenta_id,
+    s.valor_usd
+FROM staging.boletin_pyg s
+JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
+JOIN marts.dim_cuenta_contable cc ON cc.reporte = 'PYG' AND cc.codigo = s.codigo
+ON CONFLICT (fecha_id, banco_id, cuenta_id)
+DO UPDATE SET valor_usd = EXCLUDED.valor_usd, fecha_actualizacion = now()
+WHERE marts.fact_pyg.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 """
 
 
 def refresh_marts(conn) -> None:
+    load_banco_maestro_seed(conn)
     with conn.cursor() as cur:
         cur.execute(_REFRESH_MARTS_SQL)
     log.info("marts.* actualizado desde staging")
