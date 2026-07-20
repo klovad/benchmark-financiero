@@ -29,6 +29,7 @@ from etl.load.load_postgres import (
     load_raw_tasas_referenciales,
     refresh_marts,
     register_source_file,
+    upsert_banco_maestro_auto,
     upsert_dim_cuenta_contable,
     upsert_staging_bce_tasas_activas,
     upsert_staging_bce_tasas_pasivas,
@@ -37,11 +38,9 @@ from etl.load.load_postgres import (
     upsert_staging_cartera,
     upsert_staging_depositos,
     upsert_staging_tasas_referenciales,
-    _BCE_TASAS_ACTIVAS_COLS,
-    _BCE_TASAS_PASIVAS_COLS,
 )
 from etl.transform.common import sha256_file
-from etl.transform.parse_bce_tasas import parse_tsa_file, parse_tsp_file
+from etl.transform.parse_bce_tasas import RAW_TSA_COLS, RAW_TSP_COLS, parse_tsa_file, parse_tsp_file, read_raw as read_raw_bce
 from etl.transform.parse_boletin import parse_boletin_file
 from etl.transform.parse_cartera import parse_cartera_file
 from etl.transform.parse_depositos import parse_depositos_file
@@ -88,13 +87,19 @@ def load_years(years: list[int], base_dir: Path = RAW_DIR) -> None:
 def load_bce(base_dir: Path = BCE_DIR) -> None:
     """BCE tsp/tsa: descarga directa (sin Playwright), un solo archivo cada uno con todo
     el histórico semanal (2008-actualidad) -- no hay noción de 'año' para iterar como en
-    CAPCOL, se procesa el archivo completo de una vez."""
+    CAPCOL, se procesa el archivo completo de una vez.
+
+    Sin filtro de tipo_entidad (corregido 2026-07-19, ver docstring de
+    etl/transform/parse_bce_tasas.py): raw.* captura las 6 categorías del sistema
+    financiero tal cual (read_raw), staging.* resuelve identidad y agrega para TODAS
+    (parse_tsp_file/parse_tsa_file) -- bancos privados vía crosswalk curado, el resto
+    auto-registrado por RUC en staging.banco_maestro (upsert_banco_maestro_auto)."""
     files = download_bce_all(base_dir)
     conn = get_connection()
     try:
-        for clave, report_type, parse_fn, upsert_fn, payload_cols in (
-            ("tsp", "bce_tasas_pasivas", parse_tsp_file, upsert_staging_bce_tasas_pasivas, _BCE_TASAS_PASIVAS_COLS),
-            ("tsa", "bce_tasas_activas", parse_tsa_file, upsert_staging_bce_tasas_activas, _BCE_TASAS_ACTIVAS_COLS),
+        for clave, report_type, parse_fn, upsert_fn, raw_cols in (
+            ("tsp", "bce_tasas_pasivas", parse_tsp_file, upsert_staging_bce_tasas_pasivas, RAW_TSP_COLS),
+            ("tsa", "bce_tasas_activas", parse_tsa_file, upsert_staging_bce_tasas_activas, RAW_TSA_COLS),
         ):
             table = report_type
             zip_path = files[clave]
@@ -102,10 +107,15 @@ def load_bce(base_dir: Path = BCE_DIR) -> None:
             if is_source_loaded(conn, zip_path.name, source_hash):
                 log.info("Ya cargado, se omite: %s", zip_path.name)
                 continue
-            log.info("Procesando %s", zip_path.name)
-            df = parse_fn(zip_path)
-            load_raw_bce(conn, table, df, [c for c in payload_cols if c != "source_file"])
-            upsert_fn(conn, df)
+            log.info("Procesando %s (sin filtrar tipo_entidad)", zip_path.name)
+            df_raw = read_raw_bce(zip_path)
+            df_raw["source_file"] = zip_path.name
+            df_raw["source_hash"] = source_hash
+            load_raw_bce(conn, table, df_raw, raw_cols)
+
+            df_staging, entidades_auto = parse_fn(zip_path, df_raw=df_raw)
+            upsert_banco_maestro_auto(conn, entidades_auto)
+            upsert_fn(conn, df_staging)
             register_source_file(conn, zip_path.name, source_hash, report_type)
             conn.commit()
         refresh_marts(conn)

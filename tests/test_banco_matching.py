@@ -1,6 +1,11 @@
 import pytest
 
-from etl.transform.banco_matching import BancoNoResueltoError, resolver_banco_codigo
+from etl.transform.banco_matching import (
+    BancoNoResueltoError,
+    EntidadBceNoMapeadaError,
+    resolver_banco_codigo,
+    resolver_entidad_bce,
+)
 
 
 def test_capcol_manabi_variants_resolve_to_same_codigo():
@@ -41,3 +46,29 @@ def test_empty_name_raises():
 def test_invalid_fuente_raises_value_error():
     with pytest.raises(ValueError):
         resolver_banco_codigo("BP PICHINCHA", "OTRA_FUENTE")
+
+
+def test_resolver_entidad_bce_privados_usa_crosswalk_curado():
+    codigo, banco, tipo = resolver_entidad_bce("BANCO PICHINCHA C.A.", "1790010937001", "BANCOS PRIVADOS")
+    assert codigo == "PICHINCHA"
+    assert tipo == "BANCO PRIVADO"
+
+
+def test_resolver_entidad_bce_no_privados_se_auto_registra_por_ruc():
+    codigo, banco, tipo = resolver_entidad_bce(
+        "COOPERATIVA DE AHORRO Y CREDITO 4 DE OCTUBRE", "691702324001", "COOPERATIVAS DE AHORRO Y CREDITO",
+    )
+    assert codigo == "BCE_691702324001"
+    assert banco == "COOPERATIVA DE AHORRO Y CREDITO 4 DE OCTUBRE"
+    assert tipo == "COOPERATIVA"
+
+
+def test_resolver_entidad_bce_mismo_ruc_distinta_razon_social_da_mismo_codigo():
+    a, _, _ = resolver_entidad_bce("ASOCIACION MUTUALISTA X", "123", "MUTUALISTAS")
+    b, _, _ = resolver_entidad_bce("ASOCIACION MUTUALISTA X (RENOMBRADA)", "123", "MUTUALISTAS")
+    assert a == b == "BCE_123"
+
+
+def test_resolver_entidad_bce_tipo_entidad_no_mapeado_falla_fuerte():
+    with pytest.raises(EntidadBceNoMapeadaError):
+        resolver_entidad_bce("ALGO NUEVO", "999", "UNA_CATEGORIA_QUE_NO_EXISTE_TODAVIA")

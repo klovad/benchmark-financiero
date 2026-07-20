@@ -53,8 +53,23 @@ columnas aún más ricas: `destino_credito`, `destino_hipotecario`, `destino_con
   `semana;ruc;razon_social;sector_financiero;tipo_entidad;tipo_segmento;instrumento_captacion;provincia;canton;plazo;monto_total;numero_operaciones;tasa_pasiva_efectiva;tasa_nominal`
 - **`semana`**: fecha en formato `DD/MM/YYYY` (weekly, desde 2008-01-03).
 - **`sector_financiero`** (3 valores): `SECTOR FINANCIERO PRIVADO`, `SECTOR FINANCIERO PUBLICO`, `SECTOR FINANCIERO POPULAR Y SOLIDARIO`.
-- **`tipo_entidad`** (6 valores): `BANCOS PRIVADOS`, `BANCOS PUBLICOS`, `COOPERATIVAS DE AHORRO Y CREDITO`, `MUTUALISTAS`, `SOCIEDAD FINANCIERA`, `ADMINISTRADORA DE TARJETAS DE CREDITO`.
-  **Filtrar `tipo_entidad = 'BANCOS PRIVADOS'`** para alinear con el alcance del proyecto (reduce drásticamente el volumen: el archivo trae TODO el sistema financiero, no solo bancos privados).
+- **`tipo_entidad`** (6 valores, confirmado contando entidades distintas del archivo real
+  sin filtrar): `BANCOS PRIVADOS` (37 entidades históricas), `BANCOS PUBLICOS` (7),
+  `COOPERATIVAS DE AHORRO Y CREDITO` (**394** — la inmensa mayoría del universo, el
+  sector "popular y solidario" ecuatoriano tiene cientos de cooperativas pequeñas),
+  `MUTUALISTAS` (5), `SOCIEDAD FINANCIERA` (12), `ADMINISTRADORA DE TARJETAS DE CREDITO`
+  (1). 456 entidades distintas en total.
+  **Corrección (2026-07-19): NO se filtra por `tipo_entidad` en ninguna capa.** Una
+  versión anterior de esta nota decía "filtrar a BANCOS PRIVADOS para alinear con el
+  alcance del proyecto" y así se implementó — pero eso descartaba el dato **antes de que
+  llegara a `raw.*`**, perdiéndolo para siempre (si el proyecto quería analizar el
+  sistema completo más adelante, había que volver a descargar y reprocesar el ZIP
+  original). Corregido: `raw.bce_tasas_pasivas`/`activas` capturan las 6 categorías tal
+  cual; en `staging`/`marts`, los ~33 bancos privados siguen resueltos por el crosswalk
+  curado (`banco_matching.py`, necesitan alinearse con CAPCOL/Boletín), y las ~420
+  entidades restantes se auto-registran por RUC (`resolver_entidad_bce()`, sin curación
+  manual — a esa escala es inviable y no aporta valor todavía, ya que no hay otra fuente
+  con la que alinearlas). Ver `docs/linaje_datos.md` y `docs/gobernanza_datos.md`.
 - **`razon_social`** y **`ruc`**: nombre e identificador fiscal de la entidad — candidato a llave de integración con `dim_banco` de CAPCOL (los nombres no coinciden literalmente: CAPCOL usa "BP PICHINCHA", BCE probablemente usa razón social completa tipo "BANCO PICHINCHA C.A." — falta confirmar el mapeo exacto).
 - **`instrumento_captacion`**: tipo de depósito (`DEPÓSITOS A PLAZO`, `DEPÓSITOS DE AHORRO`, `FONDOS DE TARJETAHABIENTES`, etc.) — más fino que CAPCOL, revisar catálogo completo.
 - **`plazo`**: buckets de rango de días con prefijo de letra ordinal (`a. MENOS DE 30 DIAS`, `b. 30 - 60 DIAS`, ... `g. MAS DE 360 DIAS`) — el prefijo de letra sirve para ordenar.
@@ -64,7 +79,11 @@ columnas aún más ricas: `destino_credito`, `destino_hipotecario`, `destino_con
 
 ### 2.2 `tsa_desde_200801.zip` (tasas activas / colocaciones) — ✅ confirmado
 - **URL correcta**: `.../tsa_desde_200801.zip` (corregida por el usuario; `tmp` NO era esta fuente — ver nota arriba).
-- **Tamaño real**: ZIP 123MB → CSV descomprimido **1.75GB**, 7,757,195 filas totales; **2,236,663 filas** al filtrar `tipo_entidad='BANCOS PRIVADOS'`.
+- **Tamaño real**: ZIP 123MB → CSV descomprimido **1.75GB**, 7,757,194 filas totales
+  (466 entidades distintas del sistema financiero completo — 37 bancos privados, 8
+  bancos públicos, 402 cooperativas, 5 mutualistas, 12 sociedad financiera, 2
+  administradoras de tarjetas). **Ya no se filtra**, ver nota en la sección de `tsp`
+  arriba — `raw.bce_tasas_activas` captura las 7,757,194 filas tal cual.
 - **Formato**: mismo patrón que tsp — CSV `;`, decimales con coma, `semana` en `DD/MM/YYYY` (semanal, confirmado, desde 2008-01-03).
 - **Columnas** (confirmadas leyendo el archivo real):
   `semana;ruc;razon_social;sector_financiero;tipo_entidad;tipo_segmento;segmento_credito;provincia;canton;plazo;monto_total;numero_operaciones;tasa_activa_efectiva;tasa_nominal`
@@ -78,13 +97,14 @@ columnas aún más ricas: `destino_credito`, `destino_hipotecario`, `destino_con
   variantes: ACUMULACIÓN AMPLIADA/SIMPLE con y sin sufijo "(SE)", AGRÍCOLA Y GANADERO,
   MINORISTA con y sin "(SE)"), PRODUCTIVO - CORPORATIVO, PRODUCTIVO AGRÍCOLA Y
   GANADERO/EMPRESARIAL/PYMES, VIVIENDA, VIVIENDA DE INTERÉS PÚBLICO/SOCIAL — mucho más
-  fino que el `tipo_credito` de CAPCOL (6 valores). Filtrado a `tipo_entidad='BANCOS
-  PRIVADOS'` solo, son 22 (caen `INVERSIÓN PÚBLICA` y las 3 variantes "(SE)", propias de
-  banca pública/cooperativas) — **pero el catálogo (`dim_segmento_credito`) se puebla
-  con los 26 completos, sin filtrar por tipo de entidad, para que quede listo si el
-  proyecto se extiende a cooperativas/mutualistas/banca pública más adelante**; el
-  filtro a bancos privados se aplica solo al cargar las tablas de hechos, no al
-  catálogo. **Se necesita una tabla de mapeo `segmento_credito` → `tipo_credito`
+  fino que el `tipo_credito` de CAPCOL (6 valores). Solo entre bancos privados aparecen
+  22 de los 26 (faltan `INVERSIÓN PÚBLICA` y las 3 variantes "(SE)", propias de banca
+  pública/cooperativas) — pero `dim_segmento_credito` siempre se sembró con los 26
+  completos (decisión previa, ya correcta) y **`fact_colocaciones_cartera` (antes
+  `fact_tasas_activas`, renombrada 2026-07-19 mismo día) ahora también carga las filas
+  de los 4 segmentos exclusivos de banca pública/cooperativas** (2026-07-19:
+  ya no se filtra tipo_entidad en ningún punto del pipeline, ver nota arriba). **Se
+  necesita una tabla de mapeo `segmento_credito` → `tipo_credito`
   (CAPCOL)** para poder comparar tasas activas contra los saldos de cartera por
   segmento — no es un mapeo 1:1 trivial (ej. CAPCOL "comercial" ⊂ {COMERCIAL ORDINARIO,
   COMERCIAL PRIORITARIO *, PRODUCTIVO *}).

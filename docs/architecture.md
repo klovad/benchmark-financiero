@@ -29,6 +29,197 @@ marts.dim_* / marts.fact_*   (esquema estrella conformado — 5 dimensiones + 9 
 Power BI (.pbip, Import desde Postgres)
 ```
 
+## Modelo de datos (esquema estrella)
+
+7 dimensiones y 10 tablas de hechos en `marts.*`, resultado final del flujo anterior.
+`dim_fecha`/`dim_banco` son compartidas por casi todas las fuentes; `dim_canton`,
+`dim_segmento_credito`, `dim_categoria_deposito`, `dim_plazo` y `dim_cuenta_contable`
+son compartidas solo por las fuentes que las necesitan (ver "Catálogos conformados"
+abajo). Detalle de cada columna en `docs/data_dictionary.md`.
+
+```mermaid
+erDiagram
+    dim_fecha {
+        int fecha_id PK
+        date fecha
+        int anio
+        int mes
+        int trimestre
+        int anio_mes
+    }
+    dim_banco {
+        int banco_id PK
+        string banco_codigo
+        string banco
+        string tipo_entidad
+        string tamano
+    }
+    dim_canton {
+        int canton_id PK
+        string canton
+        string provincia
+        string region
+    }
+    dim_segmento_credito {
+        int segmento_id PK
+        string segmento
+        string tipo_credito_capcol
+    }
+    dim_categoria_deposito {
+        int categoria_deposito_id PK
+        string categoria
+    }
+    dim_plazo {
+        int plazo_id PK
+        int dias_desde
+        int dias_hasta
+        string plazo_codigo
+    }
+    dim_cuenta_contable {
+        int cuenta_id PK
+        string reporte
+        string codigo
+        string cuenta
+        int nivel
+        string codigo_padre
+        string seccion
+        string grupo_met
+    }
+
+    fact_saldo_cartera {
+        int fecha_id FK
+        int banco_id FK
+        int canton_id FK
+        string tipo_credito
+        string estado_cartera
+        numeric saldo
+    }
+    fact_saldo_depositos {
+        int fecha_id FK
+        int banco_id FK
+        int canton_id FK
+        int categoria_deposito_id FK
+        int plazo_id FK
+        numeric saldo
+        bigint numero_cuentas
+        bigint numero_clientes
+    }
+    fact_captaciones_depositos {
+        int fecha_id FK
+        int banco_id FK
+        int categoria_deposito_id FK
+        int plazo_id FK
+        string provincia
+        numeric monto_total
+        numeric tasa_pasiva_efectiva
+    }
+    fact_colocaciones_cartera {
+        int fecha_id FK
+        int banco_id FK
+        int segmento_id FK
+        int plazo_id FK
+        string provincia
+        numeric monto_total
+        numeric tasa_activa_efectiva
+    }
+    fact_tasas_referenciales_cartera {
+        int fecha_id FK
+        int segmento_id FK
+        numeric tasa_activa_maxima
+        numeric tasa_activa_referencial
+    }
+    fact_tasas_referenciales_depositos_instrumento {
+        int fecha_id FK
+        int categoria_deposito_id FK
+        numeric tasa_pasiva_promedio
+    }
+    fact_tasas_referenciales_depositos_plazo {
+        int fecha_id FK
+        int plazo_id FK
+        numeric tasa_pasiva_referencial
+    }
+    fact_tasas_referenciales_sistema {
+        int fecha_id PK
+        numeric tasa_pasiva_referencial_sistema
+        numeric tasa_activa_referencial_sistema
+    }
+    fact_balance {
+        int fecha_id FK
+        int banco_id FK
+        int cuenta_id FK
+        numeric saldo_usd
+    }
+    fact_pyg {
+        int fecha_id FK
+        int banco_id FK
+        int cuenta_id FK
+        numeric valor_usd
+    }
+
+    dim_fecha ||--o{ fact_saldo_cartera : fecha_id
+    dim_fecha ||--o{ fact_saldo_depositos : fecha_id
+    dim_fecha ||--o{ fact_captaciones_depositos : fecha_id
+    dim_fecha ||--o{ fact_colocaciones_cartera : fecha_id
+    dim_fecha ||--o{ fact_tasas_referenciales_cartera : fecha_id
+    dim_fecha ||--o{ fact_tasas_referenciales_depositos_instrumento : fecha_id
+    dim_fecha ||--o{ fact_tasas_referenciales_depositos_plazo : fecha_id
+    dim_fecha ||--o| fact_tasas_referenciales_sistema : fecha_id
+    dim_fecha ||--o{ fact_balance : fecha_id
+    dim_fecha ||--o{ fact_pyg : fecha_id
+
+    dim_banco ||--o{ fact_saldo_cartera : banco_id
+    dim_banco ||--o{ fact_saldo_depositos : banco_id
+    dim_banco ||--o{ fact_captaciones_depositos : banco_id
+    dim_banco ||--o{ fact_colocaciones_cartera : banco_id
+    dim_banco ||--o{ fact_balance : banco_id
+    dim_banco ||--o{ fact_pyg : banco_id
+
+    dim_canton ||--o{ fact_saldo_cartera : canton_id
+    dim_canton ||--o{ fact_saldo_depositos : canton_id
+
+    dim_segmento_credito ||--o{ fact_colocaciones_cartera : segmento_id
+    dim_segmento_credito ||--o{ fact_tasas_referenciales_cartera : segmento_id
+
+    dim_categoria_deposito ||--o{ fact_saldo_depositos : categoria_deposito_id
+    dim_categoria_deposito ||--o{ fact_captaciones_depositos : categoria_deposito_id
+    dim_categoria_deposito ||--o{ fact_tasas_referenciales_depositos_instrumento : categoria_deposito_id
+
+    dim_plazo ||--o{ fact_saldo_depositos : plazo_id
+    dim_plazo ||--o{ fact_captaciones_depositos : plazo_id
+    dim_plazo ||--o{ fact_colocaciones_cartera : plazo_id
+    dim_plazo ||--o{ fact_tasas_referenciales_depositos_plazo : plazo_id
+
+    dim_cuenta_contable ||--o{ fact_balance : cuenta_id
+    dim_cuenta_contable ||--o{ fact_pyg : cuenta_id
+```
+
+Nombres renombrados 2026-07-19 a un glosario de negocio consistente: **cartera** = negocio
+de crédito (siempre), **depositos** = negocio de captación (siempre); **saldo_** = medida
+de balance (CAPCOL); **colocaciones_**/**captaciones_** = tasa efectiva + monto por banco
+(BCE semanal); **tasas_referenciales_** = techo/referencial a nivel sistema (BCE mensual).
+Nombres anteriores: `fact_cartera`→`fact_saldo_cartera`, `fact_depositos`→`fact_saldo_depositos`,
+`fact_tasas_activas`→`fact_colocaciones_cartera`, `fact_tasas_pasivas`→`fact_captaciones_depositos`,
+`fact_tasas_referenciales_credito`→`fact_tasas_referenciales_cartera`,
+`fact_tasas_pasivas_instrumento`→`fact_tasas_referenciales_depositos_instrumento`,
+`fact_tasas_pasivas_plazo`→`fact_tasas_referenciales_depositos_plazo`. De paso se
+eliminaron 3 columnas nunca pobladas (`saldo_x_tasa`, `tasa_ponderada` en ambas tablas de
+saldo; `morosidad` en `fact_saldo_cartera`) — la tasa real ya vive en
+`fact_colocaciones_cartera`/`fact_captaciones_depositos`. Ver `sql/15_rename_fact_tables.sql`.
+
+`fact_saldo_cartera`/`fact_saldo_depositos` (CAPCOL) no referencian `dim_segmento_credito`:
+CAPCOL nunca trae el sub-segmento fino de BCE, por eso `tipo_credito`/`estado_cartera`
+quedan como dimensión degenerada (columna directa) en vez de FK. `plazo_id` en
+`fact_saldo_depositos` es nullable (`NULL` salvo `categoria_deposito = 'DEPÓSITOS A PLAZO'`)
+y las 4 tablas de `tasas_referenciales_*` son a nivel sistema (sin `dim_banco`, ver
+`docs/data_dictionary.md`).
+
+Este diagrama es la vista **estructural** del modelo (qué se relaciona con qué). No
+sustituye la definición de negocio de cada campo (`docs/data_dictionary.md`), la
+procedencia campo a campo (`docs/linaje_datos.md`) ni el marco de responsable/
+clasificación/calidad (`docs/gobernanza_datos.md`) — las 4 piezas juntas son la
+gobernanza de datos completa del proyecto, ver `docs/gobernanza_datos.md` para cómo
+encajan entre sí.
+
 ## Catálogos conformados (identidad compartida entre fuentes)
 
 La identidad de banco (`banco_codigo`) y los catálogos de segmento de crédito/categoría de
@@ -46,9 +237,12 @@ llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
   para separar categoría/plazo (CAPCOL mezclaba ambos conceptos en `tipo_deposito`) y para
   resolver los buckets de plazo con prefijo ordinal de BCE (`a. MENOS DE 30 DIAS`, etc.).
 - `dim_segmento_credito` (26 valores, universo completo de BCE) y `dim_categoria_deposito`
-  (12 valores) **no se filtran por tipo de entidad** — el filtro a bancos privados se
-  aplica solo al cargar las tablas de hechos, para que el catálogo quede listo si el
-  proyecto se extiende a cooperativas/mutualistas/banca pública.
+  (12 valores) **no se filtran por tipo de entidad**. Desde 2026-07-19 esto ya no es solo
+  el catálogo: `fact_captaciones_depositos`/`fact_colocaciones_cartera` (BCE tsp/tsa) tampoco filtran —
+  cargan el sistema financiero completo (442 bancos en `dim_banco`: 33 privados curados +
+  409 entidades auto-registradas por RUC, ver `docs/gobernanza_datos.md`). Corrige una
+  versión anterior que sí filtraba a bancos privados **antes de llegar a `raw.*`**,
+  perdiendo el resto del sistema para siempre.
 - `dim_plazo` es un catálogo abierto por rango numérico de días, auto-descubierto por cada
   fuente (`INSERT ... ON CONFLICT DO NOTHING`) — **no se fuerza una equivalencia entre
   convenciones distintas** (ej. CAPCOL "DE MÁS DE 361 DÍAS" y BCE tsp "MAS DE 360 DIAS"
@@ -86,7 +280,7 @@ SQL trata `NULL <> NULL` **incluso bajo una restricción `UNIQUE`**, así que
 `UNIQUE (a, b)` con `b` nullable no detecta conflicto entre dos filas `(1, NULL)` — cada
 corrida de `refresh_marts()` insertaba una fila "nueva" para el bucket de plazo sin límite
 superior (`dias_hasta IS NULL`), duplicando `dim_plazo` y produciendo fan-out en el JOIN
-de `fact_depositos`. Fix (ver `sql/10_fix_null_unique_constraints.sql`): reemplazar el
+de `fact_depositos` (hoy `fact_saldo_depositos`, ver renombrado 2026-07-19 arriba). Fix (ver `sql/10_fix_null_unique_constraints.sql`): reemplazar el
 `UNIQUE` plano por un índice único sobre `COALESCE(col, sentinela)`, y apuntar
 `ON CONFLICT` a esa misma expresión — verificado que `ON CONFLICT (a, COALESCE(b, -1))`
 sí detecta el conflicto. Este mismo patrón se aplicó preventivamente a toda columna
@@ -129,13 +323,17 @@ simple.
 
 ## Evaluación de escalabilidad
 
-- **Volumen no es el riesgo**: ~336k filas en `fact_cartera`, ~229k en `fact_depositos`
-  (CAPCOL, 2021-2025); ~486k en `fact_tasas_pasivas` y ~1.46M en `fact_tasas_activas` (BCE
-  semanal, histórico completo 2008-2026); ~2.18M en `fact_balance` y ~192k en `fact_pyg`
-  (Boletín, 2021-2026). El BCE semanal es el volumen dominante — se cargó vía `COPY`
-  (no `executemany`) por esa razón, ~10-100x más rápido para cientos de miles de filas.
-  Postgres lo maneja sin particionar ni tuning especial; `refresh_marts()` completo sobre
-  todo el dataset acumulado toma ~1-2 minutos.
+- **Volumen no es el riesgo**: ~336k filas en `fact_saldo_cartera`, ~229k en `fact_saldo_depositos`
+  (CAPCOL, 2021-2025); **~1.96M en `fact_captaciones_depositos` y ~4.87M en `fact_colocaciones_cartera`**
+  (BCE semanal, histórico completo 2008-2026, sistema financiero completo — no solo
+  bancos privados, ver `docs/gobernanza_datos.md`); ~2.18M en `fact_balance` y ~192k en
+  `fact_pyg` (Boletín, 2021-2026). `raw.bce_tasas_pasivas`/`activas` son más grandes
+  todavía (~3.08M y ~7.76M filas respectivamente — grano cantón, sin agregar; los nombres
+  `raw.*` no cambiaron, solo los de `marts.*`). El BCE
+  semanal es el volumen dominante con margen — se cargó vía `COPY` (no `executemany`) por
+  esa razón, ~10-100x más rápido a este volumen. Postgres lo maneja sin particionar ni
+  tuning especial; `refresh_marts()` completo sobre todo el dataset acumulado toma
+  ~5-6 minutos (subió desde ~1-2 min al dejar de filtrar BCE a solo bancos privados).
 - **El riesgo real es el *schema drift* de la fuente**: ya se observó un cambio de
   nomenclatura de carpetas/archivos en 2024. Mitigación: `raw.*` preserva el archivo tal
   cual (JSONB) para poder reprocesar sin volver a descargar si un parser cambia; la

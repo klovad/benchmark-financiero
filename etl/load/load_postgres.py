@@ -81,6 +81,26 @@ def load_raw(conn, table: str, df: pd.DataFrame, anio: int) -> None:
     log.info("raw.%s: %d filas insertadas", table, len(rows))
 
 
+def upsert_banco_maestro_auto(conn, entidades: list[tuple[str, str, str]]) -> None:
+    """Auto-registra entidades BCE no-privadas (cooperativas, mutualistas, banca pública,
+    sociedad financiera, tarjetas de crédito) resueltas por RUC en
+    etl/transform/banco_matching.py::resolver_entidad_bce -- ON CONFLICT DO NOTHING para
+    no pisar el nombre ya registrado en una corrida anterior (no hace falta actualizar,
+    el RUC no cambia)."""
+    if not entidades:
+        return
+    with conn.cursor() as cur:
+        cur.executemany(
+            """
+            INSERT INTO staging.banco_maestro (banco_codigo, banco, tipo_entidad)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (banco_codigo) DO NOTHING
+            """,
+            entidades,
+        )
+    log.info("staging.banco_maestro: %d entidades auto-registradas (no privadas)", len(entidades))
+
+
 def load_banco_maestro_seed(conn) -> None:
     """Siembra staging.banco_maestro desde etl/seeds/banco_maestro.csv -- el nombre a
     mostrar y tipo_entidad de cada banco_codigo, determinista sin importar qué variante
@@ -438,7 +458,7 @@ SELECT DISTINCT plazo_dias_desde, plazo_dias_hasta, NULL FROM staging.tasas_refe
 WHERE seccion = 'pasiva_plazo'
 ON CONFLICT (dias_desde, COALESCE(dias_hasta, -1)) DO NOTHING;
 
-INSERT INTO marts.fact_cartera (fecha_id, banco_id, canton_id, tipo_credito, estado_cartera, saldo)
+INSERT INTO marts.fact_saldo_cartera (fecha_id, banco_id, canton_id, tipo_credito, estado_cartera, saldo)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     b.banco_id,
@@ -452,9 +472,9 @@ LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia = s.provinci
 WHERE s.tipo_entidad = 'BANCO PRIVADO'
 ON CONFLICT (fecha_id, banco_id, canton_id, tipo_credito, estado_cartera)
 DO UPDATE SET saldo = EXCLUDED.saldo, fecha_actualizacion = now()
-WHERE marts.fact_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE marts.fact_saldo_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
-INSERT INTO marts.fact_depositos (fecha_id, banco_id, canton_id, categoria_deposito_id, plazo_id, saldo, numero_clientes, numero_cuentas)
+INSERT INTO marts.fact_saldo_depositos (fecha_id, banco_id, canton_id, categoria_deposito_id, plazo_id, saldo, numero_clientes, numero_cuentas)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     b.banco_id,
@@ -476,9 +496,9 @@ DO UPDATE SET saldo = EXCLUDED.saldo,
               numero_clientes = EXCLUDED.numero_clientes,
               numero_cuentas = EXCLUDED.numero_cuentas,
               fecha_actualizacion = now()
-WHERE marts.fact_depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE marts.fact_saldo_depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
-INSERT INTO marts.fact_tasas_pasivas
+INSERT INTO marts.fact_captaciones_depositos
     (fecha_id, banco_id, categoria_deposito_id, plazo_id, provincia, monto_total, numero_operaciones, tasa_pasiva_efectiva, tasa_nominal)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
@@ -501,9 +521,9 @@ DO UPDATE SET monto_total = EXCLUDED.monto_total,
               tasa_pasiva_efectiva = EXCLUDED.tasa_pasiva_efectiva,
               tasa_nominal = EXCLUDED.tasa_nominal,
               fecha_actualizacion = now()
-WHERE marts.fact_tasas_pasivas.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE marts.fact_captaciones_depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
-INSERT INTO marts.fact_tasas_activas
+INSERT INTO marts.fact_colocaciones_cartera
     (fecha_id, banco_id, segmento_id, plazo_id, provincia, monto_total, numero_operaciones, tasa_activa_efectiva, tasa_nominal)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
@@ -526,12 +546,12 @@ DO UPDATE SET monto_total = EXCLUDED.monto_total,
               tasa_activa_efectiva = EXCLUDED.tasa_activa_efectiva,
               tasa_nominal = EXCLUDED.tasa_nominal,
               fecha_actualizacion = now()
-WHERE marts.fact_tasas_activas.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE marts.fact_colocaciones_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
 -- TasasHistorico.htm: 4 tablas anchas, una por sección real (activa_maxima +
 -- activa_referencial comparten grano segmento -> misma tabla). staging.tasas_referenciales
 -- es la única tabla "larga" del proyecto (por sección/métrica) -- ver sql/12_schema_tasas_historicas.sql.
-INSERT INTO marts.fact_tasas_referenciales_credito (fecha_id, segmento_id, tasa_activa_maxima, tasa_activa_referencial)
+INSERT INTO marts.fact_tasas_referenciales_cartera (fecha_id, segmento_id, tasa_activa_maxima, tasa_activa_referencial)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     sg.segmento_id,
@@ -545,9 +565,9 @@ ON CONFLICT (fecha_id, segmento_id)
 DO UPDATE SET tasa_activa_maxima = EXCLUDED.tasa_activa_maxima,
               tasa_activa_referencial = EXCLUDED.tasa_activa_referencial,
               fecha_actualizacion = now()
-WHERE marts.fact_tasas_referenciales_credito.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE marts.fact_tasas_referenciales_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
-INSERT INTO marts.fact_tasas_pasivas_instrumento (fecha_id, categoria_deposito_id, tasa_pasiva_promedio)
+INSERT INTO marts.fact_tasas_referenciales_depositos_instrumento (fecha_id, categoria_deposito_id, tasa_pasiva_promedio)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     cd.categoria_deposito_id,
@@ -557,9 +577,9 @@ JOIN marts.dim_categoria_deposito cd ON cd.categoria = s.dimension_valor
 WHERE s.seccion = 'pasiva_instrumento'
 ON CONFLICT (fecha_id, categoria_deposito_id)
 DO UPDATE SET tasa_pasiva_promedio = EXCLUDED.tasa_pasiva_promedio, fecha_actualizacion = now()
-WHERE marts.fact_tasas_pasivas_instrumento.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE marts.fact_tasas_referenciales_depositos_instrumento.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
-INSERT INTO marts.fact_tasas_pasivas_plazo (fecha_id, plazo_id, tasa_pasiva_referencial)
+INSERT INTO marts.fact_tasas_referenciales_depositos_plazo (fecha_id, plazo_id, tasa_pasiva_referencial)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     pl.plazo_id,
@@ -570,7 +590,7 @@ JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
 WHERE s.seccion = 'pasiva_plazo'
 ON CONFLICT (fecha_id, plazo_id)
 DO UPDATE SET tasa_pasiva_referencial = EXCLUDED.tasa_pasiva_referencial, fecha_actualizacion = now()
-WHERE marts.fact_tasas_pasivas_plazo.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE marts.fact_tasas_referenciales_depositos_plazo.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
 INSERT INTO marts.fact_tasas_referenciales_sistema
     (fecha_id, tasa_pasiva_referencial_sistema, tasa_activa_referencial_sistema, tasa_legal, tasa_maxima_convencional)

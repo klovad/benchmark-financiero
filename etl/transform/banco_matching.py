@@ -115,3 +115,55 @@ def resolver_banco_codigo(nombre: str | None, fuente: str) -> str:
         f"No se pudo resolver banco_codigo para '{nombre}' (fuente={fuente}, "
         f"normalizado='{normalizado}'). Agregar una fila a etl/seeds/banco_crosswalk.csv."
     )
+
+
+# Mapea el tipo_entidad crudo del BCE (tsp/tsa, universo completo del sistema financiero)
+# a los valores canónicos de marts.dim_banco.tipo_entidad (CHECK constraint en sql/07).
+_TIPO_ENTIDAD_BCE = {
+    "BANCOS PRIVADOS": "BANCO PRIVADO",
+    "BANCOS PUBLICOS": "BANCO PUBLICO",
+    "COOPERATIVAS DE AHORRO Y CREDITO": "COOPERATIVA",
+    "MUTUALISTAS": "MUTUALISTA",
+    "SOCIEDAD FINANCIERA": "SOCIEDAD FINANCIERA",
+    "ADMINISTRADORA DE TARJETAS DE CREDITO": "TARJETAS DE CREDITO",
+}
+
+
+class EntidadBceNoMapeadaError(ValueError):
+    """El tipo_entidad crudo de BCE no está en _TIPO_ENTIDAD_BCE -- hay que agregar el
+    mapeo (probablemente el BCE agregó una categoría nueva) antes de continuar."""
+
+
+def resolver_entidad_bce(razon_social: str, ruc: str, tipo_entidad_bce: str) -> tuple[str, str, str]:
+    """Resuelve una fila de BCE tsp/tsa (CUALQUIER tipo de entidad del sistema
+    financiero, no solo bancos privados) a (banco_codigo, banco, tipo_entidad).
+
+    Dos caminos deliberadamente distintos:
+    - **BANCOS PRIVADOS**: identidad curada, igual que `resolver_banco_codigo()` de
+      siempre -- necesitan alinearse con CAPCOL/Boletín (3 fuentes describiendo el mismo
+      banco), así que un nombre no sembrado en `banco_crosswalk.csv` sigue fallando
+      fuerte (`BancoNoResueltoError`).
+    - **Todo lo demás** (~420 entidades reales: cooperativas de ahorro y crédito,
+      mutualistas, banca pública, sociedad financiera, administradoras de tarjetas de
+      crédito -- confirmado contra el archivo real sin filtro, 2026-07-19): se
+      auto-registran usando el **RUC** (identificador fiscal) como `banco_codigo`
+      (`BCE_<ruc>`) -- estable ante renames de razón social, mismo criterio que ya
+      resolvió el bug real de continuidad de Comercial de Manabí/Amibank, aplicado acá de
+      forma sistemática en vez de caso por caso. No hay curación manual porque no hay
+      otra fuente (CAPCOL/Boletín) con la que alinear estas ~420 entidades todavía -- si
+      el proyecto agrega una fuente específica de cooperativas más adelante, ESE día
+      hace falta un crosswalk real para esas entidades, no antes.
+    """
+    if tipo_entidad_bce not in _TIPO_ENTIDAD_BCE:
+        raise EntidadBceNoMapeadaError(
+            f"tipo_entidad de BCE no mapeado: '{tipo_entidad_bce}'. "
+            f"Agregar el valor a _TIPO_ENTIDAD_BCE en banco_matching.py."
+        )
+
+    if tipo_entidad_bce == "BANCOS PRIVADOS":
+        codigo = resolver_banco_codigo(razon_social, "BCE")
+        info = maestro()[codigo]
+        return codigo, info["banco"], info["tipo_entidad"]
+
+    codigo = f"BCE_{ruc}"
+    return codigo, str(razon_social).strip(), _TIPO_ENTIDAD_BCE[tipo_entidad_bce]

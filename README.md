@@ -26,9 +26,13 @@ monitoreo continuo. 4 fuentes integradas en un único esquema estrella conformad
    (ver "Estado del proyecto" abajo).
 
 Ver `docs/architecture.md` para el diseño completo (catálogos conformados, patrón de CDC,
-evaluación de escalabilidad) y `docs/data_dictionary.md` para el detalle de cada tabla.
-`docs/fuentes_datos.md` documenta la estructura real de cada fuente (no solo la ficha
-metodológica) y `docs/metricas_financieras.md` el catálogo de indicadores del Boletín.
+diagrama ER, evaluación de escalabilidad) y `docs/data_dictionary.md` para el detalle de
+cada tabla. `docs/fuentes_datos.md` documenta la estructura real de cada fuente (no solo
+la ficha metodológica) y `docs/metricas_financieras.md` el catálogo de indicadores del
+Boletín. `docs/gobernanza_datos.md` amarra todo lo anterior bajo un marco de gobernanza
+(responsable, clasificación, catálogo de metadatos por capa, reglas de calidad, huecos
+conocidos) y `docs/linaje_datos.md` traza cada campo `archivo fuente → raw → staging →
+marts` con la transformación exacta aplicada.
 
 ## Quickstart
 
@@ -93,9 +97,12 @@ data/raw/             archivos descargados (no versionado; se regenera con el ET
   por categoría (monetarios, ahorro, plazo por rango de días, garantía, restringidos,
   etc.). Ambos con desagregación geográfica (cantón/provincia/región). **No trae tasa de
   interés** (verificado contra archivos reales) — de ahí la fuente BCE.
-- **BCE tsp/tsa** (tasas semanales por banco): histórico completo 2008-01 a la fecha,
-  bancos privados. Activas por segmento de crédito (26 valores), pasivas por categoría de
-  depósito, ambas por plazo y provincia.
+- **BCE tsp/tsa** (tasas semanales por entidad): histórico completo 2008-01 a la fecha,
+  **sistema financiero completo** (442 entidades en `dim_banco`: 33 bancos privados con
+  identidad curada + 409 bancos públicos/cooperativas/mutualistas/sociedad financiera/
+  tarjetas de crédito auto-registrados por RUC — ver `docs/gobernanza_datos.md`). Activas
+  por segmento de crédito (26 valores), pasivas por categoría de depósito, ambas por
+  plazo y provincia.
 - **BCE `TasasHistorico.htm`** (techos y referenciales, nivel sistema): 2022-04 a
   2026-06 (páginas anteriores usan un layout HTML distinto, no soportado por el parser
   actual). Tasas activas máximas/referenciales por segmento, pasivas por instrumento y
@@ -110,8 +117,11 @@ data/raw/             archivos descargados (no versionado; se regenera con el ET
   sin updates espurios en una segunda corrida, ver `docs/data_dictionary.md` y
   `docs/architecture.md`).
 - ⏳ **Power BI (`.pbip`) pendiente de actualizar**: el modelo semántico actual solo
-  conecta a las tablas de CAPCOL (`fact_cartera`/`fact_depositos` y sus dimensiones);
-  incorporar las tablas nuevas de BCE/Boletín es el siguiente paso natural, no hecho
+  conecta a las tablas de CAPCOL (`fact_cartera`/`fact_depositos` y sus dimensiones, **ya
+  renombradas en Postgres a `fact_saldo_cartera`/`fact_saldo_depositos`** el 2026-07-19 —
+  ver `docs/gobernanza_datos.md` — el `.pbip` seguirá apuntando a los nombres viejos hasta
+  que se actualice, va a fallar al refrescar); incorporar las tablas nuevas de BCE/Boletín
+  es el siguiente paso natural, no hecho
   todavía.
 - ⏳ `RK`/`INDICADORES` del Boletín están documentados (`docs/metricas_financieras.md`)
   pero no cargados como tabla — son ratios recalculables desde `fact_balance`/`fact_pyg`.
