@@ -20,13 +20,13 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "fact_cartera"
+                      "Entity": "fact_saldo_cartera"
                     }
                   },
                   "Property": "HHI Cartera (Ultimo Mes)"
                 }
               },
-              "queryRef": "fact_cartera.HHI Cartera (Ultimo Mes)",
+              "queryRef": "fact_saldo_cartera.HHI Cartera (Ultimo Mes)",
               "nativeQueryRef": "HHI Cartera (Ultimo Mes)"
             }
           ]

@@ -52,7 +52,7 @@
             "x": 855.05140463659961,
             "y": 451.59088967515703
           },
-          "nodeIndex": "dim_producto_cartera",
+          "nodeIndex": "dim_segmento_credito",
           "nodeLineageTag": "10000000-0000-0000-0000-000000000030",
           "size": {
             "height": 152,
@@ -65,7 +65,7 @@
             "x": 2085.0133026502785,
             "y": 56.858066815925127
           },
-          "nodeIndex": "dim_producto_deposito",
+          "nodeIndex": "dim_categoria_deposito",
           "nodeLineageTag": "10000000-0000-0000-0000-000000000040",
           "size": {
             "height": 145,
@@ -75,10 +75,23 @@
         },
         {
           "location": {
+            "x": 2085.0133026502785,
+            "y": 250
+          },
+          "nodeIndex": "dim_plazo",
+          "nodeLineageTag": "10000000-0000-0000-0000-000000000045",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 8
+        },
+        {
+          "location": {
             "x": 1278.8213300938364,
             "y": 108.77799933604607
           },
-          "nodeIndex": "fact_cartera",
+          "nodeIndex": "fact_saldo_cartera",
           "nodeLineageTag": "10000000-0000-0000-0000-000000000050",
           "size": {
             "height": 300,
@@ -91,7 +104,7 @@
             "x": 1759.413130403173,
             "y": 129.65798090136713
           },
-          "nodeIndex": "fact_depositos",
+          "nodeIndex": "fact_saldo_depositos",
           "nodeLineageTag": "10000000-0000-0000-0000-000000000060",
           "size": {
             "height": 300,

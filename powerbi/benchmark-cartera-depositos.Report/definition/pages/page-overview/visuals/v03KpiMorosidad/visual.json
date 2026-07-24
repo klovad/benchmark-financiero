@@ -20,13 +20,13 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "fact_cartera"
+                      "Entity": "fact_saldo_cartera"
                     }
                   },
                   "Property": "Morosidad % (Ultimo Mes)"
                 }
               },
-              "queryRef": "fact_cartera.Morosidad % (Ultimo Mes)",
+              "queryRef": "fact_saldo_cartera.Morosidad % (Ultimo Mes)",
               "nativeQueryRef": "Morosidad % (Ultimo Mes)"
             }
           ]

@@ -57,13 +57,13 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "fact_cartera"
+                      "Entity": "fact_saldo_cartera"
                     }
                   },
                   "Property": "Saldo Cartera"
                 }
               },
-              "queryRef": "fact_cartera.Saldo Cartera",
+              "queryRef": "fact_saldo_cartera.Saldo Cartera",
               "nativeQueryRef": "Saldo Cartera"
             }
           ]

@@ -116,12 +116,12 @@ data/raw/             archivos descargados (no versionado; se regenera con el ET
 - ✅ ETL de las 4 fuentes completo y verificado (conteos `staging` = `marts` exactos, CDC
   sin updates espurios en una segunda corrida, ver `docs/data_dictionary.md` y
   `docs/architecture.md`).
-- ⏳ **Power BI (`.pbip`) pendiente de actualizar**: el modelo semántico actual solo
-  conecta a las tablas de CAPCOL (`fact_cartera`/`fact_depositos` y sus dimensiones, **ya
-  renombradas en Postgres a `fact_saldo_cartera`/`fact_saldo_depositos`** el 2026-07-19 —
-  ver `docs/gobernanza_datos.md` — el `.pbip` seguirá apuntando a los nombres viejos hasta
-  que se actualice, va a fallar al refrescar); incorporar las tablas nuevas de BCE/Boletín
-  es el siguiente paso natural, no hecho
-  todavía.
+- ✅ **Power BI (`.pbip`) realineado con el esquema actual de CAPCOL** (2026-07-23):
+  `fact_cartera`/`fact_depositos` → `fact_saldo_cartera`/`fact_saldo_depositos`,
+  `dim_producto_cartera`/`dim_producto_deposito` → `dim_segmento_credito` +
+  `dim_categoria_deposito`/`dim_plazo` (el modelo viejo mezclaba categoría y plazo en una
+  sola dimensión; el esquema actual los separa, así que el modelo ahora también). Sigue
+  cubriendo **solo CAPCOL** — incorporar las tablas de BCE/Boletín (11 tablas más) es un
+  trabajo aparte, no hecho todavía.
 - ⏳ `RK`/`INDICADORES` del Boletín están documentados (`docs/metricas_financieras.md`)
   pero no cargados como tabla — son ratios recalculables desde `fact_balance`/`fact_pyg`.

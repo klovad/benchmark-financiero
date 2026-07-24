@@ -39,13 +39,13 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "fact_depositos"
+                      "Entity": "fact_saldo_depositos"
                     }
                   },
                   "Property": "Saldo Depositos (Ultimo Mes)"
                 }
               },
-              "queryRef": "fact_depositos.Saldo Depositos (Ultimo Mes)",
+              "queryRef": "fact_saldo_depositos.Saldo Depositos (Ultimo Mes)",
               "nativeQueryRef": "Saldo Depositos (Ultimo Mes)"
             }
           ]
@@ -58,7 +58,7 @@
               "Measure": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "fact_depositos"
+                    "Entity": "fact_saldo_depositos"
                   }
                 },
                 "Property": "Saldo Depositos (Ultimo Mes)"

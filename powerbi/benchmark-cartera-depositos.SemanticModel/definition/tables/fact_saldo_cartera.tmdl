@@ -1,7 +1,7 @@
-table fact_cartera
+table fact_saldo_cartera
 	lineageTag: 10000000-0000-0000-0000-000000000050
 
-	measure 'Saldo Cartera' = SUM(fact_cartera[saldo])
+	measure 'Saldo Cartera' = SUM(fact_saldo_cartera[saldo])
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000a1
 
@@ -26,7 +26,7 @@ table fact_cartera
 	measure 'Saldo Cartera Vencida' =
 			CALCULATE(
 			    [Saldo Cartera],
-			    dim_producto_cartera[estado_cartera] = "vencida"
+			    fact_saldo_cartera[estado_cartera] = "vencida"
 			)
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000a2
@@ -35,7 +35,7 @@ table fact_cartera
 			DIVIDE(
 			    CALCULATE(
 			        [Saldo Cartera],
-			        dim_producto_cartera[estado_cartera] IN {"no_devenga_intereses", "vencida"}
+			        fact_saldo_cartera[estado_cartera] IN {"no_devenga_intereses", "vencida"}
 			    ),
 			    [Saldo Cartera]
 			)
@@ -72,13 +72,13 @@ table fact_cartera
 		formatString: 0.00%
 		lineageTag: 10000000-0000-0000-0000-0000000000a7
 
-	column fact_cartera_id
+	column fact_saldo_cartera_id
 		dataType: int64
 		isHidden
 		formatString: 0
 		lineageTag: 10000000-0000-0000-0000-000000000051
 		summarizeBy: none
-		sourceColumn: fact_cartera_id
+		sourceColumn: fact_saldo_cartera_id
 
 	column fecha_id
 		dataType: int64
@@ -104,13 +104,13 @@ table fact_cartera
 		summarizeBy: none
 		sourceColumn: canton_id
 
-	column producto_cartera_id
+	column segmento_id
 		dataType: int64
 		isHidden
 		formatString: 0
 		lineageTag: 10000000-0000-0000-0000-000000000055
 		summarizeBy: none
-		sourceColumn: producto_cartera_id
+		sourceColumn: segmento_id
 
 	column saldo
 		dataType: double
@@ -119,40 +119,19 @@ table fact_cartera
 		summarizeBy: sum
 		sourceColumn: saldo
 
-	column saldo_x_tasa
-		dataType: double
-		isHidden
-		formatString: #,##0.00
-		lineageTag: 10000000-0000-0000-0000-000000000057
-		summarizeBy: sum
-		sourceColumn: saldo_x_tasa
-
-	column tasa_ponderada
-		dataType: double
-		isHidden
-		formatString: 0.0000
+	column estado_cartera
+		dataType: string
 		lineageTag: 10000000-0000-0000-0000-000000000058
 		summarizeBy: none
-		sourceColumn: tasa_ponderada
+		sourceColumn: estado_cartera
 
-	column morosidad
-		dataType: double
-		lineageTag: 75e5c4b4-c398-4987-86a4-3eb180eb2e69
-		summarizeBy: sum
-		sourceColumn: morosidad
-
-		annotation SummarizationSetBy = Automatic
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
-	partition fact_cartera = m
+	partition fact_saldo_cartera = m
 		mode: import
 		source =
 				let
 					Source = PostgreSQL.Database("localhost", "benchmark_cartera_depositos"),
-					marts_fact_cartera = Source{[Schema="marts",Item="fact_cartera"]}[Data]
+					marts_fact_saldo_cartera = Source{[Schema="marts",Item="fact_saldo_cartera"]}[Data]
 				in
-					marts_fact_cartera
+					marts_fact_saldo_cartera
 
 	annotation PBI_ResultType = Table
-

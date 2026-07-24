@@ -20,13 +20,13 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "fact_cartera"
+                      "Entity": "fact_saldo_cartera"
                     }
                   },
                   "Property": "Saldo Cartera (Ultimo Mes)"
                 }
               },
-              "queryRef": "fact_cartera.Saldo Cartera (Ultimo Mes)",
+              "queryRef": "fact_saldo_cartera.Saldo Cartera (Ultimo Mes)",
               "nativeQueryRef": "Saldo Cartera (Ultimo Mes)"
             }
           ]
@@ -43,7 +43,7 @@
           "Measure": {
             "Expression": {
               "SourceRef": {
-                "Entity": "fact_cartera"
+                "Entity": "fact_saldo_cartera"
               }
             },
             "Property": "Saldo Cartera (Ultimo Mes)"

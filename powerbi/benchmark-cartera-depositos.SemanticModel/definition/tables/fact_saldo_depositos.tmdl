@@ -1,7 +1,7 @@
-table fact_depositos
+table fact_saldo_depositos
 	lineageTag: 10000000-0000-0000-0000-000000000060
 
-	measure 'Saldo Depositos' = SUM(fact_depositos[saldo])
+	measure 'Saldo Depositos' = SUM(fact_saldo_depositos[saldo])
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000b1
 
@@ -11,11 +11,11 @@ table fact_depositos
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000b9
 
-	measure 'Numero Clientes' = SUM(fact_depositos[numero_clientes])
+	measure 'Numero Clientes' = SUM(fact_saldo_depositos[numero_clientes])
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000b2
 
-	measure 'Numero Cuentas' = SUM(fact_depositos[numero_cuentas])
+	measure 'Numero Cuentas' = SUM(fact_saldo_depositos[numero_cuentas])
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000b3
 
@@ -53,13 +53,13 @@ table fact_depositos
 		formatString: 0.00
 		lineageTag: 10000000-0000-0000-0000-0000000000b8
 
-	column fact_depositos_id
+	column fact_saldo_depositos_id
 		dataType: int64
 		isHidden
 		formatString: 0
 		lineageTag: 10000000-0000-0000-0000-000000000061
 		summarizeBy: none
-		sourceColumn: fact_depositos_id
+		sourceColumn: fact_saldo_depositos_id
 
 	column fecha_id
 		dataType: int64
@@ -85,13 +85,21 @@ table fact_depositos
 		summarizeBy: none
 		sourceColumn: canton_id
 
-	column producto_deposito_id
+	column categoria_deposito_id
 		dataType: int64
 		isHidden
 		formatString: 0
 		lineageTag: 10000000-0000-0000-0000-000000000065
 		summarizeBy: none
-		sourceColumn: producto_deposito_id
+		sourceColumn: categoria_deposito_id
+
+	column plazo_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 10000000-0000-0000-0000-00000000006b
+		summarizeBy: none
+		sourceColumn: plazo_id
 
 	column saldo
 		dataType: double
@@ -99,22 +107,6 @@ table fact_depositos
 		lineageTag: 10000000-0000-0000-0000-000000000066
 		summarizeBy: sum
 		sourceColumn: saldo
-
-	column saldo_x_tasa
-		dataType: double
-		isHidden
-		formatString: #,##0.00
-		lineageTag: 10000000-0000-0000-0000-000000000067
-		summarizeBy: sum
-		sourceColumn: saldo_x_tasa
-
-	column tasa_ponderada
-		dataType: double
-		isHidden
-		formatString: 0.0000
-		lineageTag: 10000000-0000-0000-0000-000000000068
-		summarizeBy: none
-		sourceColumn: tasa_ponderada
 
 	column numero_clientes
 		dataType: int64
@@ -130,14 +122,13 @@ table fact_depositos
 		summarizeBy: sum
 		sourceColumn: numero_cuentas
 
-	partition fact_depositos = m
+	partition fact_saldo_depositos = m
 		mode: import
 		source =
 				let
 					Source = PostgreSQL.Database("localhost", "benchmark_cartera_depositos"),
-					marts_fact_depositos = Source{[Schema="marts",Item="fact_depositos"]}[Data]
+					marts_fact_saldo_depositos = Source{[Schema="marts",Item="fact_saldo_depositos"]}[Data]
 				in
-					marts_fact_depositos
+					marts_fact_saldo_depositos
 
 	annotation PBI_ResultType = Table
-

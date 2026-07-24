@@ -34,13 +34,13 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "fact_cartera"
+                      "Entity": "fact_saldo_cartera"
                     }
                   },
                   "Property": "Saldo Cartera (Ultimo Mes)"
                 }
               },
-              "queryRef": "fact_cartera.Saldo Cartera (Ultimo Mes)",
+              "queryRef": "fact_saldo_cartera.Saldo Cartera (Ultimo Mes)",
               "nativeQueryRef": "Saldo Cartera (Ultimo Mes)"
             },
             {
@@ -48,13 +48,13 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "fact_depositos"
+                      "Entity": "fact_saldo_depositos"
                     }
                   },
                   "Property": "Saldo Depositos (Ultimo Mes)"
                 }
               },
-              "queryRef": "fact_depositos.Saldo Depositos (Ultimo Mes)",
+              "queryRef": "fact_saldo_depositos.Saldo Depositos (Ultimo Mes)",
               "nativeQueryRef": "Saldo Depositos (Ultimo Mes)"
             },
             {
@@ -62,13 +62,13 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "fact_depositos"
+                      "Entity": "fact_saldo_depositos"
                     }
                   },
                   "Property": "Ratio Cartera / Depositos"
                 }
               },
-              "queryRef": "fact_depositos.Ratio Cartera / Depositos",
+              "queryRef": "fact_saldo_depositos.Ratio Cartera / Depositos",
               "nativeQueryRef": "Ratio Cartera / Depositos"
             }
           ]
@@ -81,7 +81,7 @@
               "Measure": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "fact_cartera"
+                    "Entity": "fact_saldo_cartera"
                   }
                 },
                 "Property": "Saldo Cartera (Ultimo Mes)"
