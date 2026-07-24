@@ -87,6 +87,8 @@ powerbi/              proyecto .pbip (modelo semántico + reporte) -- cubre CAPC
 docs/                 arquitectura, diccionario de datos, catálogo de fuentes, métricas
 tests/                pruebas de los parsers y módulos de resolución de identidad
 data/raw/             archivos descargados (no versionado; se regenera con el ETL)
+data/samples/          muestra de marts.* en Parquet (versionada) para probar sin Postgres
+                       cargado -- ver data/samples/README.md
 ```
 
 ## Alcance de los datos
