@@ -24,3 +24,4 @@ table dim_banco
 					marts_dim_banco
 
 	annotation PBI_ResultType = Table
+

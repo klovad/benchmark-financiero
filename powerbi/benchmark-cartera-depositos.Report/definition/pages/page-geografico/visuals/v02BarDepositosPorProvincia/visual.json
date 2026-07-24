@@ -1,7 +1,14 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "v02BarDepositosPorProvincia",
-  "position": { "x": 650, "y": 80, "z": 2001, "width": 590, "height": 600, "tabOrder": 1 },
+  "position": {
+    "x": 650,
+    "y": 80,
+    "z": 2001,
+    "height": 600,
+    "width": 590,
+    "tabOrder": 1
+  },
   "visual": {
     "visualType": "clusteredBarChart",
     "query": {
@@ -9,21 +16,57 @@
         "Category": {
           "projections": [
             {
-              "field": { "Column": { "Expression": { "SourceRef": { "Entity": "dim_canton" } }, "Property": "provincia" } },
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_canton"
+                    }
+                  },
+                  "Property": "provincia"
+                }
+              },
               "queryRef": "dim_canton.provincia",
-              "nativeQueryRef": "provincia"
+              "nativeQueryRef": "provincia",
+              "active": true
             }
           ]
         },
         "Y": {
           "projections": [
             {
-              "field": { "Measure": { "Expression": { "SourceRef": { "Entity": "fact_depositos" } }, "Property": "Saldo Depositos (Ultimo Mes)" } },
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_depositos"
+                    }
+                  },
+                  "Property": "Saldo Depositos (Ultimo Mes)"
+                }
+              },
               "queryRef": "fact_depositos.Saldo Depositos (Ultimo Mes)",
               "nativeQueryRef": "Saldo Depositos (Ultimo Mes)"
             }
           ]
         }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "fact_depositos"
+                  }
+                },
+                "Property": "Saldo Depositos (Ultimo Mes)"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
       }
     },
     "drillFilterOtherVisuals": true

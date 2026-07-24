@@ -1,18 +1,31 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "v01KpiSaldoCartera",
-  "position": { "x": 30, "y": 80, "z": 1000, "width": 280, "height": 150, "tabOrder": 0 },
+  "position": {
+    "x": 30,
+    "y": 80,
+    "z": 1000,
+    "height": 150,
+    "width": 280,
+    "tabOrder": 0
+  },
   "visual": {
     "visualType": "cardVisual",
-    "objects": {
-      "cards": [{ "properties": { "showLabel": { "expr": { "Literal": { "Value": "true" } } } } }]
-    },
     "query": {
       "queryState": {
         "Data": {
           "projections": [
             {
-              "field": { "Measure": { "Expression": { "SourceRef": { "Entity": "fact_cartera" } }, "Property": "Saldo Cartera (Ultimo Mes)" } },
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_cartera"
+                    }
+                  },
+                  "Property": "Saldo Cartera (Ultimo Mes)"
+                }
+              },
               "queryRef": "fact_cartera.Saldo Cartera (Ultimo Mes)",
               "nativeQueryRef": "Saldo Cartera (Ultimo Mes)"
             }
@@ -21,5 +34,23 @@
       }
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "e09ced9fcd4e34f420f8",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fact_cartera"
+              }
+            },
+            "Property": "Saldo Cartera (Ultimo Mes)"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

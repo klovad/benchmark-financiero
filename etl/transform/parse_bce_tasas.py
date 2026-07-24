@@ -40,8 +40,9 @@ from etl.transform.common import normalize_text, sha256_file
 
 CHUNK_SIZE = 300_000
 
-# Universo completo de segmento_credito de BCE, igual al sembrado en
-# sql/08_dim_segmento_categoria_plazo.sql -- se valida acá antes de llegar a staging.
+# Universo completo de segmento_credito de BCE (= subsegmento, nivel fino), igual al
+# sembrado en sql/08_dim_segmento_categoria_plazo.sql / dim_subsegmento_credito (renombrada
+# en sql/16_dim_segmento_normativo.sql) -- se valida acá antes de llegar a staging.
 # Verificado (2026-07-19) contra el archivo tsa completo SIN filtrar por tipo_entidad:
 # los 26 valores aparecen tal cual, ninguno nuevo aportado por entidades no-privadas.
 SEGMENTOS_VALIDOS = {
@@ -70,7 +71,7 @@ RAW_TSA_COLS = [
 
 
 class SegmentoNoResueltoError(ValueError):
-    """segmento_credito de tsa no está en el universo sembrado de dim_segmento_credito."""
+    """segmento_credito de tsa no está en el universo sembrado de dim_subsegmento_credito."""
 
 
 def _single_csv_in_zip(zip_path: Path) -> str:
@@ -119,12 +120,13 @@ def _weighted_agg(df: pd.DataFrame, group_cols: list[str], tasa_cols: list[str])
     return g
 
 
-def _resolve_identidad(df: pd.DataFrame) -> tuple[pd.DataFrame, list[tuple[str, str, str]]]:
-    """Resuelve banco_codigo/banco/tipo_entidad para TODAS las filas -- solo sobre las
+def _resolve_identidad(df: pd.DataFrame) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
+    """Resuelve banco_codigo/banco/tipo_entidad/ruc para TODAS las filas -- solo sobre las
     combinaciones distintas de (razon_social, ruc, tipo_entidad) (cientos, no millones de
-    filas), luego se pega de vuelta con merge(). Devuelve también la lista de entidades
-    auto-registradas (todo lo que no sea BANCOS PRIVADOS) para poblar
-    staging.banco_maestro -- ver resolver_entidad_bce()."""
+    filas), luego se pega de vuelta con merge(). Devuelve también la lista de TODAS las
+    entidades resueltas (bancos privados incluidos, no solo las auto-registradas) para
+    poblar staging.banco_maestro.ruc -- BCE es la única fuente que trae RUC, ver
+    resolver_entidad_bce()."""
     claves = df[["razon_social", "ruc", "tipo_entidad"]].drop_duplicates().reset_index(drop=True)
     resueltas = claves.apply(
         lambda r: resolver_entidad_bce(r["razon_social"], r["ruc"], r["tipo_entidad"]), axis=1,
@@ -132,37 +134,36 @@ def _resolve_identidad(df: pd.DataFrame) -> tuple[pd.DataFrame, list[tuple[str, 
     claves["banco_codigo"] = [t[0] for t in resueltas]
     claves["banco_nombre"] = [t[1] for t in resueltas]
     claves["banco_tipo_entidad"] = [t[2] for t in resueltas]
+    claves["banco_ruc"] = [t[3] for t in resueltas]
 
     df = df.merge(claves, on=["razon_social", "ruc", "tipo_entidad"], how="left")
 
-    entidades_auto = list(
-        claves[claves["tipo_entidad"] != "BANCOS PRIVADOS"][
-            ["banco_codigo", "banco_nombre", "banco_tipo_entidad"]
-        ]
+    entidades = list(
+        claves[["banco_codigo", "banco_nombre", "banco_tipo_entidad", "banco_ruc"]]
         .drop_duplicates(subset="banco_codigo")
         .itertuples(index=False, name=None)
     )
-    return df, entidades_auto
+    return df, entidades
 
 
-def _add_common_columns(df: pd.DataFrame) -> tuple[pd.DataFrame, list[tuple[str, str, str]]]:
+def _add_common_columns(df: pd.DataFrame) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
     df = df.copy()
-    df, entidades_auto = _resolve_identidad(df)
+    df, entidades = _resolve_identidad(df)
     df["provincia"] = df["provincia"].apply(normalize_text)
     df["plazo_codigo"] = df["plazo"]
     plazo_lookup = {v: resolver_plazo_bce(v) for v in df["plazo"].unique()}
     df["plazo_dias_desde"] = df["plazo"].map(lambda v: plazo_lookup[v][0])
     df["plazo_dias_hasta"] = df["plazo"].map(lambda v: plazo_lookup[v][1])
-    return df, entidades_auto
+    return df, entidades
 
 
-def parse_tsp_file(zip_path: Path, df_raw: pd.DataFrame | None = None) -> tuple[pd.DataFrame, list[tuple[str, str, str]]]:
-    """Devuelve (df_staging, entidades_auto). `df_raw` permite reusar una lectura ya
+def parse_tsp_file(zip_path: Path, df_raw: pd.DataFrame | None = None) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
+    """Devuelve (df_staging, entidades). `df_raw` permite reusar una lectura ya
     hecha (evita leer el zip de ~700MB dos veces si el llamador ya lo cargó para raw.*
     vía read_raw())."""
     source_hash = sha256_file(zip_path)
     df = df_raw if df_raw is not None else read_raw(zip_path)
-    df, entidades_auto = _add_common_columns(df)
+    df, entidades = _add_common_columns(df)
 
     categorias = df["instrumento_captacion"].str.strip().str.upper()
     desconocidas = set(categorias.unique()) - CATEGORIAS_VALIDAS
@@ -177,14 +178,14 @@ def parse_tsp_file(zip_path: Path, df_raw: pd.DataFrame | None = None) -> tuple[
     result = _weighted_agg(df, group_cols, ["tasa_pasiva_efectiva", "tasa_nominal"])
     result["source_file"] = zip_path.name
     result["source_hash"] = source_hash
-    return result, entidades_auto
+    return result, entidades
 
 
-def parse_tsa_file(zip_path: Path, df_raw: pd.DataFrame | None = None) -> tuple[pd.DataFrame, list[tuple[str, str, str]]]:
-    """Devuelve (df_staging, entidades_auto) -- ver parse_tsp_file."""
+def parse_tsa_file(zip_path: Path, df_raw: pd.DataFrame | None = None) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
+    """Devuelve (df_staging, entidades) -- ver parse_tsp_file."""
     source_hash = sha256_file(zip_path)
     df = df_raw if df_raw is not None else read_raw(zip_path)
-    df, entidades_auto = _add_common_columns(df)
+    df, entidades = _add_common_columns(df)
 
     segmentos = df["segmento_credito"].str.strip().str.upper()
     desconocidos = set(segmentos.unique()) - SEGMENTOS_VALIDOS
@@ -199,4 +200,4 @@ def parse_tsa_file(zip_path: Path, df_raw: pd.DataFrame | None = None) -> tuple[
     result = _weighted_agg(df, group_cols, ["tasa_activa_efectiva", "tasa_nominal"])
     result["source_file"] = zip_path.name
     result["source_hash"] = source_hash
-    return result, entidades_auto
+    return result, entidades

@@ -99,15 +99,17 @@ columnas aún más ricas: `destino_credito`, `destino_hipotecario`, `destino_con
   GANADERO/EMPRESARIAL/PYMES, VIVIENDA, VIVIENDA DE INTERÉS PÚBLICO/SOCIAL — mucho más
   fino que el `tipo_credito` de CAPCOL (6 valores). Solo entre bancos privados aparecen
   22 de los 26 (faltan `INVERSIÓN PÚBLICA` y las 3 variantes "(SE)", propias de banca
-  pública/cooperativas) — pero `dim_segmento_credito` siempre se sembró con los 26
-  completos (decisión previa, ya correcta) y **`fact_colocaciones_cartera` (antes
-  `fact_tasas_activas`, renombrada 2026-07-19 mismo día) ahora también carga las filas
-  de los 4 segmentos exclusivos de banca pública/cooperativas** (2026-07-19:
-  ya no se filtra tipo_entidad en ningún punto del pipeline, ver nota arriba). **Se
-  necesita una tabla de mapeo `segmento_credito` → `tipo_credito`
-  (CAPCOL)** para poder comparar tasas activas contra los saldos de cartera por
-  segmento — no es un mapeo 1:1 trivial (ej. CAPCOL "comercial" ⊂ {COMERCIAL ORDINARIO,
-  COMERCIAL PRIORITARIO *, PRODUCTIVO *}).
+  pública/cooperativas) — pero `dim_subsegmento_credito` (antes `dim_segmento_credito`,
+  renombrada 2026-07-19) siempre se sembró con los 26 completos (decisión previa, ya
+  correcta) y **`fact_colocaciones_cartera` (antes `fact_tasas_activas`, renombrada
+  2026-07-19 mismo día) ahora también carga las filas de los 4 segmentos exclusivos de
+  banca pública/cooperativas** (2026-07-19: ya no se filtra tipo_entidad en ningún punto
+  del pipeline, ver nota arriba). El mapeo `segmento_credito` (BCE, 26 valores fino) →
+  `tipo_credito` (CAPCOL, 6 valores grueso) que se necesitaba acá **ya está resuelto**:
+  es la FK `dim_subsegmento_credito.segmento_id → dim_segmento_credito.segmento_id`
+  poblada en `sql/16_dim_segmento_normativo.sql` (no era 1:1 trivial — ej. CAPCOL
+  "comercial" ⊂ {COMERCIAL ORDINARIO, COMERCIAL PRIORITARIO *, PRODUCTIVO *} — el mapeo
+  completo con su justificación está documentado ahí y en `docs/gobernanza_datos.md`).
 - **`tipo_entidad`**: mismos 7 valores que tsp (agrega `SECTOR FINANCIERO POPULAR Y
   SOLIDARIO` como categoría propia, a diferencia de tsp que no la listó en la muestra
   previa — revisar si es la misma taxonomía de 6-7 valores en ambos archivos).
@@ -151,7 +153,7 @@ columnas aún más ricas: `destino_credito`, `destino_hipotecario`, `destino_con
     rastrea la sección vigente fila por fila (por texto de encabezado), sin asumir qué
     tabla contiene qué sección.
   - Único alias real de nombre necesario: "Productivo Corporativo" (esta fuente) →
-    "PRODUCTIVO - CORPORATIVO" (`dim_segmento_credito`, con guion).
+    "PRODUCTIVO - CORPORATIVO" (`dim_subsegmento_credito`, con guion).
 - **Cobertura cargada**: 51 meses (2022-04 a 2026-06); páginas anteriores a 2022-04 usan
   un layout HTML más antiguo no soportado por este parser (se omiten con warning, no
   abortan el resto del batch). Dentro del rango cargado, **4 meses consecutivos

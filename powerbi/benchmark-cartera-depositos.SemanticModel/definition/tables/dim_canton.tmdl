@@ -36,3 +36,4 @@ table dim_canton
 					marts_dim_canton
 
 	annotation PBI_ResultType = Table
+

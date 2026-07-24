@@ -1,18 +1,31 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "v03KpiMorosidad",
-  "position": { "x": 630, "y": 80, "z": 1002, "width": 280, "height": 150, "tabOrder": 2 },
+  "position": {
+    "x": 630,
+    "y": 80,
+    "z": 1002,
+    "height": 150,
+    "width": 280,
+    "tabOrder": 2
+  },
   "visual": {
     "visualType": "cardVisual",
-    "objects": {
-      "cards": [{ "properties": { "showLabel": { "expr": { "Literal": { "Value": "true" } } } } }]
-    },
     "query": {
       "queryState": {
         "Data": {
           "projections": [
             {
-              "field": { "Measure": { "Expression": { "SourceRef": { "Entity": "fact_cartera" } }, "Property": "Morosidad % (Ultimo Mes)" } },
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_cartera"
+                    }
+                  },
+                  "Property": "Morosidad % (Ultimo Mes)"
+                }
+              },
               "queryRef": "fact_cartera.Morosidad % (Ultimo Mes)",
               "nativeQueryRef": "Morosidad % (Ultimo Mes)"
             }

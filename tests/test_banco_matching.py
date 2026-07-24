@@ -49,23 +49,25 @@ def test_invalid_fuente_raises_value_error():
 
 
 def test_resolver_entidad_bce_privados_usa_crosswalk_curado():
-    codigo, banco, tipo = resolver_entidad_bce("BANCO PICHINCHA C.A.", "1790010937001", "BANCOS PRIVADOS")
+    codigo, banco, tipo, ruc = resolver_entidad_bce("BANCO PICHINCHA C.A.", "1790010937001", "BANCOS PRIVADOS")
     assert codigo == "PICHINCHA"
     assert tipo == "BANCO PRIVADO"
+    assert ruc == "1790010937001"
 
 
 def test_resolver_entidad_bce_no_privados_se_auto_registra_por_ruc():
-    codigo, banco, tipo = resolver_entidad_bce(
+    codigo, banco, tipo, ruc = resolver_entidad_bce(
         "COOPERATIVA DE AHORRO Y CREDITO 4 DE OCTUBRE", "691702324001", "COOPERATIVAS DE AHORRO Y CREDITO",
     )
     assert codigo == "BCE_691702324001"
     assert banco == "COOPERATIVA DE AHORRO Y CREDITO 4 DE OCTUBRE"
     assert tipo == "COOPERATIVA"
+    assert ruc == "691702324001"
 
 
 def test_resolver_entidad_bce_mismo_ruc_distinta_razon_social_da_mismo_codigo():
-    a, _, _ = resolver_entidad_bce("ASOCIACION MUTUALISTA X", "123", "MUTUALISTAS")
-    b, _, _ = resolver_entidad_bce("ASOCIACION MUTUALISTA X (RENOMBRADA)", "123", "MUTUALISTAS")
+    a, _, _, _ = resolver_entidad_bce("ASOCIACION MUTUALISTA X", "123", "MUTUALISTAS")
+    b, _, _, _ = resolver_entidad_bce("ASOCIACION MUTUALISTA X (RENOMBRADA)", "123", "MUTUALISTAS")
     assert a == b == "BCE_123"
 
 

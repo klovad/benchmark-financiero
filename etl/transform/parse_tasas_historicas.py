@@ -38,7 +38,7 @@ def _clean_label(s) -> str | None:
 
 
 # La única discrepancia real de nombre entre esta fuente y el universo de
-# dim_segmento_credito (sembrado desde tsa): esta página omite el guion.
+# dim_subsegmento_credito (sembrado desde tsa): esta página omite el guion.
 _SEGMENTO_ALIAS = {"PRODUCTIVO CORPORATIVO": "PRODUCTIVO - CORPORATIVO"}
 
 # "Depósitos de Tarjetahabientes" (esta fuente) y "FONDOS DE TARJETAHABIENTES"

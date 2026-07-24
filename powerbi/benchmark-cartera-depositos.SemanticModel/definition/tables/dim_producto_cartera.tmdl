@@ -30,3 +30,4 @@ table dim_producto_cartera
 					marts_dim_producto_cartera
 
 	annotation PBI_ResultType = Table
+

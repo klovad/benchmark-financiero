@@ -54,14 +54,14 @@ archivo (`etl/transform/parse_cartera.py::tipo_credito_from_sheet_name`, vía
 
 | Campo origen | `raw.cartera.data` / `staging.cartera` | Transformación | `marts.*` |
 |---|---|---|---|
-| Nombre de hoja `BASE ...` | `tipo_credito` | Regex de palabras clave (`vivienda interes`→`vivienda_interes_publico`, `inmobiliario`, `productivo`→`comercial`, `consumo`, `microcredito`, `educativo`); orden importa, `vivienda interes` se evalúa antes que `inmobiliario` | `fact_saldo_cartera.tipo_credito` (columna directa — dimensión degenerada, sin FK) |
+| Nombre de hoja `BASE ...` | `tipo_credito` | Regex de palabras clave (`vivienda interes`→`vivienda_interes_publico`, `inmobiliario`, `productivo`→`comercial`, `consumo`, `microcredito`, `educativo`); orden importa, `vivienda interes` se evalúa antes que `inmobiliario` | `dim_segmento_credito` (JOIN por mapeo `tipo_credito`→`segmento`, ver `sql/16_dim_segmento_normativo.sql`) → `fact_saldo_cartera.segmento_id` (2026-07-19: antes columna directa `tipo_credito` sin FK) |
 | Columna `FECHA` | `fecha` | `month_end_date()` — normaliza a fin de mes | `dim_fecha` (JOIN por `fecha`) → `fact_saldo_cartera.fecha_id` |
 | Columna `ENTIDAD` | `banco`, `banco_codigo` | `normalize_banco()` + `resolver_banco_codigo(nombre, "CAPCOL")` (`banco_matching.py`) — falla con `BancoNoResueltoError` si no resuelve | `dim_banco` (JOIN por `banco_codigo`, poblado desde `staging.banco_maestro`) → `fact_saldo_cartera.banco_id` |
 | Columna `PROVINCIA` | `provincia` | `normalize_text()` | `dim_canton.provincia` |
 | Columna `CANTON` | `canton` | `normalize_text()` | `dim_canton` (JOIN `canton`+`provincia`) → `fact_saldo_cartera.canton_id` |
 | *(derivado de `PROVINCIA`)* | `region` | `region_for_provincia()` vía `PROVINCIA_REGION` (`etl/config.py`) | **No se materializa en `marts`** — solo vive en `staging.cartera`, informativo |
 | Columnas `POR VENCER` / `NO DEVENGA INTERESES` / `VENCIDA` (ancho→largo, una fila de salida por columna con valor) | `estado_cartera` | `ESTADO_COLUMNS` mapea el nombre de columna a `por_vencer`/`no_devenga_intereses`/`vencida` | `fact_saldo_cartera.estado_cartera` (columna directa) |
-| Valor de la columna de estado correspondiente | `saldo` | **`SUM` por groupby** sobre `(fecha, banco, cantón, tipo_credito, estado)` — el origen trae detalle de oficina/cuenta, varias filas se suman | `fact_saldo_cartera.saldo` |
+| Valor de la columna de estado correspondiente | `saldo` | **`SUM` por groupby** sobre `(fecha, banco, cantón, tipo_credito, estado)` — el origen trae detalle de oficina/cuenta, varias filas se suman (agregación en `staging.cartera`, que sigue con `tipo_credito` texto; el JOIN a `segmento_id` ocurre recién en `refresh_marts()`) | `fact_saldo_cartera.saldo` |
 | *(no existe en la fuente — confirmado contra archivos reales y la ficha metodológica)* | — | — | `tasa_ponderada`, `.morosidad`, `.saldo_x_tasa` eran columnas reservadas nunca pobladas — **eliminadas 2026-07-19** (`sql/15_rename_fact_tables.sql`, junto con el rename a `fact_saldo_cartera`); la tasa real por producto ya vive en `fact_colocaciones_cartera` |
 | Nombre del ZIP | `source_file` | — | No se propaga a `marts` |
 | SHA-256 del archivo | `source_hash` | `sha256_file()` | Solo usado por `raw.source_files` (idempotencia de carga) |
@@ -108,7 +108,7 @@ como grano más fino dentro de cada provincia y se reagrega.
 | Campo origen | `raw.bce_tasas_pasivas.data` | Transformación (staging) | `staging.bce_tasas_pasivas` | `marts.fact_captaciones_depositos` |
 |---|---|---|---|---|
 | `semana` | `fecha` (derivada, `read_raw()`) | `pd.to_datetime(..., format="%d/%m/%Y")` | `fecha` | `dim_fecha` → `fecha_id` |
-| `razon_social`, `ruc`, `tipo_entidad` (original) | tal cual, sin resolver | `resolver_entidad_bce(razon_social, ruc, tipo_entidad)` — **dos caminos**: si `tipo_entidad == 'BANCOS PRIVADOS'`, identidad curada igual que siempre (`resolver_banco_codigo`, `banco_crosswalk.csv`, `BancoNoResueltoError` si no resuelve); si no, `banco_codigo = "BCE_" + ruc` **auto-registrado sin curación manual** (~420 entidades, inviable curar a mano una por una — ver `docs/gobernanza_datos.md`) | `banco_codigo` | `dim_banco` (JOIN `banco_codigo`) → `banco_id`. Entidades no-privadas se auto-insertan en `staging.banco_maestro` vía `upsert_banco_maestro_auto()` (nombre = `razon_social` tal cual, `tipo_entidad` mapeado de la categoría cruda del BCE vía `_TIPO_ENTIDAD_BCE`) |
+| `razon_social`, `ruc`, `tipo_entidad` (original) | tal cual, sin resolver | `resolver_entidad_bce(razon_social, ruc, tipo_entidad)` — **dos caminos**: si `tipo_entidad == 'BANCOS PRIVADOS'`, identidad curada igual que siempre (`resolver_banco_codigo`, `banco_crosswalk.csv`, `BancoNoResueltoError` si no resuelve); si no, `banco_codigo = "BCE_" + ruc` **auto-registrado sin curación manual** (~420 entidades, inviable curar a mano una por una — ver `docs/gobernanza_datos.md`). El `ruc` de la fila se devuelve siempre, privados incluidos (2026-07-23) | `banco_codigo` | `dim_banco` (JOIN `banco_codigo`) → `banco_id`/`.ruc`. Todas las entidades pasan por `upsert_banco_maestro_ruc()` (crea la fila si no existe — no-privadas — y siempre actualiza `ruc`; `banco`/`tipo_entidad` de los privados los sigue fijando `load_banco_maestro_seed()` desde el CSV, `nombre = razon_social` tal cual solo para no-privados) |
 | `instrumento_captacion` | tal cual | Validado contra `CATEGORIAS_VALIDAS` (11 valores; verificado 2026-07-19 que las 5 que realmente aparecen en tsp — con o sin filtro de entidad — están todas cubiertas) | `categoria_deposito` | `dim_categoria_deposito` → `categoria_deposito_id` |
 | `plazo` | tal cual | `resolver_plazo_bce()` (`bce_plazo_matching.py`) — quita prefijo ordinal (`"a. "`...), parsea rango en días (tsp: 7 buckets; verificado sin filtro, mismos 7 para todo el sistema) | `plazo_codigo`, `plazo_dias_desde`, `plazo_dias_hasta` | `dim_plazo` (JOIN `dias_desde`+`dias_hasta`) → `plazo_id` |
 | `provincia` | tal cual | `normalize_text()` | `provincia` | `fact_captaciones_depositos.provincia` — **columna directa, sin dimensión propia** |
@@ -120,7 +120,7 @@ como grano más fino dentro de cada provincia y se reagrega.
 **Llave natural** `staging.bce_tasas_pasivas`: `(fecha, banco_codigo, categoria_deposito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''))`.
 Código: `etl/transform/parse_bce_tasas.py::read_raw` (captura), `parse_tsp_file`
 (staging), `etl/transform/banco_matching.py::resolver_entidad_bce` (identidad),
-`etl/load/load_postgres.py::upsert_banco_maestro_auto`. Verificado (2026-07-19): raw
+`etl/load/load_postgres.py::upsert_banco_maestro_ruc`. Verificado (2026-07-19): raw
 3.077.976 filas, staging = marts = 1.956.386 filas exactas (0 filas huérfanas en el
 JOIN a `dim_banco`), de las cuales 485.588 son de los 33 bancos privados curados
 (idéntico al conteo verificado antes del fix, confirma que el refactor no alteró ese
@@ -135,7 +135,7 @@ crédito).
 
 | Campo origen | `staging.bce_tasas_activas` | Transformación | `marts.fact_colocaciones_cartera` |
 |---|---|---|---|
-| `segmento_credito` | `segmento_credito` | Validado contra `SEGMENTOS_VALIDOS` (26 valores, universo completo sembrado en `sql/08`; verificado 2026-07-19 sin filtro de entidad, los 26 aparecen tal cual, ninguno nuevo); desconocido → `SegmentoNoResueltoError` | `dim_segmento_credito` (JOIN `segmento`) → `segmento_id` |
+| `segmento_credito` | `segmento_credito` | Validado contra `SEGMENTOS_VALIDOS` (26 valores, universo completo sembrado en `sql/08`; verificado 2026-07-19 sin filtro de entidad, los 26 aparecen tal cual, ninguno nuevo); desconocido → `SegmentoNoResueltoError` | `dim_subsegmento_credito` (JOIN `subsegmento`, columna renombrada de `dim_segmento_credito.segmento` en `sql/16`) → `subsegmento_id` |
 | `tasa_activa_efectiva` | `tasa_activa_efectiva` | Promedio ponderado por `monto_total` (igual que tsp) | `fact_colocaciones_cartera.tasa_activa_efectiva` |
 | *(resto de columnas: `semana`, `razon_social`/`ruc`/`tipo_entidad`, `plazo`, `provincia`, `canton`, `monto_total`, `numero_operaciones`, `tasa_nominal`)* | igual que tsp | igual que tsp (mismo `resolver_entidad_bce`, mismo `resolver_plazo_bce` — tsa usa 14 buckets, mezcla de días/años, verificado sin filtro) | igual que tsp |
 
@@ -159,8 +159,8 @@ sección/métrica, no ancha) — se ensancha a 4 tablas en `marts` dentro de `re
 | Campo origen | `staging.tasas_referenciales` | Transformación | `marts.*` |
 |---|---|---|---|
 | Nombre de archivo `TasasVigentes{MM}{YYYY}.htm` | `fecha` | Fin de mes derivado del **nombre del archivo** (no del texto "Junio 2026" dentro del HTML) | `dim_fecha` → `fecha_id` en las 4 tablas |
-| Encabezado fusionado "TASAS DE INTERÉS ACTIVAS MÁXIMAS" + fila (label=segmento, valor) | `seccion='activa_maxima'`, `dimension_valor`, `metrica='tasa_activa_maxima'`, `valor` | `_segmento_label()` (quita superíndices de nota al pie; alias `PRODUCTIVO CORPORATIVO`→`PRODUCTIVO - CORPORATIVO`, única discrepancia real de nombre vs. el universo tsa) | `dim_segmento_credito` (JOIN `segmento`=`dimension_valor`) → `fact_tasas_referenciales_cartera.tasa_activa_maxima` (pivotado con `FILTER`) |
-| "...ACTIVAS EFECTIVAS REFERENCIALES" + fila | `seccion='activa_referencial'`, `metrica='tasa_activa_referencial'` | igual | mismo grano (fecha×segmento) → `fact_tasas_referenciales_cartera.tasa_activa_referencial` |
+| Encabezado fusionado "TASAS DE INTERÉS ACTIVAS MÁXIMAS" + fila (label=segmento, valor) | `seccion='activa_maxima'`, `dimension_valor`, `metrica='tasa_activa_maxima'`, `valor` | `_segmento_label()` (quita superíndices de nota al pie; alias `PRODUCTIVO CORPORATIVO`→`PRODUCTIVO - CORPORATIVO`, única discrepancia real de nombre vs. el universo tsa) | `dim_subsegmento_credito` (JOIN `subsegmento`=`dimension_valor`) → `fact_tasas_referenciales_cartera.tasa_activa_maxima` (pivotado con `FILTER`) |
+| "...ACTIVAS EFECTIVAS REFERENCIALES" + fila | `seccion='activa_referencial'`, `metrica='tasa_activa_referencial'` | igual | mismo grano (fecha×subsegmento) → `fact_tasas_referenciales_cartera.tasa_activa_referencial` |
 | "...PASIVAS EFECTIVAS PROMEDIO POR INSTRUMENTO" + fila (label=categoría, valor) | `seccion='pasiva_instrumento'`, `dimension_valor`, `metrica='tasa_pasiva_promedio'` | `_categoria_label()` (alias `DEPÓSITOS DE TARJETAHABIENTES`→`FONDOS DE TARJETAHABIENTES`, armoniza con el nombre ya sembrado) | `dim_categoria_deposito` (JOIN `categoria`) → `fact_tasas_referenciales_depositos_instrumento.tasa_pasiva_promedio` |
 | "...PASIVAS EFECTIVAS REFERENCIALES POR PLAZO" + fila (label `"PLAZO X-Y"`/`"PLAZO X Y MÁS"`, valor) | `seccion='pasiva_plazo'`, `plazo_dias_desde`/`plazo_dias_hasta`, `metrica='tasa_pasiva_referencial'` | `_resolver_plazo()` (regex propio, distinto del de tsp/tsa) | `dim_plazo` → `fact_tasas_referenciales_depositos_plazo.tasa_pasiva_referencial` |
 | "OTRAS TASAS REFERENCIALES" + fila (label ∈ 4 métricas de sistema) | `seccion='sistema'`, `metrica` | `_METRICAS_SISTEMA` mapea el label exacto (`TASA PASIVA REFERENCIAL`, `TASA ACTIVA REFERENCIAL`, `TASA LEGAL`, `TASA MÁXIMA CONVENCIONAL`) a la columna destino | `fact_tasas_referenciales_sistema` (4 columnas, `PRIMARY KEY(fecha_id)`, pivotado con `FILTER`) |
@@ -211,7 +211,7 @@ Válidos para las 4 fuentes, no repetidos en cada tabla arriba:
 - **CDC (`fecha_carga`/`fecha_actualizacion`/`row_hash`)**: se aplica en `staging.*` y en
   los `fact_*`/`dim_banco` de `marts` — nunca en `raw.*` (append-only, idempotente por
   archivo vía `source_hash`) ni en los catálogos pequeños de solo-catálogo (`dim_plazo`,
-  `dim_categoria_deposito`, `dim_segmento_credito`), que se insertan una vez por
-  `ON CONFLICT DO NOTHING` y no cambian. Detalle del patrón en `docs/architecture.md`.
+  `dim_categoria_deposito`, `dim_segmento_credito`, `dim_subsegmento_credito`), que se
+  insertan/mapean una vez y no cambian. Detalle del patrón en `docs/architecture.md`.
 - **`fecha_id` (marts)**: siempre `TO_CHAR(fecha, 'YYYYMMDD')::INT`, calculado en el
   `INSERT...SELECT` de `refresh_marts()` — nunca almacenado en `staging.*`.

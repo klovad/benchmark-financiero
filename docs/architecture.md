@@ -31,11 +31,11 @@ Power BI (.pbip, Import desde Postgres)
 
 ## Modelo de datos (esquema estrella)
 
-7 dimensiones y 10 tablas de hechos en `marts.*`, resultado final del flujo anterior.
+8 dimensiones y 10 tablas de hechos en `marts.*`, resultado final del flujo anterior.
 `dim_fecha`/`dim_banco` son compartidas por casi todas las fuentes; `dim_canton`,
-`dim_segmento_credito`, `dim_categoria_deposito`, `dim_plazo` y `dim_cuenta_contable`
-son compartidas solo por las fuentes que las necesitan (ver "Catálogos conformados"
-abajo). Detalle de cada columna en `docs/data_dictionary.md`.
+`dim_segmento_credito`, `dim_subsegmento_credito`, `dim_categoria_deposito`, `dim_plazo`
+y `dim_cuenta_contable` son compartidas solo por las fuentes que las necesitan (ver
+"Catálogos conformados" abajo). Detalle de cada columna en `docs/data_dictionary.md`.
 
 ```mermaid
 erDiagram
@@ -52,7 +52,7 @@ erDiagram
         string banco_codigo
         string banco
         string tipo_entidad
-        string tamano
+        string ruc
     }
     dim_canton {
         int canton_id PK
@@ -63,7 +63,11 @@ erDiagram
     dim_segmento_credito {
         int segmento_id PK
         string segmento
-        string tipo_credito_capcol
+    }
+    dim_subsegmento_credito {
+        int subsegmento_id PK
+        string subsegmento
+        int segmento_id FK
     }
     dim_categoria_deposito {
         int categoria_deposito_id PK
@@ -90,7 +94,7 @@ erDiagram
         int fecha_id FK
         int banco_id FK
         int canton_id FK
-        string tipo_credito
+        int segmento_id FK
         string estado_cartera
         numeric saldo
     }
@@ -116,7 +120,7 @@ erDiagram
     fact_colocaciones_cartera {
         int fecha_id FK
         int banco_id FK
-        int segmento_id FK
+        int subsegmento_id FK
         int plazo_id FK
         string provincia
         numeric monto_total
@@ -124,7 +128,7 @@ erDiagram
     }
     fact_tasas_referenciales_cartera {
         int fecha_id FK
-        int segmento_id FK
+        int subsegmento_id FK
         numeric tasa_activa_maxima
         numeric tasa_activa_referencial
     }
@@ -177,8 +181,10 @@ erDiagram
     dim_canton ||--o{ fact_saldo_cartera : canton_id
     dim_canton ||--o{ fact_saldo_depositos : canton_id
 
-    dim_segmento_credito ||--o{ fact_colocaciones_cartera : segmento_id
-    dim_segmento_credito ||--o{ fact_tasas_referenciales_cartera : segmento_id
+    dim_segmento_credito ||--o{ fact_saldo_cartera : segmento_id
+    dim_segmento_credito ||--o{ dim_subsegmento_credito : segmento_id
+    dim_subsegmento_credito ||--o{ fact_colocaciones_cartera : subsegmento_id
+    dim_subsegmento_credito ||--o{ fact_tasas_referenciales_cartera : subsegmento_id
 
     dim_categoria_deposito ||--o{ fact_saldo_depositos : categoria_deposito_id
     dim_categoria_deposito ||--o{ fact_captaciones_depositos : categoria_deposito_id
@@ -206,9 +212,18 @@ eliminaron 3 columnas nunca pobladas (`saldo_x_tasa`, `tasa_ponderada` en ambas 
 saldo; `morosidad` en `fact_saldo_cartera`) — la tasa real ya vive en
 `fact_colocaciones_cartera`/`fact_captaciones_depositos`. Ver `sql/15_rename_fact_tables.sql`.
 
-`fact_saldo_cartera`/`fact_saldo_depositos` (CAPCOL) no referencian `dim_segmento_credito`:
-CAPCOL nunca trae el sub-segmento fino de BCE, por eso `tipo_credito`/`estado_cartera`
-quedan como dimensión degenerada (columna directa) en vez de FK. `plazo_id` en
+**Segmentación de crédito: 2 dimensiones normativas, no una** (2026-07-19,
+`sql/16_dim_segmento_normativo.sql`): `dim_segmento_credito` (7 valores, nivel grueso:
+PRODUCTIVO/CONSUMO/EDUCATIVO/INMOBILIARIO/VIVIENDA DE INTERÉS PÚBLICO/MICROCRÉDITO/
+INVERSIÓN PÚBLICA) y `dim_subsegmento_credito` (26 valores, nivel fino tal como lo
+reporta BCE) están unidas por FK propia — antes eran una sola tabla con el rollup a
+CAPCOL como columna `TEXT` nullable (`tipo_credito_capcol`), sin garantía de que
+coincidiera con el `tipo_credito` (también texto libre) de `fact_cartera`. CAPCOL nunca
+trae el sub-segmento fino, así que `fact_saldo_cartera.segmento_id` referencia el nivel
+grueso directo; BCE sí reporta al nivel fino, así que `fact_colocaciones_cartera`/
+`fact_tasas_referenciales_cartera` referencian `dim_subsegmento_credito` vía
+`subsegmento_id`. `estado_cartera` en `fact_saldo_cartera` sigue como dimensión
+degenerada (columna directa, solo 3 valores fijos, no una jerarquía real). `plazo_id` en
 `fact_saldo_depositos` es nullable (`NULL` salvo `categoria_deposito = 'DEPÓSITOS A PLAZO'`)
 y las 4 tablas de `tasas_referenciales_*` son a nivel sistema (sin `dim_banco`, ver
 `docs/data_dictionary.md`).
@@ -236,7 +251,7 @@ llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
 - `etl/transform/categoria_deposito_matching.py` y `bce_plazo_matching.py`: mismo patrón
   para separar categoría/plazo (CAPCOL mezclaba ambos conceptos en `tipo_deposito`) y para
   resolver los buckets de plazo con prefijo ordinal de BCE (`a. MENOS DE 30 DIAS`, etc.).
-- `dim_segmento_credito` (26 valores, universo completo de BCE) y `dim_categoria_deposito`
+- `dim_subsegmento_credito` (26 valores, universo completo de BCE) y `dim_categoria_deposito`
   (12 valores) **no se filtran por tipo de entidad**. Desde 2026-07-19 esto ya no es solo
   el catálogo: `fact_captaciones_depositos`/`fact_colocaciones_cartera` (BCE tsp/tsa) tampoco filtran —
   cargan el sistema financiero completo (442 bancos en `dim_banco`: 33 privados curados +

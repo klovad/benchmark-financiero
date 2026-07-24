@@ -81,24 +81,27 @@ def load_raw(conn, table: str, df: pd.DataFrame, anio: int) -> None:
     log.info("raw.%s: %d filas insertadas", table, len(rows))
 
 
-def upsert_banco_maestro_auto(conn, entidades: list[tuple[str, str, str]]) -> None:
-    """Auto-registra entidades BCE no-privadas (cooperativas, mutualistas, banca pública,
-    sociedad financiera, tarjetas de crédito) resueltas por RUC en
-    etl/transform/banco_matching.py::resolver_entidad_bce -- ON CONFLICT DO NOTHING para
-    no pisar el nombre ya registrado en una corrida anterior (no hace falta actualizar,
-    el RUC no cambia)."""
+def upsert_banco_maestro_ruc(conn, entidades: list[tuple[str, str, str, str]]) -> None:
+    """Registra el RUC de TODAS las entidades resueltas por BCE (bancos privados
+    incluidos) y auto-registra las no-privadas (cooperativas, mutualistas, banca pública,
+    sociedad financiera, tarjetas de crédito) -- ver
+    etl/transform/banco_matching.py::resolver_entidad_bce. `ON CONFLICT DO UPDATE SET
+    ruc` únicamente: para bancos privados la fila ya existe (sembrada desde
+    banco_maestro.csv) y no se toca `banco`/`tipo_entidad`, que siguen siendo dueños de
+    ese valor -- load_banco_maestro_seed() los reafirma en cada refresh_marts(); para
+    entidades nuevas, el INSERT las crea con banco/tipo_entidad/ruc de una vez."""
     if not entidades:
         return
     with conn.cursor() as cur:
         cur.executemany(
             """
-            INSERT INTO staging.banco_maestro (banco_codigo, banco, tipo_entidad)
-            VALUES (%s, %s, %s)
-            ON CONFLICT (banco_codigo) DO NOTHING
+            INSERT INTO staging.banco_maestro (banco_codigo, banco, tipo_entidad, ruc)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (banco_codigo) DO UPDATE SET ruc = EXCLUDED.ruc
             """,
             entidades,
         )
-    log.info("staging.banco_maestro: %d entidades auto-registradas (no privadas)", len(entidades))
+    log.info("staging.banco_maestro: ruc actualizado/creado para %d entidades", len(entidades))
 
 
 def load_banco_maestro_seed(conn) -> None:
@@ -406,8 +409,8 @@ ON CONFLICT (fecha_id) DO NOTHING;
 -- dim_banco: identidad ya resuelta en staging.banco_codigo (etl/transform/banco_matching.py);
 -- el nombre a mostrar y tipo_entidad vienen de staging.banco_maestro (sembrado desde
 -- etl/seeds/banco_maestro.csv), no de cualquier texto crudo que haya llegado primero.
-INSERT INTO marts.dim_banco (banco_codigo, banco, tipo_entidad)
-SELECT bm.banco_codigo, bm.banco, bm.tipo_entidad
+INSERT INTO marts.dim_banco (banco_codigo, banco, tipo_entidad, ruc)
+SELECT bm.banco_codigo, bm.banco, bm.tipo_entidad, bm.ruc
 FROM staging.banco_maestro bm
 WHERE bm.banco_codigo IN (
     SELECT DISTINCT banco_codigo FROM staging.cartera WHERE tipo_entidad = 'BANCO PRIVADO'
@@ -423,7 +426,7 @@ WHERE bm.banco_codigo IN (
     SELECT DISTINCT banco_codigo FROM staging.boletin_pyg
 )
 ON CONFLICT (banco_codigo) DO UPDATE SET
-    banco = EXCLUDED.banco, tipo_entidad = EXCLUDED.tipo_entidad, fecha_actualizacion = now()
+    banco = EXCLUDED.banco, tipo_entidad = EXCLUDED.tipo_entidad, ruc = EXCLUDED.ruc, fecha_actualizacion = now()
 WHERE marts.dim_banco.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
 INSERT INTO marts.dim_canton (canton, provincia, region)
@@ -458,19 +461,30 @@ SELECT DISTINCT plazo_dias_desde, plazo_dias_hasta, NULL FROM staging.tasas_refe
 WHERE seccion = 'pasiva_plazo'
 ON CONFLICT (dias_desde, COALESCE(dias_hasta, -1)) DO NOTHING;
 
-INSERT INTO marts.fact_saldo_cartera (fecha_id, banco_id, canton_id, tipo_credito, estado_cartera, saldo)
+-- tipo_credito de CAPCOL (6 valores, snake_case) es el nombre coloquial del mismo
+-- segmento normativo grueso que usa marts.dim_segmento_credito (7 valores, MAYÚSCULAS
+-- regulatorias) -- se resuelve aquí en vez de duplicar la columna como texto suelto.
+INSERT INTO marts.fact_saldo_cartera (fecha_id, banco_id, canton_id, segmento_id, estado_cartera, saldo)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     b.banco_id,
     c.canton_id,
-    s.tipo_credito,
+    sg.segmento_id,
     s.estado_cartera,
     s.saldo
 FROM staging.cartera s
 JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
 LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia = s.provincia
+JOIN marts.dim_segmento_credito sg ON sg.segmento = CASE s.tipo_credito
+    WHEN 'comercial' THEN 'PRODUCTIVO'
+    WHEN 'consumo' THEN 'CONSUMO'
+    WHEN 'inmobiliario' THEN 'INMOBILIARIO'
+    WHEN 'microcredito' THEN 'MICROCRÉDITO'
+    WHEN 'vivienda_interes_publico' THEN 'VIVIENDA DE INTERÉS PÚBLICO'
+    WHEN 'educativo' THEN 'EDUCATIVO'
+END
 WHERE s.tipo_entidad = 'BANCO PRIVADO'
-ON CONFLICT (fecha_id, banco_id, canton_id, tipo_credito, estado_cartera)
+ON CONFLICT (fecha_id, banco_id, canton_id, segmento_id, estado_cartera)
 DO UPDATE SET saldo = EXCLUDED.saldo, fecha_actualizacion = now()
 WHERE marts.fact_saldo_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
@@ -524,11 +538,11 @@ DO UPDATE SET monto_total = EXCLUDED.monto_total,
 WHERE marts.fact_captaciones_depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
 INSERT INTO marts.fact_colocaciones_cartera
-    (fecha_id, banco_id, segmento_id, plazo_id, provincia, monto_total, numero_operaciones, tasa_activa_efectiva, tasa_nominal)
+    (fecha_id, banco_id, subsegmento_id, plazo_id, provincia, monto_total, numero_operaciones, tasa_activa_efectiva, tasa_nominal)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     b.banco_id,
-    sg.segmento_id,
+    sg.subsegmento_id,
     pl.plazo_id,
     s.provincia,
     s.monto_total,
@@ -537,10 +551,10 @@ SELECT
     s.tasa_nominal
 FROM staging.bce_tasas_activas s
 JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
-JOIN marts.dim_segmento_credito sg ON sg.segmento = s.segmento_credito
+JOIN marts.dim_subsegmento_credito sg ON sg.subsegmento = s.segmento_credito
 JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
     AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
-ON CONFLICT (fecha_id, banco_id, segmento_id, plazo_id, COALESCE(provincia, ''))
+ON CONFLICT (fecha_id, banco_id, subsegmento_id, plazo_id, COALESCE(provincia, ''))
 DO UPDATE SET monto_total = EXCLUDED.monto_total,
               numero_operaciones = EXCLUDED.numero_operaciones,
               tasa_activa_efectiva = EXCLUDED.tasa_activa_efectiva,
@@ -551,17 +565,17 @@ WHERE marts.fact_colocaciones_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_has
 -- TasasHistorico.htm: 4 tablas anchas, una por sección real (activa_maxima +
 -- activa_referencial comparten grano segmento -> misma tabla). staging.tasas_referenciales
 -- es la única tabla "larga" del proyecto (por sección/métrica) -- ver sql/12_schema_tasas_historicas.sql.
-INSERT INTO marts.fact_tasas_referenciales_cartera (fecha_id, segmento_id, tasa_activa_maxima, tasa_activa_referencial)
+INSERT INTO marts.fact_tasas_referenciales_cartera (fecha_id, subsegmento_id, tasa_activa_maxima, tasa_activa_referencial)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
-    sg.segmento_id,
+    sg.subsegmento_id,
     MAX(s.valor) FILTER (WHERE s.seccion = 'activa_maxima'),
     MAX(s.valor) FILTER (WHERE s.seccion = 'activa_referencial')
 FROM staging.tasas_referenciales s
-JOIN marts.dim_segmento_credito sg ON sg.segmento = s.dimension_valor
+JOIN marts.dim_subsegmento_credito sg ON sg.subsegmento = s.dimension_valor
 WHERE s.seccion IN ('activa_maxima', 'activa_referencial')
-GROUP BY TO_CHAR(s.fecha, 'YYYYMMDD')::INT, sg.segmento_id
-ON CONFLICT (fecha_id, segmento_id)
+GROUP BY TO_CHAR(s.fecha, 'YYYYMMDD')::INT, sg.subsegmento_id
+ON CONFLICT (fecha_id, subsegmento_id)
 DO UPDATE SET tasa_activa_maxima = EXCLUDED.tasa_activa_maxima,
               tasa_activa_referencial = EXCLUDED.tasa_activa_referencial,
               fecha_actualizacion = now()

@@ -5,37 +5,33 @@ table fact_cartera
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000a1
 
-	measure 'Saldo Cartera (Ultimo Mes)' = ```
+	measure 'Saldo Cartera (Ultimo Mes)' =
 			VAR UltimaFecha = CALCULATE(MAX(dim_fecha[fecha]), ALL(dim_fecha))
 			RETURN CALCULATE([Saldo Cartera], dim_fecha[fecha] = UltimaFecha)
-			```
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000a8
 
-	measure 'HHI Cartera (Ultimo Mes)' = ```
+	measure 'HHI Cartera (Ultimo Mes)' =
 			VAR UltimaFecha = CALCULATE(MAX(dim_fecha[fecha]), ALL(dim_fecha))
 			RETURN CALCULATE([HHI Cartera], dim_fecha[fecha] = UltimaFecha)
-			```
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000a9
 
-	measure 'Morosidad % (Ultimo Mes)' = ```
+	measure 'Morosidad % (Ultimo Mes)' =
 			VAR UltimaFecha = CALCULATE(MAX(dim_fecha[fecha]), ALL(dim_fecha))
 			RETURN CALCULATE([Morosidad %], dim_fecha[fecha] = UltimaFecha)
-			```
 		formatString: 0.00%
 		lineageTag: 10000000-0000-0000-0000-0000000000aa
 
-	measure 'Saldo Cartera Vencida' = ```
+	measure 'Saldo Cartera Vencida' =
 			CALCULATE(
 			    [Saldo Cartera],
 			    dim_producto_cartera[estado_cartera] = "vencida"
 			)
-			```
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000a2
 
-	measure 'Morosidad %' = ```
+	measure 'Morosidad %' =
 			DIVIDE(
 			    CALCULATE(
 			        [Saldo Cartera],
@@ -43,83 +39,78 @@ table fact_cartera
 			    ),
 			    [Saldo Cartera]
 			)
-			```
 		formatString: 0.00%
 		lineageTag: 10000000-0000-0000-0000-0000000000a3
 
-	measure 'Market Share Banco (Cartera)' = ```
+	measure 'Market Share Banco (Cartera)' =
 			DIVIDE(
 			    [Saldo Cartera],
 			    CALCULATE([Saldo Cartera], ALL(dim_banco))
 			)
-			```
 		formatString: 0.00%
 		lineageTag: 10000000-0000-0000-0000-0000000000a4
 
-	measure 'HHI Cartera' = ```
+	measure 'HHI Cartera' =
 			SUMX(
 			    VALUES(dim_banco[banco]),
 			    [Market Share Banco (Cartera)] ^ 2
 			) * 10000
-			```
 		formatString: #,##0
 		lineageTag: 10000000-0000-0000-0000-0000000000a5
 
-	measure 'Variacion Cartera MoM' = ```
+	measure 'Variacion Cartera MoM' =
 			VAR Actual = [Saldo Cartera]
 			VAR Anterior = CALCULATE([Saldo Cartera], DATEADD(dim_fecha[fecha], -1, MONTH))
 			RETURN DIVIDE(Actual - Anterior, Anterior)
-			```
 		formatString: 0.00%
 		lineageTag: 10000000-0000-0000-0000-0000000000a6
 
-	measure 'Variacion Cartera YoY' = ```
+	measure 'Variacion Cartera YoY' =
 			VAR Actual = [Saldo Cartera]
 			VAR Anterior = CALCULATE([Saldo Cartera], DATEADD(dim_fecha[fecha], -12, MONTH))
 			RETURN DIVIDE(Actual - Anterior, Anterior)
-			```
 		formatString: 0.00%
 		lineageTag: 10000000-0000-0000-0000-0000000000a7
 
 	column fact_cartera_id
 		dataType: int64
+		isHidden
 		formatString: 0
 		lineageTag: 10000000-0000-0000-0000-000000000051
 		summarizeBy: none
 		sourceColumn: fact_cartera_id
-		isHidden
 
 	column fecha_id
 		dataType: int64
+		isHidden
 		formatString: 0
 		lineageTag: 10000000-0000-0000-0000-000000000052
 		summarizeBy: none
 		sourceColumn: fecha_id
-		isHidden
 
 	column banco_id
 		dataType: int64
+		isHidden
 		formatString: 0
 		lineageTag: 10000000-0000-0000-0000-000000000053
 		summarizeBy: none
 		sourceColumn: banco_id
-		isHidden
 
 	column canton_id
 		dataType: int64
+		isHidden
 		formatString: 0
 		lineageTag: 10000000-0000-0000-0000-000000000054
 		summarizeBy: none
 		sourceColumn: canton_id
-		isHidden
 
 	column producto_cartera_id
 		dataType: int64
+		isHidden
 		formatString: 0
 		lineageTag: 10000000-0000-0000-0000-000000000055
 		summarizeBy: none
 		sourceColumn: producto_cartera_id
-		isHidden
 
 	column saldo
 		dataType: double
@@ -130,19 +121,29 @@ table fact_cartera
 
 	column saldo_x_tasa
 		dataType: double
+		isHidden
 		formatString: #,##0.00
 		lineageTag: 10000000-0000-0000-0000-000000000057
 		summarizeBy: sum
 		sourceColumn: saldo_x_tasa
-		isHidden
 
 	column tasa_ponderada
 		dataType: double
+		isHidden
 		formatString: 0.0000
 		lineageTag: 10000000-0000-0000-0000-000000000058
 		summarizeBy: none
 		sourceColumn: tasa_ponderada
-		isHidden
+
+	column morosidad
+		dataType: double
+		lineageTag: 75e5c4b4-c398-4987-86a4-3eb180eb2e69
+		summarizeBy: sum
+		sourceColumn: morosidad
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	partition fact_cartera = m
 		mode: import
@@ -154,3 +155,4 @@ table fact_cartera
 					marts_fact_cartera
 
 	annotation PBI_ResultType = Table
+

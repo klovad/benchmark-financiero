@@ -67,9 +67,9 @@ de asumir que estas tablas son el archivo fuente sin tocar.
 | `staging.depositos` | `(fecha, tipo_entidad, banco, canton, tipo_deposito)` | `banco_codigo` + `categoria_deposito`/`plazo_dias_*` vía `banco_matching.py` + `categoria_deposito_matching.py` | Sí |
 | `staging.bce_tasas_pasivas` | `(fecha, banco_codigo, categoria_deposito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''))` | `banco_codigo` + `plazo_dias_*` vía `resolver_entidad_bce()` + `bce_plazo_matching.py` — **todas las entidades del sistema financiero, no solo bancos privados** (corregido 2026-07-19, ver abajo) | Sí |
 | `staging.bce_tasas_activas` | `(fecha, banco_codigo, segmento_credito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''))` | igual + `segmento_credito` validado contra universo de 26 | Sí |
-| `staging.tasas_referenciales` | `(fecha, seccion, COALESCE(dimension_valor,''), COALESCE(plazo_dias_desde,-1), COALESCE(plazo_dias_hasta,-1), metrica)` | `dimension_valor` armonizado a los nombres ya sembrados en `dim_segmento_credito`/`dim_categoria_deposito` (alias explícitos, ver `linaje_datos.md`) | Sí |
+| `staging.tasas_referenciales` | `(fecha, seccion, COALESCE(dimension_valor,''), COALESCE(plazo_dias_desde,-1), COALESCE(plazo_dias_hasta,-1), metrica)` | `dimension_valor` armonizado a los nombres ya sembrados en `dim_subsegmento_credito`/`dim_categoria_deposito` (alias explícitos, ver `linaje_datos.md`) | Sí |
 | `staging.boletin_balance` / `boletin_pyg` | `(fecha, banco_codigo, codigo)` | `banco_codigo` vía `banco_matching.py` (fuente `"BOLETIN"`) | Sí |
-| `staging.banco_maestro` | `banco_codigo` (PK) | Dos mecanismos: (1) sembrada desde `etl/seeds/banco_maestro.csv` para los ~33 bancos privados curados (`load_banco_maestro_seed`); (2) **auto-registrada por RUC** para las ~420 entidades no-privadas de BCE (`upsert_banco_maestro_auto`, `ON CONFLICT DO NOTHING`) — ver "Identidad para el universo completo del sistema financiero" abajo | No (se resiembra/complementa en cada corrida, `ON CONFLICT DO NOTHING`/`DO UPDATE` sin CDC propio) |
+| `staging.banco_maestro` | `banco_codigo` (PK) | Dos mecanismos: (1) sembrada desde `etl/seeds/banco_maestro.csv` para los ~33 bancos privados curados (`load_banco_maestro_seed`, banco/tipo_entidad); (2) **`ruc` poblado para TODAS las entidades y fila creada para las ~420 no-privadas** (`upsert_banco_maestro_ruc`, `ON CONFLICT DO UPDATE SET ruc`, 2026-07-23) — ver "Identidad para el universo completo del sistema financiero" abajo | No (se resiembra/complementa en cada corrida, `ON CONFLICT DO NOTHING`/`DO UPDATE` sin CDC propio) |
 
 ### Identidad para el universo completo del sistema financiero (BCE, 2026-07-19)
 
@@ -115,7 +115,8 @@ gobernanza (rol, cadencia, volumen conocido). Nombres de tabla actualizados 2026
 | `dim_fecha` | Dimensión conformada, grano día | — | derivada del resto | — |
 | `dim_banco` | Dimensión conformada | — | 2021–2026 | 442 (33 bancos privados curados + 409 entidades BCE auto-registradas por RUC — cooperativas, bancos públicos, mutualistas, sociedad financiera, tarjetas de crédito; medido 2026-07-19) |
 | `dim_canton` | Dimensión conformada | — | derivada de CAPCOL | — |
-| `dim_segmento_credito` | Catálogo (universo BCE, no filtrado por entidad) | — | sembrado una vez (`sql/08`) | 26 filas |
+| `dim_segmento_credito` | Catálogo, segmento normativo de crédito (nivel grueso — 2026-07-19: nombre reasignado, ver "Normalización de la segmentación de crédito" abajo) | — | sembrado una vez (`sql/16`) | 7 filas |
+| `dim_subsegmento_credito` (antes `dim_segmento_credito`) | Catálogo (universo BCE, no filtrado por entidad; nivel fino) | — | sembrado una vez (`sql/08`) | 26 filas |
 | `dim_categoria_deposito` | Catálogo | — | sembrado una vez (`sql/08`) | 11 filas |
 | `dim_plazo` | Catálogo abierto, auto-descubierto | — | crece con cada fuente nueva | no fijo por diseño |
 | `dim_cuenta_contable` | Catálogo (Catálogo Único de Cuentas) | — | descubierto del Boletín | ~1500 cuentas (BALANCE+PYG, según comentario de `upsert_dim_cuenta_contable`) |
@@ -166,6 +167,63 @@ Los volúmenes de esta tabla y la del renombrado son mediciones puntuales de 202
 no se actualizan automáticamente; `SELECT COUNT(*)` directo contra la base es la fuente
 de verdad si se necesita un valor vigente.
 
+## Normalización de la segmentación de crédito (2026-07-19)
+
+El usuario notó que `fact_saldo_cartera.tipo_credito` era texto libre en vez de FK, y
+preguntó por qué no referenciaba `dim_segmento_credito` — la respuesta reveló un choque de
+grano real, no un descuido: `dim_segmento_credito` (como se llamaba entonces) tenía el
+grano del **sub-segmento fino de BCE** (26 valores), y CAPCOL nunca reporta a ese nivel,
+solo al **segmento normativo grueso** (6 valores). El rollup entre ambos vivía como una
+columna `tipo_credito_capcol TEXT` nullable en la misma tabla — texto libre, sin FK, sin
+garantía de que coincidiera con `fact_cartera.tipo_credito` (también texto libre) si
+alguno de los dos cambiaba. Y 4 de los 26 sub-segmentos quedaban con `tipo_credito_capcol
+= NULL` por no tener equivalente en bancos privados, en vez de tener su segmento
+normativo real asignado.
+
+**Solución acordada con el usuario** (`sql/16_dim_segmento_normativo.sql`): dos
+dimensiones normalizadas por FK, patrón Kimball de "outrigger" — dos hechos en grano
+distinto comparten la dimensión gruesa en vez de forzar uno al grano fino del otro:
+
+- **`marts.dim_segmento_credito`** (nueva, 7 filas, MAYÚSCULAS): el segmento normativo de
+  la cartera de crédito — `PRODUCTIVO`, `CONSUMO`, `EDUCATIVO`, `INMOBILIARIO`, `VIVIENDA
+  DE INTERÉS PÚBLICO`, `MICROCRÉDITO`, `INVERSIÓN PÚBLICA`.
+- **`marts.dim_subsegmento_credito`** (antes `dim_segmento_credito`, 26 filas): el
+  sub-segmento fino tal como lo reporta BCE, con `segmento_id` FK obligatoria (ya no
+  `tipo_credito_capcol` texto nullable) a la tabla anterior.
+- **`fact_saldo_cartera`** (CAPCOL, solo reporta al nivel grueso): `tipo_credito` TEXT →
+  `segmento_id` FK a `dim_segmento_credito`.
+- **`fact_colocaciones_cartera`** / **`fact_tasas_referenciales_cartera`** (BCE, reportan
+  al nivel fino): columna `segmento_id` renombrada a `subsegmento_id`, FK actualizada a
+  `dim_subsegmento_credito`.
+
+**Mapeo subsegmento → segmento**, con precisión sobre los 4 que antes quedaban en NULL:
+`PRODUCTIVO` agrupa tanto la terminología vigente (Productivo Corporativo/Empresarial/
+PYMES/Agrícola y Ganadero) como la previa a la revisión metodológica de abril-julio 2022
+(JPRF-F-2022-031/053), que usaba "Comercial" para el mismo segmento — mismo segmento
+normativo, dos nombres según la época de la serie histórica (2008-2026). `INMOBILIARIO`
+agrupa esa forma y la forma histórica "Vivienda" (crédito de vivienda ordinario, no
+social). `VIVIENDA DE INTERÉS PÚBLICO` agrupa esa forma y "Vivienda de Interés Social"
+(mismo segmento de vivienda social/pública con techo de tasa propio). `MICROCRÉDITO`
+agrupa las 7 variantes, incluidas las 3 con sufijo "(SE)" — Sector Financiero Popular y
+Solidario, variante del mismo sub-segmento bajo la metodología de cooperativas, no un
+segmento distinto. `INVERSIÓN PÚBLICA` es su propio segmento (aparece como línea propia,
+no anidada bajo Productivo, en la sección "TASAS DE INTERÉS ACTIVAS MÁXIMAS VIGENTES" de
+`TasasHistorico.htm` — ver `docs/fuentes_datos.md` sección 2.3). Con este mapeo ningún
+sub-segmento queda sin `segmento_id`.
+
+**Casing**: `dim_segmento_credito.segmento` se sembró en MAYÚSCULAS para mantener
+consistencia con `dim_subsegmento_credito.subsegmento` y `dim_categoria_deposito.categoria`
+(ambos ya en mayúsculas, tal como los reporta BCE) — evita mezclar convenciones dentro de
+la misma jerarquía normativa. `staging.cartera.tipo_credito` (snake_case minúsculas,
+convención de CAPCOL) no cambia — es la capa `staging`, se resuelve a `segmento_id` recién
+en `refresh_marts()`, igual que `banco_codigo` se resuelve a `banco_id`.
+
+Verificado: conteos idénticos antes/después de la migración en las 3 tablas afectadas
+(`fact_saldo_cartera`=336.030, `fact_colocaciones_cartera`=4.869.696,
+`fact_tasas_referenciales_cartera`=611), los 26 sub-segmentos con `segmento_id` no nulo,
+`refresh_marts()` corre sin error, CDC no-op confirmado (0 filas con
+`fecha_actualizacion > fecha_carga` tras el refresh), 37 tests pasan.
+
 ## Reglas de calidad de datos
 
 Todas verificadas en código, no solo documentadas:
@@ -211,14 +269,15 @@ asumir que un campo "debería" tener datos:
 
 | Hueco | Detalle | Dónde está documentado |
 |---|---|---|
-| `dim_banco.tamano` / `dim_banco.ruc` nunca se pueblan | Las columnas existen en el esquema (`sql/07`) pero `refresh_marts()` solo inserta `(banco_codigo, banco, tipo_entidad)` — `etl/seeds/banco_maestro.csv` no trae esas 2 columnas. Quedan `NULL` siempre. Confirmado leyendo el código en esta sesión, no documentado antes. | Este documento (nuevo hallazgo) |
+| ~~`dim_banco.tamano` / `dim_banco.ruc` nunca se pueblan~~ — **resuelto 2026-07-23** | `tamano` se eliminó (ninguna de las 3 fuentes trae GRANDE/MEDIANO/PEQUEÑO por banco individual, solo como agregado del Boletín ya excluido — no se va a usar un proxy propio). `ruc` se activó: BCE tsp/tsa sí lo trae para todas las entidades, incluidos los 33 bancos privados curados — `resolver_entidad_bce()` lo descartaba en ese camino, ahora no. 442/442 filas con `ruc`. | `sql/17_dim_banco_ruc_sin_tamano.sql`, `docs/data_dictionary.md` |
 | ~~`fact_cartera.tasa_ponderada` / `.morosidad` / `.saldo_x_tasa` nunca se pueblan~~ — **resuelto 2026-07-19** | Estaban reservadas desde v1, nunca escritas por `refresh_marts()`. Eliminadas junto con el renombrado de tablas (`sql/15_rename_fact_tables.sql`) — la tasa real ya vive en `fact_colocaciones_cartera`/`fact_captaciones_depositos` | `docs/linaje_datos.md`, `docs/data_dictionary.md`, sección "Renombrado de tablas de hechos" arriba |
-| `dim_producto_cartera` / `dim_producto_deposito` siguen existiendo en Postgres, huérfanas | Las migraciones (`sql/08`, `sql/09`) dejaron de referenciarlas pero **nunca ejecutaron un `DROP TABLE`** — siguen físicamente en la base sin ningún `fact_*` apuntándoles. El modelo lógico vivo (este catálogo, el diagrama ER) no las incluye porque no son parte del esquema en uso. | Detectado en la sesión que generó el diagrama ER; falta un `DROP TABLE` explícito si se quiere una base limpia |
+| ~~`dim_producto_cartera` / `dim_producto_deposito` seguían existiendo en Postgres, huérfanas~~ — **confirmado ya no existen (2026-07-20)** | Las migraciones (`sql/08`, `sql/09`) dejaron de referenciarlas y no hay ningún `DROP TABLE` en `sql/*.sql` — pero `to_regclass('marts.dim_producto_cartera')`/`dim_producto_deposito` devuelve `NULL` en la base viva: no existen. Se dropearon en algún momento fuera de una migración versionada (no hay registro de cuándo/quién); el estado real y el modelo lógico (este catálogo, el diagrama ER) ya coinciden, solo esta fila estaba desactualizada. | Verificado directo contra Postgres en esta sesión |
 | `TasasHistorico.htm` solo 2022-04 a 2026-06 | Páginas anteriores (2008–2022) usan un layout HTML distinto no soportado por el parser | `docs/fuentes_datos.md`, `docs/linaje_datos.md` |
 | Boletín solo 2021-01 en adelante | No se intentó cargar años anteriores — decisión explícita de alcance | `docs/fuentes_datos.md` |
 | `dim_cuenta_contable.grupo_met` no es partición limpia | Un mismo código de cuenta puede caer en 2+ grupos funcionales de la hoja `MET`; se guarda solo el primero encontrado | `docs/metricas_financieras.md` |
 | ~~BCE tsp/tsa: `raw.*` no incluía el universo completo de entidades~~ — **resuelto 2026-07-19** | Estaba filtrado a bancos privados antes de persistir; corregido, `raw.*` ahora captura las 6 categorías completas y `staging`/`marts` resuelven identidad para todas (curada para privados, auto-registrada por RUC para el resto) | `docs/linaje_datos.md`, sección "Identidad para el universo completo del sistema financiero" arriba |
-| Identidad auto-registrada por RUC (~420 entidades no-privadas) no está curada | A diferencia de los bancos privados, estas ~420 entidades no pasaron por revisión humana — el nombre/tipo_entidad viene tal cual del BCE. Riesgo real (bajo pero no cero): si el BCE reutiliza un RUC entre 2 entidades distintas por error de origen (se observaron un par de casos de RUC compartido entre nombres de bancos privados en el archivo real), se fusionarían en un solo `banco_codigo` — aceptable para este nivel de curación, pero no verificado exhaustivamente | `docs/gobernanza_datos.md` (esta fila), `etl/transform/banco_matching.py::resolver_entidad_bce` |
+| Identidad auto-registrada por RUC (~420 entidades no-privadas) no está curada | A diferencia de los bancos privados, estas ~420 entidades no pasaron por revisión humana — el nombre/tipo_entidad viene tal cual del BCE. | `etl/transform/banco_matching.py::resolver_entidad_bce` |
+| **7 pares de `dim_banco.banco_codigo` distintos comparten el mismo `ruc`** — confirmado 2026-07-23, no un riesgo teórico | Al activar `ruc` (ver fila de arriba) se pudo verificar por primera vez con datos reales, no solo sospechar: `DINERS CLUB`/`BP DINERS`, `BANCO AMIBANK S.A.`/`FINCA`/`BP FINCA S.A.` (3 vías, mismo RUC), `COOPERATIVA...DESARROLLO DE LOS PUEBLOS`/`BP...CODESARROLLO`, `BANCO ATLÁNTIDA S.A.`/`BP D-MIRO S.A.`, `VISIONFUND`/`BP VISIONFUND ECUADOR S.A.`, `M.M. JARAMILLO ARTEAGA`/`PROMERICA`, `COOPERATIVA...NACIONAL`/`BP COOPNACIONAL`. El patrón dominante **no es un error del BCE**, es una entidad que cambió de forma legal (cooperativa/financiera → banco privado licenciado) mientras BCE seguía usando el mismo RUC — `resolver_entidad_bce()` la resuelve por separado en cada lado porque enruta por `tipo_entidad_bce`, así que quedan como 2 filas distintas de `dim_banco` para el mismo contribuyente. **No se fusionó**: a diferencia del bug de Manabí/Amibank (mismo nombre, mismo tipo, typo de la fuente), acá el cambio de tipo de entidad es real y fusionar podría ocultar esa transición en vez de modelarla — es una decisión de negocio, no una limpieza mecánica. Cualquier análisis longitudinal por banco (o modelo predictivo) que agrupe por `banco_codigo` debe revisar esta lista si el banco de interés aparece en ella. | `SELECT ruc, count(*), string_agg(banco,' / ') FROM marts.dim_banco GROUP BY ruc HAVING count(*)>1` |
 | `dim_banco` creció de ~33 a 442 filas de golpe | Efecto esperado del fix de arriba, no un bug — pero cualquier cálculo/reporte que asumía "todo `dim_banco` es banco privado" (ej. si el `.pbip` de Power BI algún día vuelve a usarse sin filtrar `tipo_entidad`) necesita revisarse | Este documento |
 | Power BI (`.pbip`) desactualizado | Solo modela el esquema original de CAPCOL (7 tablas); las tablas de BCE/Boletín añadidas después no están en el modelo semántico, y tampoco contempla el universo completo de `dim_banco` (asumía solo bancos privados) | `README.md`, memoria de sesión |
 

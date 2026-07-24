@@ -29,7 +29,7 @@ from etl.load.load_postgres import (
     load_raw_tasas_referenciales,
     refresh_marts,
     register_source_file,
-    upsert_banco_maestro_auto,
+    upsert_banco_maestro_ruc,
     upsert_dim_cuenta_contable,
     upsert_staging_bce_tasas_activas,
     upsert_staging_bce_tasas_pasivas,
@@ -93,7 +93,8 @@ def load_bce(base_dir: Path = BCE_DIR) -> None:
     etl/transform/parse_bce_tasas.py): raw.* captura las 6 categorías del sistema
     financiero tal cual (read_raw), staging.* resuelve identidad y agrega para TODAS
     (parse_tsp_file/parse_tsa_file) -- bancos privados vía crosswalk curado, el resto
-    auto-registrado por RUC en staging.banco_maestro (upsert_banco_maestro_auto)."""
+    auto-registrado por RUC en staging.banco_maestro; el RUC se guarda para todas,
+    privados incluidos (upsert_banco_maestro_ruc, ver sql/17)."""
     files = download_bce_all(base_dir)
     conn = get_connection()
     try:
@@ -113,8 +114,8 @@ def load_bce(base_dir: Path = BCE_DIR) -> None:
             df_raw["source_hash"] = source_hash
             load_raw_bce(conn, table, df_raw, raw_cols)
 
-            df_staging, entidades_auto = parse_fn(zip_path, df_raw=df_raw)
-            upsert_banco_maestro_auto(conn, entidades_auto)
+            df_staging, entidades = parse_fn(zip_path, df_raw=df_raw)
+            upsert_banco_maestro_ruc(conn, entidades)
             upsert_fn(conn, df_staging)
             register_source_file(conn, zip_path.name, source_hash, report_type)
             conn.commit()

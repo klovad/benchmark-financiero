@@ -24,3 +24,4 @@ table dim_producto_deposito
 					marts_dim_producto_deposito
 
 	annotation PBI_ResultType = Table
+

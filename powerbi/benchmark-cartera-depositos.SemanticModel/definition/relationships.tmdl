@@ -29,3 +29,9 @@ relationship r-depositos-canton
 relationship r-depositos-producto
 	fromColumn: fact_depositos.producto_deposito_id
 	toColumn: dim_producto_deposito.producto_deposito_id
+
+relationship a5c8e10a-4136-4fdb-8f9d-325d2036cddb
+	joinOnDateBehavior: datePartOnly
+	fromColumn: dim_fecha.fecha
+	toColumn: LocalDateTable_76987366-8a16-47d1-9a0e-627391fc7b4e.Date
+

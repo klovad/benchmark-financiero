@@ -134,9 +134,9 @@ class EntidadBceNoMapeadaError(ValueError):
     mapeo (probablemente el BCE agregó una categoría nueva) antes de continuar."""
 
 
-def resolver_entidad_bce(razon_social: str, ruc: str, tipo_entidad_bce: str) -> tuple[str, str, str]:
+def resolver_entidad_bce(razon_social: str, ruc: str, tipo_entidad_bce: str) -> tuple[str, str, str, str]:
     """Resuelve una fila de BCE tsp/tsa (CUALQUIER tipo de entidad del sistema
-    financiero, no solo bancos privados) a (banco_codigo, banco, tipo_entidad).
+    financiero, no solo bancos privados) a (banco_codigo, banco, tipo_entidad, ruc).
 
     Dos caminos deliberadamente distintos:
     - **BANCOS PRIVADOS**: identidad curada, igual que `resolver_banco_codigo()` de
@@ -153,6 +153,13 @@ def resolver_entidad_bce(razon_social: str, ruc: str, tipo_entidad_bce: str) -> 
       otra fuente (CAPCOL/Boletín) con la que alinear estas ~420 entidades todavía -- si
       el proyecto agrega una fuente específica de cooperativas más adelante, ESE día
       hace falta un crosswalk real para esas entidades, no antes.
+
+    El `ruc` de la fila se devuelve siempre (también para BANCOS PRIVADOS, donde antes se
+    descartaba) -- BCE es la única de las 3 fuentes que trae RUC, así que es la única vía
+    para poblar `dim_banco.ruc` (2026-07-23). Nota de calidad conocida: al menos un par de
+    bancos privados reales comparten RUC en el archivo fuente (ej. Atlántida/D-MIRO) --
+    ver "huecos de gobernanza" en docs/gobernanza_datos.md antes de tratar `ruc` como
+    único por banco.
     """
     if tipo_entidad_bce not in _TIPO_ENTIDAD_BCE:
         raise EntidadBceNoMapeadaError(
@@ -160,10 +167,11 @@ def resolver_entidad_bce(razon_social: str, ruc: str, tipo_entidad_bce: str) -> 
             f"Agregar el valor a _TIPO_ENTIDAD_BCE en banco_matching.py."
         )
 
+    ruc = str(ruc).strip()
     if tipo_entidad_bce == "BANCOS PRIVADOS":
         codigo = resolver_banco_codigo(razon_social, "BCE")
         info = maestro()[codigo]
-        return codigo, info["banco"], info["tipo_entidad"]
+        return codigo, info["banco"], info["tipo_entidad"], ruc
 
     codigo = f"BCE_{ruc}"
-    return codigo, str(razon_social).strip(), _TIPO_ENTIDAD_BCE[tipo_entidad_bce]
+    return codigo, str(razon_social).strip(), _TIPO_ENTIDAD_BCE[tipo_entidad_bce], ruc

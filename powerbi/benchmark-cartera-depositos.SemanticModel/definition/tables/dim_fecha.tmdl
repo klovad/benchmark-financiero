@@ -15,26 +15,39 @@ table dim_fecha
 		summarizeBy: none
 		sourceColumn: fecha
 
+		variation Variation
+			isDefault
+			relationship: a5c8e10a-4136-4fdb-8f9d-325d2036cddb
+			defaultHierarchy: LocalDateTable_76987366-8a16-47d1-9a0e-627391fc7b4e.'Jerarquía de fechas'
+
+		annotation UnderlyingDateTimeDataType = Date
+
 	column anio
 		dataType: int64
 		formatString: 0
 		lineageTag: 10000000-0000-0000-0000-000000000004
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: anio
+
+		annotation SummarizationSetBy = Automatic
 
 	column mes
 		dataType: int64
 		formatString: 0
 		lineageTag: 10000000-0000-0000-0000-000000000005
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: mes
+
+		annotation SummarizationSetBy = Automatic
 
 	column trimestre
 		dataType: int64
 		formatString: 0
 		lineageTag: 10000000-0000-0000-0000-000000000006
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: trimestre
+
+		annotation SummarizationSetBy = Automatic
 
 	column nombre_mes
 		dataType: string
@@ -52,3 +65,4 @@ table dim_fecha
 					marts_dim_fecha
 
 	annotation PBI_ResultType = Table
+
