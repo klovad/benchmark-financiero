@@ -24,6 +24,9 @@ powerbi/**/cache.abf
 # Playwright
 playwright/.cache/
 
+# Salidas regenerables de scripts/ (no versionar snapshots de resultados)
+scripts/output/
+
 # OS / editores
 .DS_Store
 Thumbs.db

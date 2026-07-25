@@ -7,6 +7,13 @@ recalculables desde ellos); cargarlos aparte duplicaría datos y arriesgaría re
 fórmula oficial distinto de como Superbancos la calcula. Este documento existe para poder
 construir las mismas medidas en Power BI con confianza, no como reemplazo de la fuente.
 
+**Ver también**: [`glosario_cuentas.md`](glosario_cuentas.md) documenta qué significa cada
+cuenta del Catálogo Único y los bloques reutilizables (`cartera_bruta`, `depositos_corto_plazo`,
+promedios YTD, etc.) que no dependen de `grupo_met` — útil si se necesita construir un
+indicador similar sin depender del bug de `grupo_met` descrito abajo. El catálogo `IND_NN`
+del Excel de Financiero (otro catálogo distinto a este) está en
+[`indicadores_excel_bcos_coop.md`](indicadores_excel_bcos_coop.md).
+
 **Corrección de alcance**: la investigación original estimó "40 indicadores". El archivo
 real (`FINANCIERO MENSUAL BANCA PRIVADA 2026_06.xlsx`, hoja `INDICADORES`) trae **48**,
 organizados en 12 categorías. Se documentan los 48 por nombre y categoría; de ellos, 3 se
