@@ -121,6 +121,33 @@ modelos predictivos en vez de recalcular market share/HHI desde los `fact_*` cad
 Ambas vistas de market share solo cubren CAPCOL (`fact_saldo_cartera`/`fact_saldo_depositos`,
 2021-2025) — no existe un equivalente para las tasas de BCE ni para el Boletín todavía.
 
+### Vistas de bloques de construcción — Balance/PyG (`sql/18_glosario_cuentas_views.sql`)
+
+9 vistas, grano banco × fecha, que implementan los "bloques con nombre propio" documentados
+conceptualmente en `docs/glosario_cuentas.md` (qué cuentas del Catálogo Único componen cada
+bloque y por qué) — cualquier catálogo de indicadores nuevo debería componer estas vistas en
+vez de recalcular la lógica de cuentas desde cero. Ver el glosario para el detalle de cada
+fórmula; aquí solo el mapeo vista → bloque:
+
+| Vista | Bloque (glosario §) |
+|---|---|
+| `marts.vw_cartera_bruta` | `cartera_bruta` (§2) |
+| `marts.vw_cartera_improductiva` | `cartera_improductiva`, total (§2) |
+| `marts.vw_cartera_improductiva_segmento` | `cartera_improductiva`, por segmento (§2) |
+| `marts.vw_cartera_bruta_segmento` | `cartera_bruta`, por segmento (§2) |
+| `marts.vw_depositos_corto_plazo` | `depositos_corto_plazo` (§3) |
+| `marts.vw_pyg_total_gastos` | `total_gastos` PyG, workaround del hueco `codigo='4'` (§4.6) |
+| `marts.vw_utilidad_acumulada` | `utilidad_acumulada` (§4) |
+| `marts.vw_utilidad_anualizada` | `utilidad_anualizada` (§4) |
+| `marts.vw_activo_promedio_ytd` / `marts.vw_patrimonio_promedio_ytd` | promedio YTD (§5) — ventana diciembre año anterior → fecha de corte |
+
+No filtran por `tipo_entidad` (no hace falta: `fact_balance`/`fact_pyg` ya vienen
+solo-privados por diseño del Boletín). Escritas siguiendo la misma lógica de
+[`scripts/compute_indicadores_excel.py`](../scripts/compute_indicadores_excel.py) (motor de
+referencia en pandas, corrido y verificado contra `data/samples/marts_full`), pero **las
+vistas SQL en sí no se ejecutaron todavía contra una instancia Postgres real** — validar
+sintaxis en el primer uso real.
+
 ## Decisiones de modelado relevantes
 - **Identidad de banco resuelta en ETL, no con tabla de alias en el esquema estrella**: `etl/transform/banco_matching.py` normaliza y resuelve `banco_codigo` antes de `staging.*`; `dim_banco` se puebla desde `staging.banco_maestro` (sembrado desde `etl/seeds/banco_maestro.csv`).
 - **Carga incremental por hash (CDC), no full refresh**: `staging.*` y `marts.*` tienen `fecha_carga`/`fecha_actualizacion`/`row_hash` (columna `GENERATED ALWAYS AS`); `fecha_actualizacion` solo se mueve si el dato realmente cambió. Ver `docs/architecture.md`.
