@@ -21,6 +21,7 @@ from etl.transform.common import (
     find_base_sheets,
     month_end_date,
     normalize_banco,
+    normalize_provincia,
     normalize_text,
     region_for_provincia,
     sha256_file,
@@ -64,7 +65,7 @@ def _parse_sheet(ws, tipo_credito: str) -> list[dict]:
         fecha = get(row, "FECHA")
         if fecha is None:
             continue
-        provincia = normalize_text(get(row, "PROVINCIA"))
+        provincia = normalize_provincia(get(row, "PROVINCIA"))
         banco = normalize_banco(get(row, "ENTIDAD"))
         base = {
             "fecha": month_end_date(fecha),

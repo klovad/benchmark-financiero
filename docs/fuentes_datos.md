@@ -110,6 +110,25 @@ columnas aún más ricas: `destino_credito`, `destino_hipotecario`, `destino_con
   poblada en `sql/16_dim_segmento_normativo.sql` (no era 1:1 trivial — ej. CAPCOL
   "comercial" ⊂ {COMERCIAL ORDINARIO, COMERCIAL PRIORITARIO *, PRODUCTIVO *} — el mapeo
   completo con su justificación está documentado ahí y en `docs/gobernanza_datos.md`).
+- **`tipo_segmento`** (14 valores en tsp y tsa, idéntico universo en ambos, verificado
+  leyendo los archivos completos): clasificación normativa de **tamaño/estructura de la
+  ENTIDAD** — no confundir con `segmento_credito`, que clasifica el producto. Distinta
+  por `tipo_entidad`: `BANCOS PRIVADOS` → `BANCO GRANDE`/`BANCO MEDIANO`/`BANCO PEQUEÑO`;
+  `COOPERATIVAS DE AHORRO Y CREDITO` → `SEGMENTO 1`..`SEGMENTO 5`/`SIN SEGMENTO`
+  (segmentación por activos totales de la Junta de Política y Regulación Financiera,
+  JPRF-F-2023-074 — Segmento 1 > USD 80MM, bajando por umbrales hasta Segmento 5 =
+  cajas/bancos/cajas comunales; seps.gob.ec); `MUTUALISTAS` → `SEGMENTO 1 MUTUALISTA` o
+  `MUTUALISTAS`; `BANCOS PUBLICOS`/`SOCIEDAD FINANCIERA`/`ADMINISTRADORA DE TARJETAS DE
+  CREDITO` → una sola categoría, igual a `tipo_entidad`. **Cambia en el tiempo por
+  entidad** (verificado: una cooperativa real pasa de `SIN SEGMENTO` a `SEGMENTO 3` a
+  `SEGMENTO 1` entre 2009 y 2023 según crece) — no es un atributo fijo del banco, es un
+  atributo de `(fecha, banco)`. En un puñado de casos (~1 en un millón de filas) no es
+  estable dentro de la misma `(fecha, banco_codigo)` entre provincias/instrumentos —
+  posible artefacto de una reclasificación a mitad de semana en la fuente; se resuelve
+  por la fila de mayor `monto_total`, mismo criterio que ya se usa para ponderar tasas.
+  Se preservaba en `raw.*` desde el inicio pero se descartaba antes de `staging` sin
+  examinar su contenido (detectado 2026-07-25) — ver `marts.dim_segmento_entidad`
+  (`sql/19_dim_segmento_entidad.sql`) y `docs/gobernanza_datos.md`.
 - **`tipo_entidad`**: mismos 7 valores que tsp (agrega `SECTOR FINANCIERO POPULAR Y
   SOLIDARIO` como categoría propia, a diferencia de tsp que no la listó en la muestra
   previa — revisar si es la misma taxonomía de 6-7 valores en ambos archivos).

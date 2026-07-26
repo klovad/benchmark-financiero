@@ -25,13 +25,25 @@ el patrón de carga incremental por hash).
 | banco | text | Nombre a mostrar (sembrado desde `etl/seeds/banco_maestro.csv`) |
 | tipo_entidad | text | 6 valores reales (CHECK constraint, `sql/07`): BANCO PRIVADO, BANCO PUBLICO, COOPERATIVA, MUTUALISTA, SOCIEDAD FINANCIERA, TARJETAS DE CREDITO — 442 bancos totales (33 privados con identidad curada + 409 auto-registrados por RUC desde BCE, ver `docs/gobernanza_datos.md`) |
 | ruc | text, nullable | Identificador fiscal, poblado desde BCE tsp/tsa (única fuente que lo trae) — 2026-07-23: activado también para los 33 bancos privados curados, antes se descartaba en ese camino (`sql/17_dim_banco_ruc_sin_tamano.sql`); 442/442 filas con `ruc`. **No es único por banco**: al menos 7 pares de `banco_codigo` distintos comparten el mismo RUC (ver `docs/gobernanza_datos.md`, "RUC compartido entre identidades") |
-| **`tamano` (GRANDE/MEDIANO/PEQUEÑO) eliminada** (2026-07-23, `sql/17`): nunca se pobló — ninguna de las 3 fuentes trae esa clasificación por banco individual (Superbancos solo la expone como columnas de agregado del Boletín, ya excluidas), y no se va a construir un proxy propio. | | |
+| segmento_entidad_id | int, FK, nullable | `dim_segmento_entidad.segmento_entidad_id` — **última** clasificación normativa de tamaño/estructura conocida para el banco (2026-07-25, `sql/19_dim_segmento_entidad.sql`), SCD tipo 1, actualizada en cada `refresh_marts()` desde la fila más reciente de `fact_captaciones_depositos`/`fact_colocaciones_cartera`. Para análisis histórico (la clasificación cambia en el tiempo) usar el `segmento_entidad_id` de esos hechos, no este — ver tabla abajo |
+| **`tamano` (GRANDE/MEDIANO/PEQUEÑO) eliminada** (2026-07-23, `sql/17`) **y su reemplazo real encontrado 2 días después**: se creyó "no obtenible con las fuentes actuales", pero BCE tsp/tsa sí trae esta clasificación por banco individual bajo la columna `tipo_segmento`, descartada hasta entonces sin examinar su contenido — ver `dim_segmento_entidad` abajo y `docs/gobernanza_datos.md`. | | |
 | **Nota de calidad resuelta**: `BP COMERCIAL DE MANABI`/`BP BANCO COMERCIAL DE MANABI` y `BANCO AMIBANK S.A.`/`BANCO AMIBANK S.A., EN LIQUIDACION` eran el mismo banco partido en 2 filas por un rename de la fuente CAPCOL — corregido vía crosswalk, ver `etl/seeds/banco_crosswalk.csv`. | | |
+
+### marts.dim_provincia (2026-07-25, `sql/20_dim_provincia.sql`)
+| provincia_id | serial | Llave sustituta |
+| provincia | text, único | 24 provincias del Ecuador (ortografía canónica de CAPCOL: sin tilde salvo la Ñ — `BOLIVAR`, `CAÑAR`) + `ZONA NO DELIMITADA` (CAPCOL) + `S/N` (BCE, filas a nivel nacional sin desagregar), ambas con `region = NULL` |
+| region | text, nullable | Costa / Sierra / Oriente / Insular — **única fuente de verdad** en `marts` (antes duplicada como texto suelto en `dim_canton` y en `staging.depositos`, con valores inconsistentes entre sí para al menos una provincia — ver `docs/gobernanza_datos.md`, "Normalización de provincia") |
+| **Compartida entre grano cantón (`dim_canton`) y grano provincia (BCE, sin cantón)** — antes `dim_canton` guardaba `provincia`/`region` como texto propio y `fact_captaciones_depositos`/`fact_colocaciones_cartera` guardaban `provincia` como texto suelto sin FK; ambas normalizadas contra este catálogo único. | | |
 
 ### marts.dim_canton
 | canton_id | serial | Llave sustituta |
-| canton, provincia | text | Ubicación de la oficina donde se registró la operación (no la residencia del cliente) |
-| region | text | Costa / Sierra / Oriente / Insular, derivada de la provincia |
+| canton | text | Ubicación de la oficina donde se registró la operación (no la residencia del cliente) |
+| provincia_id | int, FK | `dim_provincia.provincia_id` — antes `provincia`/`region` como texto propio (ver `dim_provincia` arriba) |
+
+### marts.dim_segmento_entidad (2026-07-25, `sql/19_dim_segmento_entidad.sql`)
+| segmento_entidad_id | serial | Llave sustituta |
+| tipo_segmento | text, único | Clasificación normativa de tamaño/estructura de la ENTIDAD (no del producto — no confundir con `dim_segmento_credito`/`dim_subsegmento_credito`), 14 valores: `BANCO GRANDE`/`BANCO MEDIANO`/`BANCO PEQUEÑO` (bancos privados), `SEGMENTO 1`..`SEGMENTO 5`/`SIN SEGMENTO` (cooperativas, JPRF-F-2023-074, segmentación por activos), `SEGMENTO 1 MUTUALISTA` (mutualistas), una categoría única para bancos públicos/sociedad financiera/tarjetas de crédito |
+| **Fuente**: columna `tipo_segmento` de BCE tsp/tsa, preservada en `raw.*` desde el inicio pero descartada antes de `staging` sin examinar su contenido — detectado 2026-07-25 (el usuario preguntó dónde se había considerado). **Es un atributo de la entidad EN CADA FECHA, no fijo** (verificado: cooperativas reales cambian de segmento con los años según crecen) — por eso vive al grano semanal de `fact_captaciones_depositos`/`fact_colocaciones_cartera`, no como columna estática; `dim_banco.segmento_entidad_id` solo guarda la última clasificación conocida, de conveniencia. | | |
 
 ### marts.dim_segmento_credito (nivel grueso — 2026-07-19: nombre reasignado, antes lo tenía la tabla ahora `dim_subsegmento_credito`, ver abajo)
 | segmento_id | serial | Llave sustituta |
@@ -88,6 +100,8 @@ en `fact_colocaciones_cartera`; `morosidad` es derivable de `estado_cartera` si 
 
 ### marts.fact_colocaciones_cartera (antes `fact_tasas_activas`) / marts.fact_captaciones_depositos (antes `fact_tasas_pasivas`) — grano: fecha × banco × categoría/subsegmento × plazo × provincia — BCE tsa/tsp, semanal
 | subsegmento_id (solo cartera) | int, FK | `dim_subsegmento_credito.subsegmento_id` — nivel fino, columna llamada `segmento_id` hasta 2026-07-19 (ver `sql/16_dim_segmento_normativo.sql`) |
+| provincia_id | int, FK, nullable | `dim_provincia.provincia_id` (2026-07-25, antes columna `provincia` texto suelto sin FK, ver `sql/20_dim_provincia.sql`) |
+| segmento_entidad_id | int, FK, nullable | `dim_segmento_entidad.segmento_entidad_id` (2026-07-25, ver esa tabla arriba) — clasificación de tamaño/estructura del banco EN ESA FECHA |
 | monto_total, numero_operaciones | numeric, int | Agregados de la semana reportados por el BCE |
 | tasa_activa_efectiva/tasa_pasiva_efectiva, tasa_nominal | numeric | Las tasas efectivas reales por banco — esto es lo que CAPCOL no tenía |
 | **Sistema financiero completo, no solo bancos privados** (corregido 2026-07-19) — `dim_banco` tiene 442 entidades (33 privados curados + 409 auto-registrados por RUC: cooperativas, bancos públicos, mutualistas, sociedad financiera, tarjetas de crédito). Ver `docs/gobernanza_datos.md`. | | |

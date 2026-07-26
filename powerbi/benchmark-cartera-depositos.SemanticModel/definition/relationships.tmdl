@@ -10,6 +10,10 @@ relationship r-cartera-canton
 	fromColumn: fact_saldo_cartera.canton_id
 	toColumn: dim_canton.canton_id
 
+relationship r-canton-provincia
+	fromColumn: dim_canton.provincia_id
+	toColumn: dim_provincia.provincia_id
+
 relationship r-cartera-segmento
 	fromColumn: fact_saldo_cartera.segmento_id
 	toColumn: dim_segmento_credito.segmento_id

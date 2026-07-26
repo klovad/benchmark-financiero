@@ -18,6 +18,7 @@ from etl.transform.common import (
     find_base_sheets,
     month_end_date,
     normalize_banco,
+    normalize_provincia,
     normalize_text,
     region_for_provincia,
     sha256_file,
@@ -56,7 +57,7 @@ def parse_depositos_file(source_path: Path, extract_dir: Path) -> pd.DataFrame:
         saldo = get(row, "SALDO")
         if saldo is None:
             continue
-        provincia = normalize_text(get(row, "PROVINCIA"))
+        provincia = normalize_provincia(get(row, "PROVINCIA"))
         numero_cuentas = get(row, "NUMERO DE CUENTAS")
         numero_clientes = get(row, "NUMERO DE CLIENTES")
         banco = normalize_banco(get(row, "ENTIDAD"))
@@ -67,7 +68,12 @@ def parse_depositos_file(source_path: Path, extract_dir: Path) -> pd.DataFrame:
             "tipo_entidad": "BANCO PRIVADO",
             "banco": banco,
             "banco_codigo": resolver_banco_codigo(banco, "CAPCOL"),
-            "region": normalize_text(get(row, "REGION")) or region_for_provincia(provincia),
+            # Derivado siempre de PROVINCIA_REGION (no de la columna REGION del archivo
+            # fuente): se confirmó que esa columna trae valores inconsistentes con
+            # cartera para al menos una provincia (MORONA SANTIAGO: "AMAZONICA" en
+            # depositos vs. "ORIENTE", el mapeo canónico, en cartera) -- marts.dim_canton
+            # llegó a tener 2 regiones distintas para la misma provincia por esto.
+            "region": region_for_provincia(provincia),
             "provincia": provincia,
             "canton": normalize_text(get(row, "CANTON")),
             "tipo_deposito": tipo_deposito,
