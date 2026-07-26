@@ -3,15 +3,17 @@
 Implementa en pandas las fórmulas documentadas y verificadas dígito a dígito contra el
 Excel real en docs/indicadores_excel_bcos_coop.md — liquidez, morosidad (total y por
 segmento), cobertura, ROA/ROE (con promedio YTD), eficiencia — para los bancos privados
-del data mart, al corte más reciente disponible en data/samples/marts_full (o el que se
-indique con --fecha-id).
+del data mart, al corte más reciente disponible en data/samples/marts_ultimos_5_anios (o
+el que se indique con --fecha-id).
 
 Uso:
     python scripts/compute_indicadores_excel.py [--fecha-id 20260630]
 
-Requiere pandas + pyarrow (ver requirements.txt). Lee `data/samples/marts_full/` por
-defecto -- para correr contra Postgres real, reemplazar `rd_one`/`rd_years` por consultas
-a `marts.*` (o, mejor, usar directamente las vistas de sql/18_glosario_cuentas_views.sql,
+Requiere pandas + pyarrow (ver requirements.txt). Lee `data/samples/marts_ultimos_5_anios/`
+por defecto (2026-07-25: antes `marts_full/`, histórico completo -- reemplazado por la
+ventana de 5 años para no versionar ~394MB; el corte más reciente sigue estando ahí) --
+para correr contra Postgres real, reemplazar `rd_one`/`rd_years` por consultas a
+`marts.*` (o, mejor, usar directamente las vistas de sql/18_glosario_cuentas_views.sql,
 que implementan estos mismos bloques del lado de la base).
 """
 import argparse
@@ -21,7 +23,7 @@ from pathlib import Path
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = REPO_ROOT / "data" / "samples" / "marts_full"
+DATA_DIR = REPO_ROOT / "data" / "samples" / "marts_ultimos_5_anios"
 OUTPUT_DIR = Path(__file__).resolve().parent / "output"
 
 SEGMENTOS = ["PRODUCTIVO", "CONSUMO", "INMOBILIARIO", "MICROCR", "EDUCATIVO"]

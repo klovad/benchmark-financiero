@@ -360,8 +360,10 @@ simple.
 
 ## Evaluación de escalabilidad
 
-- **Volumen no es el riesgo**: ~336k filas en `fact_saldo_cartera`, ~229k en `fact_saldo_depositos`
-  (CAPCOL, 2021-2025); **~1.96M en `fact_captaciones_depositos` y ~4.87M en `fact_colocaciones_cartera`**
+- **Volumen no es el riesgo**: ~123k filas en `fact_saldo_cartera` (2026-07-25: pivotado
+  a columnas por estado, antes ~370k — ver `sql/21_fact_saldo_cartera_pivot.sql`), ~251k
+  en `fact_saldo_depositos` (CAPCOL, 2021-01 a 2026-06); **~1.96M en
+  `fact_captaciones_depositos` y ~4.87M en `fact_colocaciones_cartera`**
   (BCE semanal, histórico completo 2008-2026, sistema financiero completo — no solo
   bancos privados, ver `docs/gobernanza_datos.md`); ~2.18M en `fact_balance` y ~192k en
   `fact_pyg` (Boletín, 2021-2026). `raw.bce_tasas_pasivas`/`activas` son más grandes
@@ -409,7 +411,8 @@ sustituye abrirlo en Power BI Desktop, pero elimina la clase de error más comú
 - **5 páginas de reporte con visuales reales** (no solo el lienzo vacío):
   - **Overview y KPIs**: 4 tarjetas (`Saldo Cartera (Ultimo Mes)`, `Saldo Depositos
     (Ultimo Mes)`, `Morosidad % (Ultimo Mes)`, `HHI Cartera (Ultimo Mes)`) + línea de
-    tendencia mensual `Saldo Cartera`/`Saldo Depositos` 2021-2025.
+    tendencia mensual `Saldo Cartera`/`Saldo Depositos` (todo el rango cargado en
+    `marts.dim_fecha`, 2021-01 a 2026-06 a la fecha).
   - **Benchmark por Banco**: dos barras horizontales (cartera y depósitos del último mes
     por `dim_banco[banco]`).
   - **Análisis Geográfico**: dos barras horizontales por `dim_provincia[provincia]`

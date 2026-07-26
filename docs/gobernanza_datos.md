@@ -112,24 +112,26 @@ gobernanza (rol, cadencia, volumen conocido). Nombres de tabla actualizados 2026
 
 | Tabla | Rol | Cadencia de la fuente | Cobertura cargada | Volumen (última medición) |
 |---|---|---|---|---|
-| `dim_fecha` | Dimensión conformada, grano día | — | derivada del resto | — |
+| `dim_fecha` | Dimensión conformada, grano día | — | derivada del resto | 1.019 filas (medido 2026-07-25) |
 | `dim_banco` | Dimensión conformada | — | 2021–2026 | 442 (33 bancos privados curados + 409 entidades BCE auto-registradas por RUC — cooperativas, bancos públicos, mutualistas, sociedad financiera, tarjetas de crédito; medido 2026-07-19) |
-| `dim_canton` | Dimensión conformada | — | derivada de CAPCOL | — |
+| `dim_canton` | Dimensión conformada (2026-07-25: `provincia`/`region` texto → FK a `dim_provincia`) | — | derivada de CAPCOL | 132 filas (medido 2026-07-25) |
+| `dim_provincia` | Dimensión conformada, outrigger de `dim_canton` y de los hechos BCE semanales (nueva 2026-07-25, `sql/20`) | — | sembrada una vez | 26 filas (24 provincias + `ZONA NO DELIMITADA` + `S/N`) |
 | `dim_segmento_credito` | Catálogo, segmento normativo de crédito (nivel grueso — 2026-07-19: nombre reasignado, ver "Normalización de la segmentación de crédito" abajo) | — | sembrado una vez (`sql/16`) | 7 filas |
 | `dim_subsegmento_credito` (antes `dim_segmento_credito`) | Catálogo (universo BCE, no filtrado por entidad; nivel fino) | — | sembrado una vez (`sql/08`) | 26 filas |
+| `dim_segmento_entidad` | Catálogo, clasificación normativa de tamaño/estructura de la entidad (nueva 2026-07-25, `sql/19`) | — | sembrado una vez | 14 filas |
 | `dim_categoria_deposito` | Catálogo | — | sembrado una vez (`sql/08`) | 11 filas |
 | `dim_plazo` | Catálogo abierto, auto-descubierto | — | crece con cada fuente nueva | no fijo por diseño |
 | `dim_cuenta_contable` | Catálogo (Catálogo Único de Cuentas) | — | descubierto del Boletín | ~1500 cuentas (BALANCE+PYG, según comentario de `upsert_dim_cuenta_contable`) |
-| `fact_saldo_cartera` (antes `fact_cartera`) | Hecho, CAPCOL | Mensual | 2021-01 a 2025-12 | 336.030 filas (medido 2026-07-19) |
-| `fact_saldo_depositos` (antes `fact_depositos`) | Hecho, CAPCOL | Mensual | 2021-01 a 2025-12 | 229.034 filas (medido 2026-07-19, verificación CDC post-fix `sql/10`) |
-| `fact_captaciones_depositos` (antes `fact_tasas_pasivas`) | Hecho, BCE tsp — **sistema financiero completo**, no solo bancos privados | Semanal | 2008-01 a 2026 (histórico completo) | 1.956.386 filas (medido 2026-07-19, post-fix de filtro — 485.588 bancos privados + 1.470.798 resto del sistema) |
-| `fact_colocaciones_cartera` (antes `fact_tasas_activas`) | Hecho, BCE tsa — **sistema financiero completo**, no solo bancos privados | Semanal | 2008-01 a 2026 (histórico completo) | 4.869.696 filas (medido 2026-07-19, post-fix de filtro — 1.462.134 bancos privados + 3.407.562 resto del sistema) |
-| `fact_tasas_referenciales_cartera` (antes `fact_tasas_referenciales_credito`) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-04 a 2026-06 | 611 filas (medido 2026-07-19) |
-| `fact_tasas_referenciales_depositos_instrumento` (antes `fact_tasas_pasivas_instrumento`) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-04 a 2026-06 | 255 filas (medido 2026-07-19) |
-| `fact_tasas_referenciales_depositos_plazo` (antes `fact_tasas_pasivas_plazo`) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-04 a 2026-06 | 306 filas (medido 2026-07-19) |
-| `fact_tasas_referenciales_sistema` (sin cambio de nombre) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-04 a 2026-06 | 51 filas (medido 2026-07-19; ≤ 1 fila/mes por diseño, PK=`fecha_id`) |
-| `fact_balance` | Hecho, Boletín | Mensual | 2021-01 a 2026-06 | 2.180.784 filas (medido 2026-07-19) |
-| `fact_pyg` | Hecho, Boletín | Mensual | 2021-01 a 2026-06 | 192.489 filas (medido 2026-07-19) |
+| `fact_saldo_cartera` (antes `fact_cartera`) | Hecho, CAPCOL — 2026-07-25: `estado_cartera` pivotado a columnas (`saldo_por_vencer`/`saldo_no_devenga_intereses`/`saldo_vencida`/`saldo_total`), ver `sql/21` | Mensual | 2021-01 a 2026-06 | 123.322 filas (medido 2026-07-25, post-pivote — antes 369.966 con `estado_cartera` como fila) |
+| `fact_saldo_depositos` (antes `fact_depositos`) | Hecho, CAPCOL | Mensual | 2021-01 a 2026-06 | 251.247 filas (medido 2026-07-25) |
+| `fact_captaciones_depositos` (antes `fact_tasas_pasivas`) | Hecho, BCE tsp — **sistema financiero completo**, no solo bancos privados; `provincia_id`/`segmento_entidad_id` agregados 2026-07-25 (`sql/19`, `sql/20`) | Semanal | 2008-01 a 2026-07 (histórico completo) | 1.956.386 filas (medido 2026-07-25) |
+| `fact_colocaciones_cartera` (antes `fact_tasas_activas`) | Hecho, BCE tsa — **sistema financiero completo**, no solo bancos privados; `provincia_id`/`segmento_entidad_id` agregados 2026-07-25 (`sql/19`, `sql/20`) | Semanal | 2008-01 a 2026-07 (histórico completo) | 4.869.696 filas (medido 2026-07-25) |
+| `fact_tasas_referenciales_cartera` (antes `fact_tasas_referenciales_credito`) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-08 a 2026-06 | 611 filas (medido 2026-07-25) |
+| `fact_tasas_referenciales_depositos_instrumento` (antes `fact_tasas_pasivas_instrumento`) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-04 a 2026-06 | 255 filas (medido 2026-07-25) |
+| `fact_tasas_referenciales_depositos_plazo` (antes `fact_tasas_pasivas_plazo`) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-04 a 2026-06 | 306 filas (medido 2026-07-25) |
+| `fact_tasas_referenciales_sistema` (sin cambio de nombre) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-04 a 2026-06 | 51 filas (medido 2026-07-25; ≤ 1 fila/mes por diseño, PK=`fecha_id`) |
+| `fact_balance` | Hecho, Boletín | Mensual | 2021-01 a 2026-06 | 2.180.784 filas (medido 2026-07-25) |
+| `fact_pyg` | Hecho, Boletín | Mensual | 2021-01 a 2026-06 | 192.489 filas (medido 2026-07-25) |
 
 ## Renombrado de tablas de hechos (2026-07-19)
 
