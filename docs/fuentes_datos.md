@@ -18,7 +18,7 @@ investiga o integra una fuente nueva — es la referencia antes de rediseñar na
   (grano del archivo fuente/`staging.cartera`; `marts.fact_saldo_cartera` pivota
   `estado_cartera` a columnas desde 2026-07-25, ver `docs/data_dictionary.md`).
 - **Sin tasas de interés** (confirmado). Sin balance/PyG.
-- **Cargado**: `raw`/`staging`/`marts` en Postgres, 2021-2025, ver `docs/data_dictionary.md`.
+- **Cargado**: `raw`/`staging`/`marts` en Postgres, 2021-01 a 2026-06, ver `docs/data_dictionary.md`.
 
 ## 2. BCE — Tasas de interés activas y pasivas (semanal) — 🔎 en investigación
 

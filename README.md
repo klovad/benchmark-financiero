@@ -93,7 +93,7 @@ data/samples/          muestra de marts.* en Parquet (versionada) para probar si
 
 ## Alcance de los datos
 
-- **CAPCOL** (cartera/depósitos): bancos privados, 2021-01 a 2025-12, mensual. Cartera por
+- **CAPCOL** (cartera/depósitos): bancos privados, 2021-01 a 2026-06, mensual. Cartera por
   tipo de crédito (comercial, consumo, inmobiliario, microcrédito, vivienda de interés
   público, educativo) y estado (por vencer / no devenga intereses / vencida). Depósitos
   por categoría (monetarios, ahorro, plazo por rango de días, garantía, restringidos,

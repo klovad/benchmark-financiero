@@ -127,13 +127,13 @@ modelos predictivos en vez de recalcular market share/HHI desde los `fact_*` cad
 
 | Vista | Grano | Columnas | Fórmula |
 |---|---|---|---|
-| `marts.vw_cartera_market_share` | fecha × banco | `saldo_banco`, `saldo_total_mes`, `market_share_pct` | `SUM(saldo)` por banco sobre `fact_saldo_cartera`, y `market_share_pct = saldo_banco / SUM(saldo_banco) OVER (PARTITION BY fecha_id) * 100` |
+| `marts.vw_cartera_market_share` | fecha × banco | `saldo_banco`, `saldo_total_mes`, `market_share_pct` | `SUM(saldo_total)` por banco sobre `fact_saldo_cartera` (columna `saldo_total` desde 2026-07-25, antes `saldo` — ver `sql/21_fact_saldo_cartera_pivot.sql`), y `market_share_pct = saldo_banco / SUM(saldo_banco) OVER (PARTITION BY fecha_id) * 100` |
 | `marts.vw_cartera_hhi` | fecha | `hhi` | Índice Herfindahl-Hirschman: `SUM(market_share_pct^2)` sobre `vw_cartera_market_share`, redondeado a 2 decimales (rango teórico 0–10.000; > 2.500 se suele leer como mercado concentrado) |
 | `marts.vw_depositos_market_share` | fecha × banco | igual que `vw_cartera_market_share` | igual, sobre `fact_saldo_depositos` |
 | `marts.vw_depositos_hhi` | fecha | `hhi` | igual que `vw_cartera_hhi`, sobre `vw_depositos_market_share` |
 
 Ambas vistas de market share solo cubren CAPCOL (`fact_saldo_cartera`/`fact_saldo_depositos`,
-2021-2025) — no existe un equivalente para las tasas de BCE ni para el Boletín todavía.
+2021-01 a 2026-06) — no existe un equivalente para las tasas de BCE ni para el Boletín todavía.
 
 ### Vistas de bloques de construcción — Balance/PyG (`sql/18_glosario_cuentas_views.sql`)
 
@@ -158,16 +158,17 @@ fórmula; aquí solo el mapeo vista → bloque:
 No filtran por `tipo_entidad` (no hace falta: `fact_balance`/`fact_pyg` ya vienen
 solo-privados por diseño del Boletín). Escritas siguiendo la misma lógica de
 [`scripts/compute_indicadores_excel.py`](../scripts/compute_indicadores_excel.py) (motor de
-referencia en pandas, corrido y verificado contra `data/samples/marts_full`), pero **las
+referencia en pandas, corrido y verificado contra `data/samples/marts_ultimos_5_anios`
+-- antes `marts_full`, ver `data/samples/README.md`), pero **las
 vistas SQL en sí no se ejecutaron todavía contra una instancia Postgres real** — validar
 sintaxis en el primer uso real.
 
 ## Decisiones de modelado relevantes
 - **Identidad de banco resuelta en ETL, no con tabla de alias en el esquema estrella**: `etl/transform/banco_matching.py` normaliza y resuelve `banco_codigo` antes de `staging.*`; `dim_banco` se puebla desde `staging.banco_maestro` (sembrado desde `etl/seeds/banco_maestro.csv`).
 - **Carga incremental por hash (CDC), no full refresh**: `staging.*` y `marts.*` tienen `fecha_carga`/`fecha_actualizacion`/`row_hash` (columna `GENERATED ALWAYS AS`); `fecha_actualizacion` solo se mueve si el dato realmente cambió. Ver `docs/architecture.md`.
-- **Índices únicos NULL-safe**: cualquier `UNIQUE`/`ON CONFLICT` sobre una columna nullable (`dias_hasta`, `plazo_id`, `provincia`) usa `COALESCE(col, sentinela)` — Postgres trata `NULL <> NULL` incluso bajo `UNIQUE`, lo que causó un bug real de filas duplicadas (`dim_plazo`/`fact_depositos`) corregido en `sql/10_fix_null_unique_constraints.sql`.
+- **Índices únicos NULL-safe**: cualquier `UNIQUE`/`ON CONFLICT` sobre una columna nullable (`dias_hasta`, `plazo_id`, `provincia_id`, `canton_id`) usa `COALESCE(col, sentinela)` — Postgres trata `NULL <> NULL` incluso bajo `UNIQUE`, lo que causó un bug real de filas duplicadas (`dim_plazo`/`fact_depositos`) corregido en `sql/10_fix_null_unique_constraints.sql`.
 - **Sin EAV en `marts`**: cada fuente de tasas tiene su propia tabla ancha con una columna por métrica real, en vez de una tabla genérica "tipo/valor". La única tabla "larga" es `staging.tasas_referenciales` (aterrizaje de las 5 secciones de `TasasHistorico.htm`, grano heterogéneo) — se ensancha a las 4 tablas de marts en `refresh_marts()`.
 - **Indicadores financieros no se cargan como tabla**: son ratios recalculables desde `fact_balance`/`fact_pyg` (ver `docs/metricas_financieras.md`); cargarlos aparte arriesgaría reproducir la fórmula oficial de Superbancos distinto.
 - **Alcance por fuente, no uniforme**: CAPCOL (`fact_saldo_cartera`/`fact_saldo_depositos`) y Boletín (`fact_balance`/`fact_pyg`) siguen filtrados a bancos privados en el `WHERE`/portal de origen. BCE (`fact_colocaciones_cartera`/`fact_captaciones_depositos`) **ya no se filtra** (corregido 2026-07-19) — cubre el sistema financiero completo, 442 entidades en `dim_banco`. Los catálogos (`dim_subsegmento_credito`, `dim_categoria_deposito`) siempre guardaron el universo completo sin filtrar.
 - **`dim_segmento_credito`/`dim_subsegmento_credito`: jerarquía normativa de 2 niveles, no un rollup de texto libre** (2026-07-19): el segmento grueso (7 valores) y el subsegmento fino de BCE (26 valores) son dos dimensiones separadas unidas por FK — antes había una sola tabla con el rollup a CAPCOL como columna `TEXT` nullable, sin garantía de que coincidiera con `fact_cartera.tipo_credito` (también texto libre). `fact_saldo_cartera` (CAPCOL, solo reporta al nivel grueso) ahora referencia `dim_segmento_credito` directo; `fact_colocaciones_cartera`/`fact_tasas_referenciales_cartera` (BCE, reportan al nivel fino) referencian `dim_subsegmento_credito`. Ver `sql/16_dim_segmento_normativo.sql`.
-- **Cobertura cargada** (2026-07): CAPCOL 2021-2025; BCE tsp/tsa 2008-2026 (semanal, histórico completo); `TasasHistorico.htm` 2022-04 a 2026-06 (páginas anteriores usan un layout HTML no soportado); Boletín BALANCE/PYG 2021-01 a 2026-06.
+- **Cobertura cargada** (2026-07): CAPCOL 2021-01 a 2026-06; BCE tsp/tsa 2008-2026 (semanal, histórico completo); `TasasHistorico.htm` 2022-04 a 2026-06 (páginas anteriores usan un layout HTML no soportado); Boletín BALANCE/PYG 2021-01 a 2026-06.
