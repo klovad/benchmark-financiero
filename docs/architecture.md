@@ -23,7 +23,7 @@ raw.cartera / raw.depositos      raw.bce_tasas_pasivas/activas    raw.tasas_refe
 staging.*   (tipado, banco_codigo/categoria/segmento ya resueltos, columnas fecha_carga/fecha_actualizacion/row_hash)
         │  refresh_marts() (SQL puro, INSERT...SELECT...ON CONFLICT, idempotente)
         ▼
-marts.dim_* / marts.fact_*   (esquema estrella conformado — 5 dimensiones + 9 tablas de hechos)
+marts.dim_* / marts.fact_*   (esquema estrella conformado — 10 dimensiones + 10 tablas de hechos)
         │
         ▼
 Power BI (.pbip, Import desde Postgres)
@@ -31,11 +31,13 @@ Power BI (.pbip, Import desde Postgres)
 
 ## Modelo de datos (esquema estrella)
 
-8 dimensiones y 10 tablas de hechos en `marts.*`, resultado final del flujo anterior.
+10 dimensiones y 10 tablas de hechos en `marts.*`, resultado final del flujo anterior.
 `dim_fecha`/`dim_banco` son compartidas por casi todas las fuentes; `dim_canton`,
-`dim_segmento_credito`, `dim_subsegmento_credito`, `dim_categoria_deposito`, `dim_plazo`
-y `dim_cuenta_contable` son compartidas solo por las fuentes que las necesitan (ver
-"Catálogos conformados" abajo). Detalle de cada columna en `docs/data_dictionary.md`.
+`dim_provincia`, `dim_segmento_credito`, `dim_subsegmento_credito`, `dim_segmento_entidad`,
+`dim_categoria_deposito`, `dim_plazo` y `dim_cuenta_contable` son compartidas solo por las
+fuentes que las necesitan (ver "Catálogos conformados" abajo). `dim_provincia` y
+`dim_segmento_entidad` (2026-07-25) son outriggers de `dim_canton`/`dim_banco`
+respectivamente. Detalle de cada columna en `docs/data_dictionary.md`.
 
 ```mermaid
 erDiagram
@@ -53,12 +55,21 @@ erDiagram
         string banco
         string tipo_entidad
         string ruc
+        int segmento_entidad_id FK
+    }
+    dim_provincia {
+        int provincia_id PK
+        string provincia
+        string region
     }
     dim_canton {
         int canton_id PK
         string canton
-        string provincia
-        string region
+        int provincia_id FK
+    }
+    dim_segmento_entidad {
+        int segmento_entidad_id PK
+        string tipo_segmento
     }
     dim_segmento_credito {
         int segmento_id PK
@@ -113,7 +124,8 @@ erDiagram
         int banco_id FK
         int categoria_deposito_id FK
         int plazo_id FK
-        string provincia
+        int provincia_id FK
+        int segmento_entidad_id FK
         numeric monto_total
         numeric tasa_pasiva_efectiva
     }
@@ -122,7 +134,8 @@ erDiagram
         int banco_id FK
         int subsegmento_id FK
         int plazo_id FK
-        string provincia
+        int provincia_id FK
+        int segmento_entidad_id FK
         numeric monto_total
         numeric tasa_activa_efectiva
     }
@@ -177,6 +190,13 @@ erDiagram
     dim_banco ||--o{ fact_colocaciones_cartera : banco_id
     dim_banco ||--o{ fact_balance : banco_id
     dim_banco ||--o{ fact_pyg : banco_id
+    dim_segmento_entidad ||--o{ dim_banco : segmento_entidad_id
+    dim_segmento_entidad ||--o{ fact_captaciones_depositos : segmento_entidad_id
+    dim_segmento_entidad ||--o{ fact_colocaciones_cartera : segmento_entidad_id
+
+    dim_provincia ||--o{ dim_canton : provincia_id
+    dim_provincia ||--o{ fact_captaciones_depositos : provincia_id
+    dim_provincia ||--o{ fact_colocaciones_cartera : provincia_id
 
     dim_canton ||--o{ fact_saldo_cartera : canton_id
     dim_canton ||--o{ fact_saldo_depositos : canton_id
@@ -381,16 +401,18 @@ referenciado en un visual se verificó contra las medidas/columnas reales del TM
 sustituye abrirlo en Power BI Desktop, pero elimina la clase de error más común (URLs de
 `$schema` desactualizadas, campos requeridos faltantes, nombres de medida mal escritos).
 
-- **Modelo semántico completo**: 7 tablas conectadas a Postgres (`marts.*`), relaciones
-  fact→dim, 17 medidas DAX (saldo, saldo "último mes", morosidad, market share, HHI,
-  variación m/m y a/a, ratio cartera/depósitos).
+- **Modelo semántico completo**: 8 tablas conectadas a Postgres (`marts.*`, incluye
+  `dim_provincia` desde 2026-07-25), relaciones fact→dim, 17 medidas DAX (saldo, saldo
+  "último mes", morosidad, market share, HHI, variación m/m y a/a, ratio cartera/depósitos).
 - **5 páginas de reporte con visuales reales** (no solo el lienzo vacío):
   - **Overview y KPIs**: 4 tarjetas (`Saldo Cartera (Ultimo Mes)`, `Saldo Depositos
     (Ultimo Mes)`, `Morosidad % (Ultimo Mes)`, `HHI Cartera (Ultimo Mes)`) + línea de
     tendencia mensual `Saldo Cartera`/`Saldo Depositos` 2021-2025.
   - **Benchmark por Banco**: dos barras horizontales (cartera y depósitos del último mes
     por `dim_banco[banco]`).
-  - **Análisis Geográfico**: dos barras horizontales por `dim_canton[provincia]`.
+  - **Análisis Geográfico**: dos barras horizontales por `dim_provincia[provincia]`
+    (2026-07-25: antes `dim_canton[provincia]`, columna movida a `dim_provincia` al
+    normalizar — ver "Normalización de provincia" en `docs/gobernanza_datos.md`).
   - **Tendencias y Estacionalidad**: línea de `Saldo Cartera` por mes, una serie por año
     (`dim_fecha[anio]` como leyenda) para ver estacionalidad.
   - **Correlación Cartera vs Depósitos**: tabla por banco con saldo de cartera, saldo de

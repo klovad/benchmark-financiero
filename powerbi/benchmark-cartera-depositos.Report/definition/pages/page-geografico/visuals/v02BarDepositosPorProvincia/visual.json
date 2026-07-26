@@ -20,13 +20,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "dim_canton"
+                      "Entity": "dim_provincia"
                     }
                   },
                   "Property": "provincia"
                 }
               },
-              "queryRef": "dim_canton.provincia",
+              "queryRef": "dim_provincia.provincia",
               "nativeQueryRef": "provincia",
               "active": true
             }

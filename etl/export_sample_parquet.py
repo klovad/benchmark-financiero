@@ -4,9 +4,10 @@ lo que sea) sin tener Postgres cargado -- ej. en otra sesión/máquina donde el 
 todavía no corrió.
 
 Dos modos:
-- Muestra de un mes (default): los 7 catálogos pequeños (dim_banco, dim_canton,
-  dim_segmento_credito, dim_subsegmento_credito, dim_categoria_deposito, dim_plazo,
-  dim_cuenta_contable) se exportan completos -- no tiene sentido recortarlos por mes, y
+- Muestra de un mes (default): los 9 catálogos pequeños (dim_banco, dim_canton,
+  dim_provincia, dim_segmento_credito, dim_subsegmento_credito, dim_segmento_entidad,
+  dim_categoria_deposito, dim_plazo, dim_cuenta_contable) se exportan completos -- no
+  tiene sentido recortarlos por mes, y
   los hechos filtrados necesitan el catálogo completo para resolver sus FK. dim_fecha se
   exporta acotada a las fechas que realmente aparecen en los hechos filtrados (mantiene
   el sample chico y autocontenido). Las 10 tablas de hechos se filtran por (anio, mes)
@@ -36,8 +37,10 @@ log = logging.getLogger(__name__)
 CATALOGOS_COMPLETOS = [
     "dim_banco",
     "dim_canton",
+    "dim_provincia",
     "dim_segmento_credito",
     "dim_subsegmento_credito",
+    "dim_segmento_entidad",
     "dim_categoria_deposito",
     "dim_plazo",
     "dim_cuenta_contable",

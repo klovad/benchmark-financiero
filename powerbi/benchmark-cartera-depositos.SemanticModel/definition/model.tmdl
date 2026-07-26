@@ -6,7 +6,7 @@ model Model
 		legacyRedirects
 		returnErrorValuesAsNull
 
-annotation PBI_QueryOrder = ["dim_fecha", "dim_banco", "dim_canton", "dim_segmento_credito", "dim_categoria_deposito", "dim_plazo", "fact_saldo_cartera", "fact_saldo_depositos"]
+annotation PBI_QueryOrder = ["dim_fecha", "dim_banco", "dim_canton", "dim_provincia", "dim_segmento_credito", "dim_categoria_deposito", "dim_plazo", "fact_saldo_cartera", "fact_saldo_depositos"]
 
 annotation __PBI_TimeIntelligenceEnabled = 1
 
@@ -15,6 +15,7 @@ annotation PBI_ProTooling = ["DevMode"]
 ref table dim_fecha
 ref table dim_banco
 ref table dim_canton
+ref table dim_provincia
 ref table dim_segmento_credito
 ref table dim_categoria_deposito
 ref table dim_plazo

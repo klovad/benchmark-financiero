@@ -14,17 +14,13 @@ table dim_canton
 		summarizeBy: none
 		sourceColumn: canton
 
-	column provincia
-		dataType: string
+	column provincia_id
+		dataType: int64
+		isHidden
+		formatString: 0
 		lineageTag: 10000000-0000-0000-0000-000000000023
 		summarizeBy: none
-		sourceColumn: provincia
-
-	column region
-		dataType: string
-		lineageTag: 10000000-0000-0000-0000-000000000024
-		summarizeBy: none
-		sourceColumn: region
+		sourceColumn: provincia_id
 
 	partition dim_canton = m
 		mode: import

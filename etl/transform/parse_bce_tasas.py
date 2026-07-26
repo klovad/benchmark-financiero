@@ -25,6 +25,20 @@ categoria/segmento, plazo, provincia) -- SIN canton. El archivo trae canton como
 más fino dentro de cada provincia (confirmado: ej. GUAYAS tiene más filas que solo
 GUAYAQUIL), así que hay que reagregar: montos y operaciones se SUMAN, las tasas se
 promedian PONDERADAS por monto_total de cada fila (no un promedio simple entre cantones).
+
+`tipo_segmento` (columna original, ver docs/fuentes_datos.md) es la clasificación
+normativa de tamaño/estructura de CADA entidad -- BANCO GRANDE/MEDIANO/PEQUEÑO para
+bancos privados, SEGMENTO 1-5/SIN SEGMENTO para cooperativas (JPRF, umbrales por
+activos), SEGMENTO 1 MUTUALISTA para mutualistas, una sola categoría para el resto.
+Detectada 2026-07-25 (el usuario preguntó dónde se había considerado -- no se había
+considerado: se preservaba en raw.* pero se descartaba antes de staging sin examinar su
+contenido). Es un atributo de la ENTIDAD en esa fecha, no del instrumento/segmento de
+crédito -- se resuelve una sola vez por (fecha, banco_codigo) ANTES de la agregación por
+provincia (`_resolve_segmento_entidad`), no se incluye en el group_cols de
+`_weighted_agg` para no multiplicar filas. Es estable dentro de (fecha, banco_codigo) en
+la inmensa mayoría de los casos; en los pocos donde no lo es (~1 en un millón de filas,
+verificado), se resuelve por la fila de mayor monto_total, mismo criterio de
+ponderación que ya se usa para las tasas.
 """
 
 import zipfile
@@ -36,7 +50,7 @@ import pandas as pd
 from etl.transform.banco_matching import resolver_entidad_bce
 from etl.transform.bce_plazo_matching import resolver_plazo_bce
 from etl.transform.categoria_deposito_matching import CATEGORIAS_VALIDAS
-from etl.transform.common import normalize_text, sha256_file
+from etl.transform.common import normalize_provincia, sha256_file
 
 CHUNK_SIZE = 300_000
 
@@ -56,6 +70,20 @@ SEGMENTOS_VALIDOS = {
     "PRODUCTIVO PYMES", "VIVIENDA", "VIVIENDA DE INTERÉS PÚBLICO", "VIVIENDA DE INTERÉS SOCIAL",
 }
 
+# Universo completo de tipo_segmento (= clasificación normativa de tamaño/estructura de
+# la ENTIDAD, distinta de segmento_credito que clasifica el PRODUCTO). Verificado
+# 2026-07-25 leyendo tsp y tsa completos, sin filtrar por tipo_entidad -- idéntico
+# universo en ambos archivos, 14 valores. Cooperativas: JPRF-F-2023-074 (segmentación
+# por activos, seps.gob.ec). Bancos privados: Superbancos ya usa este tier en las
+# columnas de agregado del Boletín (BANCOS PRIVADOS GRANDES/MEDIANOS/PEQUEÑOS), pero acá
+# es la primera vez que se ve etiquetado por banco individual -- ver dim_segmento_entidad.
+TIPOS_SEGMENTO_VALIDOS = {
+    "BANCO GRANDE", "BANCO MEDIANO", "BANCO PEQUEÑO", "BANCOS PUBLICOS",
+    "SEGMENTO 1", "SEGMENTO 2", "SEGMENTO 3", "SEGMENTO 4", "SEGMENTO 5", "SIN SEGMENTO",
+    "SEGMENTO 1 MUTUALISTA", "MUTUALISTAS",
+    "SOCIEDAD FINANCIERA", "ADMINISTRADORA DE TARJETAS DE CREDITO",
+}
+
 # Columnas originales de la fuente (+ fecha derivada de semana) para raw.bce_tasas_*.
 # Deliberadamente SIN agregar ni resolver identidad -- eso es trabajo de staging.
 RAW_TSP_COLS = [
@@ -72,6 +100,18 @@ RAW_TSA_COLS = [
 
 class SegmentoNoResueltoError(ValueError):
     """segmento_credito de tsa no está en el universo sembrado de dim_subsegmento_credito."""
+
+
+class TipoSegmentoNoResueltoError(ValueError):
+    """tipo_segmento no está en el universo sembrado de dim_segmento_entidad."""
+
+
+def _resolve_segmento_entidad(df: pd.DataFrame) -> pd.DataFrame:
+    """Un tipo_segmento por (fecha, banco_codigo) -- atributo de la entidad, no del
+    instrumento/plazo/provincia de cada fila. Estable en casi todos los casos; cuando no
+    (raro, ver docstring del módulo), gana la fila de mayor monto_total."""
+    idx = df.groupby(["fecha", "banco_codigo"])["monto_total"].idxmax()
+    return df.loc[idx, ["fecha", "banco_codigo", "tipo_segmento"]].reset_index(drop=True)
 
 
 def _single_csv_in_zip(zip_path: Path) -> str:
@@ -149,7 +189,7 @@ def _resolve_identidad(df: pd.DataFrame) -> tuple[pd.DataFrame, list[tuple[str, 
 def _add_common_columns(df: pd.DataFrame) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
     df = df.copy()
     df, entidades = _resolve_identidad(df)
-    df["provincia"] = df["provincia"].apply(normalize_text)
+    df["provincia"] = df["provincia"].apply(normalize_provincia)
     df["plazo_codigo"] = df["plazo"]
     plazo_lookup = {v: resolver_plazo_bce(v) for v in df["plazo"].unique()}
     df["plazo_dias_desde"] = df["plazo"].map(lambda v: plazo_lookup[v][0])
@@ -171,11 +211,18 @@ def parse_tsp_file(zip_path: Path, df_raw: pd.DataFrame | None = None) -> tuple[
         raise ValueError(f"instrumento_captacion desconocido en tsp: {desconocidas}")
     df["categoria_deposito"] = categorias
 
+    df["tipo_segmento"] = df["tipo_segmento"].str.strip().str.upper()
+    desconocidos_seg = set(df["tipo_segmento"].unique()) - TIPOS_SEGMENTO_VALIDOS
+    if desconocidos_seg:
+        raise TipoSegmentoNoResueltoError(f"tipo_segmento desconocido en tsp: {desconocidos_seg}")
+    segmento_entidad = _resolve_segmento_entidad(df)
+
     group_cols = [
         "fecha", "banco_codigo", "categoria_deposito",
         "plazo_dias_desde", "plazo_dias_hasta", "plazo_codigo", "provincia",
     ]
     result = _weighted_agg(df, group_cols, ["tasa_pasiva_efectiva", "tasa_nominal"])
+    result = result.merge(segmento_entidad, on=["fecha", "banco_codigo"], how="left")
     result["source_file"] = zip_path.name
     result["source_hash"] = source_hash
     return result, entidades
@@ -193,11 +240,18 @@ def parse_tsa_file(zip_path: Path, df_raw: pd.DataFrame | None = None) -> tuple[
         raise SegmentoNoResueltoError(f"segmento_credito desconocido en tsa: {desconocidos}")
     df["segmento_credito"] = segmentos
 
+    df["tipo_segmento"] = df["tipo_segmento"].str.strip().str.upper()
+    desconocidos_seg = set(df["tipo_segmento"].unique()) - TIPOS_SEGMENTO_VALIDOS
+    if desconocidos_seg:
+        raise TipoSegmentoNoResueltoError(f"tipo_segmento desconocido en tsa: {desconocidos_seg}")
+    segmento_entidad = _resolve_segmento_entidad(df)
+
     group_cols = [
         "fecha", "banco_codigo", "segmento_credito",
         "plazo_dias_desde", "plazo_dias_hasta", "plazo_codigo", "provincia",
     ]
     result = _weighted_agg(df, group_cols, ["tasa_activa_efectiva", "tasa_nominal"])
+    result = result.merge(segmento_entidad, on=["fecha", "banco_codigo"], how="left")
     result["source_file"] = zip_path.name
     result["source_hash"] = source_hash
     return result, entidades

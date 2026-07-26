@@ -252,12 +252,12 @@ def _upsert_bce_via_temp(conn, df: pd.DataFrame, table: str, cols: list[str], ke
 _BCE_TASAS_PASIVAS_COLS = [
     "fecha", "banco_codigo", "categoria_deposito", "plazo_dias_desde", "plazo_dias_hasta",
     "plazo_codigo", "provincia", "monto_total", "numero_operaciones",
-    "tasa_pasiva_efectiva", "tasa_nominal", "source_file",
+    "tasa_pasiva_efectiva", "tasa_nominal", "tipo_segmento", "source_file",
 ]
 _BCE_TASAS_ACTIVAS_COLS = [
     "fecha", "banco_codigo", "segmento_credito", "plazo_dias_desde", "plazo_dias_hasta",
     "plazo_codigo", "provincia", "monto_total", "numero_operaciones",
-    "tasa_activa_efectiva", "tasa_nominal", "source_file",
+    "tasa_activa_efectiva", "tasa_nominal", "tipo_segmento", "source_file",
 ]
 
 
@@ -429,14 +429,18 @@ ON CONFLICT (banco_codigo) DO UPDATE SET
     banco = EXCLUDED.banco, tipo_entidad = EXCLUDED.tipo_entidad, ruc = EXCLUDED.ruc, fecha_actualizacion = now()
 WHERE marts.dim_banco.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
-INSERT INTO marts.dim_canton (canton, provincia, region)
-SELECT DISTINCT canton, provincia, region FROM (
-    SELECT canton, provincia, region FROM staging.cartera
+-- translate() en vez de igualdad exacta: CAPCOL no es 100% consistente en su propia
+-- ortografía sin tilde (ver sql/20_dim_provincia.sql) -- normalize_provincia() en Python
+-- ya homologa las filas nuevas, esto es una red de seguridad adicional en SQL.
+INSERT INTO marts.dim_canton (canton, provincia_id)
+SELECT DISTINCT c.canton, dp.provincia_id FROM (
+    SELECT canton, provincia FROM staging.cartera
     UNION
-    SELECT canton, provincia, region FROM staging.depositos
+    SELECT canton, provincia FROM staging.depositos
 ) c
-WHERE canton IS NOT NULL
-ON CONFLICT (canton, provincia) DO NOTHING;
+JOIN marts.dim_provincia dp ON dp.provincia = translate(c.provincia, 'ÁÉÍÓÚ', 'AEIOU')
+WHERE c.canton IS NOT NULL
+ON CONFLICT (canton, provincia_id) DO NOTHING;
 
 -- dim_plazo: catálogo abierto por rango numérico, auto-descubierto desde cada fuente.
 -- No se fuerza una equivalencia falsa entre esquemas de plazo que no calzan entre
@@ -474,7 +478,8 @@ SELECT
     s.saldo
 FROM staging.cartera s
 JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
-LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia = s.provincia
+LEFT JOIN marts.dim_provincia dp ON dp.provincia = translate(s.provincia, 'ÁÉÍÓÚ', 'AEIOU')
+LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia_id = dp.provincia_id
 JOIN marts.dim_segmento_credito sg ON sg.segmento = CASE s.tipo_credito
     WHEN 'comercial' THEN 'PRODUCTIVO'
     WHEN 'consumo' THEN 'CONSUMO'
@@ -500,7 +505,8 @@ SELECT
     s.numero_cuentas
 FROM staging.depositos s
 JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
-LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia = s.provincia
+LEFT JOIN marts.dim_provincia dp ON dp.provincia = translate(s.provincia, 'ÁÉÍÓÚ', 'AEIOU')
+LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia_id = dp.provincia_id
 JOIN marts.dim_categoria_deposito cd ON cd.categoria = s.categoria_deposito
 LEFT JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
     AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
@@ -513,54 +519,80 @@ DO UPDATE SET saldo = EXCLUDED.saldo,
 WHERE marts.fact_saldo_depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
 INSERT INTO marts.fact_captaciones_depositos
-    (fecha_id, banco_id, categoria_deposito_id, plazo_id, provincia, monto_total, numero_operaciones, tasa_pasiva_efectiva, tasa_nominal)
+    (fecha_id, banco_id, categoria_deposito_id, plazo_id, provincia_id, monto_total, numero_operaciones, tasa_pasiva_efectiva, tasa_nominal, segmento_entidad_id)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     b.banco_id,
     cd.categoria_deposito_id,
     pl.plazo_id,
-    s.provincia,
+    dp.provincia_id,
     s.monto_total,
     s.numero_operaciones,
     s.tasa_pasiva_efectiva,
-    s.tasa_nominal
+    s.tasa_nominal,
+    se.segmento_entidad_id
 FROM staging.bce_tasas_pasivas s
 JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
 JOIN marts.dim_categoria_deposito cd ON cd.categoria = s.categoria_deposito
 JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
     AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
-ON CONFLICT (fecha_id, banco_id, categoria_deposito_id, plazo_id, COALESCE(provincia, ''))
+LEFT JOIN marts.dim_provincia dp ON dp.provincia = s.provincia
+LEFT JOIN marts.dim_segmento_entidad se ON se.tipo_segmento = s.tipo_segmento
+ON CONFLICT (fecha_id, banco_id, categoria_deposito_id, plazo_id, COALESCE(provincia_id, -1))
 DO UPDATE SET monto_total = EXCLUDED.monto_total,
               numero_operaciones = EXCLUDED.numero_operaciones,
               tasa_pasiva_efectiva = EXCLUDED.tasa_pasiva_efectiva,
               tasa_nominal = EXCLUDED.tasa_nominal,
+              segmento_entidad_id = EXCLUDED.segmento_entidad_id,
               fecha_actualizacion = now()
 WHERE marts.fact_captaciones_depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
 INSERT INTO marts.fact_colocaciones_cartera
-    (fecha_id, banco_id, subsegmento_id, plazo_id, provincia, monto_total, numero_operaciones, tasa_activa_efectiva, tasa_nominal)
+    (fecha_id, banco_id, subsegmento_id, plazo_id, provincia_id, monto_total, numero_operaciones, tasa_activa_efectiva, tasa_nominal, segmento_entidad_id)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     b.banco_id,
     sg.subsegmento_id,
     pl.plazo_id,
-    s.provincia,
+    dp.provincia_id,
     s.monto_total,
     s.numero_operaciones,
     s.tasa_activa_efectiva,
-    s.tasa_nominal
+    s.tasa_nominal,
+    se.segmento_entidad_id
 FROM staging.bce_tasas_activas s
 JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
 JOIN marts.dim_subsegmento_credito sg ON sg.subsegmento = s.segmento_credito
 JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
     AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
-ON CONFLICT (fecha_id, banco_id, subsegmento_id, plazo_id, COALESCE(provincia, ''))
+LEFT JOIN marts.dim_provincia dp ON dp.provincia = s.provincia
+LEFT JOIN marts.dim_segmento_entidad se ON se.tipo_segmento = s.tipo_segmento
+ON CONFLICT (fecha_id, banco_id, subsegmento_id, plazo_id, COALESCE(provincia_id, -1))
 DO UPDATE SET monto_total = EXCLUDED.monto_total,
               numero_operaciones = EXCLUDED.numero_operaciones,
               tasa_activa_efectiva = EXCLUDED.tasa_activa_efectiva,
               tasa_nominal = EXCLUDED.tasa_nominal,
+              segmento_entidad_id = EXCLUDED.segmento_entidad_id,
               fecha_actualizacion = now()
 WHERE marts.fact_colocaciones_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+
+-- dim_banco.segmento_entidad_id: conveniencia con la ÚLTIMA clasificación conocida (SCD
+-- tipo 1) para análisis puntuales contra la situación actual, sin tener que ir a buscar
+-- la fila más reciente en los hechos semanales. Se resuelve tomando la fecha más
+-- reciente entre AMBOS hechos BCE (un banco puede aparecer solo en tsp o solo en tsa).
+UPDATE marts.dim_banco b
+SET segmento_entidad_id = latest.segmento_entidad_id, fecha_actualizacion = now()
+FROM (
+    SELECT DISTINCT ON (banco_id) banco_id, segmento_entidad_id
+    FROM (
+        SELECT banco_id, fecha_id, segmento_entidad_id FROM marts.fact_captaciones_depositos WHERE segmento_entidad_id IS NOT NULL
+        UNION ALL
+        SELECT banco_id, fecha_id, segmento_entidad_id FROM marts.fact_colocaciones_cartera WHERE segmento_entidad_id IS NOT NULL
+    ) x
+    ORDER BY banco_id, fecha_id DESC
+) latest
+WHERE b.banco_id = latest.banco_id
+  AND b.row_hash IS DISTINCT FROM md5(b.banco || '|' || b.tipo_entidad || '|' || COALESCE(b.ruc, '') || '|' || COALESCE(latest.segmento_entidad_id::text, ''));
 
 -- TasasHistorico.htm: 4 tablas anchas, una por sección real (activa_maxima +
 -- activa_referencial comparten grano segmento -> misma tabla). staging.tasas_referenciales

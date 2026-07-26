@@ -54,6 +54,21 @@ def normalize_banco(value) -> str | None:
     return normalize_text(value)
 
 
+def normalize_provincia(value) -> str | None:
+    """CAPCOL escribe provincias sin tilde (BOLIVAR, GALAPAGOS, LOS RIOS...) pero SÍ
+    conserva la Ñ (CAÑAR); BCE trae las mismas provincias con tilde (BOLÍVAR, GALÁPAGOS).
+    marts.dim_provincia usa la convención de CAPCOL (histórico, más largo) como canónica
+    -- así que se quita solo el acento agudo (U+0301) tras descomponer NFKD, NO cualquier
+    marca combinante, para no perder la Ñ (que en NFKD es N + tilde combinante U+0303,
+    una marca distinta)."""
+    text = normalize_text(value)
+    if text is None:
+        return None
+    decomposed = unicodedata.normalize("NFKD", text)
+    sin_agudo = "".join(c for c in decomposed if c != "́")
+    return unicodedata.normalize("NFC", sin_agudo)
+
+
 _PROVINCIA_REGION_NORM = {_strip_accents(k): v for k, v in PROVINCIA_REGION.items()}
 
 
