@@ -14,7 +14,9 @@ investiga o integra una fuente nueva — es la referencia antes de rediseñar na
   ZIP → Excel con hoja(s) `BASE ...`. Un archivo de cartera por segmento (excepto
   "Vivienda", que trae 2 hojas BASE). Un archivo de depósitos por año con todos los
   tipos.
-- **Grano**: mensual, por banco x cantón x tipo_credito/tipo_deposito x estado_cartera.
+- **Grano**: mensual, por banco x cantón x tipo_credito/tipo_deposito x estado_cartera
+  (grano del archivo fuente/`staging.cartera`; `marts.fact_saldo_cartera` pivota
+  `estado_cartera` a columnas desde 2026-07-25, ver `docs/data_dictionary.md`).
 - **Sin tasas de interés** (confirmado). Sin balance/PyG.
 - **Cargado**: `raw`/`staging`/`marts` en Postgres, 2021-2025, ver `docs/data_dictionary.md`.
 

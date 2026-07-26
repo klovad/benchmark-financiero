@@ -82,10 +82,10 @@ captación (siempre); **saldo_** = medida de balance (CAPCOL, mensual); **coloca
 = techo/referencial a nivel sistema (BCE mensual, `TasasHistorico`). Nombre anterior
 entre paréntesis en cada tabla, para quien busque referencias viejas.
 
-### marts.fact_saldo_cartera (antes `fact_cartera`) — grano: fecha × banco × cantón × segmento × estado_cartera — CAPCOL, mensual
-| saldo | numeric | Saldo en USD |
+### marts.fact_saldo_cartera (antes `fact_cartera`) — grano: fecha × banco × cantón × segmento — CAPCOL, mensual
 | segmento_id | int, FK | `dim_segmento_credito.segmento_id` (nivel grueso — CAPCOL nunca trae el sub-segmento fino de BCE). Hasta 2026-07-19 esta columna era `tipo_credito` (texto libre, sin FK); pasó a estar normalizada contra el mismo catálogo normativo que usan los hechos de BCE en vez de duplicar el nombre del segmento como texto suelto — ver `sql/16_dim_segmento_normativo.sql` |
-| estado_cartera | text | Dimensión degenerada (columna directa, sin FK — solo 3 valores fijos: por_vencer/no_devenga_intereses/vencida) |
+| saldo_por_vencer, saldo_no_devenga_intereses, saldo_vencida | numeric | Saldo en USD por estado de cartera. **2026-07-25** (`sql/21_fact_saldo_cartera_pivot.sql`): antes `estado_cartera` era una dimensión degenerada partiendo el saldo en 3 filas por combinación de `(fecha, banco, cantón, segmento)` — un antipatrón EAV, no una dimensión real (los 3 estados son medidas mutuamente excluyentes del mismo hecho, siempre presentes juntas). Pivotado a 3 columnas, mismo criterio que ya usaba `fact_tasas_referenciales_cartera` (2 columnas de medida en vez de "tipo_tasa"+"valor"). El grano pasó de 369.966 a 123.322 filas (÷3, exacto — no había combinaciones con menos de 3 estados) |
+| saldo_total | numeric, `GENERATED ALWAYS AS (...) STORED` | Suma de los 3 — una sola fuente de verdad, no algo que el ETL deba mantener sincronizado (mismo patrón que `row_hash` en todo el proyecto). `morosidad = (saldo_no_devenga_intereses + saldo_vencida) / saldo_total`, ya no requiere filtrar nada |
 
 `saldo_x_tasa`, `tasa_ponderada`, `morosidad` (columnas nunca pobladas, reservadas en v1)
 **se eliminaron** en `sql/15_rename_fact_tables.sql` — la tasa real por producto ya vive

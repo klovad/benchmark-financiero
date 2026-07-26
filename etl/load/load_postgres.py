@@ -468,14 +468,18 @@ ON CONFLICT (dias_desde, COALESCE(dias_hasta, -1)) DO NOTHING;
 -- tipo_credito de CAPCOL (6 valores, snake_case) es el nombre coloquial del mismo
 -- segmento normativo grueso que usa marts.dim_segmento_credito (7 valores, MAYÚSCULAS
 -- regulatorias) -- se resuelve aquí en vez de duplicar la columna como texto suelto.
-INSERT INTO marts.fact_saldo_cartera (fecha_id, banco_id, canton_id, segmento_id, estado_cartera, saldo)
+-- estado_cartera ya no es dimensión degenerada -- son 3 medidas columnares del mismo
+-- grano (fecha, banco, cantón, segmento), ver sql/21_fact_saldo_cartera_pivot.sql.
+INSERT INTO marts.fact_saldo_cartera
+    (fecha_id, banco_id, canton_id, segmento_id, saldo_por_vencer, saldo_no_devenga_intereses, saldo_vencida)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     b.banco_id,
     c.canton_id,
     sg.segmento_id,
-    s.estado_cartera,
-    s.saldo
+    COALESCE(SUM(s.saldo) FILTER (WHERE s.estado_cartera = 'por_vencer'), 0),
+    COALESCE(SUM(s.saldo) FILTER (WHERE s.estado_cartera = 'no_devenga_intereses'), 0),
+    COALESCE(SUM(s.saldo) FILTER (WHERE s.estado_cartera = 'vencida'), 0)
 FROM staging.cartera s
 JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
 LEFT JOIN marts.dim_provincia dp ON dp.provincia = translate(s.provincia, 'ÁÉÍÓÚ', 'AEIOU')
@@ -489,8 +493,12 @@ JOIN marts.dim_segmento_credito sg ON sg.segmento = CASE s.tipo_credito
     WHEN 'educativo' THEN 'EDUCATIVO'
 END
 WHERE s.tipo_entidad = 'BANCO PRIVADO'
-ON CONFLICT (fecha_id, banco_id, canton_id, segmento_id, estado_cartera)
-DO UPDATE SET saldo = EXCLUDED.saldo, fecha_actualizacion = now()
+GROUP BY TO_CHAR(s.fecha, 'YYYYMMDD')::INT, b.banco_id, c.canton_id, sg.segmento_id
+ON CONFLICT (fecha_id, banco_id, COALESCE(canton_id, -1), segmento_id)
+DO UPDATE SET saldo_por_vencer = EXCLUDED.saldo_por_vencer,
+              saldo_no_devenga_intereses = EXCLUDED.saldo_no_devenga_intereses,
+              saldo_vencida = EXCLUDED.saldo_vencida,
+              fecha_actualizacion = now()
 WHERE marts.fact_saldo_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
 INSERT INTO marts.fact_saldo_depositos (fecha_id, banco_id, canton_id, categoria_deposito_id, plazo_id, saldo, numero_clientes, numero_cuentas)
