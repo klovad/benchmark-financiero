@@ -106,8 +106,10 @@ erDiagram
         int banco_id FK
         int canton_id FK
         int segmento_id FK
-        string estado_cartera
-        numeric saldo
+        numeric saldo_por_vencer
+        numeric saldo_no_devenga_intereses
+        numeric saldo_vencida
+        numeric saldo_total
     }
     fact_saldo_depositos {
         int fecha_id FK
