@@ -27,6 +27,13 @@ playwright/.cache/
 # Salidas regenerables de scripts/ (no versionar snapshots de resultados)
 scripts/output/
 
+# Graphify (codebase knowledge graph, ver README): graph.json + GRAPH_REPORT.md
+# se versionan (snapshot consultable/legible); el resto (viz interactiva, cache,
+# manifest de extracción) es regenerable localmente vía `graphify update .`
+graphify-out/*
+!graphify-out/graph.json
+!graphify-out/GRAPH_REPORT.md
+
 # OS / editores
 .DS_Store
 Thumbs.db
