@@ -1,0 +1,84 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-unit:
+    # pytest -m "not integration": matching/normalización de identidad, parsers con
+    # fixtures locales, sha256_file() y el parseo de fecha-desde-nombre-de-archivo.
+    # Sin DB, sin red. Ver docs/propuesta_escalabilidad_etl.md sección 2.4.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: pytest (unit)
+        run: python -m pytest -m "not integration" -v
+
+  test-integration:
+    # postgres:17 como service container. GitHub Actions no soporta el mount de
+    # docker-entrypoint-initdb.d que usa docker-compose.yml en local, así que el
+    # schema se aplica explícitamente vía psql, sql/*.sql en orden lexicográfico de
+    # nombre de archivo -- mismo orden en el que correrían como initdb scripts.
+    #
+    # POSTGRES_USER=bp_etl / POSTGRES_DB=benchmark_cartera_depositos: mismos valores
+    # que espera sql/00_roles_db.sql (ver también los comentarios de
+    # docker-compose.yml). El propio contenedor postgres:17 crea el rol bp_etl y la
+    # base benchmark_cartera_depositos a partir de estas env vars ANTES de que
+    # cualquier paso de este job corra -- así que los guards `IF NOT EXISTS`/
+    # `WHERE NOT EXISTS` de sql/00 evalúan false cuando se aplica y el script queda
+    # como no-op idempotente, igual que en docker-compose.yml. POSTGRES_PASSWORD es
+    # una password descartable solo para este job, nunca la real.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: bp_etl
+          POSTGRES_DB: benchmark_cartera_depositos
+          POSTGRES_PASSWORD: ci_throwaway_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bp_etl -d benchmark_cartera_depositos"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: benchmark_cartera_depositos
+      POSTGRES_USER: bp_etl
+      POSTGRES_PASSWORD: ci_throwaway_password
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Instalar cliente psql
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Aplicar migraciones (sql/*.sql en orden lexicográfico)
+        run: |
+          set -e
+          for f in sql/*.sql; do
+            echo "Aplicando $f"
+            PGPASSWORD="$POSTGRES_PASSWORD" psql -h localhost -p 5432 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f "$f"
+          done
+
+      - name: pytest (integration)
+        run: python -m pytest -m integration -v
