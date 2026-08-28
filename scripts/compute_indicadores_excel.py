@@ -16,6 +16,7 @@ para correr contra Postgres real, reemplazar `rd_one`/`rd_years` por consultas a
 `marts.*` (o, mejor, usar directamente las vistas de sql/18_glosario_cuentas_views.sql,
 que implementan estos mismos bloques del lado de la base).
 """
+
 import argparse
 import json
 from pathlib import Path
@@ -56,7 +57,10 @@ def segmento_bruto(fb14, keyword):
 def segmento_improductiva(fb14, keyword):
     rows = fb14[
         fb14.cuenta.str.contains(keyword, case=False, na=False)
-        & (fb14.cuenta.str.contains("NO DEVENGA", case=False, na=False) | fb14.cuenta.str.contains("VENCIDA", case=False, na=False))
+        & (
+            fb14.cuenta.str.contains("NO DEVENGA", case=False, na=False)
+            | fb14.cuenta.str.contains("VENCIDA", case=False, na=False)
+        )
         & ~fb14.cuenta.str.contains("POR VENCER", case=False, na=False)
     ]
     return rows.saldo_usd.sum()
@@ -64,7 +68,8 @@ def segmento_improductiva(fb14, keyword):
 
 def promedio_ytd(fact_balance, dim_fecha, codigo, banco_id, fecha_id):
     """Promedio de saldos fin de mes de `codigo` (1=activo, 3=patrimonio), desde
-    diciembre del año anterior hasta fecha_id (inclusive) -- ver glosario_cuentas.md §5."""
+    diciembre del año anterior hasta fecha_id (inclusive) -- ver glosario_cuentas.md §5.
+    """
     anio = fecha_id // 10000
     dic_anterior_id = int(f"{anio - 1}1231")
     fechas_ytd = dim_fecha[
@@ -84,7 +89,9 @@ def promedio_ytd(fact_balance, dim_fecha, codigo, banco_id, fecha_id):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--fecha-id", type=int, default=None,
+        "--fecha-id",
+        type=int,
+        default=None,
         help="Corte AAAAMMDD a calcular (por defecto: el más reciente disponible en fact_balance)",
     )
     args = parser.parse_args()
@@ -94,7 +101,9 @@ def main():
     dim_fecha = rd_one("dim_fecha")
     dim_fecha["fecha"] = pd.to_datetime(dim_fecha["fecha"])
 
-    privados = dim_banco[dim_banco.tipo_entidad == "BANCO PRIVADO"][["banco_id", "banco", "banco_codigo"]].copy()
+    privados = dim_banco[dim_banco.tipo_entidad == "BANCO PRIVADO"][
+        ["banco_id", "banco", "banco_codigo"]
+    ].copy()
 
     anios = range(dim_fecha.anio.min(), dim_fecha.anio.max() + 1)
     fact_balance = rd_years("fact_balance", anios).merge(
@@ -110,7 +119,9 @@ def main():
     skipped = []
     for _, b in privados.iterrows():
         bid, bname, bcod = b.banco_id, b.banco, b.banco_codigo
-        fb = fact_balance[(fact_balance.fecha_id == fecha_id) & (fact_balance.banco_id == bid)]
+        fb = fact_balance[
+            (fact_balance.fecha_id == fecha_id) & (fact_balance.banco_id == bid)
+        ]
         fp = fact_pyg[(fact_pyg.fecha_id == fecha_id) & (fact_pyg.banco_id == bid)]
         if fb.empty:
             skipped.append((bname, "sin fact_balance en fecha"))
@@ -123,17 +134,26 @@ def main():
         cartera_bruta = cod(fb, "14") - cod(fb, "1499")
         provision_cartera = -cod(fb, "1499")  # positivo
 
-        fb14 = fb[fb.codigo.str.startswith("14") & (fb.nivel == 4) & (fb.codigo != "1499")]
+        fb14 = fb[
+            fb.codigo.str.startswith("14") & (fb.nivel == 4) & (fb.codigo != "1499")
+        ]
         cartera_improductiva = fb14[
-            (fb14.cuenta.str.contains("NO DEVENGA", case=False, na=False) | fb14.cuenta.str.contains("VENCIDA", case=False, na=False))
+            (
+                fb14.cuenta.str.contains("NO DEVENGA", case=False, na=False)
+                | fb14.cuenta.str.contains("VENCIDA", case=False, na=False)
+            )
             & ~fb14.cuenta.str.contains("POR VENCER", case=False, na=False)
         ].saldo_usd.sum()
 
         dep_corto_plazo = cod(fb, "2101") + cod(fb, "210305") + cod(fb, "210310")
         indice_liquidez = fondos_disp / dep_corto_plazo if dep_corto_plazo else None
 
-        morosidad_total = cartera_improductiva / cartera_bruta if cartera_bruta else None
-        cobertura = provision_cartera / cartera_improductiva if cartera_improductiva else None
+        morosidad_total = (
+            cartera_improductiva / cartera_bruta if cartera_bruta else None
+        )
+        cobertura = (
+            provision_cartera / cartera_improductiva if cartera_improductiva else None
+        )
 
         mora_seg = {}
         for seg in SEGMENTOS:
@@ -146,7 +166,9 @@ def main():
         ingresos = cod(fp, "5")
         gastos_top = cod(fp, "4")
         if gastos_top == 0:
-            gastos_top = fp[fp.codigo.isin(["41", "42", "43", "44", "45", "46", "47", "48"])].valor_usd.sum()
+            gastos_top = fp[
+                fp.codigo.isin(["41", "42", "43", "44", "45", "46", "47", "48"])
+            ].valor_usd.sum()
         utilidad_neta = ingresos - gastos_top
         gasto_operacion = cod(fp, "45")
 
@@ -160,18 +182,32 @@ def main():
 
         eficiencia = gasto_operacion / total_activos if total_activos else None
 
-        rows_out.append({
-            "banco": bname, "banco_codigo": bcod,
-            "total_activos": total_activos, "total_pasivos": total_pasivos, "patrimonio": patrimonio,
-            "cartera_bruta": cartera_bruta, "cartera_improductiva": cartera_improductiva,
-            "provision_cartera": provision_cartera,
-            "indice_liquidez": indice_liquidez, "morosidad_total": morosidad_total, "cobertura": cobertura,
-            "mora_productivo": mora_seg["PRODUCTIVO"], "mora_consumo": mora_seg["CONSUMO"],
-            "mora_inmobiliario": mora_seg["INMOBILIARIO"], "mora_microcredito": mora_seg["MICROCR"],
-            "mora_educativo": mora_seg["EDUCATIVO"],
-            "utilidad_neta_periodo": utilidad_neta, "utilidad_anualizada": utilidad_anualizada,
-            "gasto_operacion": gasto_operacion, "roa": roa, "roe": roe, "eficiencia": eficiencia,
-        })
+        rows_out.append(
+            {
+                "banco": bname,
+                "banco_codigo": bcod,
+                "total_activos": total_activos,
+                "total_pasivos": total_pasivos,
+                "patrimonio": patrimonio,
+                "cartera_bruta": cartera_bruta,
+                "cartera_improductiva": cartera_improductiva,
+                "provision_cartera": provision_cartera,
+                "indice_liquidez": indice_liquidez,
+                "morosidad_total": morosidad_total,
+                "cobertura": cobertura,
+                "mora_productivo": mora_seg["PRODUCTIVO"],
+                "mora_consumo": mora_seg["CONSUMO"],
+                "mora_inmobiliario": mora_seg["INMOBILIARIO"],
+                "mora_microcredito": mora_seg["MICROCR"],
+                "mora_educativo": mora_seg["EDUCATIVO"],
+                "utilidad_neta_periodo": utilidad_neta,
+                "utilidad_anualizada": utilidad_anualizada,
+                "gasto_operacion": gasto_operacion,
+                "roa": roa,
+                "roe": roe,
+                "eficiencia": eficiencia,
+            }
+        )
 
     df_out = pd.DataFrame(rows_out).sort_values("total_activos", ascending=False)
 
@@ -179,22 +215,45 @@ def main():
     print("\n=== Bancos con fact_balance pero SIN fila (omitidos) ===")
     for s in skipped:
         print(" ", s)
-    print(f"\n=== Bancos incluidos: {len(df_out)} de {len(privados)} privados totales ===")
+    print(
+        f"\n=== Bancos incluidos: {len(df_out)} de {len(privados)} privados totales ==="
+    )
 
     print("\n=== Revisión de posibles outliers ===")
     print("morosidad_total fuera de [0,1]:")
-    print(df_out[(df_out.morosidad_total < 0) | (df_out.morosidad_total > 1)][["banco", "morosidad_total", "cartera_bruta", "cartera_improductiva"]])
-    print("\ncobertura > 1000% (10x) -- no necesariamente un error, ver nota en docs/indicadores_excel_bcos_coop.md:")
-    print(df_out[df_out.cobertura > 10][["banco", "cobertura", "provision_cartera", "cartera_improductiva"]])
+    print(
+        df_out[(df_out.morosidad_total < 0) | (df_out.morosidad_total > 1)][
+            ["banco", "morosidad_total", "cartera_bruta", "cartera_improductiva"]
+        ]
+    )
+    print(
+        "\ncobertura > 1000% (10x) -- no necesariamente un error, ver nota en docs/indicadores_excel_bcos_coop.md:"
+    )
+    print(
+        df_out[df_out.cobertura > 10][
+            ["banco", "cobertura", "provision_cartera", "cartera_improductiva"]
+        ]
+    )
     print("\nroa/roe nulos:")
-    print(df_out[df_out.roa.isna() | df_out.roe.isna()][["banco", "roa", "roe", "total_activos"]])
+    print(
+        df_out[df_out.roa.isna() | df_out.roe.isna()][
+            ["banco", "roa", "roe", "total_activos"]
+        ]
+    )
 
     print("\n", df_out.to_string())
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     out_path = OUTPUT_DIR / f"indicadores_excel_{fecha_id}.json"
     clean = json.loads(df_out.where(pd.notnull(df_out), None).to_json(orient="records"))
-    out_path.write_text(json.dumps({"fecha_cierre": str(fecha_id), "indicadores": clean}, ensure_ascii=False, indent=2), encoding="utf-8")
+    out_path.write_text(
+        json.dumps(
+            {"fecha_cierre": str(fecha_id), "indicadores": clean},
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
     print("\nEscrito:", out_path)
 
 

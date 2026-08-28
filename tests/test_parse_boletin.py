@@ -1,8 +1,8 @@
 from etl.transform.parse_boletin import (
+    _SECCION_POR_DIGITO,
     BOLETIN_AGGREGATE_COLUMNS,
     _codigo_padre,
     _normalize_col,
-    _SECCION_POR_DIGITO,
 )
 
 
@@ -12,15 +12,23 @@ def test_aggregate_columns_normalizadas_cubren_variantes_2021_y_2026():
     assert _normalize_col("BANCA MÚLTIPLE") in BOLETIN_AGGREGATE_COLUMNS
     assert _normalize_col("BANCA MULTIPLE") in BOLETIN_AGGREGATE_COLUMNS
     assert _normalize_col("BANCOS PRIVADOS MICROCRÉDITO") in BOLETIN_AGGREGATE_COLUMNS
-    assert _normalize_col("BANCOS PRIVADOS DE MICROEMPRESA") in BOLETIN_AGGREGATE_COLUMNS
-    assert _normalize_col("BANCOS PRIVADOS DE MICROCRÉDITO") in BOLETIN_AGGREGATE_COLUMNS
+    assert (
+        _normalize_col("BANCOS PRIVADOS DE MICROEMPRESA") in BOLETIN_AGGREGATE_COLUMNS
+    )
+    assert (
+        _normalize_col("BANCOS PRIVADOS DE MICROCRÉDITO") in BOLETIN_AGGREGATE_COLUMNS
+    )
     # espacios extra al final de la celda (visto en la plantilla 2021) no deben colar
-    assert _normalize_col("BANCOS PRIVADOS COMERCIALES     ") in BOLETIN_AGGREGATE_COLUMNS
+    assert (
+        _normalize_col("BANCOS PRIVADOS COMERCIALES     ") in BOLETIN_AGGREGATE_COLUMNS
+    )
 
 
 def test_nombre_de_banco_real_no_se_confunde_con_agregado():
     assert _normalize_col("BP GUAYAQUIL") not in BOLETIN_AGGREGATE_COLUMNS
-    assert _normalize_col("BP BANCO COMERCIAL DE MANABI") not in BOLETIN_AGGREGATE_COLUMNS
+    assert (
+        _normalize_col("BP BANCO COMERCIAL DE MANABI") not in BOLETIN_AGGREGATE_COLUMNS
+    )
 
 
 def test_codigo_padre_sigue_la_jerarquia_del_catalogo_unico_de_cuentas():

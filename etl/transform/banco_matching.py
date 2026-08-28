@@ -39,7 +39,9 @@ class BancoNoResueltoError(ValueError):
 
 
 def _strip_accents(text: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c))
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c)
+    )
 
 
 def _normalizar(nombre: str) -> str:
@@ -71,18 +73,21 @@ def maestro() -> dict[str, dict]:
     """banco_codigo -> {"banco": ..., "tipo_entidad": ...}"""
     global _maestro_cache
     if _maestro_cache is None:
-        _maestro_cache = {row["banco_codigo"]: row for row in _cargar_csv(_MAESTRO_PATH)}
+        _maestro_cache = {
+            row["banco_codigo"]: row for row in _cargar_csv(_MAESTRO_PATH)
+        }
     return _maestro_cache
 
 
 def _por_regla(normalizado: str) -> str | None:
     """Regla determinística de respaldo para variaciones triviales no sembradas en el
-    crosswalk (ej. un banco nuevo que ya sigue la convención 'BP <nombre>' de CAPCOL)."""
+    crosswalk (ej. un banco nuevo que ya sigue la convención 'BP <nombre>' de CAPCOL).
+    """
     texto = normalizado
     if texto.startswith("BP "):
         texto = texto[3:]
     elif texto.startswith("BANCO "):
-        texto = texto[len("BANCO "):]
+        texto = texto[len("BANCO ") :]
     texto = _LEGAL_SUFFIXES.sub("", texto).strip()
     texto = _strip_accents(texto)
     texto = re.sub(r"[^A-Z0-9]+", "_", texto).strip("_")
@@ -97,7 +102,9 @@ def resolver_banco_codigo(nombre: str | None, fuente: str) -> str:
     Lanza BancoNoResueltoError si no se puede resolver -- no autogenera identidad nueva.
     """
     if fuente not in FUENTES_VALIDAS:
-        raise ValueError(f"fuente inválida: {fuente!r} (debe ser una de {FUENTES_VALIDAS})")
+        raise ValueError(
+            f"fuente inválida: {fuente!r} (debe ser una de {FUENTES_VALIDAS})"
+        )
     if not nombre or not str(nombre).strip():
         raise BancoNoResueltoError(f"Nombre de banco vacío (fuente={fuente})")
 
@@ -134,7 +141,9 @@ class EntidadBceNoMapeadaError(ValueError):
     mapeo (probablemente el BCE agregó una categoría nueva) antes de continuar."""
 
 
-def resolver_entidad_bce(razon_social: str, ruc: str, tipo_entidad_bce: str) -> tuple[str, str, str, str]:
+def resolver_entidad_bce(
+    razon_social: str, ruc: str, tipo_entidad_bce: str
+) -> tuple[str, str, str, str]:
     """Resuelve una fila de BCE tsp/tsa (CUALQUIER tipo de entidad del sistema
     financiero, no solo bancos privados) a (banco_codigo, banco, tipo_entidad, ruc).
 

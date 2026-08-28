@@ -1,0 +1,32 @@
+# Config-only pyproject.toml: black/ruff leen su configuracion de aqui por convencion.
+# NO reemplaza requirements.txt (sin tabla [project]) -- ver docs/propuesta_escalabilidad_etl.md
+# seccion 3.1/4.4: migrar a [project.dependencies] cambia el contrato de quickstart del
+# README y queda como decision aparte a confirmar con el usuario, no incluida aqui.
+
+[tool.black]
+line-length = 88
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+# Fase 1 (ver seccion 4.2 de la propuesta): E/F (pycodestyle + pyflakes core) + I (isort).
+# Fase 2 (B bugbear, UP pyupgrade) queda en defer hasta que la fase 1 sea rutina.
+select = ["E", "F", "I"]
+# E501 (line-too-long) queda ignorada: black ya es el formateador de referencia para el
+# largo de linea del *codigo*, pero deliberadamente no reenvuelve comentarios ni
+# docstrings -- y este repo tiene docstrings narrativos largos en espanol documentando
+# decisiones de diseño (ver seccion 4.3 de la propuesta: "explicar el porque, no solo el
+# que", docs/architecture.md). Medido tras el pase de black: 103 lineas >88, casi todas
+# comentarios/docstrings/strings que black no puede acortar -- mantener E501 activa aqui
+# generaria ruido, no señal. Sigue la recomendacion oficial de ruff al combinarlo con
+# black (https://docs.astral.sh/ruff/faq/#is-ruff-compatible-with-black).
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+# `integration` registrado explícitamente para que `pytest -m "not integration"` y
+# `pytest -m integration` corran sin warnings de marker desconocido -- ver
+# docs/propuesta_escalabilidad_etl.md sección 2.4 (jobs test-unit/test-integration).
+markers = [
+    "integration: requiere Postgres real ya migrado (sql/00...sql/22, ver docker-compose.yml). Sin red.",
+]

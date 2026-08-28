@@ -3,20 +3,32 @@ services:
     image: postgres:17
     container_name: bp_benchmark_postgres
     restart: unless-stopped
+    # Interpolado desde el .env de la raiz (Docker Compose lo autocarga) -- misma
+    # fuente de verdad que etl/config.py, en vez de credenciales hardcodeadas que
+    # podian divergir en silencio de .env/.env.example.
     environment:
-      POSTGRES_DB: benchmark_cartera_depositos
-      POSTGRES_USER: bp_etl
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - bp_benchmark_pgdata:/var/lib/postgresql/data
-      - ./sql/01_schema_raw.sql:/docker-entrypoint-initdb.d/01_schema_raw.sql:ro
-      - ./sql/02_schema_staging.sql:/docker-entrypoint-initdb.d/02_schema_staging.sql:ro
-      - ./sql/03_schema_marts.sql:/docker-entrypoint-initdb.d/03_schema_marts.sql:ro
-      - ./sql/04_indexes_views.sql:/docker-entrypoint-initdb.d/04_indexes_views.sql:ro
+      # docker-entrypoint-initdb.d corre los scripts en orden lexicografico de nombre de
+      # archivo, asi que montar el directorio completo cubre todas las migraciones
+      # existentes de una vez y no requiere editar este archivo cada vez que se agregue
+      # una migracion nueva (sql/22, sql/23, ...).
+      #
+      # sql/00_roles_db.sql SI se incluye deliberadamente: crea el rol/DB con
+      # `IF NOT EXISTS`/`WHERE NOT EXISTS` (ver el archivo), y el propio contenedor ya
+      # crea el rol POSTGRES_USER y la base POSTGRES_DB automaticamente a partir de las
+      # env vars de arriba antes de correr los scripts de init -- asi que ambos guards
+      # de sql/00 evaluan false aqui y el script queda como no-op idempotente, sin
+      # pisar la password real con el literal 'changeme' que trae de su rama manual
+      # (psql -U postgres, para cuando se corre fuera de Docker).
+      - ./sql:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bp_etl -d benchmark_cartera_depositos"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
