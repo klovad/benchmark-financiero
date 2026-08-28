@@ -1,0 +1,141 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
+  "name": "v08BarBenchmarkBanco",
+  "position": {
+    "x": 20,
+    "y": 310,
+    "z": 3000,
+    "height": 390,
+    "width": 610,
+    "tabOrder": 7
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_banco"
+                    }
+                  },
+                  "Property": "banco"
+                }
+              },
+              "queryRef": "dim_banco.banco",
+              "nativeQueryRef": "banco",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Parametro Metrica"
+                    }
+                  },
+                  "Property": "Valor Metrica (Ultimo Mes)"
+                }
+              },
+              "queryRef": "Parametro Metrica.Valor Metrica (Ultimo Mes)",
+              "nativeQueryRef": "Valor Metrica (Ultimo Mes)"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Parametro Metrica"
+                  }
+                },
+                "Property": "Valor Metrica (Ultimo Mes)"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": "Benchmark por banco — métrica seleccionada"
+          }
+        }
+      ],
+      "background": [
+        {
+          "properties": {
+            "show": { "expr": { "Literal": { "Value": "true" } } },
+            "color": { "solid": { "color": { "expr": { "Literal": { "Value": "'#1B2029'" } } } } },
+            "transparency": { "expr": { "Literal": { "Value": "0D" } } }
+          }
+        }
+      ],
+      "border": [
+        {
+          "properties": {
+            "show": { "expr": { "Literal": { "Value": "true" } } },
+            "color": { "solid": { "color": { "expr": { "Literal": { "Value": "'#C9A24B'" } } } } },
+            "radius": { "expr": { "Literal": { "Value": "6D" } } },
+            "width": { "expr": { "Literal": { "Value": "1D" } } }
+          }
+        }
+      ],
+      "dropShadow": [
+        {
+          "properties": {
+            "show": { "expr": { "Literal": { "Value": "false" } } }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "d5e6f708192a3b4c5d6e",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "dim_banco"
+              }
+            },
+            "Property": "banco"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "e6f708192a3b4c5d6e7f",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Parametro Metrica"
+              }
+            },
+            "Property": "Valor Metrica (Ultimo Mes)"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

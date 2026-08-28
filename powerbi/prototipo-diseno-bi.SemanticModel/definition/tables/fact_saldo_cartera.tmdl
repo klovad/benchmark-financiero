@@ -1,0 +1,111 @@
+table fact_saldo_cartera
+	lineageTag: 20000000-0000-0000-0000-000000000050
+
+	measure 'Saldo Cartera' = SUM(fact_saldo_cartera[saldo_total])
+		formatString: #,##0
+		lineageTag: 20000000-0000-0000-0000-0000000000a1
+
+	measure 'Saldo Cartera (Ultimo Mes)' =
+			VAR UltimaFecha = CALCULATE(MAX(dim_fecha[fecha]), ALL(dim_fecha))
+			RETURN CALCULATE([Saldo Cartera], dim_fecha[fecha] = UltimaFecha)
+		formatString: #,##0
+		lineageTag: 20000000-0000-0000-0000-0000000000a2
+
+	measure 'Morosidad %' =
+			DIVIDE(
+			    SUM(fact_saldo_cartera[saldo_no_devenga_intereses]) + SUM(fact_saldo_cartera[saldo_vencida]),
+			    [Saldo Cartera]
+			)
+		formatString: 0.00%
+		lineageTag: 20000000-0000-0000-0000-0000000000a3
+
+	measure 'Morosidad % (Ultimo Mes)' =
+			VAR UltimaFecha = CALCULATE(MAX(dim_fecha[fecha]), ALL(dim_fecha))
+			RETURN CALCULATE([Morosidad %], dim_fecha[fecha] = UltimaFecha)
+		formatString: 0.00%
+		lineageTag: 20000000-0000-0000-0000-0000000000a4
+
+	measure 'Market Share Banco (Cartera)' =
+			DIVIDE(
+			    [Saldo Cartera],
+			    CALCULATE([Saldo Cartera], ALL(dim_banco))
+			)
+		formatString: 0.00%
+		lineageTag: 20000000-0000-0000-0000-0000000000a5
+
+	measure 'HHI Cartera' =
+			SUMX(
+			    VALUES(dim_banco[banco]),
+			    [Market Share Banco (Cartera)] ^ 2
+			) * 10000
+		formatString: #,##0
+		lineageTag: 20000000-0000-0000-0000-0000000000a6
+
+	measure 'HHI Cartera (Ultimo Mes)' =
+			VAR UltimaFecha = CALCULATE(MAX(dim_fecha[fecha]), ALL(dim_fecha))
+			RETURN CALCULATE([HHI Cartera], dim_fecha[fecha] = UltimaFecha)
+		formatString: #,##0
+		lineageTag: 20000000-0000-0000-0000-0000000000a7
+
+	column fact_saldo_cartera_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 20000000-0000-0000-0000-000000000051
+		summarizeBy: none
+		sourceColumn: fact_saldo_cartera_id
+
+	column fecha_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 20000000-0000-0000-0000-000000000052
+		summarizeBy: none
+		sourceColumn: fecha_id
+
+	column banco_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 20000000-0000-0000-0000-000000000053
+		summarizeBy: none
+		sourceColumn: banco_id
+
+	column saldo_por_vencer
+		dataType: double
+		formatString: #,##0.00
+		lineageTag: 20000000-0000-0000-0000-000000000054
+		summarizeBy: sum
+		sourceColumn: saldo_por_vencer
+
+	column saldo_no_devenga_intereses
+		dataType: double
+		formatString: #,##0.00
+		lineageTag: 20000000-0000-0000-0000-000000000055
+		summarizeBy: sum
+		sourceColumn: saldo_no_devenga_intereses
+
+	column saldo_vencida
+		dataType: double
+		formatString: #,##0.00
+		lineageTag: 20000000-0000-0000-0000-000000000056
+		summarizeBy: sum
+		sourceColumn: saldo_vencida
+
+	column saldo_total
+		dataType: double
+		formatString: #,##0.00
+		lineageTag: 20000000-0000-0000-0000-000000000057
+		summarizeBy: sum
+		sourceColumn: saldo_total
+
+	partition fact_saldo_cartera = m
+		mode: import
+		source =
+				let
+					Source = PostgreSQL.Database("localhost", "benchmark_cartera_depositos"),
+					marts_fact_saldo_cartera = Source{[Schema="marts",Item="fact_saldo_cartera"]}[Data]
+				in
+					marts_fact_saldo_cartera
+
+	annotation PBI_ResultType = Table

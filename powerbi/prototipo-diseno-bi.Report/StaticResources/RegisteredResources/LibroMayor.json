@@ -1,0 +1,87 @@
+{
+  "name": "LibroMayor",
+  "dataColors": [
+    "#407AEA",
+    "#9E7E00",
+    "#008BDB",
+    "#D05500",
+    "#0096C4",
+    "#7E68E3",
+    "#009DA7",
+    "#A459CC"
+  ],
+  "good": "#4FAE7D",
+  "neutral": "#8B8371",
+  "bad": "#D9714F",
+  "maximum": "#4FAE7D",
+  "center": "#3A3F49",
+  "minimum": "#D9714F",
+  "null": "#3A3F49",
+  "background": "#14171C",
+  "backgroundLight": "#14171C",
+  "backgroundNeutral": "#232836",
+  "secondaryBackground": "#1B2029",
+  "foreground": "#F3EEE3",
+  "foregroundNeutralSecondary": "#A79E8C",
+  "foregroundNeutralTertiary": "#7C7566",
+  "tableAccent": "#C9A24B",
+  "hyperlink": "#6FB3D9",
+  "visitedHyperlink": "#B08FE0",
+  "disabledText": "#4A4739",
+  "textClasses": {
+    "largeTitle": {
+      "fontFace": "Georgia",
+      "fontSize": 20,
+      "fontWeight": "bold",
+      "color": "#F3EEE3"
+    },
+    "title": {
+      "fontFace": "Georgia",
+      "fontSize": 13,
+      "fontWeight": "bold",
+      "color": "#F3EEE3"
+    },
+    "header": {
+      "fontFace": "Segoe UI",
+      "fontSize": 12,
+      "fontWeight": "600",
+      "color": "#F3EEE3"
+    },
+    "label": {
+      "fontFace": "Segoe UI",
+      "fontSize": 10,
+      "fontWeight": "normal",
+      "color": "#F3EEE3"
+    },
+    "boldLabel": {
+      "fontFace": "Segoe UI",
+      "fontSize": 10,
+      "fontWeight": "bold",
+      "color": "#F3EEE3"
+    },
+    "smallLabel": {
+      "fontFace": "Segoe UI",
+      "fontSize": 9,
+      "fontWeight": "normal",
+      "color": "#A79E8C"
+    },
+    "smallDataLabel": {
+      "fontFace": "Consolas",
+      "fontSize": 9,
+      "fontWeight": "normal",
+      "color": "#A79E8C"
+    },
+    "callout": {
+      "fontFace": "Consolas",
+      "fontSize": 26,
+      "fontWeight": "bold",
+      "color": "#C9A24B"
+    },
+    "dataTitle": {
+      "fontFace": "Segoe UI",
+      "fontSize": 11,
+      "fontWeight": "600",
+      "color": "#A79E8C"
+    }
+  }
+}

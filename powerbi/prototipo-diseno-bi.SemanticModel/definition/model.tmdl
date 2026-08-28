@@ -1,0 +1,20 @@
+model Model
+	culture: es-EC
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: es-EC
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["dim_fecha", "dim_banco", "fact_saldo_cartera", "fact_saldo_depositos", "Parametro Metrica", "Parametro Periodo", "Parametro Ventana"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table dim_fecha
+ref table dim_banco
+ref table fact_saldo_cartera
+ref table fact_saldo_depositos
+ref table 'Parametro Metrica'
+ref table 'Parametro Periodo'
+ref table 'Parametro Ventana'
+

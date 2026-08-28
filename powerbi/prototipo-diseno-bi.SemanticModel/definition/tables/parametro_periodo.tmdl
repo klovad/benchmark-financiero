@@ -1,0 +1,49 @@
+table 'Parametro Periodo'
+	lineageTag: 20000000-0000-0000-0000-000000000080
+
+	measure 'Valor Metrica Periodo' =
+			VAR Seleccion = SELECTEDVALUE('Parametro Periodo'[Periodo], "Mes Actual")
+			VAR UltimaFecha = CALCULATE(MAX(dim_fecha[fecha]), ALL(dim_fecha))
+			VAR FechaObjetivo = IF(Seleccion = "Mismo Mes Año Anterior", EDATE(UltimaFecha, -12), UltimaFecha)
+			RETURN CALCULATE('Parametro Metrica'[Valor Metrica Base], dim_fecha[fecha] = FechaObjetivo)
+		formatString: #,##0
+		lineageTag: 20000000-0000-0000-0000-0000000000d1
+
+	measure 'Titulo Periodo Seleccionado' =
+			SELECTEDVALUE('Parametro Periodo'[Periodo], "Mes Actual")
+		lineageTag: 20000000-0000-0000-0000-0000000000d2
+
+	measure 'Variacion Metrica Periodo' =
+			VAR UltimaFecha = CALCULATE(MAX(dim_fecha[fecha]), ALL(dim_fecha))
+			VAR Actual = CALCULATE('Parametro Metrica'[Valor Metrica Base], dim_fecha[fecha] = UltimaFecha)
+			VAR Anterior = CALCULATE('Parametro Metrica'[Valor Metrica Base], dim_fecha[fecha] = EDATE(UltimaFecha, -12))
+			RETURN DIVIDE(Actual - Anterior, Anterior)
+		formatString: 0.00%
+		lineageTag: 20000000-0000-0000-0000-0000000000d3
+
+	column Periodo
+		dataType: string
+		lineageTag: 20000000-0000-0000-0000-000000000081
+		summarizeBy: none
+		sourceColumn: Periodo
+		sortByColumn: Orden
+
+	column Orden
+		dataType: int64
+		formatString: 0
+		lineageTag: 20000000-0000-0000-0000-000000000082
+		summarizeBy: none
+		sourceColumn: Orden
+		isHidden
+
+	partition 'Parametro Periodo' = calculated
+		mode: import
+		source =
+				DATATABLE(
+				    "Periodo", STRING,
+				    "Orden", INTEGER,
+				    {
+				        {"Mes Actual", 1},
+				        {"Mismo Mes Año Anterior", 2}
+				    }
+				)
