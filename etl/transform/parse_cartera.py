@@ -35,7 +35,9 @@ ESTADO_COLUMNS = {
 
 
 def _strip_accents(text: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c))
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c)
+    )
 
 
 def tipo_credito_from_sheet_name(sheet_name: str) -> str:
@@ -47,10 +49,18 @@ def tipo_credito_from_sheet_name(sheet_name: str) -> str:
 
 
 def _find_header_row(ws):
-    for row_idx, row in enumerate(ws.iter_rows(min_row=1, max_row=10, values_only=True), start=1):
+    for row_idx, row in enumerate(
+        ws.iter_rows(min_row=1, max_row=10, values_only=True), start=1
+    ):
         if any(isinstance(v, str) and v.strip().upper() == "FECHA" for v in row):
-            return row_idx, {v.strip().upper(): i for i, v in enumerate(row) if isinstance(v, str) and v.strip()}
-    raise ValueError("No se encontró la fila de encabezado (columna 'FECHA') en la hoja BASE")
+            return row_idx, {
+                v.strip().upper(): i
+                for i, v in enumerate(row)
+                if isinstance(v, str) and v.strip()
+            }
+    raise ValueError(
+        "No se encontró la fila de encabezado (columna 'FECHA') en la hoja BASE"
+    )
 
 
 def _parse_sheet(ws, tipo_credito: str) -> list[dict]:
@@ -107,7 +117,17 @@ def parse_cartera_file(source_path: Path, extract_dir: Path) -> pd.DataFrame:
     # El origen trae detalle a nivel de oficina/cuenta contable: varias filas pueden
     # compartir (fecha, banco, canton, tipo_credito, estado_cartera) y deben sumarse,
     # no sobrescribirse, para no perder saldo al cargar a staging.
-    key_cols = ["fecha", "tipo_entidad", "banco", "banco_codigo", "region", "provincia", "canton", "tipo_credito", "estado_cartera"]
+    key_cols = [
+        "fecha",
+        "tipo_entidad",
+        "banco",
+        "banco_codigo",
+        "region",
+        "provincia",
+        "canton",
+        "tipo_credito",
+        "estado_cartera",
+    ]
     df = df.groupby(key_cols, dropna=False, as_index=False).agg(
         saldo=("saldo", "sum"),
         source_file=("source_file", "first"),

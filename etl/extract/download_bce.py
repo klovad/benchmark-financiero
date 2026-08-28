@@ -10,6 +10,7 @@ import urllib.request
 from pathlib import Path
 
 from etl.config import BCE_DIR, BCE_URLS
+from etl.logging_utils import setup_logging
 
 log = logging.getLogger(__name__)
 
@@ -40,5 +41,5 @@ def download_all(out_dir: Path = BCE_DIR) -> dict[str, Path]:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    setup_logging()
     download_all()

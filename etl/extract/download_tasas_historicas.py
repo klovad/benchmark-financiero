@@ -14,6 +14,7 @@ import urllib.request
 from pathlib import Path
 
 from etl.config import BCE_BASE_URL, BCE_DIR
+from etl.logging_utils import setup_logging
 
 log = logging.getLogger(__name__)
 
@@ -58,6 +59,6 @@ def download_tasas_historicas(out_dir: Path = HISTORICO_DIR) -> list[Path]:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    setup_logging()
     files = download_tasas_historicas()
     print(f"{len(files)} páginas disponibles")

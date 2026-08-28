@@ -42,7 +42,9 @@ def is_source_loaded(conn, source_file: str, source_hash: str) -> bool:
         return cur.fetchone() is not None
 
 
-def register_source_file(conn, source_file: str, source_hash: str, report_type: str) -> None:
+def register_source_file(
+    conn, source_file: str, source_hash: str, report_type: str
+) -> None:
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -101,7 +103,10 @@ def upsert_banco_maestro_ruc(conn, entidades: list[tuple[str, str, str, str]]) -
             """,
             entidades,
         )
-    log.info("staging.banco_maestro: ruc actualizado/creado para %d entidades", len(entidades))
+    log.info(
+        "staging.banco_maestro: ruc actualizado/creado para %d entidades",
+        len(entidades),
+    )
 
 
 def load_banco_maestro_seed(conn) -> None:
@@ -109,7 +114,10 @@ def load_banco_maestro_seed(conn) -> None:
     mostrar y tipo_entidad de cada banco_codigo, determinista sin importar qué variante
     de texto llegó primero durante la carga."""
     with open(_SEEDS_DIR / "banco_maestro.csv", encoding="utf-8") as f:
-        rows = [(r["banco_codigo"], r["banco"], r["tipo_entidad"]) for r in csv.DictReader(f)]
+        rows = [
+            (r["banco_codigo"], r["banco"], r["tipo_entidad"])
+            for r in csv.DictReader(f)
+        ]
     with conn.cursor() as cur:
         cur.executemany(
             """
@@ -125,10 +133,22 @@ def load_banco_maestro_seed(conn) -> None:
 
 def upsert_staging_cartera(conn, df: pd.DataFrame) -> None:
     rows = [
-        tuple(_clean(v) for v in (
-            r.fecha, r.tipo_entidad, r.banco, r.banco_codigo, r.region, r.provincia, r.canton,
-            r.tipo_credito, r.estado_cartera, r.saldo, r.source_file,
-        ))
+        tuple(
+            _clean(v)
+            for v in (
+                r.fecha,
+                r.tipo_entidad,
+                r.banco,
+                r.banco_codigo,
+                r.region,
+                r.provincia,
+                r.canton,
+                r.tipo_credito,
+                r.estado_cartera,
+                r.saldo,
+                r.source_file,
+            )
+        )
         for r in df.itertuples(index=False)
     ]
     with conn.cursor() as cur:
@@ -150,11 +170,26 @@ def upsert_staging_cartera(conn, df: pd.DataFrame) -> None:
 
 def upsert_staging_depositos(conn, df: pd.DataFrame) -> None:
     rows = [
-        tuple(_clean(v) for v in (
-            r.fecha, r.tipo_entidad, r.banco, r.banco_codigo, r.region, r.provincia, r.canton,
-            r.tipo_deposito, r.categoria_deposito, r.plazo_dias_desde, r.plazo_dias_hasta,
-            r.saldo, r.numero_clientes, r.numero_cuentas, r.source_file,
-        ))
+        tuple(
+            _clean(v)
+            for v in (
+                r.fecha,
+                r.tipo_entidad,
+                r.banco,
+                r.banco_codigo,
+                r.region,
+                r.provincia,
+                r.canton,
+                r.tipo_deposito,
+                r.categoria_deposito,
+                r.plazo_dias_desde,
+                r.plazo_dias_hasta,
+                r.saldo,
+                r.numero_clientes,
+                r.numero_cuentas,
+                r.source_file,
+            )
+        )
         for r in df.itertuples(index=False)
     ]
     with conn.cursor() as cur:
@@ -214,26 +249,41 @@ def load_raw_bce(conn, table: str, df: pd.DataFrame, payload_cols: list[str]) ->
 _BCE_INT_COLS = {"plazo_dias_desde", "plazo_dias_hasta", "numero_operaciones"}
 
 
-def _upsert_bce_via_temp(conn, df: pd.DataFrame, table: str, cols: list[str], key_cols: list[str]) -> None:
+def _upsert_bce_via_temp(
+    conn, df: pd.DataFrame, table: str, cols: list[str], key_cols: list[str]
+) -> None:
     """COPY a una tabla temporal (misma sesión, se descarta sola) y de ahí INSERT ...
     ON CONFLICT DO UPDATE con guard de row_hash -- COPY no soporta ON CONFLICT
     directamente, así que no se puede COPY directo a staging.*."""
     df = df.copy()
     for c in _BCE_INT_COLS & set(cols):
-        df[c] = df[c].astype("Int64")  # nullable -- evita que NaN vuelva float la columna (COPY rechaza '60.0' en INT)
+        df[c] = df[c].astype(
+            "Int64"
+        )  # nullable -- evita que NaN vuelva float la columna (COPY rechaza '60.0' en INT)
 
     with conn.cursor() as cur:
-        cur.execute(f"CREATE TEMP TABLE _tmp_{table} (LIKE staging.{table} INCLUDING DEFAULTS) ON COMMIT DROP")
+        cur.execute(
+            f"CREATE TEMP TABLE _tmp_{table} (LIKE staging.{table} INCLUDING DEFAULTS) ON COMMIT DROP"
+        )
         cur.execute(f"ALTER TABLE _tmp_{table} DROP COLUMN IF EXISTS id")
 
-    rows = (tuple(_clean(getattr(r, c)) for c in cols) for r in df.itertuples(index=False))
+    rows = (
+        tuple(_clean(getattr(r, c)) for c in cols) for r in df.itertuples(index=False)
+    )
     cols_sql = ", ".join(cols)
     _copy_rows(conn, f"COPY _tmp_{table} ({cols_sql}) FROM STDIN", rows)
 
     set_cols = [c for c in cols if c not in key_cols]
-    set_clause = ", ".join(f"{c} = EXCLUDED.{c}" for c in set_cols) + ", fecha_actualizacion = now()"
+    set_clause = (
+        ", ".join(f"{c} = EXCLUDED.{c}" for c in set_cols)
+        + ", fecha_actualizacion = now()"
+    )
     key_expr = ", ".join(
-        f"COALESCE({c}, -1)" if c in ("plazo_dias_hasta",) else (f"COALESCE({c}, '')" if c == "provincia" else c)
+        (
+            f"COALESCE({c}, -1)"
+            if c in ("plazo_dias_hasta",)
+            else (f"COALESCE({c}, '')" if c == "provincia" else c)
+        )
         for c in key_cols
     )
     with conn.cursor() as cur:
@@ -250,14 +300,34 @@ def _upsert_bce_via_temp(conn, df: pd.DataFrame, table: str, cols: list[str], ke
 
 
 _BCE_TASAS_PASIVAS_COLS = [
-    "fecha", "banco_codigo", "categoria_deposito", "plazo_dias_desde", "plazo_dias_hasta",
-    "plazo_codigo", "provincia", "monto_total", "numero_operaciones",
-    "tasa_pasiva_efectiva", "tasa_nominal", "tipo_segmento", "source_file",
+    "fecha",
+    "banco_codigo",
+    "categoria_deposito",
+    "plazo_dias_desde",
+    "plazo_dias_hasta",
+    "plazo_codigo",
+    "provincia",
+    "monto_total",
+    "numero_operaciones",
+    "tasa_pasiva_efectiva",
+    "tasa_nominal",
+    "tipo_segmento",
+    "source_file",
 ]
 _BCE_TASAS_ACTIVAS_COLS = [
-    "fecha", "banco_codigo", "segmento_credito", "plazo_dias_desde", "plazo_dias_hasta",
-    "plazo_codigo", "provincia", "monto_total", "numero_operaciones",
-    "tasa_activa_efectiva", "tasa_nominal", "tipo_segmento", "source_file",
+    "fecha",
+    "banco_codigo",
+    "segmento_credito",
+    "plazo_dias_desde",
+    "plazo_dias_hasta",
+    "plazo_codigo",
+    "provincia",
+    "monto_total",
+    "numero_operaciones",
+    "tasa_activa_efectiva",
+    "tasa_nominal",
+    "tipo_segmento",
+    "source_file",
 ]
 
 
@@ -268,8 +338,13 @@ def load_raw_tasas_referenciales(conn, df: pd.DataFrame, source_hash: str) -> No
     por archivo en el llamador (igual que CAPCOL)."""
     payload_cols = [c for c in df.columns if c != "source_file"]
     rows = [
-        (r.source_file, source_hash, r.fecha.year, r.fecha.month,
-         json.dumps({c: _clean(getattr(r, c)) for c in payload_cols}, default=str))
+        (
+            r.source_file,
+            source_hash,
+            r.fecha.year,
+            r.fecha.month,
+            json.dumps({c: _clean(getattr(r, c)) for c in payload_cols}, default=str),
+        )
         for r in df.itertuples(index=False)
     ]
     with conn.cursor() as cur:
@@ -282,10 +357,19 @@ def load_raw_tasas_referenciales(conn, df: pd.DataFrame, source_hash: str) -> No
 
 def upsert_staging_tasas_referenciales(conn, df: pd.DataFrame) -> None:
     rows = [
-        tuple(_clean(v) for v in (
-            r.fecha, r.seccion, r.dimension_valor, r.plazo_dias_desde, r.plazo_dias_hasta,
-            r.metrica, r.valor, r.source_file,
-        ))
+        tuple(
+            _clean(v)
+            for v in (
+                r.fecha,
+                r.seccion,
+                r.dimension_valor,
+                r.plazo_dias_desde,
+                r.plazo_dias_hasta,
+                r.metrica,
+                r.valor,
+                r.source_file,
+            )
+        )
         for r in df.itertuples(index=False)
     ]
     with conn.cursor() as cur:
@@ -304,13 +388,31 @@ def upsert_staging_tasas_referenciales(conn, df: pd.DataFrame) -> None:
 
 
 def upsert_staging_bce_tasas_pasivas(conn, df: pd.DataFrame) -> None:
-    key_cols = ["fecha", "banco_codigo", "categoria_deposito", "plazo_dias_desde", "plazo_dias_hasta", "provincia"]
-    _upsert_bce_via_temp(conn, df, "bce_tasas_pasivas", _BCE_TASAS_PASIVAS_COLS, key_cols)
+    key_cols = [
+        "fecha",
+        "banco_codigo",
+        "categoria_deposito",
+        "plazo_dias_desde",
+        "plazo_dias_hasta",
+        "provincia",
+    ]
+    _upsert_bce_via_temp(
+        conn, df, "bce_tasas_pasivas", _BCE_TASAS_PASIVAS_COLS, key_cols
+    )
 
 
 def upsert_staging_bce_tasas_activas(conn, df: pd.DataFrame) -> None:
-    key_cols = ["fecha", "banco_codigo", "segmento_credito", "plazo_dias_desde", "plazo_dias_hasta", "provincia"]
-    _upsert_bce_via_temp(conn, df, "bce_tasas_activas", _BCE_TASAS_ACTIVAS_COLS, key_cols)
+    key_cols = [
+        "fecha",
+        "banco_codigo",
+        "segmento_credito",
+        "plazo_dias_desde",
+        "plazo_dias_hasta",
+        "provincia",
+    ]
+    _upsert_bce_via_temp(
+        conn, df, "bce_tasas_activas", _BCE_TASAS_ACTIVAS_COLS, key_cols
+    )
 
 
 def upsert_dim_cuenta_contable(conn, cuentas_df: pd.DataFrame) -> None:
@@ -318,7 +420,18 @@ def upsert_dim_cuenta_contable(conn, cuentas_df: pd.DataFrame) -> None:
     (~1500 cuentas), executemany alcanza. grupo_met se actualiza si el archivo nuevo trae
     un valor donde antes no había (no se pisa un grupo ya conocido con NULL)."""
     rows = [
-        tuple(_clean(v) for v in (r.reporte, r.codigo, r.cuenta, r.nivel, r.codigo_padre, r.seccion, r.grupo_met))
+        tuple(
+            _clean(v)
+            for v in (
+                r.reporte,
+                r.codigo,
+                r.cuenta,
+                r.nivel,
+                r.codigo_padre,
+                r.seccion,
+                r.grupo_met,
+            )
+        )
         for r in cuentas_df.itertuples(index=False)
     ]
     with conn.cursor() as cur:
@@ -339,20 +452,35 @@ def upsert_dim_cuenta_contable(conn, cuentas_df: pd.DataFrame) -> None:
 def load_raw_boletin(conn, table: str, df: pd.DataFrame, source_hash: str) -> None:
     payload_cols = [c for c in df.columns if c not in ("source_file",)]
     rows = (
-        (r.source_file, source_hash, r.fecha.year, r.fecha.month,
-         json.dumps({c: _clean(getattr(r, c)) for c in payload_cols}, default=str))
+        (
+            r.source_file,
+            source_hash,
+            r.fecha.year,
+            r.fecha.month,
+            json.dumps({c: _clean(getattr(r, c)) for c in payload_cols}, default=str),
+        )
         for r in df.itertuples(index=False)
     )
-    n = _copy_rows(conn, f"COPY raw.{table} (source_file, source_hash, anio, mes, data) FROM STDIN", rows)
+    n = _copy_rows(
+        conn,
+        f"COPY raw.{table} (source_file, source_hash, anio, mes, data) FROM STDIN",
+        rows,
+    )
     log.info("raw.%s: %d filas insertadas", table, n)
 
 
-def _upsert_boletin_via_temp(conn, df: pd.DataFrame, table: str, cols: list[str], valor_col: str) -> None:
+def _upsert_boletin_via_temp(
+    conn, df: pd.DataFrame, table: str, cols: list[str], valor_col: str
+) -> None:
     with conn.cursor() as cur:
-        cur.execute(f"CREATE TEMP TABLE _tmp_{table} (LIKE staging.{table} INCLUDING DEFAULTS) ON COMMIT DROP")
+        cur.execute(
+            f"CREATE TEMP TABLE _tmp_{table} (LIKE staging.{table} INCLUDING DEFAULTS) ON COMMIT DROP"
+        )
         cur.execute(f"ALTER TABLE _tmp_{table} DROP COLUMN IF EXISTS id")
 
-    rows = (tuple(_clean(getattr(r, c)) for c in cols) for r in df.itertuples(index=False))
+    rows = (
+        tuple(_clean(getattr(r, c)) for c in cols) for r in df.itertuples(index=False)
+    )
     cols_sql = ", ".join(cols)
     _copy_rows(conn, f"COPY _tmp_{table} ({cols_sql}) FROM STDIN", rows)
 
@@ -369,12 +497,28 @@ def _upsert_boletin_via_temp(conn, df: pd.DataFrame, table: str, cols: list[str]
     log.info("staging.%s: %d filas upsert", table, len(df))
 
 
-_BOLETIN_BALANCE_COLS = ["fecha", "banco", "banco_codigo", "codigo", "saldo_usd", "source_file"]
-_BOLETIN_PYG_COLS = ["fecha", "banco", "banco_codigo", "codigo", "valor_usd", "source_file"]
+_BOLETIN_BALANCE_COLS = [
+    "fecha",
+    "banco",
+    "banco_codigo",
+    "codigo",
+    "saldo_usd",
+    "source_file",
+]
+_BOLETIN_PYG_COLS = [
+    "fecha",
+    "banco",
+    "banco_codigo",
+    "codigo",
+    "valor_usd",
+    "source_file",
+]
 
 
 def upsert_staging_boletin_balance(conn, df: pd.DataFrame) -> None:
-    _upsert_boletin_via_temp(conn, df, "boletin_balance", _BOLETIN_BALANCE_COLS, "saldo_usd")
+    _upsert_boletin_via_temp(
+        conn, df, "boletin_balance", _BOLETIN_BALANCE_COLS, "saldo_usd"
+    )
 
 
 def upsert_staging_boletin_pyg(conn, df: pd.DataFrame) -> None:

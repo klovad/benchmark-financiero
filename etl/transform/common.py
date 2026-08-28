@@ -10,7 +10,9 @@ from etl.config import PROVINCIA_REGION
 
 
 def _strip_accents(text: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c))
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c)
+    )
 
 
 def sha256_file(path: Path) -> str:
@@ -27,9 +29,13 @@ def extract_single_xlsx(zip_path: Path, extract_dir: Path) -> Path:
     openpyxl."""
     extract_dir.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(zip_path) as zf:
-        xlsx_names = [n for n in zf.namelist() if n.lower().endswith((".xlsx", ".xlsm"))]
+        xlsx_names = [
+            n for n in zf.namelist() if n.lower().endswith((".xlsx", ".xlsm"))
+        ]
         if len(xlsx_names) != 1:
-            raise ValueError(f"{zip_path.name}: se esperaba 1 .xlsx/.xlsm dentro del zip, se encontraron {len(xlsx_names)}")
+            raise ValueError(
+                f"{zip_path.name}: se esperaba 1 .xlsx/.xlsm dentro del zip, se encontraron {len(xlsx_names)}"
+            )
         zf.extract(xlsx_names[0], extract_dir)
         return extract_dir / xlsx_names[0]
 

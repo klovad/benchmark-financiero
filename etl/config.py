@@ -14,7 +14,9 @@ BOLETIN_URL = "https://www.superbancos.gob.ec/estadisticas/portalestudios/bancos
 # BCE: tasas de interés semanales por banco. Convención de nombres t{s|m}{p|a} = tasas +
 # (semanal|mensual) + (pasiva|activa); solo se integran las semanales (tsp/tsa) --
 # decisión explícita del usuario, ver docs/fuentes_datos.md sección 2.
-BCE_BASE_URL = "https://contenido.bce.fin.ec/documentos/Estadisticas/SectorMonFin/TasasInteres"
+BCE_BASE_URL = (
+    "https://contenido.bce.fin.ec/documentos/Estadisticas/SectorMonFin/TasasInteres"
+)
 BCE_URLS = {
     "tsp": f"{BCE_BASE_URL}/tsp_desde_200801.zip",
     "tsa": f"{BCE_BASE_URL}/tsa_desde_200801.zip",
@@ -29,7 +31,9 @@ DB_CONFIG = {
     "password": os.getenv("POSTGRES_PASSWORD", "changeme"),
 }
 
-DEFAULT_YEARS = [int(y) for y in os.getenv("SCRAPER_YEARS", "2021,2022,2023,2024,2025").split(",")]
+DEFAULT_YEARS = [
+    int(y) for y in os.getenv("SCRAPER_YEARS", "2021,2022,2023,2024,2025").split(",")
+]
 
 # Nombres de carpeta usados por el portal CAPCOL para cada reporte. Antes de 2024 se
 # llamaban COLOCACIONES/CAPTACIONES; desde 2024 se renombraron a CARTERA/DEPOSITOS.
@@ -55,12 +59,28 @@ TIPO_CREDITO_KEYWORDS = {
 # Región geográfica de cada provincia del Ecuador (el archivo de cartera no trae región,
 # solo depositos la incluye; se deriva aquí para tener el dato en ambos reportes).
 PROVINCIA_REGION = {
-    "AZUAY": "SIERRA", "BOLIVAR": "SIERRA", "CAÑAR": "SIERRA", "CARCHI": "SIERRA",
-    "COTOPAXI": "SIERRA", "CHIMBORAZO": "SIERRA", "IMBABURA": "SIERRA", "LOJA": "SIERRA",
-    "PICHINCHA": "SIERRA", "TUNGURAHUA": "SIERRA", "SANTO DOMINGO DE LOS TSACHILAS": "SIERRA",
-    "EL ORO": "COSTA", "ESMERALDAS": "COSTA", "GUAYAS": "COSTA", "LOS RIOS": "COSTA",
-    "MANABI": "COSTA", "SANTA ELENA": "COSTA",
-    "MORONA SANTIAGO": "ORIENTE", "NAPO": "ORIENTE", "ORELLANA": "ORIENTE",
-    "PASTAZA": "ORIENTE", "SUCUMBIOS": "ORIENTE", "ZAMORA CHINCHIPE": "ORIENTE",
+    "AZUAY": "SIERRA",
+    "BOLIVAR": "SIERRA",
+    "CAÑAR": "SIERRA",
+    "CARCHI": "SIERRA",
+    "COTOPAXI": "SIERRA",
+    "CHIMBORAZO": "SIERRA",
+    "IMBABURA": "SIERRA",
+    "LOJA": "SIERRA",
+    "PICHINCHA": "SIERRA",
+    "TUNGURAHUA": "SIERRA",
+    "SANTO DOMINGO DE LOS TSACHILAS": "SIERRA",
+    "EL ORO": "COSTA",
+    "ESMERALDAS": "COSTA",
+    "GUAYAS": "COSTA",
+    "LOS RIOS": "COSTA",
+    "MANABI": "COSTA",
+    "SANTA ELENA": "COSTA",
+    "MORONA SANTIAGO": "ORIENTE",
+    "NAPO": "ORIENTE",
+    "ORELLANA": "ORIENTE",
+    "PASTAZA": "ORIENTE",
+    "SUCUMBIOS": "ORIENTE",
+    "ZAMORA CHINCHIPE": "ORIENTE",
     "GALAPAGOS": "INSULAR",
 }

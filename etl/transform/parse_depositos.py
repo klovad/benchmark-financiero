@@ -26,10 +26,18 @@ from etl.transform.common import (
 
 
 def _find_header_row(ws):
-    for row_idx, row in enumerate(ws.iter_rows(min_row=1, max_row=10, values_only=True), start=1):
+    for row_idx, row in enumerate(
+        ws.iter_rows(min_row=1, max_row=10, values_only=True), start=1
+    ):
         if any(isinstance(v, str) and v.strip().upper() == "FECHA" for v in row):
-            return row_idx, {v.strip().upper(): i for i, v in enumerate(row) if isinstance(v, str) and v.strip()}
-    raise ValueError("No se encontró la fila de encabezado (columna 'FECHA') en la hoja BASE")
+            return row_idx, {
+                v.strip().upper(): i
+                for i, v in enumerate(row)
+                if isinstance(v, str) and v.strip()
+            }
+    raise ValueError(
+        "No se encontró la fila de encabezado (columna 'FECHA') en la hoja BASE"
+    )
 
 
 def parse_depositos_file(source_path: Path, extract_dir: Path) -> pd.DataFrame:
@@ -62,28 +70,36 @@ def parse_depositos_file(source_path: Path, extract_dir: Path) -> pd.DataFrame:
         numero_clientes = get(row, "NUMERO DE CLIENTES")
         banco = normalize_banco(get(row, "ENTIDAD"))
         tipo_deposito = normalize_text(get(row, "TIPO DE DEPOSITO"))
-        categoria_deposito, plazo_dias_desde, plazo_dias_hasta = resolver_categoria_deposito(tipo_deposito)
-        records.append({
-            "fecha": month_end_date(fecha),
-            "tipo_entidad": "BANCO PRIVADO",
-            "banco": banco,
-            "banco_codigo": resolver_banco_codigo(banco, "CAPCOL"),
-            # Derivado siempre de PROVINCIA_REGION (no de la columna REGION del archivo
-            # fuente): se confirmó que esa columna trae valores inconsistentes con
-            # cartera para al menos una provincia (MORONA SANTIAGO: "AMAZONICA" en
-            # depositos vs. "ORIENTE", el mapeo canónico, en cartera) -- marts.dim_canton
-            # llegó a tener 2 regiones distintas para la misma provincia por esto.
-            "region": region_for_provincia(provincia),
-            "provincia": provincia,
-            "canton": normalize_text(get(row, "CANTON")),
-            "tipo_deposito": tipo_deposito,
-            "categoria_deposito": categoria_deposito,
-            "plazo_dias_desde": plazo_dias_desde,
-            "plazo_dias_hasta": plazo_dias_hasta,
-            "saldo": float(saldo),
-            "numero_cuentas": int(numero_cuentas) if numero_cuentas is not None else None,
-            "numero_clientes": int(numero_clientes) if numero_clientes is not None else None,
-        })
+        categoria_deposito, plazo_dias_desde, plazo_dias_hasta = (
+            resolver_categoria_deposito(tipo_deposito)
+        )
+        records.append(
+            {
+                "fecha": month_end_date(fecha),
+                "tipo_entidad": "BANCO PRIVADO",
+                "banco": banco,
+                "banco_codigo": resolver_banco_codigo(banco, "CAPCOL"),
+                # Derivado siempre de PROVINCIA_REGION (no de la columna REGION del archivo
+                # fuente): se confirmó que esa columna trae valores inconsistentes con
+                # cartera para al menos una provincia (MORONA SANTIAGO: "AMAZONICA" en
+                # depositos vs. "ORIENTE", el mapeo canónico, en cartera) -- marts.dim_canton
+                # llegó a tener 2 regiones distintas para la misma provincia por esto.
+                "region": region_for_provincia(provincia),
+                "provincia": provincia,
+                "canton": normalize_text(get(row, "CANTON")),
+                "tipo_deposito": tipo_deposito,
+                "categoria_deposito": categoria_deposito,
+                "plazo_dias_desde": plazo_dias_desde,
+                "plazo_dias_hasta": plazo_dias_hasta,
+                "saldo": float(saldo),
+                "numero_cuentas": (
+                    int(numero_cuentas) if numero_cuentas is not None else None
+                ),
+                "numero_clientes": (
+                    int(numero_clientes) if numero_clientes is not None else None
+                ),
+            }
+        )
 
     wb.close()
     df = pd.DataFrame.from_records(records)
@@ -93,7 +109,16 @@ def parse_depositos_file(source_path: Path, extract_dir: Path) -> pd.DataFrame:
     # El origen trae una fila por cuenta contable (columna CUENTA, no conservada aquí);
     # varias cuentas comparten (fecha, banco, canton, tipo_deposito) y deben sumarse,
     # no sobrescribirse, para no perder saldo al cargar a staging.
-    key_cols = ["fecha", "tipo_entidad", "banco", "banco_codigo", "region", "provincia", "canton", "tipo_deposito"]
+    key_cols = [
+        "fecha",
+        "tipo_entidad",
+        "banco",
+        "banco_codigo",
+        "region",
+        "provincia",
+        "canton",
+        "tipo_deposito",
+    ]
     df = df.groupby(key_cols, dropna=False, as_index=False).agg(
         saldo=("saldo", "sum"),
         numero_cuentas=("numero_cuentas", "sum"),

@@ -24,11 +24,13 @@ import openpyxl
 import pandas as pd
 
 from etl.transform.banco_matching import resolver_banco_codigo
-from etl.transform.common import extract_single_xlsx, normalize_text, sha256_file
+from etl.transform.common import extract_single_xlsx, normalize_text
 
 
 def _strip_accents(text: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c))
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c)
+    )
 
 
 def _normalize_col(text: str) -> str:
@@ -42,19 +44,33 @@ def _normalize_col(text: str) -> str:
 # entre plantillas (ej. 'BANCOS PRIVADOS MICROCRÉDITO' 2026 vs 'BANCOS PRIVADOS DE
 # MICROEMPRESA' 2021) -- se guarda ya normalizado, ver _normalize_col.
 BOLETIN_AGGREGATE_COLUMNS = {
-    _normalize_col(c) for c in (
-        "BANCOS PRIVADOS GRANDES", "BANCOS PRIVADOS MEDIANOS", "BANCOS PRIVADOS PEQUEÑOS",
-        "TOTAL BANCOS PRIVADOS", "BANCOS PRIVADOS COMERCIALES", "BANCOS PRIVADOS CONSUMO",
-        "BANCOS PRIVADOS VIVIENDA", "BANCOS PRIVADOS MICROCRÉDITO", "BANCA MÚLTIPLE",
-        "BANCOS PRIVADOS DE MICROEMPRESA", "BANCA MULTIPLE", "BANCOS PRIVADOS DE MICROCRÉDITO",
+    _normalize_col(c)
+    for c in (
+        "BANCOS PRIVADOS GRANDES",
+        "BANCOS PRIVADOS MEDIANOS",
+        "BANCOS PRIVADOS PEQUEÑOS",
+        "TOTAL BANCOS PRIVADOS",
+        "BANCOS PRIVADOS COMERCIALES",
+        "BANCOS PRIVADOS CONSUMO",
+        "BANCOS PRIVADOS VIVIENDA",
+        "BANCOS PRIVADOS MICROCRÉDITO",
+        "BANCA MÚLTIPLE",
+        "BANCOS PRIVADOS DE MICROEMPRESA",
+        "BANCA MULTIPLE",
+        "BANCOS PRIVADOS DE MICROCRÉDITO",
     )
 }
 
 _CODIGO_VALIDO = re.compile(r"^\d+$")
 
 _SECCION_POR_DIGITO = {
-    "1": "ACTIVO", "2": "PASIVO", "3": "PATRIMONIO", "4": "GASTOS", "5": "INGRESOS",
-    "6": "CONTINGENTE", "7": "CUENTAS_DE_ORDEN",
+    "1": "ACTIVO",
+    "2": "PASIVO",
+    "3": "PATRIMONIO",
+    "4": "GASTOS",
+    "5": "INGRESOS",
+    "6": "CONTINGENTE",
+    "7": "CUENTAS_DE_ORDEN",
 }
 
 
@@ -71,23 +87,33 @@ def _find_header_row(ws) -> tuple[int, dict[str, int]]:
     insensible a acentos para cubrir ambas variantes de plantilla. Se exige que la fila
     tenga TANTO 'CODIGO' COMO 'CUENTA': algunos archivos antiguos traen una fila previa
     con solo 'CÓDIGO' (sin 'CUENTA') que sería un falso positivo."""
-    for row_idx, row in enumerate(ws.iter_rows(min_row=1, max_row=10, values_only=True), start=1):
+    for row_idx, row in enumerate(
+        ws.iter_rows(min_row=1, max_row=10, values_only=True), start=1
+    ):
         cols = {}
         for i, v in enumerate(row):
             if isinstance(v, str) and v.strip():
-                key = "CÓDIGO" if _strip_accents(v.strip().upper()) == "CODIGO" else v.strip()
+                key = (
+                    "CÓDIGO"
+                    if _strip_accents(v.strip().upper()) == "CODIGO"
+                    else v.strip()
+                )
                 cols[key] = i
         if "CÓDIGO" in cols and "CUENTA" in cols:
             return row_idx, cols
-    raise ValueError("No se encontró la fila de encabezado (columnas 'CÓDIGO'+'CUENTA')")
+    raise ValueError(
+        "No se encontró la fila de encabezado (columnas 'CÓDIGO'+'CUENTA')"
+    )
 
 
 def _parse_hoja(ws, cuenta_col_key: str = "CUENTA") -> pd.DataFrame:
     header_row_idx, cols = _find_header_row(ws)
     codigo_idx, cuenta_idx = cols["CÓDIGO"], cols[cuenta_col_key]
     banco_cols = {
-        banco: idx for banco, idx in cols.items()
-        if idx not in (codigo_idx, cuenta_idx) and _normalize_col(banco) not in BOLETIN_AGGREGATE_COLUMNS
+        banco: idx
+        for banco, idx in cols.items()
+        if idx not in (codigo_idx, cuenta_idx)
+        and _normalize_col(banco) not in BOLETIN_AGGREGATE_COLUMNS
     }
 
     records = []
@@ -101,7 +127,14 @@ def _parse_hoja(ws, cuenta_col_key: str = "CUENTA") -> pd.DataFrame:
             valor = row[idx] if idx < len(row) else None
             if valor is None:
                 continue
-            records.append({"codigo": codigo, "cuenta": cuenta, "banco": banco, "valor_miles": float(valor)})
+            records.append(
+                {
+                    "codigo": codigo,
+                    "cuenta": cuenta,
+                    "banco": banco,
+                    "valor_miles": float(valor),
+                }
+            )
     return pd.DataFrame.from_records(records)
 
 
@@ -129,12 +162,13 @@ def _parse_met(ws) -> dict[str, str]:
     return grupo_por_codigo
 
 
-def parse_boletin_file(source_path: Path, extract_dir: Path, fecha) -> dict[str, pd.DataFrame]:
+def parse_boletin_file(
+    source_path: Path, extract_dir: Path, fecha
+) -> dict[str, pd.DataFrame]:
     """Devuelve {'balance': df, 'pyg': df, 'cuentas': df} -- 'cuentas' es el plan de
     cuentas (con seccion/nivel/codigo_padre/grupo_met) descubierto en este archivo, para
     poblar/actualizar dim_cuenta_contable; 'balance'/'pyg' son los valores por banco ya
     con banco_codigo resuelto y x1000 aplicado."""
-    source_hash = sha256_file(source_path)
     xlsx_path = (
         extract_single_xlsx(source_path, extract_dir)
         if source_path.suffix.lower() == ".zip"
@@ -149,17 +183,31 @@ def parse_boletin_file(source_path: Path, extract_dir: Path, fecha) -> dict[str,
 
     cuentas = []
     for reporte, df in (("BALANCE", balance), ("PYG", pyg)):
-        for codigo, cuenta in df[["codigo", "cuenta"]].drop_duplicates().itertuples(index=False):
-            cuentas.append({
-                "reporte": reporte, "codigo": codigo, "cuenta": cuenta,
-                "nivel": len(codigo), "codigo_padre": _codigo_padre(codigo),
-                "seccion": _SECCION_POR_DIGITO.get(codigo[0]),
-                "grupo_met": grupo_met.get(codigo) if reporte == "BALANCE" else None,
-            })
+        for codigo, cuenta in (
+            df[["codigo", "cuenta"]].drop_duplicates().itertuples(index=False)
+        ):
+            cuentas.append(
+                {
+                    "reporte": reporte,
+                    "codigo": codigo,
+                    "cuenta": cuenta,
+                    "nivel": len(codigo),
+                    "codigo_padre": _codigo_padre(codigo),
+                    "seccion": _SECCION_POR_DIGITO.get(codigo[0]),
+                    "grupo_met": (
+                        grupo_met.get(codigo) if reporte == "BALANCE" else None
+                    ),
+                }
+            )
     cuentas_df = pd.DataFrame.from_records(cuentas)
 
-    for df, valor_col, out_col in ((balance, "valor_miles", "saldo_usd"), (pyg, "valor_miles", "valor_usd")):
-        df["banco_codigo"] = df["banco"].apply(lambda b: resolver_banco_codigo(b, "BOLETIN"))
+    for df, valor_col, out_col in (
+        (balance, "valor_miles", "saldo_usd"),
+        (pyg, "valor_miles", "valor_usd"),
+    ):
+        df["banco_codigo"] = df["banco"].apply(
+            lambda b: resolver_banco_codigo(b, "BOLETIN")
+        )
         df["fecha"] = fecha
         df[out_col] = df[valor_col] * 1000.0
         df["source_file"] = source_path.name

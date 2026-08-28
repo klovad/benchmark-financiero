@@ -1,0 +1,27 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    # Puro lint estatico: sin DB, sin red (aparte de instalar las herramientas). Ver
+    # docs/propuesta_escalabilidad_etl.md seccion 2.4.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar black + ruff
+        run: pip install "black==24.10.0" "ruff==0.7.4"
+
+      - name: ruff check
+        run: ruff check .
+
+      - name: black --check
+        run: black --check .

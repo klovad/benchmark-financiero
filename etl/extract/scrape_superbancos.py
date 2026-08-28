@@ -13,11 +13,13 @@ import argparse
 import logging
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright, TimeoutError as PwTimeoutError
+from playwright.sync_api import TimeoutError as PwTimeoutError
+from playwright.sync_api import sync_playwright
 
 from etl.config import CAPCOL_URL, DEFAULT_YEARS, FOLDER_NAMES, RAW_DIR
+from etl.logging_utils import setup_logging
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+setup_logging()
 log = logging.getLogger(__name__)
 
 
@@ -41,7 +43,12 @@ def _open_year_folder(page, year: int, retries: int = 3) -> bool:
             folder.first.click()
             page.wait_for_timeout(2500)
             return True
-        log.info("Intento %d/%d: carpeta 'Año %s' no visible aún, esperando...", attempt, retries, year)
+        log.info(
+            "Intento %d/%d: carpeta 'Año %s' no visible aún, esperando...",
+            attempt,
+            retries,
+            year,
+        )
         page.wait_for_timeout(2000)
     log.warning("No se encontró la carpeta 'Año %s' en el portal", year)
     return False
@@ -91,7 +98,9 @@ def scrape_year(page, year: int, out_dir: Path) -> dict[str, list[Path]]:
     return results
 
 
-def scrape(years: list[int], out_dir: Path = RAW_DIR, headless: bool = True) -> dict[int, dict]:
+def scrape(
+    years: list[int], out_dir: Path = RAW_DIR, headless: bool = True
+) -> dict[int, dict]:
     all_results = {}
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=headless)
@@ -106,7 +115,9 @@ def scrape(years: list[int], out_dir: Path = RAW_DIR, headless: bool = True) -> 
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Descarga archivos CAPCOL de Superbancos")
+    parser = argparse.ArgumentParser(
+        description="Descarga archivos CAPCOL de Superbancos"
+    )
     parser.add_argument("--years", nargs="+", type=int, default=DEFAULT_YEARS)
     parser.add_argument("--out", type=Path, default=RAW_DIR)
     args = parser.parse_args()

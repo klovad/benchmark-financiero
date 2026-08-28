@@ -127,7 +127,10 @@ def export_sample(anio: int, mes: int, out_dir: Path) -> None:
             params={"ids": sorted(fecha_ids)},
         )
         dim_fecha.to_parquet(out_dir / "dim_fecha.parquet", index=False)
-        log.info("dim_fecha: %d filas (fechas usadas por los hechos exportados)", len(dim_fecha))
+        log.info(
+            "dim_fecha: %d filas (fechas usadas por los hechos exportados)",
+            len(dim_fecha),
+        )
 
 
 if __name__ == "__main__":
@@ -135,17 +138,33 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--anio", type=int, default=2025)
     parser.add_argument("--mes", type=int, default=3)
-    parser.add_argument("--full", action="store_true", help="Exporta todo el histórico, sin filtrar por mes")
-    parser.add_argument("--anios-recientes", type=int, default=None, help="Con --full, limita los hechos a los últimos N años calendario con datos")
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Exporta todo el histórico, sin filtrar por mes",
+    )
+    parser.add_argument(
+        "--anios-recientes",
+        type=int,
+        default=None,
+        help="Con --full, limita los hechos a los últimos N años calendario con datos",
+    )
     args = parser.parse_args()
 
     if args.full:
         if args.anios_recientes:
-            destino = PROJECT_ROOT / "data" / "samples" / f"marts_ultimos_{args.anios_recientes}_anios"
+            destino = (
+                PROJECT_ROOT
+                / "data"
+                / "samples"
+                / f"marts_ultimos_{args.anios_recientes}_anios"
+            )
         else:
             destino = PROJECT_ROOT / "data" / "samples" / "marts_full"
         export_full(destino, anios_recientes=args.anios_recientes)
     else:
-        destino = PROJECT_ROOT / "data" / "samples" / f"marts_{args.anio:04d}-{args.mes:02d}"
+        destino = (
+            PROJECT_ROOT / "data" / "samples" / f"marts_{args.anio:04d}-{args.mes:02d}"
+        )
         export_sample(args.anio, args.mes, destino)
     log.info("Listo: %s", destino)
