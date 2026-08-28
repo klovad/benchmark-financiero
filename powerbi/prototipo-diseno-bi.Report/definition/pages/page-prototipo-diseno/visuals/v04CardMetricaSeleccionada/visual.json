@@ -1,0 +1,103 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
+  "name": "v04CardMetricaSeleccionada",
+  "position": {
+    "x": 20,
+    "y": 130,
+    "z": 2000,
+    "height": 160,
+    "width": 300,
+    "tabOrder": 3
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Parametro Periodo"
+                    }
+                  },
+                  "Property": "Valor Metrica Periodo"
+                }
+              },
+              "queryRef": "Parametro Periodo.Valor Metrica Periodo",
+              "nativeQueryRef": "Valor Metrica Periodo"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": true,
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Parametro Metrica"
+                    }
+                  },
+                  "Property": "Titulo Dinamico Prototipo"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "background": [
+        {
+          "properties": {
+            "show": { "expr": { "Literal": { "Value": "true" } } },
+            "color": { "solid": { "color": { "expr": { "Literal": { "Value": "'#1B2029'" } } } } },
+            "transparency": { "expr": { "Literal": { "Value": "0D" } } }
+          }
+        }
+      ],
+      "border": [
+        {
+          "properties": {
+            "show": { "expr": { "Literal": { "Value": "true" } } },
+            "color": { "solid": { "color": { "expr": { "Literal": { "Value": "'#C9A24B'" } } } } },
+            "radius": { "expr": { "Literal": { "Value": "6D" } } },
+            "width": { "expr": { "Literal": { "Value": "1D" } } }
+          }
+        }
+      ],
+      "dropShadow": [
+        {
+          "properties": {
+            "show": { "expr": { "Literal": { "Value": "false" } } }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "f01e09c1a2b3d4e5f607",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Parametro Periodo"
+              }
+            },
+            "Property": "Valor Metrica Periodo"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}
