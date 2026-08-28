@@ -393,6 +393,125 @@ simple.
   liquidez) o más países, el patrón raw→staging→marts ya soporta agregarlos sin
   rediseño: un parser + un mapping nuevo por reporte.
 
+## Portabilidad de motor — inventario de construcciones específicas de Postgres
+
+Este proyecto usa Postgres, no un motor genérico "SQL estándar" — varias piezas del
+diseño se apoyan en features propias de Postgres. Inventario real (grep contra
+`sql/*.sql` y `etl/load/load_postgres.py`, no de memoria) de qué se usa, dónde, y su
+equivalente concreto si algún día hubiera que portar a SQL Server o a un lakehouse
+(Databricks/Delta, con nota de Snowflake donde aplica):
+
+**1. Columnas calculadas `GENERATED ALWAYS AS (...) STORED`** (`row_hash` en casi todas
+las tablas de `staging`/`marts`, `saldo_total` en `fact_saldo_cartera`)
+- Dónde: `row_hash` aparece en `sql/05_dim_banco_rework.sql:32,39`,
+  `sql/07_dim_banco_dim_fecha_rebuild.sql:31`, `sql/09_fact_cartera_depositos_rework.sql:27,43`,
+  `sql/11_schema_bce.sql:54,80,103,126`, `sql/12_schema_tasas_historicas.sql:49,63,75,85,100`,
+  `sql/13_schema_boletin.sql:58,74,88,100`, `sql/15_rename_fact_tables.sql:37`,
+  `sql/16_dim_segmento_normativo.sql:131`, `sql/17_dim_banco_ruc_sin_tamano.sql:21`,
+  `sql/19_dim_segmento_entidad.sql:32,41,53,63,77`, `sql/21_fact_saldo_cartera_pivot.sql:26`
+  (29 ocurrencias en total). `saldo_total` en `sql/21_fact_saldo_cartera_pivot.sql:22-23`.
+- **SQL Server**: `columna AS (expresión) PERSISTED` — mismo concepto (columna calculada
+  materializada, indexable), pero `MD5()` no existe nativo: se reemplaza por
+  `CONVERT(VARCHAR(32), HASHBYTES('MD5', ...), 2)` (`HASHBYTES` devuelve `VARBINARY`).
+- **Databricks/Delta**: Delta Lake soporta `GENERATED ALWAYS AS (expr)` en `CREATE TABLE`
+  desde Delta Lake 1.2+, sintaxis casi idéntica — aunque en la práctica de Databricks se
+  usa sobre todo para derivar columnas de partición, no hashes de fila completos.
+  **Snowflake** no tiene columnas `STORED`: sus columnas `AS (expr)` son virtuales (se
+  recalculan en cada lectura, no se persisten ni indexan), así que el patrón de acá se
+  movería a un `MERGE` que calcule el hash explícitamente al escribir, o a una vista.
+- *Por qué Postgres acá*: una sola fuente de verdad para "¿cambió esta fila?" — ni el ETL
+  ni una migración futura pueden desincronizar el hash del contenido real (ver
+  `sql/21_fact_saldo_cartera_pivot.sql` líneas 8-11 y la sección "Carga incremental" arriba).
+
+**2. Patrón de upsert `ON CONFLICT (...) DO UPDATE ... WHERE row_hash IS DISTINCT FROM EXCLUDED.row_hash`**
+- Dónde: vive en Python, no en `sql/*.sql` (la identidad se resuelve antes de `staging`,
+  principio de diseño #2) — `etl/load/load_postgres.py` líneas 140-144
+  (`staging.cartera`), 167-176 (`staging.depositos`), 244-246 (`_upsert_bce_via_temp`,
+  genérico para las 4 tablas BCE), 297-299 (`tasas_referenciales`), 364-366 (Boletín
+  balance/PyG), 428-430 (`marts.dim_banco`), 497-502/522-527/549-556/578-585 (los 4
+  `fact_*` de CAPCOL/BCE), 618-666 (4 `fact_tasas_referenciales_*`), 681-696
+  (`fact_balance`/`fact_pyg`) — 17 usos del patrón en total.
+- **SQL Server**: no existe `ON CONFLICT`; el equivalente es
+  `MERGE INTO destino USING origen ON (llave) WHEN MATCHED AND destino.row_hash <> origen.row_hash THEN UPDATE SET ... WHEN NOT MATCHED THEN INSERT (...) VALUES (...);`
+  — mismo resultado lógico, con la salvedad de que `MERGE` en SQL Server tiene bugs de
+  concurrencia documentados por Microsoft bajo aislamiento alto (no recomendado sin
+  locking explícito en cargas concurrentes).
+- **Databricks/Delta**: `MERGE INTO destino USING origen ON llave WHEN MATCHED AND destino.row_hash <> origen.row_hash THEN UPDATE SET * WHEN NOT MATCHED THEN INSERT *`
+  — sintaxis `MERGE` nativa de Delta Lake, casi calcada. **Snowflake** usa el mismo
+  `MERGE INTO` con idéntica semántica de `WHEN MATCHED`/`WHEN NOT MATCHED`.
+- *Por qué Postgres acá*: el guard "solo actualizar si cambió de verdad" vive en el SQL,
+  no como lógica adicional en el ETL — correr el pipeline de nuevo (o solo para un año)
+  converge sin generar `UPDATE`s espurios (ver "Carga incremental (CDC)" arriba).
+
+**3. `JSONB` en `raw.*` (+ índice GIN)**
+- Dónde: `sql/01_schema_raw.sql` líneas 20 y 32 (`data JSONB NOT NULL` en
+  `raw.cartera`/`raw.depositos`), líneas 45-46 (`CREATE INDEX ... USING GIN (data)`).
+- **SQL Server**: columna `NVARCHAR(MAX)` con el JSON como texto + `JSON_VALUE`/
+  `JSON_QUERY`/`OPENJSON` para leerlo; sin índice nativo sobre el documento completo —
+  se indexarían columnas calculadas persistidas que extraen claves puntuales, no el
+  equivalente de un GIN sobre todo el JSON (SQL Server 2025/Fabric anuncian un tipo
+  `JSON` binario nativo más cercano a JSONB, pero no es la versión objetivo de este
+  proyecto).
+- **Databricks/Delta**: sin tipo JSON binario tradicional — se guarda como `STRING` y se
+  parsea con `from_json`/`get_json_object`, o (en runtimes recientes) tipo `VARIANT`
+  semi-estructurado con poda a nivel de archivo (data skipping/Z-order) en vez de un
+  índice GIN. **Snowflake** sí tiene un tipo `VARIANT` nativo maduro con clustering
+  automático — el más parecido a JSONB de los tres motores comparados.
+- *Por qué Postgres acá*: el layout de columnas de la fuente (Superbancos) cambió entre
+  años (renombre colocaciones/captaciones → cartera/depositos en 2024, ver
+  `sql/01_schema_raw.sql` líneas 5-7) — JSONB deja `raw.*` inmune a ese drift sin perder
+  filas ni romper la carga, y el GIN permite consultar el JSON crudo sin re-parsear si
+  un parser necesita reprocesarse.
+
+**4. Carga masiva vía `COPY ... FROM STDIN`**
+- Dónde: `etl/load/load_postgres.py`, función `_copy_rows()` líneas 183-192 (usa
+  `cur.copy(copy_sql)` de psycopg3), invocada en líneas 208 (`COPY raw.{table} (...)
+  FROM STDIN`), 231 (`COPY _tmp_{table} (...) FROM STDIN`), 346 y 357. El patrón "COPY a
+  tabla temporal + `INSERT ... ON CONFLICT`" (líneas 217-226:
+  `CREATE TEMP TABLE _tmp_{table} (LIKE staging.{table} INCLUDING DEFAULTS) ON COMMIT DROP`)
+  existe, según el comentario de la línea 219, porque "COPY no soporta ON CONFLICT
+  directamente" — no se puede hacer COPY directo a `staging.*`.
+- **SQL Server**: `BULK INSERT`/`OPENROWSET(BULK...)` desde un archivo en disco/blob, o
+  la API `SqlBulkCopy` desde el cliente — no hay equivalente de "COPY desde STDIN" en una
+  sesión interactiva; normalmente se usa la utilidad `bcp` por línea de comandos o
+  `SqlBulkCopy` desde Python/.NET. El truco de "bulk load a una tabla de staging +
+  `MERGE`" de acá es exactamente el patrón recomendado en SQL Server también.
+- **Databricks/Delta**: `COPY INTO tabla FROM 'ruta_en_object_storage'` — comando nativo
+  de Delta Lake pensado para este caso de uso exacto (carga masiva idempotente por
+  archivo, con seguimiento de qué archivos ya se cargaron — conceptualmente equivalente
+  a `raw.source_files` acá). **Snowflake** tiene el mismo comando,
+  `COPY INTO <tabla> FROM @stage`.
+- *Por qué Postgres acá*: ~10-100x más rápido que `executemany` a los volúmenes de BCE
+  semanal (comentario `etl/load/load_postgres.py` líneas 184-185: "cientos de miles de
+  filas por archivo, todo el histórico semanal 2008-2026 en un solo CSV").
+
+**5. Esquemas `raw` / `staging` / `marts` dentro de una sola base**
+- Dónde: `CREATE SCHEMA IF NOT EXISTS raw AUTHORIZATION bp_etl` (`sql/01_schema_raw.sql:9`),
+  `staging` (`sql/02_schema_staging.sql:5`), `marts` (`sql/03_schema_marts.sql:4`).
+- **SQL Server**: mapea 1:1 — `CREATE SCHEMA raw/staging/marts AUTHORIZATION ...` dentro
+  de la misma base, mismo mecanismo de namespacing y permisos por esquema.
+- **Databricks/Delta (Unity Catalog)**: mapea directo al patrón *medallion* estándar de
+  Databricks — típicamente `bronze`/`silver`/`gold` en vez de `raw`/`staging`/`marts`
+  (mismo rol exacto: bronze = crudo tal cual, silver = tipado/limpio, gold = agregado
+  para consumo), como 3 esquemas dentro de un catálogo de Unity Catalog (namespace de 3
+  niveles `catalogo.esquema.tabla`) o como 3 catálogos separados si se quiere aislamiento
+  más fuerte entre capas. **Snowflake** usa esquemas dentro de una base igual que
+  Postgres/SQL Server — portable sin cambio de concepto.
+- *Por qué Postgres acá*: separación física de capas dentro de la misma base, sin la
+  sobrecarga operativa de 3 bases/clusters distintos — suficiente al volumen actual (ver
+  "Evaluación de escalabilidad" arriba).
+
+**6. (bonus) Cláusula de agregación `FILTER (WHERE ...)`**
+- Dónde: `sql/21_fact_saldo_cartera_pivot.sql:35-37` (3 usos, pivote de
+  `estado_cartera`) y `sql/18_glosario_cuentas_views.sql` (4 usos).
+- **SQL Server** y **Snowflake**: ninguno de los dos soporta `FILTER` — se reescribe como
+  `SUM(CASE WHEN condición THEN columna ELSE 0 END)`.
+- **Databricks/Delta (Spark SQL)**: sí soporta `FILTER (WHERE ...)` desde Spark 3.x,
+  sintaxis idéntica a Postgres.
+- *Por qué Postgres acá*: más legible que el `CASE WHEN` equivalente para expresar "una
+  columna de medida por cada valor mutuamente excluyente de una ex-dimensión degenerada"
+  (ver comentario inicial de `sql/21_fact_saldo_cartera_pivot.sql`).
+
 ## Power BI: cómo se construyó y qué quedó armado
 
 El `.pbip` (`powerbi/benchmark-cartera-depositos.*`) se escribió a mano en TMDL/PBIR (no

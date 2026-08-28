@@ -12,6 +12,8 @@ igual que banco_matching.py hace con la identidad de banco.
 
 import re
 
+from etl.transform.bce_plazo_matching import PlazoNoResueltoError
+
 CATEGORIAS_VALIDAS = {
     "DEPÓSITOS DE AHORRO",
     "DEPÓSITOS DE CUENTA BÁSICA",
@@ -31,12 +33,27 @@ CATEGORIAS_VALIDAS = {
 _RANGO = re.compile(r"^DE\s+(\d+)\s+A\s+(\d+)\s+D[IÍ]AS$")
 _SIN_TOPE = re.compile(r"^DE\s+M[AÁ]S\s+DE\s+(\d+)\s+D[IÍ]AS$")
 
+# Universo verificado contra staging.depositos (2026-08-22): CAPCOL trae exactamente
+# estos 5 buckets de plazo, sin cambios desde que se integró la fuente. Igual que
+# PLAZOS_TSP_VALIDOS/PLAZOS_TSA_VALIDOS en bce_plazo_matching.py -- que un texto nuevo
+# matchee el *shape* de _RANGO/_SIN_TOPE no basta para aceptarlo en el dim_plazo
+# compartido con BCE sin revisión deliberada.
+PLAZOS_VALIDOS = {
+    "DE 1 A 30 DÍAS",
+    "DE 31 A 90 DÍAS",
+    "DE 91 A 180 DÍAS",
+    "DE 181 A 360 DÍAS",
+    "DE MÁS DE 361 DÍAS",
+}
+
 
 class CategoriaNoResueltaError(ValueError):
     """El texto crudo no es ni una categoría conocida ni un bucket de plazo reconocible."""
 
 
-def resolver_categoria_deposito(tipo_deposito_crudo: str) -> tuple[str, int | None, int | None]:
+def resolver_categoria_deposito(
+    tipo_deposito_crudo: str,
+) -> tuple[str, int | None, int | None]:
     """Devuelve (categoria, dias_desde, dias_hasta). dias_* son None salvo que la
     categoría resultante sea 'DEPÓSITOS A PLAZO' con un bucket de plazo reconocible."""
     if not tipo_deposito_crudo or not tipo_deposito_crudo.strip():
@@ -46,10 +63,22 @@ def resolver_categoria_deposito(tipo_deposito_crudo: str) -> tuple[str, int | No
 
     m = _RANGO.match(texto)
     if m:
+        if texto not in PLAZOS_VALIDOS:
+            raise PlazoNoResueltoError(
+                f"Bucket de plazo desconocido en CAPCOL: '{tipo_deposito_crudo}'. Si es "
+                f"un bucket nuevo y legítimo, agregarlo deliberadamente a PLAZOS_VALIDOS "
+                f"en etl/transform/categoria_deposito_matching.py (no relajar esta validación)."
+            )
         return "DEPÓSITOS A PLAZO", int(m.group(1)), int(m.group(2))
 
     m = _SIN_TOPE.match(texto)
     if m:
+        if texto not in PLAZOS_VALIDOS:
+            raise PlazoNoResueltoError(
+                f"Bucket de plazo desconocido en CAPCOL: '{tipo_deposito_crudo}'. Si es "
+                f"un bucket nuevo y legítimo, agregarlo deliberadamente a PLAZOS_VALIDOS "
+                f"en etl/transform/categoria_deposito_matching.py (no relajar esta validación)."
+            )
         return "DEPÓSITOS A PLAZO", int(m.group(1)), None
 
     if texto in CATEGORIAS_VALIDAS:
