@@ -120,7 +120,7 @@ gobernanza (rol, cadencia, volumen conocido). Nombres de tabla actualizados 2026
 | `dim_subsegmento_credito` (antes `dim_segmento_credito`) | Catálogo (universo BCE, no filtrado por entidad; nivel fino) | — | sembrado una vez (`sql/08`) | 26 filas |
 | `dim_segmento_entidad` | Catálogo, clasificación normativa de tamaño/estructura de la entidad (nueva 2026-07-25, `sql/19`) | — | sembrado una vez | 14 filas |
 | `dim_categoria_deposito` | Catálogo | — | sembrado una vez (`sql/08`) | 11 filas |
-| `dim_plazo` | Catálogo abierto, auto-descubierto | — | crece con cada fuente nueva | no fijo por diseño |
+| `dim_plazo` | Catálogo, fail-fast desde 2026-08-27 (antes: abierto, auto-descubierto sin validar — ver "Reglas de calidad" #1/#2 abajo) | — | crece solo cuando se agrega deliberadamente un bucket nuevo a `PLAZOS_TSP_VALIDOS`/`PLAZOS_TSA_VALIDOS`/`PLAZOS_VALIDOS` (CAPCOL)/`PLAZOS_VALIDOS` (TasasHistorico) | 21 filas (medido 2026-08-27 contra `marts.dim_plazo` — menos que 7+14+5+6=32 porque varios buckets coinciden exactamente en `(dias_desde, dias_hasta)` entre CAPCOL/tsp/tsa/TasasHistorico y comparten fila por el `UNIQUE (dias_desde, COALESCE(dias_hasta,-1))`; no fijo por diseño pero ya no crece sin revisión) |
 | `dim_cuenta_contable` | Catálogo (Catálogo Único de Cuentas) | — | descubierto del Boletín | ~1500 cuentas (BALANCE+PYG, según comentario de `upsert_dim_cuenta_contable`) |
 | `fact_saldo_cartera` (antes `fact_cartera`) | Hecho, CAPCOL — 2026-07-25: `estado_cartera` pivotado a columnas (`saldo_por_vencer`/`saldo_no_devenga_intereses`/`saldo_vencida`/`saldo_total`), ver `sql/21` | Mensual | 2021-01 a 2026-06 | 123.322 filas (medido 2026-07-25, post-pivote — antes 369.966 con `estado_cartera` como fila) |
 | `fact_saldo_depositos` (antes `fact_depositos`) | Hecho, CAPCOL | Mensual | 2021-01 a 2026-06 | 251.247 filas (medido 2026-07-25) |
@@ -230,16 +230,29 @@ Verificado: conteos idénticos antes/después de la migración en las 3 tablas a
 
 Todas verificadas en código, no solo documentadas:
 
-1. **Identidad curada, nunca autogenerada**: `banco_matching.py`, `categoria_deposito_matching.py`
-   y `bce_plazo_matching.py` lanzan una excepción propia (`BancoNoResueltoError`,
-   `CategoriaNoResueltaError`, `PlazoNoResueltoError`) ante un valor crudo no reconocido,
-   en vez de crear una fila nueva silenciosa en el catálogo. Cubierto por
-   `tests/test_banco_matching.py`, `tests/test_categoria_deposito_matching.py`,
-   `tests/test_bce_plazo_matching.py`.
-2. **Universo cerrado y validado en BCE**: `SEGMENTOS_VALIDOS` (26) y `CATEGORIAS_VALIDAS`
-   (11) se validan explícitamente contra el valor real de cada fila de tsp/tsa antes de
-   escribir a `staging.*` — un valor fuera del universo sembrado detiene la carga
-   (`ValueError`/`SegmentoNoResueltoError`), no se descarta silenciosamente.
+1. **Identidad curada, nunca autogenerada**: `banco_matching.py`, `categoria_deposito_matching.py`,
+   `bce_plazo_matching.py` y `parse_tasas_historicas.py` lanzan una excepción propia
+   (`BancoNoResueltoError`, `CategoriaNoResueltaError`, `PlazoNoResueltoError`) ante un
+   valor crudo no reconocido, en vez de crear una fila nueva silenciosa en el catálogo.
+   Cubierto por `tests/test_banco_matching.py`, `tests/test_categoria_deposito_matching.py`,
+   `tests/test_bce_plazo_matching.py`, `tests/test_parse_tasas_historicas.py`.
+   **`dim_plazo` era la excepción a esta regla hasta 2026-08-27** (crecía vía
+   `INSERT ... ON CONFLICT DO NOTHING` en `refresh_marts()`, sin validar contra ningún
+   universo conocido — cualquier texto que matcheara el *shape* regex de un bucket se
+   aceptaba sin revisión) — cerrado con `PLAZOS_TSP_VALIDOS`/`PLAZOS_TSA_VALIDOS`
+   (`bce_plazo_matching.py::validar_universo_plazos_bce()`) y sets `PLAZOS_VALIDOS`
+   análogos en `categoria_deposito_matching.py` (CAPCOL) y `parse_tasas_historicas.py`
+   (`TasasHistorico.htm`); los 3 caminos ahora comparten `PlazoNoResueltoError`, igual
+   que `BancoNoResueltoError` centraliza la identidad de banco. Verificado contra
+   `raw.*` completo (no solo `staging`, que puede estar en una ventana más chica): los
+   universos válidos codificados coinciden exactamente con el histórico completo
+   ingerido en las 4 fuentes (tsp: 7, tsa: 14, CAPCOL: 5, TasasHistorico: 6) — ningún
+   bucket real actual queda fuera.
+2. **Universo cerrado y validado en BCE**: `SEGMENTOS_VALIDOS` (26), `CATEGORIAS_VALIDAS`
+   (11), `PLAZOS_TSP_VALIDOS` (7) y `PLAZOS_TSA_VALIDOS` (14) se validan explícitamente
+   contra el valor real de cada fila de tsp/tsa antes de escribir a `staging.*` — un
+   valor fuera del universo sembrado detiene la carga (`ValueError`/
+   `SegmentoNoResueltoError`/`PlazoNoResueltoError`), no se descarta silenciosamente.
 3. **Índices únicos NULL-safe**: todo `UNIQUE`/`ON CONFLICT` sobre una columna nullable
    (`plazo_dias_hasta`, `plazo_id`, `provincia`) usa `COALESCE(col, sentinela)` — bug real
    encontrado y corregido en `sql/10_fix_null_unique_constraints.sql` (Postgres trata
@@ -256,12 +269,19 @@ Todas verificadas en código, no solo documentadas:
    decimales — usado como comprobación de que una fórmula derivada es correcta antes de
    confiar en cualquier métrica calculada, no solo en que el dato cargó sin error.
 7. **Suite de tests**: `tests/test_transform.py` (parsers CAPCOL, requiere archivos reales
-   descargados — se salta si no están) + 5 archivos de tests puros sobre las funciones de
-   matching/normalización (no requieren archivos externos): `test_banco_matching.py`,
-   `test_categoria_deposito_matching.py`, `test_bce_plazo_matching.py`,
-   `test_parse_boletin.py`, `test_parse_tasas_historicas.py` — 33 tests en total,
-   incluyendo un test de regresión (`test_parse_filas_rastrea_seccion_sin_asumir_que_tabla_0_es_activa_maxima`)
-   que fija explícitamente el bug real de inestabilidad de tabla en `TasasHistorico.htm`.
+   descargados — se salta si no están) + archivos de tests puros sobre funciones de
+   matching/normalización/parsing que no requieren archivos externos
+   (`test_banco_matching.py`, `test_categoria_deposito_matching.py`,
+   `test_bce_plazo_matching.py`, `test_parse_boletin.py`, `test_parse_tasas_historicas.py`,
+   `test_common.py`, `test_pipeline_fecha_parsing.py`) + `test_integration_regressions.py`
+   (usa `db_conn`, fixture en `tests/conftest.py` — requiere Postgres vivo, se salta si no
+   hay conexión), incluyendo un test de regresión
+   (`test_parse_filas_rastrea_seccion_sin_asumir_que_tabla_0_es_activa_maxima`) que fija
+   explícitamente el bug real de inestabilidad de tabla en `TasasHistorico.htm`.
+   **Conteo puntual, no un número fijo a mantener a mano** (mismo criterio que la tabla de
+   volúmenes de `marts` arriba: se degrada apenas se agrega un test) — **57 tests** medido
+   2026-08-27 con `grep -rc "^def test_" tests/*.py` (o `pytest --collect-only -q`); ese
+   comando, no este número, es la fuente de verdad si hace falta un valor vigente.
 
 ## Huecos de gobernanza conocidos
 
@@ -280,8 +300,8 @@ asumir que un campo "debería" tener datos:
 | Boletín solo 2021-01 en adelante | No se intentó cargar años anteriores — decisión explícita de alcance | `docs/fuentes_datos.md` |
 | `dim_cuenta_contable.grupo_met` no es partición limpia | Un mismo código de cuenta puede caer en 2+ grupos funcionales de la hoja `MET`; se guarda solo el primero encontrado | `docs/metricas_financieras.md` |
 | ~~BCE tsp/tsa: `raw.*` no incluía el universo completo de entidades~~ — **resuelto 2026-07-19** | Estaba filtrado a bancos privados antes de persistir; corregido, `raw.*` ahora captura las 6 categorías completas y `staging`/`marts` resuelven identidad para todas (curada para privados, auto-registrada por RUC para el resto) | `docs/linaje_datos.md`, sección "Identidad para el universo completo del sistema financiero" arriba |
-| Identidad auto-registrada por RUC (~420 entidades no-privadas) no está curada | A diferencia de los bancos privados, estas ~420 entidades no pasaron por revisión humana — el nombre/tipo_entidad viene tal cual del BCE. | `etl/transform/banco_matching.py::resolver_entidad_bce` |
-| **7 pares de `dim_banco.banco_codigo` distintos comparten el mismo `ruc`** — confirmado 2026-07-23, no un riesgo teórico | Al activar `ruc` (ver fila de arriba) se pudo verificar por primera vez con datos reales, no solo sospechar: `DINERS CLUB`/`BP DINERS`, `BANCO AMIBANK S.A.`/`FINCA`/`BP FINCA S.A.` (3 vías, mismo RUC), `COOPERATIVA...DESARROLLO DE LOS PUEBLOS`/`BP...CODESARROLLO`, `BANCO ATLÁNTIDA S.A.`/`BP D-MIRO S.A.`, `VISIONFUND`/`BP VISIONFUND ECUADOR S.A.`, `M.M. JARAMILLO ARTEAGA`/`PROMERICA`, `COOPERATIVA...NACIONAL`/`BP COOPNACIONAL`. El patrón dominante **no es un error del BCE**, es una entidad que cambió de forma legal (cooperativa/financiera → banco privado licenciado) mientras BCE seguía usando el mismo RUC — `resolver_entidad_bce()` la resuelve por separado en cada lado porque enruta por `tipo_entidad_bce`, así que quedan como 2 filas distintas de `dim_banco` para el mismo contribuyente. **No se fusionó**: a diferencia del bug de Manabí/Amibank (mismo nombre, mismo tipo, typo de la fuente), acá el cambio de tipo de entidad es real y fusionar podría ocultar esa transición en vez de modelarla — es una decisión de negocio, no una limpieza mecánica. Cualquier análisis longitudinal por banco (o modelo predictivo) que agrupe por `banco_codigo` debe revisar esta lista si el banco de interés aparece en ella. | `SELECT ruc, count(*), string_agg(banco,' / ') FROM marts.dim_banco GROUP BY ruc HAVING count(*)>1` |
+| Identidad auto-registrada por RUC (~420 entidades no-privadas) no está curada | A diferencia de los bancos privados, estas ~420 entidades no pasaron por revisión humana — el nombre/tipo_entidad viene tal cual del BCE. Decisión deliberada, no un descuido: a esta escala curar 420 nombres a mano es inviable y no hay hoy ninguna otra fuente (CAPCOL/Boletín) con la que reconciliar estas entidades, así que la curación no aportaría valor todavía. **Condición de salida explícita** (no es un "más adelante" abierto): la curación deja de ser diferible el día que ocurra CUALQUIERA de (1) el proyecto agrega una fuente específica de cooperativas/mutualistas/sociedades financieras (dato con el que sí se podría reconciliar el crosswalk de las ~420), o (2) aparece una colisión de RUC *entre* dos entidades del set auto-registrado (distinto de la colisión ya conocida y documentada entre banco-privado-curado y entidad-auto-registrada, ver fila `vw_banco_ruc_colisiones` abajo) — ese caso significaría que el RUC, la única llave que sostiene hoy el auto-registro sin curación, dejó de ser confiable como identificador único para ese subconjunto. Ninguna de las 2 condiciones se ha cumplido a la fecha de esta nota (2026-08-27). | `etl/transform/banco_matching.py::resolver_entidad_bce` |
+| **7 pares de `dim_banco.banco_codigo` distintos comparten el mismo `ruc`** — confirmado 2026-07-23, no un riesgo teórico; **discoverability resuelta 2026-08-22** | Al activar `ruc` (ver fila de arriba) se pudo verificar por primera vez con datos reales, no solo sospechar: `DINERS CLUB`/`BP DINERS`, `BANCO AMIBANK S.A.`/`FINCA`/`BP FINCA S.A.` (3 vías, mismo RUC), `COOPERATIVA...DESARROLLO DE LOS PUEBLOS`/`BP...CODESARROLLO`, `BANCO ATLÁNTIDA S.A.`/`BP D-MIRO S.A.`, `VISIONFUND`/`BP VISIONFUND ECUADOR S.A.`, `M.M. JARAMILLO ARTEAGA`/`PROMERICA`, `COOPERATIVA...NACIONAL`/`BP COOPNACIONAL`. El patrón dominante **no es un error del BCE**, es una entidad que cambió de forma legal (cooperativa/financiera → banco privado licenciado) mientras BCE seguía usando el mismo RUC — `resolver_entidad_bce()` la resuelve por separado en cada lado porque enruta por `tipo_entidad_bce`, así que quedan como 2 filas distintas de `dim_banco` para el mismo contribuyente. **No se fusionó y sigue sin fusionarse**: a diferencia del bug de Manabí/Amibank (mismo nombre, mismo tipo, typo de la fuente), acá el cambio de tipo de entidad es real y fusionar podría ocultar esa transición en vez de modelarla — es una decisión de negocio, no una limpieza mecánica, y esta fila documenta esa decisión, no un pendiente. Lo que sí era un hueco real: la única forma de descubrir la colisión era haber leído esta fila — la query de verificación no estaba persistida en ningún objeto consultable. **Resuelto 2026-08-22**: `marts.vw_banco_ruc_colisiones` (`sql/22_vw_banco_ruc_colisiones.sql`) surface los 7 pares/15 filas directo desde SQL — cualquier análisis longitudinal por banco (o modelo predictivo) que agrupe por `banco_codigo` debe cruzar contra esa vista si el banco de interés aparece en ella. | `sql/22_vw_banco_ruc_colisiones.sql`, `docs/data_dictionary.md` |
 | `dim_banco` creció de ~33 a 442 filas de golpe | Efecto esperado del fix de arriba, no un bug — pero cualquier cálculo/reporte que asumía "todo `dim_banco` es banco privado" (ej. si el `.pbip` de Power BI algún día vuelve a usarse sin filtrar `tipo_entidad`) necesita revisarse | Este documento |
 | ~~Power BI (`.pbip`) con nombres/columnas viejos~~ — **realineado 2026-07-23, actualizado de nuevo 2026-07-25 (dos veces)** | Se actualizaron las 8 tablas ya modeladas (`fact_saldo_cartera`/`fact_saldo_depositos`, `dim_segmento_credito`, `dim_categoria_deposito` + `dim_plazo` nueva) para que coincidan con el esquema vivo — medidas DAX, relaciones y visuals del reporte incluidos. 2026-07-25: la normalización de `dim_canton.provincia`→`dim_provincia` (ver fila "Normalización de provincia" arriba) rompía 2 visuales del reporte (`page-geografico`, barras por provincia) que sí usaban ese campo directo — agregada `dim_provincia.tmdl` (9na tabla), relación `dim_canton→dim_provincia`, y los 2 `visual.json` actualizados a `Entity: "dim_provincia"`. Mismo día, el pivote de `estado_cartera` (ver fila "Pivote de estado_cartera" abajo) rompía 3 medidas DAX que filtraban `fact_saldo_cartera[estado_cartera]` — corregidas a `SUM()` directo sobre las nuevas columnas; ningún visual necesitó cambios (todos usan medidas, no columnas crudas — confirmado con grep antes de asumirlo). **Sigue sin cubrir BCE/Boletín** (11 tablas más) ni el universo completo de `dim_banco` (el modelo solo trae bancos privados, coherente con su alcance actual) — eso es una expansión aparte, no un arreglo. | `README.md` |
 | **Pivote de `estado_cartera`** — antipatrón EAV corregido, no un bug de datos | `fact_saldo_cartera` tenía `estado_cartera` como dimensión degenerada (3 filas por `(fecha, banco, cantón, segmento)`, una por estado) cuando en realidad son 3 medidas mutuamente excluyentes del mismo hecho — el usuario lo identificó explícitamente al revisar el modelo. Mismo criterio que ya usaba `fact_tasas_referenciales_cartera` (columnas de medida, no "tipo"+"valor"). Pivotado a `saldo_por_vencer`/`saldo_no_devenga_intereses`/`saldo_vencida` + `saldo_total` (columna `GENERATED`, suma de las 3) — grano pasó de 369.966 a 123.322 filas (÷3 exacto, sin combinaciones parciales). `vw_cartera_market_share`/`vw_cartera_hhi` (`sql/15`) dependían de la columna `saldo` vieja — recreadas sobre `saldo_total` en la misma migración. Verificado: `SUM(saldo_total)` pre/post migración idéntico, `refresh_marts()` idempotente. | `sql/21_fact_saldo_cartera_pivot.sql`, `docs/data_dictionary.md` |

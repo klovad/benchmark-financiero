@@ -22,6 +22,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from etl.transform.bce_plazo_matching import PlazoNoResueltoError
+
 _NUM = re.compile(r"^-?\d+[.,]\d+$")
 
 
@@ -49,25 +51,56 @@ _CATEGORIA_ALIAS = {"DEPÓSITOS DE TARJETAHABIENTES": "FONDOS DE TARJETAHABIENTE
 _PLAZO_RANGO = re.compile(r"^PLAZO\s+(\d+)\s*-\s*(\d+)$")
 _PLAZO_SIN_TOPE = re.compile(r"^PLAZO\s+(\d+)\s+Y\s+M[AÁ]S$")
 
+# Universo verificado contra staging.tasas_referenciales seccion='pasiva_plazo'
+# (2026-08-22): esta fuente trae exactamente estos 6 buckets. Mismo criterio que
+# PLAZOS_TSP_VALIDOS/PLAZOS_TSA_VALIDOS (etl/transform/bce_plazo_matching.py) y
+# PLAZOS_VALIDOS (etl/transform/categoria_deposito_matching.py) -- que un texto nuevo
+# matchee el *shape* de _PLAZO_RANGO/_PLAZO_SIN_TOPE no basta para aceptarlo en el
+# dim_plazo compartido sin revisión deliberada.
+PLAZOS_VALIDOS = {
+    "PLAZO 30-60",
+    "PLAZO 61-90",
+    "PLAZO 91-120",
+    "PLAZO 121-180",
+    "PLAZO 181-360",
+    # el regex _PLAZO_SIN_TOPE acepta "MAS"/"MÁS" (M[AÁ]S) porque esta fuente no es
+    # 100% consistente con el acento -- se incluyen ambas variantes en el universo
+    # válido para no romper filas reales por una diferencia de tilde.
+    "PLAZO 361 Y MAS",
+    "PLAZO 361 Y MÁS",
+}
+
 
 def _resolver_plazo(texto: str) -> tuple[int, int | None]:
     t = texto.strip().upper()
+    if t not in PLAZOS_VALIDOS:
+        raise PlazoNoResueltoError(
+            f"No se pudo resolver el plazo de TasasHistorico: '{texto}'. Si es un "
+            f"bucket nuevo y legítimo, agregarlo deliberadamente a PLAZOS_VALIDOS en "
+            f"etl/transform/parse_tasas_historicas.py (no relajar esta validación)."
+        )
     m = _PLAZO_RANGO.match(t)
     if m:
         return int(m.group(1)), int(m.group(2))
     m = _PLAZO_SIN_TOPE.match(t)
     if m:
         return int(m.group(1)), None
-    raise ValueError(f"No se pudo resolver el plazo de TasasHistorico: '{texto}'")
+    raise PlazoNoResueltoError(
+        f"No se pudo resolver el plazo de TasasHistorico: '{texto}'"
+    )
 
 
 def _segmento_label(raw: str) -> str:
-    label = re.sub(r"\d+$", "", raw.strip()).strip().upper()  # quita superíndices de nota al pie (ej. "Inmobiliario3")
+    label = (
+        re.sub(r"\d+$", "", raw.strip()).strip().upper()
+    )  # quita superíndices de nota al pie (ej. "Inmobiliario3")
     return _SEGMENTO_ALIAS.get(label, label)
 
 
 def _categoria_label(raw: str) -> str:
-    label = re.sub(r"[\d*]+$", "", raw.strip()).strip().upper()  # quita marcadores de nota al pie (ej. "Depósitos a Plazo*")
+    label = (
+        re.sub(r"[\d*]+$", "", raw.strip()).strip().upper()
+    )  # quita marcadores de nota al pie (ej. "Depósitos a Plazo*")
     return _CATEGORIA_ALIAS.get(label, label)
 
 
@@ -76,7 +109,10 @@ def _categoria_label(raw: str) -> str:
 _SECCION_MARCADORES = [
     ("TASAS DE INTERÉS ACTIVAS MÁXIMAS", "activa_maxima"),
     ("TASAS DE INTERÉS ACTIVAS EFECTIVAS REFERENCIALES", "activa_referencial"),
-    ("TASAS DE INTERÉS PASIVAS EFECTIVAS PROMEDIO POR INSTRUMENTO", "pasiva_instrumento"),
+    (
+        "TASAS DE INTERÉS PASIVAS EFECTIVAS PROMEDIO POR INSTRUMENTO",
+        "pasiva_instrumento",
+    ),
     ("TASAS DE INTERÉS PASIVAS EFECTIVAS REFERENCIALES POR PLAZO", "pasiva_plazo"),
     ("OTRAS TASAS REFERENCIALES", "sistema"),
 ]
@@ -91,17 +127,42 @@ _METRICAS_SISTEMA = {
 
 def _emitir(seccion: str, label: str, valor: float) -> dict | None:
     if seccion == "activa_maxima":
-        return {"seccion": seccion, "dimension_valor": _segmento_label(label), "metrica": "tasa_activa_maxima", "valor": valor}
+        return {
+            "seccion": seccion,
+            "dimension_valor": _segmento_label(label),
+            "metrica": "tasa_activa_maxima",
+            "valor": valor,
+        }
     if seccion == "activa_referencial":
-        return {"seccion": seccion, "dimension_valor": _segmento_label(label), "metrica": "tasa_activa_referencial", "valor": valor}
+        return {
+            "seccion": seccion,
+            "dimension_valor": _segmento_label(label),
+            "metrica": "tasa_activa_referencial",
+            "valor": valor,
+        }
     if seccion == "pasiva_instrumento":
-        return {"seccion": seccion, "dimension_valor": _categoria_label(label), "metrica": "tasa_pasiva_promedio", "valor": valor}
+        return {
+            "seccion": seccion,
+            "dimension_valor": _categoria_label(label),
+            "metrica": "tasa_pasiva_promedio",
+            "valor": valor,
+        }
     if seccion == "pasiva_plazo":
         desde, hasta = _resolver_plazo(label)
-        return {"seccion": seccion, "plazo_dias_desde": desde, "plazo_dias_hasta": hasta, "metrica": "tasa_pasiva_referencial", "valor": valor}
+        return {
+            "seccion": seccion,
+            "plazo_dias_desde": desde,
+            "plazo_dias_hasta": hasta,
+            "metrica": "tasa_pasiva_referencial",
+            "valor": valor,
+        }
     if seccion == "sistema":
         metrica = _METRICAS_SISTEMA.get(label.strip().upper())
-        return {"seccion": seccion, "metrica": metrica, "valor": valor} if metrica else None
+        return (
+            {"seccion": seccion, "metrica": metrica, "valor": valor}
+            if metrica
+            else None
+        )
     return None
 
 
@@ -160,7 +221,9 @@ def parse_tasas_historicas_file(path: Path, fecha) -> pd.DataFrame:
 
     filas = _parse_filas(tablas)
     if not filas:
-        raise ValueError(f"{path.name}: no se pudo extraer ninguna fila reconocible (layout no soportado)")
+        raise ValueError(
+            f"{path.name}: no se pudo extraer ninguna fila reconocible (layout no soportado)"
+        )
 
     df = pd.DataFrame.from_records(filas)
     df["fecha"] = fecha
@@ -168,4 +231,15 @@ def parse_tasas_historicas_file(path: Path, fecha) -> pd.DataFrame:
         if col not in df.columns:
             df[col] = None
     df["source_file"] = path.name
-    return df[["fecha", "seccion", "dimension_valor", "plazo_dias_desde", "plazo_dias_hasta", "metrica", "valor", "source_file"]]
+    return df[
+        [
+            "fecha",
+            "seccion",
+            "dimension_valor",
+            "plazo_dias_desde",
+            "plazo_dias_hasta",
+            "metrica",
+            "valor",
+            "source_file",
+        ]
+    ]

@@ -48,7 +48,12 @@ import numpy as np
 import pandas as pd
 
 from etl.transform.banco_matching import resolver_entidad_bce
-from etl.transform.bce_plazo_matching import resolver_plazo_bce
+from etl.transform.bce_plazo_matching import (
+    PLAZOS_TSA_VALIDOS,
+    PLAZOS_TSP_VALIDOS,
+    resolver_plazo_bce,
+    validar_universo_plazos_bce,
+)
 from etl.transform.categoria_deposito_matching import CATEGORIAS_VALIDAS
 from etl.transform.common import normalize_provincia, sha256_file
 
@@ -60,14 +65,32 @@ CHUNK_SIZE = 300_000
 # Verificado (2026-07-19) contra el archivo tsa completo SIN filtrar por tipo_entidad:
 # los 26 valores aparecen tal cual, ninguno nuevo aportado por entidades no-privadas.
 SEGMENTOS_VALIDOS = {
-    "COMERCIAL ORDINARIO", "COMERCIAL PRIORITARIO CORPORATIVO", "COMERCIAL PRIORITARIO EMPRESARIAL",
-    "COMERCIAL PRIORITARIO PYMES", "CONSUMO", "CONSUMO MINORISTA", "CONSUMO ORDINARIO",
-    "CONSUMO PRIORITARIO", "EDUCATIVO", "EDUCATIVO SOCIAL", "INMOBILIARIO", "INVERSIÓN PÚBLICA",
-    "MICROCRÉDITO ACUMULACIÓN AMPLIADA (SE)", "MICROCRÉDITO ACUMULACIÓN SIMPLE (SE)",
-    "MICROCRÉDITO AGRÍCOLA Y GANADERO", "MICROCRÉDITO DE ACUMULACIÓN AMPLIADA",
-    "MICROCRÉDITO DE ACUMULACIÓN SIMPLE", "MICROCRÉDITO MINORISTA", "MICROCRÉDITO MINORISTA (SE)",
-    "PRODUCTIVO - CORPORATIVO", "PRODUCTIVO AGRÍCOLA Y GANADERO", "PRODUCTIVO EMPRESARIAL",
-    "PRODUCTIVO PYMES", "VIVIENDA", "VIVIENDA DE INTERÉS PÚBLICO", "VIVIENDA DE INTERÉS SOCIAL",
+    "COMERCIAL ORDINARIO",
+    "COMERCIAL PRIORITARIO CORPORATIVO",
+    "COMERCIAL PRIORITARIO EMPRESARIAL",
+    "COMERCIAL PRIORITARIO PYMES",
+    "CONSUMO",
+    "CONSUMO MINORISTA",
+    "CONSUMO ORDINARIO",
+    "CONSUMO PRIORITARIO",
+    "EDUCATIVO",
+    "EDUCATIVO SOCIAL",
+    "INMOBILIARIO",
+    "INVERSIÓN PÚBLICA",
+    "MICROCRÉDITO ACUMULACIÓN AMPLIADA (SE)",
+    "MICROCRÉDITO ACUMULACIÓN SIMPLE (SE)",
+    "MICROCRÉDITO AGRÍCOLA Y GANADERO",
+    "MICROCRÉDITO DE ACUMULACIÓN AMPLIADA",
+    "MICROCRÉDITO DE ACUMULACIÓN SIMPLE",
+    "MICROCRÉDITO MINORISTA",
+    "MICROCRÉDITO MINORISTA (SE)",
+    "PRODUCTIVO - CORPORATIVO",
+    "PRODUCTIVO AGRÍCOLA Y GANADERO",
+    "PRODUCTIVO EMPRESARIAL",
+    "PRODUCTIVO PYMES",
+    "VIVIENDA",
+    "VIVIENDA DE INTERÉS PÚBLICO",
+    "VIVIENDA DE INTERÉS SOCIAL",
 }
 
 # Universo completo de tipo_segmento (= clasificación normativa de tamaño/estructura de
@@ -78,23 +101,55 @@ SEGMENTOS_VALIDOS = {
 # columnas de agregado del Boletín (BANCOS PRIVADOS GRANDES/MEDIANOS/PEQUEÑOS), pero acá
 # es la primera vez que se ve etiquetado por banco individual -- ver dim_segmento_entidad.
 TIPOS_SEGMENTO_VALIDOS = {
-    "BANCO GRANDE", "BANCO MEDIANO", "BANCO PEQUEÑO", "BANCOS PUBLICOS",
-    "SEGMENTO 1", "SEGMENTO 2", "SEGMENTO 3", "SEGMENTO 4", "SEGMENTO 5", "SIN SEGMENTO",
-    "SEGMENTO 1 MUTUALISTA", "MUTUALISTAS",
-    "SOCIEDAD FINANCIERA", "ADMINISTRADORA DE TARJETAS DE CREDITO",
+    "BANCO GRANDE",
+    "BANCO MEDIANO",
+    "BANCO PEQUEÑO",
+    "BANCOS PUBLICOS",
+    "SEGMENTO 1",
+    "SEGMENTO 2",
+    "SEGMENTO 3",
+    "SEGMENTO 4",
+    "SEGMENTO 5",
+    "SIN SEGMENTO",
+    "SEGMENTO 1 MUTUALISTA",
+    "MUTUALISTAS",
+    "SOCIEDAD FINANCIERA",
+    "ADMINISTRADORA DE TARJETAS DE CREDITO",
 }
 
 # Columnas originales de la fuente (+ fecha derivada de semana) para raw.bce_tasas_*.
 # Deliberadamente SIN agregar ni resolver identidad -- eso es trabajo de staging.
 RAW_TSP_COLS = [
-    "fecha", "ruc", "razon_social", "sector_financiero", "tipo_entidad", "tipo_segmento",
-    "instrumento_captacion", "provincia", "canton", "plazo", "monto_total",
-    "numero_operaciones", "tasa_pasiva_efectiva", "tasa_nominal",
+    "fecha",
+    "ruc",
+    "razon_social",
+    "sector_financiero",
+    "tipo_entidad",
+    "tipo_segmento",
+    "instrumento_captacion",
+    "provincia",
+    "canton",
+    "plazo",
+    "monto_total",
+    "numero_operaciones",
+    "tasa_pasiva_efectiva",
+    "tasa_nominal",
 ]
 RAW_TSA_COLS = [
-    "fecha", "ruc", "razon_social", "sector_financiero", "tipo_entidad", "tipo_segmento",
-    "segmento_credito", "provincia", "canton", "plazo", "monto_total",
-    "numero_operaciones", "tasa_activa_efectiva", "tasa_nominal",
+    "fecha",
+    "ruc",
+    "razon_social",
+    "sector_financiero",
+    "tipo_entidad",
+    "tipo_segmento",
+    "segmento_credito",
+    "provincia",
+    "canton",
+    "plazo",
+    "monto_total",
+    "numero_operaciones",
+    "tasa_activa_efectiva",
+    "tasa_nominal",
 ]
 
 
@@ -111,13 +166,19 @@ def _resolve_segmento_entidad(df: pd.DataFrame) -> pd.DataFrame:
     instrumento/plazo/provincia de cada fila. Estable en casi todos los casos; cuando no
     (raro, ver docstring del módulo), gana la fila de mayor monto_total."""
     idx = df.groupby(["fecha", "banco_codigo"])["monto_total"].idxmax()
-    return df.loc[idx, ["fecha", "banco_codigo", "tipo_segmento"]].reset_index(drop=True)
+    return df.loc[idx, ["fecha", "banco_codigo", "tipo_segmento"]].reset_index(
+        drop=True
+    )
 
 
 def _single_csv_in_zip(zip_path: Path) -> str:
-    names = [n for n in zipfile.ZipFile(zip_path).namelist() if n.lower().endswith(".csv")]
+    names = [
+        n for n in zipfile.ZipFile(zip_path).namelist() if n.lower().endswith(".csv")
+    ]
     if len(names) != 1:
-        raise ValueError(f"{zip_path.name}: se esperaba 1 csv dentro del zip, se encontraron {len(names)}")
+        raise ValueError(
+            f"{zip_path.name}: se esperaba 1 csv dentro del zip, se encontraron {len(names)}"
+        )
     return names[0]
 
 
@@ -129,7 +190,12 @@ def read_raw(zip_path: Path) -> pd.DataFrame:
     chunks = []
     with zipfile.ZipFile(zip_path) as zf, zf.open(csv_name) as f:
         for chunk in pd.read_csv(
-            f, sep=";", decimal=",", encoding="utf-8", dtype={"ruc": str}, chunksize=CHUNK_SIZE,
+            f,
+            sep=";",
+            decimal=",",
+            encoding="utf-8",
+            dtype={"ruc": str},
+            chunksize=CHUNK_SIZE,
         ):
             chunks.append(chunk)
     df = pd.concat(chunks, ignore_index=True)
@@ -137,7 +203,9 @@ def read_raw(zip_path: Path) -> pd.DataFrame:
     return df
 
 
-def _weighted_agg(df: pd.DataFrame, group_cols: list[str], tasa_cols: list[str]) -> pd.DataFrame:
+def _weighted_agg(
+    df: pd.DataFrame, group_cols: list[str], tasa_cols: list[str]
+) -> pd.DataFrame:
     """Colapsa cantón dentro de cada provincia: SUM(monto_total)/SUM(numero_operaciones);
     cada tasa se promedia ponderada por el monto_total de las filas donde esa tasa
     específica no es nula (denominador propio por columna, no el monto_total agregado
@@ -160,16 +228,23 @@ def _weighted_agg(df: pd.DataFrame, group_cols: list[str], tasa_cols: list[str])
     return g
 
 
-def _resolve_identidad(df: pd.DataFrame) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
+def _resolve_identidad(
+    df: pd.DataFrame,
+) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
     """Resuelve banco_codigo/banco/tipo_entidad/ruc para TODAS las filas -- solo sobre las
     combinaciones distintas de (razon_social, ruc, tipo_entidad) (cientos, no millones de
     filas), luego se pega de vuelta con merge(). Devuelve también la lista de TODAS las
     entidades resueltas (bancos privados incluidos, no solo las auto-registradas) para
     poblar staging.banco_maestro.ruc -- BCE es la única fuente que trae RUC, ver
     resolver_entidad_bce()."""
-    claves = df[["razon_social", "ruc", "tipo_entidad"]].drop_duplicates().reset_index(drop=True)
+    claves = (
+        df[["razon_social", "ruc", "tipo_entidad"]]
+        .drop_duplicates()
+        .reset_index(drop=True)
+    )
     resueltas = claves.apply(
-        lambda r: resolver_entidad_bce(r["razon_social"], r["ruc"], r["tipo_entidad"]), axis=1,
+        lambda r: resolver_entidad_bce(r["razon_social"], r["ruc"], r["tipo_entidad"]),
+        axis=1,
     )
     claves["banco_codigo"] = [t[0] for t in resueltas]
     claves["banco_nombre"] = [t[1] for t in resueltas]
@@ -186,24 +261,29 @@ def _resolve_identidad(df: pd.DataFrame) -> tuple[pd.DataFrame, list[tuple[str, 
     return df, entidades
 
 
-def _add_common_columns(df: pd.DataFrame) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
+def _add_common_columns(
+    df: pd.DataFrame, plazos_validos: set[str], fuente: str
+) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
     df = df.copy()
     df, entidades = _resolve_identidad(df)
     df["provincia"] = df["provincia"].apply(normalize_provincia)
     df["plazo_codigo"] = df["plazo"]
+    validar_universo_plazos_bce(df["plazo"].unique(), plazos_validos, fuente)
     plazo_lookup = {v: resolver_plazo_bce(v) for v in df["plazo"].unique()}
     df["plazo_dias_desde"] = df["plazo"].map(lambda v: plazo_lookup[v][0])
     df["plazo_dias_hasta"] = df["plazo"].map(lambda v: plazo_lookup[v][1])
     return df, entidades
 
 
-def parse_tsp_file(zip_path: Path, df_raw: pd.DataFrame | None = None) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
+def parse_tsp_file(
+    zip_path: Path, df_raw: pd.DataFrame | None = None
+) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
     """Devuelve (df_staging, entidades). `df_raw` permite reusar una lectura ya
     hecha (evita leer el zip de ~700MB dos veces si el llamador ya lo cargó para raw.*
     vía read_raw())."""
     source_hash = sha256_file(zip_path)
     df = df_raw if df_raw is not None else read_raw(zip_path)
-    df, entidades = _add_common_columns(df)
+    df, entidades = _add_common_columns(df, PLAZOS_TSP_VALIDOS, "tsp")
 
     categorias = df["instrumento_captacion"].str.strip().str.upper()
     desconocidas = set(categorias.unique()) - CATEGORIAS_VALIDAS
@@ -214,12 +294,19 @@ def parse_tsp_file(zip_path: Path, df_raw: pd.DataFrame | None = None) -> tuple[
     df["tipo_segmento"] = df["tipo_segmento"].str.strip().str.upper()
     desconocidos_seg = set(df["tipo_segmento"].unique()) - TIPOS_SEGMENTO_VALIDOS
     if desconocidos_seg:
-        raise TipoSegmentoNoResueltoError(f"tipo_segmento desconocido en tsp: {desconocidos_seg}")
+        raise TipoSegmentoNoResueltoError(
+            f"tipo_segmento desconocido en tsp: {desconocidos_seg}"
+        )
     segmento_entidad = _resolve_segmento_entidad(df)
 
     group_cols = [
-        "fecha", "banco_codigo", "categoria_deposito",
-        "plazo_dias_desde", "plazo_dias_hasta", "plazo_codigo", "provincia",
+        "fecha",
+        "banco_codigo",
+        "categoria_deposito",
+        "plazo_dias_desde",
+        "plazo_dias_hasta",
+        "plazo_codigo",
+        "provincia",
     ]
     result = _weighted_agg(df, group_cols, ["tasa_pasiva_efectiva", "tasa_nominal"])
     result = result.merge(segmento_entidad, on=["fecha", "banco_codigo"], how="left")
@@ -228,27 +315,38 @@ def parse_tsp_file(zip_path: Path, df_raw: pd.DataFrame | None = None) -> tuple[
     return result, entidades
 
 
-def parse_tsa_file(zip_path: Path, df_raw: pd.DataFrame | None = None) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
+def parse_tsa_file(
+    zip_path: Path, df_raw: pd.DataFrame | None = None
+) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
     """Devuelve (df_staging, entidades) -- ver parse_tsp_file."""
     source_hash = sha256_file(zip_path)
     df = df_raw if df_raw is not None else read_raw(zip_path)
-    df, entidades = _add_common_columns(df)
+    df, entidades = _add_common_columns(df, PLAZOS_TSA_VALIDOS, "tsa")
 
     segmentos = df["segmento_credito"].str.strip().str.upper()
     desconocidos = set(segmentos.unique()) - SEGMENTOS_VALIDOS
     if desconocidos:
-        raise SegmentoNoResueltoError(f"segmento_credito desconocido en tsa: {desconocidos}")
+        raise SegmentoNoResueltoError(
+            f"segmento_credito desconocido en tsa: {desconocidos}"
+        )
     df["segmento_credito"] = segmentos
 
     df["tipo_segmento"] = df["tipo_segmento"].str.strip().str.upper()
     desconocidos_seg = set(df["tipo_segmento"].unique()) - TIPOS_SEGMENTO_VALIDOS
     if desconocidos_seg:
-        raise TipoSegmentoNoResueltoError(f"tipo_segmento desconocido en tsa: {desconocidos_seg}")
+        raise TipoSegmentoNoResueltoError(
+            f"tipo_segmento desconocido en tsa: {desconocidos_seg}"
+        )
     segmento_entidad = _resolve_segmento_entidad(df)
 
     group_cols = [
-        "fecha", "banco_codigo", "segmento_credito",
-        "plazo_dias_desde", "plazo_dias_hasta", "plazo_codigo", "provincia",
+        "fecha",
+        "banco_codigo",
+        "segmento_credito",
+        "plazo_dias_desde",
+        "plazo_dias_hasta",
+        "plazo_codigo",
+        "provincia",
     ]
     result = _weighted_agg(df, group_cols, ["tasa_activa_efectiva", "tasa_nominal"])
     result = result.merge(segmento_entidad, on=["fecha", "banco_codigo"], how="left")

@@ -24,7 +24,7 @@ el patrón de carga incremental por hash).
 | banco_codigo | text | Identidad canónica resuelta en ETL (`banco_matching.py`), única entre las 3 fuentes |
 | banco | text | Nombre a mostrar (sembrado desde `etl/seeds/banco_maestro.csv`) |
 | tipo_entidad | text | 6 valores reales (CHECK constraint, `sql/07`): BANCO PRIVADO, BANCO PUBLICO, COOPERATIVA, MUTUALISTA, SOCIEDAD FINANCIERA, TARJETAS DE CREDITO — 442 bancos totales (33 privados con identidad curada + 409 auto-registrados por RUC desde BCE, ver `docs/gobernanza_datos.md`) |
-| ruc | text, nullable | Identificador fiscal, poblado desde BCE tsp/tsa (única fuente que lo trae) — 2026-07-23: activado también para los 33 bancos privados curados, antes se descartaba en ese camino (`sql/17_dim_banco_ruc_sin_tamano.sql`); 442/442 filas con `ruc`. **No es único por banco**: al menos 7 pares de `banco_codigo` distintos comparten el mismo RUC (ver `docs/gobernanza_datos.md`, "RUC compartido entre identidades") |
+| ruc | text, nullable | Identificador fiscal, poblado desde BCE tsp/tsa (única fuente que lo trae) — 2026-07-23: activado también para los 33 bancos privados curados, antes se descartaba en ese camino (`sql/17_dim_banco_ruc_sin_tamano.sql`); 442/442 filas con `ruc`. **No es único por banco**: 7 `ruc` distintos son compartidos por 2+ `banco_codigo` (ver `docs/gobernanza_datos.md`, "Huecos de gobernanza conocidos", y la vista `marts.vw_banco_ruc_colisiones` más abajo para consultarlos directo) |
 | segmento_entidad_id | int, FK, nullable | `dim_segmento_entidad.segmento_entidad_id` — **última** clasificación normativa de tamaño/estructura conocida para el banco (2026-07-25, `sql/19_dim_segmento_entidad.sql`), SCD tipo 1, actualizada en cada `refresh_marts()` desde la fila más reciente de `fact_captaciones_depositos`/`fact_colocaciones_cartera`. Para análisis histórico (la clasificación cambia en el tiempo) usar el `segmento_entidad_id` de esos hechos, no este — ver tabla abajo |
 | **`tamano` (GRANDE/MEDIANO/PEQUEÑO) eliminada** (2026-07-23, `sql/17`) **y su reemplazo real encontrado 2 días después**: se creyó "no obtenible con las fuentes actuales", pero BCE tsp/tsa sí trae esta clasificación por banco individual bajo la columna `tipo_segmento`, descartada hasta entonces sin examinar su contenido — ver `dim_segmento_entidad` abajo y `docs/gobernanza_datos.md`. | | |
 | **Nota de calidad resuelta**: `BP COMERCIAL DE MANABI`/`BP BANCO COMERCIAL DE MANABI` y `BANCO AMIBANK S.A.`/`BANCO AMIBANK S.A., EN LIQUIDACION` eran el mismo banco partido en 2 filas por un rename de la fuente CAPCOL — corregido vía crosswalk, ver `etl/seeds/banco_crosswalk.csv`. | | |
@@ -58,11 +58,12 @@ el patrón de carga incremental por hash).
 | categoria_deposito_id | serial | Llave sustituta |
 | categoria | text | 12 valores: 11 de CAPCOL/BCE + `DEPÓSITOS MONETARIOS` (agregado sin distinguir generan/no-generan intereses, encontrado en `TasasHistorico.htm`) |
 
-### marts.dim_plazo (catálogo abierto por rango numérico, compartido entre fuentes)
+### marts.dim_plazo (catálogo por rango numérico, compartido entre fuentes)
 | plazo_id | serial | Llave sustituta |
 | dias_desde, dias_hasta | int, int nullable | `dias_hasta = NULL` significa sin límite superior |
 | plazo_codigo | text | Texto original de la fuente, informativo |
 | **No se fuerza equivalencia entre convenciones de distintas fuentes** — ej. CAPCOL "DE MÁS DE 361 DÍAS" y BCE tsp "g. MAS DE 360 DIAS" son filas distintas ((361,NULL) vs (360,NULL)), cada una con el límite real que reporta su fuente. | | |
+| **Fail-fast desde 2026-08-27** (antes: catálogo abierto, auto-descubierto vía `INSERT ... ON CONFLICT DO NOTHING` en `refresh_marts()` sin validar contra ningún universo conocido) — cada fuente ahora valida el texto crudo de plazo contra un universo cerrado y verificado ANTES de que el dato llegue a `staging`, igual que `categoria_deposito`/`segmento_credito`: `PLAZOS_TSP_VALIDOS` (7)/`PLAZOS_TSA_VALIDOS` (14) en `etl/transform/bce_plazo_matching.py::validar_universo_plazos_bce()`, `PLAZOS_VALIDOS` (5) en `etl/transform/categoria_deposito_matching.py`, `PLAZOS_VALIDOS` (6) en `etl/transform/parse_tasas_historicas.py`. Un texto que matchea el *shape* regex de un bucket pero no está en el universo válido de su fuente lanza `PlazoNoResueltoError` en vez de crear una fila nueva silenciosa — dim_plazo solo crece cuando alguien agrega deliberadamente el bucket nuevo a uno de esos 3 sets (mismo criterio que `SEGMENTOS_VALIDOS`/`CATEGORIAS_VALIDAS`). El `INSERT ... ON CONFLICT DO NOTHING` en `refresh_marts()` (`etl/load/load_postgres.py`, líneas ~593-610) sigue existiendo a nivel `marts` por razones de CDC/idempotencia, pero ya no es la barrera de validación real: por diseño, en operación normal nunca debería insertar un bucket que no pasó ya por el gate de Python. | | |
 
 ### marts.dim_cuenta_contable (plan de cuentas del Boletín, BALANCE + PYG)
 | cuenta_id | serial | Llave sustituta |
@@ -134,6 +135,31 @@ modelos predictivos en vez de recalcular market share/HHI desde los `fact_*` cad
 
 Ambas vistas de market share solo cubren CAPCOL (`fact_saldo_cartera`/`fact_saldo_depositos`,
 2021-01 a 2026-06) — no existe un equivalente para las tasas de BCE ni para el Boletín todavía.
+
+### Vista de gobernanza — `marts.vw_banco_ruc_colisiones` (`sql/22_vw_banco_ruc_colisiones.sql`)
+
+**Para qué**: hace consultable directamente el hueco de gobernanza "7 pares de
+`banco_codigo` distintos comparten el mismo `ruc`" (ver `docs/gobernanza_datos.md`,
+"Huecos de gobernanza conocidos") — antes solo estaba documentado como prosa, con la
+query de verificación mencionada en el propio documento pero no persistida en ningún
+objeto de base de datos. Un analista que haga `SELECT * FROM marts.dim_banco` no tiene
+forma de descubrir la colisión sin haber leído ese documento primero; esta vista sí lo
+muestra directo.
+
+**Grano**: una fila por `(ruc, banco_id)` — no por `ruc`. Solo incluye los `ruc` que
+aparecen en 2 o más filas de `dim_banco`.
+
+**Columnas**: `ruc`, `banco_id`, `banco_codigo`, `banco`, `tipo_entidad`.
+
+**Cuándo usarla**: antes de cualquier análisis longitudinal o modelo predictivo que
+agrupe/una por `banco_codigo` o `ruc` — hacer `LEFT JOIN`/`NOT EXISTS` contra esta vista
+para saber si el banco de interés participa en una colisión. **No cambia la decisión de
+negocio**: los `banco_codigo` de cada par siguen sin fusionarse (el cambio de
+`tipo_entidad` — cooperativa/financiera que pasó a banco privado licenciado manteniendo
+el mismo RUC en BCE — es real, y fusionar ocultaría esa transición en vez de modelarla).
+Verificado contra Postgres vivo (2026-08-22): 7 `ruc` distintos, 15 filas (6 pares 2-a-2 +
+1 trío AMIBANK/FINCA/BP FINCA), coincide exactamente con la lista de
+`docs/gobernanza_datos.md`.
 
 ### Vistas de bloques de construcción — Balance/PyG (`sql/18_glosario_cuentas_views.sql`)
 

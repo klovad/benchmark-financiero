@@ -1,6 +1,12 @@
 import pytest
 
-from etl.transform.bce_plazo_matching import PlazoNoResueltoError, resolver_plazo_bce
+from etl.transform.bce_plazo_matching import (
+    PLAZOS_TSA_VALIDOS,
+    PLAZOS_TSP_VALIDOS,
+    PlazoNoResueltoError,
+    resolver_plazo_bce,
+    validar_universo_plazos_bce,
+)
 
 
 def test_tsp_7_buckets_reales_resuelven():
@@ -32,3 +38,31 @@ def test_plazo_no_reconocido_lanza_error():
 def test_plazo_vacio_lanza_error():
     with pytest.raises(PlazoNoResueltoError):
         resolver_plazo_bce("")
+
+
+def test_universo_tsp_completo_no_lanza():
+    validar_universo_plazos_bce(PLAZOS_TSP_VALIDOS, PLAZOS_TSP_VALIDOS, "tsp")
+
+
+def test_universo_tsa_completo_no_lanza():
+    validar_universo_plazos_bce(PLAZOS_TSA_VALIDOS, PLAZOS_TSA_VALIDOS, "tsa")
+
+
+def test_universo_tolera_minusculas_y_espacios_como_el_dato_real():
+    # plazo_codigo real en staging trae la letra ordinal en minúscula ("a. ", "b. ", ...)
+    # con el resto en mayúscula -- ver etl/transform/parse_bce_tasas.py.
+    validar_universo_plazos_bce(
+        [" a. menos de 30 dias ", "b. 30 - 60 dias"], PLAZOS_TSP_VALIDOS, "tsp"
+    )
+
+
+def test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_lanza():
+    """Un texto que matchea el shape de resolver_plazo_bce() (ej. un bucket "h." nuevo
+    que tsp nunca ha reportado) no debe entrar a marts.dim_plazo sin revisión."""
+    with pytest.raises(PlazoNoResueltoError):
+        validar_universo_plazos_bce(["h. MAS DE 1000 DIAS"], PLAZOS_TSP_VALIDOS, "tsp")
+
+
+def test_bucket_fuera_del_universo_tsa_lanza():
+    with pytest.raises(PlazoNoResueltoError):
+        validar_universo_plazos_bce(["o. 12 - 20 AÑOS"], PLAZOS_TSA_VALIDOS, "tsa")
