@@ -63,8 +63,8 @@ de asumir que estas tablas son el archivo fuente sin tocar.
 
 | Tabla | Llave natural (`ON CONFLICT`) | Resolución de identidad aplicada | CDC |
 |---|---|---|---|
-| `staging.cartera` | `(fecha, tipo_entidad, banco, canton, tipo_credito, estado_cartera)` | `banco_codigo` vía `banco_matching.py` | Sí |
-| `staging.depositos` | `(fecha, tipo_entidad, banco, canton, tipo_deposito)` | `banco_codigo` + `categoria_deposito`/`plazo_dias_*` vía `banco_matching.py` + `categoria_deposito_matching.py` | Sí |
+| `staging.cartera` | `(fecha, tipo_entidad, banco, COALESCE(canton,''), tipo_credito, estado_cartera)` | `banco_codigo` vía `banco_matching.py` | Sí |
+| `staging.depositos` | `(fecha, tipo_entidad, banco, COALESCE(canton,''), tipo_deposito)` | `banco_codigo` + `categoria_deposito`/`plazo_dias_*` vía `banco_matching.py` + `categoria_deposito_matching.py` | Sí |
 | `staging.bce_tasas_pasivas` | `(fecha, banco_codigo, categoria_deposito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''))` | `banco_codigo` + `plazo_dias_*` vía `resolver_entidad_bce()` + `bce_plazo_matching.py` — **todas las entidades del sistema financiero, no solo bancos privados** (corregido 2026-07-19, ver abajo) | Sí |
 | `staging.bce_tasas_activas` | `(fecha, banco_codigo, segmento_credito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''))` | igual + `segmento_credito` validado contra universo de 26 | Sí |
 | `staging.tasas_referenciales` | `(fecha, seccion, COALESCE(dimension_valor,''), COALESCE(plazo_dias_desde,-1), COALESCE(plazo_dias_hasta,-1), metrica)` | `dimension_valor` armonizado a los nombres ya sembrados en `dim_subsegmento_credito`/`dim_categoria_deposito` (alias explícitos, ver `linaje_datos.md`) | Sí |
@@ -254,9 +254,17 @@ Todas verificadas en código, no solo documentadas:
    valor fuera del universo sembrado detiene la carga (`ValueError`/
    `SegmentoNoResueltoError`/`PlazoNoResueltoError`), no se descarta silenciosamente.
 3. **Índices únicos NULL-safe**: todo `UNIQUE`/`ON CONFLICT` sobre una columna nullable
-   (`plazo_dias_hasta`, `plazo_id`, `provincia`) usa `COALESCE(col, sentinela)` — bug real
-   encontrado y corregido en `sql/10_fix_null_unique_constraints.sql` (Postgres trata
-   `NULL <> NULL` incluso bajo `UNIQUE`, lo que duplicaba filas silenciosamente).
+   (`plazo_dias_hasta`, `plazo_id`, `provincia`, `staging.cartera.canton`,
+   `staging.depositos.canton`) usa `COALESCE(col, sentinela)` — bug real encontrado y
+   corregido en `sql/10_fix_null_unique_constraints.sql` (Postgres trata `NULL <> NULL`
+   incluso bajo `UNIQUE`, lo que duplicaba filas silenciosamente).
+   `staging.cartera.canton`/`staging.depositos.canton` tenían la misma forma de bug
+   (`UNIQUE` plano, sin `COALESCE`) pero estaban latentes, no activos — verificado 0 filas
+   con `canton IS NULL` de 369.966 en `staging.cartera` y 0 de 251.247 en
+   `staging.depositos` antes de aplicar cada fix respectivamente, así que ninguno de los
+   dos hizo falta backfill/dedupe, a diferencia de `dim_plazo`/`fact_depositos` en su
+   momento. Corregidos en `sql/23_fix_staging_cartera_canton_null_safe.sql` (cartera) y
+   `sql/24_fix_staging_depositos_canton_null_safe.sql` (depositos, mismo día).
 4. **CDC verificado, no solo implementado**: para cada una de las 4 fuentes se confirmó
    explícitamente que correr el pipeline dos veces seguidas sin datos nuevos no genera
    ningún `UPDATE` real (`fecha_actualizacion` sin cambios en la segunda corrida) — no es
@@ -279,9 +287,13 @@ Todas verificadas en código, no solo documentadas:
    (`test_parse_filas_rastrea_seccion_sin_asumir_que_tabla_0_es_activa_maxima`) que fija
    explícitamente el bug real de inestabilidad de tabla en `TasasHistorico.htm`.
    **Conteo puntual, no un número fijo a mantener a mano** (mismo criterio que la tabla de
-   volúmenes de `marts` arriba: se degrada apenas se agrega un test) — **57 tests** medido
-   2026-08-27 con `grep -rc "^def test_" tests/*.py` (o `pytest --collect-only -q`); ese
-   comando, no este número, es la fuente de verdad si hace falta un valor vigente.
+   volúmenes de `marts` arriba: se degrada apenas se agrega un test) — **59 tests** medido
+   2026-08-27 (incluye `test_staging_cartera_canton_null_safe_unique_regression`, agregado
+   junto con `sql/23_fix_staging_cartera_canton_null_safe.sql`, y
+   `test_staging_depositos_canton_null_safe_unique_regression`, agregado junto con
+   `sql/24_fix_staging_depositos_canton_null_safe.sql`) con
+   `grep -rc "^def test_" tests/*.py` (o `pytest --collect-only -q`); ese comando, no este
+   número, es la fuente de verdad si hace falta un valor vigente.
 
 ## Huecos de gobernanza conocidos
 
@@ -305,6 +317,7 @@ asumir que un campo "debería" tener datos:
 | `dim_banco` creció de ~33 a 442 filas de golpe | Efecto esperado del fix de arriba, no un bug — pero cualquier cálculo/reporte que asumía "todo `dim_banco` es banco privado" (ej. si el `.pbip` de Power BI algún día vuelve a usarse sin filtrar `tipo_entidad`) necesita revisarse | Este documento |
 | ~~Power BI (`.pbip`) con nombres/columnas viejos~~ — **realineado 2026-07-23, actualizado de nuevo 2026-07-25 (dos veces)** | Se actualizaron las 8 tablas ya modeladas (`fact_saldo_cartera`/`fact_saldo_depositos`, `dim_segmento_credito`, `dim_categoria_deposito` + `dim_plazo` nueva) para que coincidan con el esquema vivo — medidas DAX, relaciones y visuals del reporte incluidos. 2026-07-25: la normalización de `dim_canton.provincia`→`dim_provincia` (ver fila "Normalización de provincia" arriba) rompía 2 visuales del reporte (`page-geografico`, barras por provincia) que sí usaban ese campo directo — agregada `dim_provincia.tmdl` (9na tabla), relación `dim_canton→dim_provincia`, y los 2 `visual.json` actualizados a `Entity: "dim_provincia"`. Mismo día, el pivote de `estado_cartera` (ver fila "Pivote de estado_cartera" abajo) rompía 3 medidas DAX que filtraban `fact_saldo_cartera[estado_cartera]` — corregidas a `SUM()` directo sobre las nuevas columnas; ningún visual necesitó cambios (todos usan medidas, no columnas crudas — confirmado con grep antes de asumirlo). **Sigue sin cubrir BCE/Boletín** (11 tablas más) ni el universo completo de `dim_banco` (el modelo solo trae bancos privados, coherente con su alcance actual) — eso es una expansión aparte, no un arreglo. | `README.md` |
 | **Pivote de `estado_cartera`** — antipatrón EAV corregido, no un bug de datos | `fact_saldo_cartera` tenía `estado_cartera` como dimensión degenerada (3 filas por `(fecha, banco, cantón, segmento)`, una por estado) cuando en realidad son 3 medidas mutuamente excluyentes del mismo hecho — el usuario lo identificó explícitamente al revisar el modelo. Mismo criterio que ya usaba `fact_tasas_referenciales_cartera` (columnas de medida, no "tipo"+"valor"). Pivotado a `saldo_por_vencer`/`saldo_no_devenga_intereses`/`saldo_vencida` + `saldo_total` (columna `GENERATED`, suma de las 3) — grano pasó de 369.966 a 123.322 filas (÷3 exacto, sin combinaciones parciales). `vw_cartera_market_share`/`vw_cartera_hhi` (`sql/15`) dependían de la columna `saldo` vieja — recreadas sobre `saldo_total` en la misma migración. Verificado: `SUM(saldo_total)` pre/post migración idéntico, `refresh_marts()` idempotente. | `sql/21_fact_saldo_cartera_pivot.sql`, `docs/data_dictionary.md` |
+| ~~`staging.depositos` tenía el mismo bug de `UNIQUE` sin `COALESCE` sobre `canton` que `staging.cartera` tenía~~ — **resuelto 2026-08-27** | `sql/23_fix_staging_cartera_canton_null_safe.sql` había corregido únicamente `staging.cartera` (alcance puntual del cambio que lo originó), dejando `staging.depositos` con el mismo bug class de `sql/10`/`sql/23` (`UNIQUE` plano sobre `canton`, `NULL <> NULL` incluso bajo `UNIQUE`) pendiente. Cerrado en `sql/24_fix_staging_depositos_canton_null_safe.sql`: verificado de nuevo contra la base viva (0 filas con `canton IS NULL` de 251.247, así que tampoco hizo falta backfill/dedupe), `UNIQUE` plano reemplazado por índice de expresión `staging_depositos_natural_key_unique (fecha, tipo_entidad, banco, COALESCE(canton, ''), tipo_deposito)`, y `upsert_staging_depositos()` (`etl/load/load_postgres.py`) actualizado al mismo `ON CONFLICT (..., COALESCE(canton, ''), ...)`. CDC no-op reverificado con doble carga idéntica (segunda corrida no cambia `fecha_actualizacion`). | `sql/24_fix_staging_depositos_canton_null_safe.sql`, `etl/load/load_postgres.py::upsert_staging_depositos`, `tests/test_integration_regressions.py::test_staging_depositos_canton_null_safe_unique_regression` |
 
 ## Gestión de cambios de esquema
 

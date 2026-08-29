@@ -72,6 +72,78 @@ def test_dim_plazo_null_safe_unique_regression(db_conn):
 
 
 @pytest.mark.integration
+def test_staging_cartera_canton_null_safe_unique_regression(db_conn):
+    """Regresión de sql/23_fix_staging_cartera_canton_null_safe.sql: dos filas con la
+    misma llave natural (fecha, tipo_entidad, banco, tipo_credito, estado_cartera) salvo
+    canton=NULL en ambas deben colapsar a una sola fila bajo el índice único NULL-safe
+    staging_cartera_natural_key_unique (fecha, tipo_entidad, banco, COALESCE(canton, ''),
+    tipo_credito, estado_cartera) -- antes del fix, el UNIQUE plano sobre `canton` (mismo
+    bug class que sql/10_fix_null_unique_constraints.sql, NULL <> NULL incluso bajo
+    UNIQUE) dejaba pasar ambas filas como filas distintas."""
+    banco_codigo = "ZZTEST_CANTON_NULL"
+    fecha = date(2099, 3, 31)
+    with db_conn.cursor() as cur:
+        for saldo in (100, 999):
+            cur.execute(
+                """
+                INSERT INTO staging.cartera
+                    (fecha, tipo_entidad, banco, banco_codigo, canton, tipo_credito,
+                     estado_cartera, saldo, source_file)
+                VALUES (%s, 'BANCO PRIVADO', 'ZZ TEST BANK', %s, NULL, 'comercial',
+                        'por_vencer', %s, 'test_integration')
+                ON CONFLICT (fecha, tipo_entidad, banco, COALESCE(canton, ''), tipo_credito, estado_cartera)
+                DO UPDATE SET saldo = EXCLUDED.saldo, fecha_actualizacion = now()
+                """,
+                (fecha, banco_codigo, saldo),
+            )
+
+        cur.execute(
+            "SELECT saldo FROM staging.cartera WHERE banco_codigo = %s",
+            (banco_codigo,),
+        )
+        rows = cur.fetchall()
+
+    assert len(rows) == 1  # las 2 filas con canton NULL colapsan a 1, no 2
+    assert rows[0][0] == 999  # la segunda inserción actualizó la primera (mismo natural key)
+
+
+@pytest.mark.integration
+def test_staging_depositos_canton_null_safe_unique_regression(db_conn):
+    """Regresión de sql/24_fix_staging_depositos_canton_null_safe.sql: dos filas con la
+    misma llave natural (fecha, tipo_entidad, banco, tipo_deposito) salvo canton=NULL en
+    ambas deben colapsar a una sola fila bajo el índice único NULL-safe
+    staging_depositos_natural_key_unique (fecha, tipo_entidad, banco, COALESCE(canton, ''),
+    tipo_deposito) -- mismo bug class que sql/23_fix_staging_cartera_canton_null_safe.sql
+    y sql/10_fix_null_unique_constraints.sql (NULL <> NULL incluso bajo UNIQUE), y misma
+    columna canton, aplicado esta vez a staging.depositos en vez de staging.cartera."""
+    banco_codigo = "ZZTEST_CANTON_NULL_DEP"
+    fecha = date(2099, 3, 31)
+    with db_conn.cursor() as cur:
+        for saldo in (100, 999):
+            cur.execute(
+                """
+                INSERT INTO staging.depositos
+                    (fecha, tipo_entidad, banco, banco_codigo, canton, tipo_deposito,
+                     categoria_deposito, saldo, source_file)
+                VALUES (%s, 'BANCO PRIVADO', 'ZZ TEST BANK', %s, NULL, 'ahorro',
+                        'DEPÓSITOS DE AHORRO', %s, 'test_integration')
+                ON CONFLICT (fecha, tipo_entidad, banco, COALESCE(canton, ''), tipo_deposito)
+                DO UPDATE SET saldo = EXCLUDED.saldo, fecha_actualizacion = now()
+                """,
+                (fecha, banco_codigo, saldo),
+            )
+
+        cur.execute(
+            "SELECT saldo FROM staging.depositos WHERE banco_codigo = %s",
+            (banco_codigo,),
+        )
+        rows = cur.fetchall()
+
+    assert len(rows) == 1  # las 2 filas con canton NULL colapsan a 1, no 2
+    assert rows[0][0] == 999  # la segunda inserción actualizó la primera (mismo natural key)
+
+
+@pytest.mark.integration
 def test_fact_saldo_cartera_pivot_invariant(db_conn):
     """Regresión de sql/21_fact_saldo_cartera_pivot.sql: 3 filas EAV-shape
     (por_vencer / no_devenga_intereses / vencida) en staging.cartera para la misma
