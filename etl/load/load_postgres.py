@@ -157,7 +157,7 @@ def upsert_staging_cartera(conn, df: pd.DataFrame) -> None:
             INSERT INTO staging.cartera
                 (fecha, tipo_entidad, banco, banco_codigo, region, provincia, canton, tipo_credito, estado_cartera, saldo, source_file)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (fecha, tipo_entidad, banco, canton, tipo_credito, estado_cartera)
+            ON CONFLICT (fecha, tipo_entidad, banco, COALESCE(canton, ''), tipo_credito, estado_cartera)
             DO UPDATE SET saldo = EXCLUDED.saldo, region = EXCLUDED.region,
                           provincia = EXCLUDED.provincia, source_file = EXCLUDED.source_file,
                           banco_codigo = EXCLUDED.banco_codigo, fecha_actualizacion = now()
@@ -199,7 +199,7 @@ def upsert_staging_depositos(conn, df: pd.DataFrame) -> None:
                 (fecha, tipo_entidad, banco, banco_codigo, region, provincia, canton, tipo_deposito,
                  categoria_deposito, plazo_dias_desde, plazo_dias_hasta, saldo, numero_clientes, numero_cuentas, source_file)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (fecha, tipo_entidad, banco, canton, tipo_deposito)
+            ON CONFLICT (fecha, tipo_entidad, banco, COALESCE(canton, ''), tipo_deposito)
             DO UPDATE SET saldo = EXCLUDED.saldo, numero_clientes = EXCLUDED.numero_clientes,
                           numero_cuentas = EXCLUDED.numero_cuentas, region = EXCLUDED.region,
                           provincia = EXCLUDED.provincia, source_file = EXCLUDED.source_file,

@@ -115,8 +115,8 @@ data/samples/          muestra de marts.* en Parquet (versionada) para probar si
   (`etl/pipeline.py::parse_fecha_from_*_filename`) -- puros, sin DB ni red.
 - **Integration** (`@pytest.mark.integration`, fixture `db_conn` en
   `tests/conftest.py`): requieren Postgres real ya migrado hasta el último `sql/*.sql`
-  (ver Quickstart). Cubren las regresiones de `sql/10` (unicidad NULL-safe) y `sql/21`
-  (invariante de grano del pivote de `fact_saldo_cartera`), y un round-trip real de
+  (ver Quickstart). Cubren las regresiones de `sql/10`/`sql/23`/`sql/24` (unicidad
+  NULL-safe) y `sql/21` (invariante de grano del pivote de `fact_saldo_cartera`), y un round-trip real de
   `upsert_staging_cartera()`/`register_source_file()`/`is_source_loaded()` verificando
   el contrato de CDC (una segunda carga idéntica no dispara ningún `UPDATE`). Ninguno
   hace `commit` -- `db_conn` siempre hace `rollback` al terminar, así que no dejan
