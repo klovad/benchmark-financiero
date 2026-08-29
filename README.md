@@ -116,11 +116,17 @@ data/samples/          muestra de marts.* en Parquet (versionada) para probar si
 - **Integration** (`@pytest.mark.integration`, fixture `db_conn` en
   `tests/conftest.py`): requieren Postgres real ya migrado hasta el último `sql/*.sql`
   (ver Quickstart). Cubren las regresiones de `sql/10`/`sql/23`/`sql/24` (unicidad
-  NULL-safe) y `sql/21` (invariante de grano del pivote de `fact_saldo_cartera`), y un round-trip real de
+  NULL-safe) y `sql/21` (invariante de grano del pivote de `fact_saldo_cartera`), un round-trip real de
   `upsert_staging_cartera()`/`register_source_file()`/`is_source_loaded()` verificando
-  el contrato de CDC (una segunda carga idéntica no dispara ningún `UPDATE`). Ninguno
-  hace `commit` -- `db_conn` siempre hace `rollback` al terminar, así que no dejan
-  residuos en la base.
+  el contrato de CDC (una segunda carga idéntica no dispara ningún `UPDATE`), y la
+  mecánica COPY/tabla-temporal de `_upsert_bce_via_temp()`/`_upsert_boletin_via_temp()`
+  (vía `upsert_staging_bce_tasas_pasivas()`/`upsert_staging_boletin_balance()`): conteo
+  de filas, CDC no-op, UPDATE real, y verificación contra `pg_tables` de que la tabla
+  temporal existe (`pg_temp_N`) antes de un `commit()` y desaparece después (promesa de
+  `ON COMMIT DROP`). La mayoría de estos tests nunca hacen `commit` -- `db_conn` siempre
+  hace `rollback` al terminar, sin dejar residuos --, salvo los de tabla temporal: como
+  `ON COMMIT DROP` solo dispara en un `commit` real, esos pocos sí comitean entre
+  llamadas y se limpian ellos mismos con `DELETE` + `commit()` en un `finally`.
 
 ```powershell
 .venv\Scripts\python -m pytest -m "not integration"   # unit -- sin Postgres
