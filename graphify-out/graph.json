@@ -443,6 +443,138 @@
       "source_location": "L48"
     },
     {
+      "id": "etl_transform_parse_boletin_codigo_padre",
+      "label": "_codigo_padre()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "_codigo_padre()",
+      "source_file": "etl/transform/parse_boletin.py",
+      "source_location": "L77"
+    },
+    {
+      "id": "etl_transform_parse_boletin_find_header_row",
+      "label": "_find_header_row()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "_find_header_row()",
+      "source_file": "etl/transform/parse_boletin.py",
+      "source_location": "L85"
+    },
+    {
+      "id": "etl_transform_parse_boletin_normalize_col",
+      "label": "_normalize_col()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "_normalize_col()",
+      "source_file": "etl/transform/parse_boletin.py",
+      "source_location": "L36"
+    },
+    {
+      "id": "etl_transform_parse_boletin_parse_boletin_file",
+      "label": "parse_boletin_file()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "parse_boletin_file()",
+      "source_file": "etl/transform/parse_boletin.py",
+      "source_location": "L165"
+    },
+    {
+      "id": "etl_transform_parse_boletin_parse_hoja",
+      "label": "_parse_hoja()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "_parse_hoja()",
+      "source_file": "etl/transform/parse_boletin.py",
+      "source_location": "L109"
+    },
+    {
+      "id": "etl_transform_parse_boletin_parse_met",
+      "label": "_parse_met()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "_parse_met()",
+      "source_file": "etl/transform/parse_boletin.py",
+      "source_location": "L141"
+    },
+    {
+      "id": "etl_transform_parse_boletin_strip_accents",
+      "label": "_strip_accents()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "_strip_accents()",
+      "source_file": "etl/transform/parse_boletin.py",
+      "source_location": "L30"
+    },
+    {
+      "id": "tests_test_parse_boletin_test_aggregate_columns_normalizadas_cubren_variantes_2021_y_2026",
+      "label": "test_aggregate_columns_normalizadas_cubren_variantes_2021_y_2026()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "test_aggregate_columns_normalizadas_cubren_variantes_2021_y_2026()",
+      "source_file": "tests/test_parse_boletin.py",
+      "source_location": "L9"
+    },
+    {
+      "id": "tests_test_parse_boletin_test_codigo_padre_sigue_la_jerarquia_del_catalogo_unico_de_cuentas",
+      "label": "test_codigo_padre_sigue_la_jerarquia_del_catalogo_unico_de_cuentas()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "test_codigo_padre_sigue_la_jerarquia_del_catalogo_unico_de_cuentas()",
+      "source_file": "tests/test_parse_boletin.py",
+      "source_location": "L34"
+    },
+    {
+      "id": "tests_test_parse_boletin_test_nombre_de_banco_real_no_se_confunde_con_agregado",
+      "label": "test_nombre_de_banco_real_no_se_confunde_con_agregado()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "test_nombre_de_banco_real_no_se_confunde_con_agregado()",
+      "source_file": "tests/test_parse_boletin.py",
+      "source_location": "L27"
+    },
+    {
+      "id": "tests_test_parse_boletin_test_seccion_se_deriva_del_primer_digito",
+      "label": "test_seccion_se_deriva_del_primer_digito()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "test_seccion_se_deriva_del_primer_digito()",
+      "source_file": "tests/test_parse_boletin.py",
+      "source_location": "L41"
+    },
+    {
       "id": "etl_export_sample_parquet_export_full",
       "label": "export_full()",
       "_callable": true,
@@ -575,90 +707,6 @@
       "source_location": "L12"
     },
     {
-      "id": "etl_transform_parse_boletin_codigo_padre",
-      "label": "_codigo_padre()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "_codigo_padre()",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L77"
-    },
-    {
-      "id": "etl_transform_parse_boletin_find_header_row",
-      "label": "_find_header_row()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "_find_header_row()",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L85"
-    },
-    {
-      "id": "etl_transform_parse_boletin_normalize_col",
-      "label": "_normalize_col()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "_normalize_col()",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L36"
-    },
-    {
-      "id": "etl_transform_parse_boletin_parse_boletin_file",
-      "label": "parse_boletin_file()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "parse_boletin_file()",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L165"
-    },
-    {
-      "id": "etl_transform_parse_boletin_parse_hoja",
-      "label": "_parse_hoja()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "_parse_hoja()",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L109"
-    },
-    {
-      "id": "etl_transform_parse_boletin_parse_met",
-      "label": "_parse_met()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "_parse_met()",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L141"
-    },
-    {
-      "id": "etl_transform_parse_boletin_strip_accents",
-      "label": "_strip_accents()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "_strip_accents()",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L30"
-    },
-    {
       "id": "etl_transform_parse_cartera_find_header_row",
       "label": "_find_header_row()",
       "_callable": true,
@@ -777,54 +825,6 @@
       "norm_label": "test_sha256_file_is_deterministic()",
       "source_file": "tests/test_common.py",
       "source_location": "L6"
-    },
-    {
-      "id": "tests_test_parse_boletin_test_aggregate_columns_normalizadas_cubren_variantes_2021_y_2026",
-      "label": "test_aggregate_columns_normalizadas_cubren_variantes_2021_y_2026()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "test_aggregate_columns_normalizadas_cubren_variantes_2021_y_2026()",
-      "source_file": "tests/test_parse_boletin.py",
-      "source_location": "L9"
-    },
-    {
-      "id": "tests_test_parse_boletin_test_codigo_padre_sigue_la_jerarquia_del_catalogo_unico_de_cuentas",
-      "label": "test_codigo_padre_sigue_la_jerarquia_del_catalogo_unico_de_cuentas()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "test_codigo_padre_sigue_la_jerarquia_del_catalogo_unico_de_cuentas()",
-      "source_file": "tests/test_parse_boletin.py",
-      "source_location": "L34"
-    },
-    {
-      "id": "tests_test_parse_boletin_test_nombre_de_banco_real_no_se_confunde_con_agregado",
-      "label": "test_nombre_de_banco_real_no_se_confunde_con_agregado()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "test_nombre_de_banco_real_no_se_confunde_con_agregado()",
-      "source_file": "tests/test_parse_boletin.py",
-      "source_location": "L27"
-    },
-    {
-      "id": "tests_test_parse_boletin_test_seccion_se_deriva_del_primer_digito",
-      "label": "test_seccion_se_deriva_del_primer_digito()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "test_seccion_se_deriva_del_primer_digito()",
-      "source_file": "tests/test_parse_boletin.py",
-      "source_location": "L41"
     },
     {
       "id": "tests_test_transform_first_file",
@@ -1484,7 +1484,7 @@
       "file_type": "code",
       "norm_label": "test_fact_saldo_cartera_pivot_invariant()",
       "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L75"
+      "source_location": "L147"
     },
     {
       "id": "tests_test_integration_regressions_test_source_file_hash_gate",
@@ -1496,7 +1496,31 @@
       "file_type": "code",
       "norm_label": "test_source_file_hash_gate()",
       "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L219"
+      "source_location": "L291"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_staging_cartera_canton_null_safe_unique_regression",
+      "label": "test_staging_cartera_canton_null_safe_unique_regression()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "test_staging_cartera_canton_null_safe_unique_regression()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L75"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_staging_depositos_canton_null_safe_unique_regression",
+      "label": "test_staging_depositos_canton_null_safe_unique_regression()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "test_staging_depositos_canton_null_safe_unique_regression()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L111"
     },
     {
       "id": "tests_test_integration_regressions_test_upsert_staging_cartera_round_trip_cdc_no_op",
@@ -1508,7 +1532,7 @@
       "file_type": "code",
       "norm_label": "test_upsert_staging_cartera_round_trip_cdc_no_op()",
       "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L152"
+      "source_location": "L224"
     },
     {
       "id": "tests_test_pipeline_fecha_parsing_test_parse_fecha_boletin_no_matching_pattern_raises",
@@ -6912,15 +6936,103 @@
       "source_location": "L61"
     },
     {
-      "id": "etl_transform_banco_matching_py_valueerror",
-      "label": "ValueError",
+      "id": "etl_transform_parse_boletin",
+      "label": "parse_boletin.py",
       "_origin": "ast",
       "community": 116,
-      "community_name": "ValueError",
+      "community_name": "parse_boletin.py",
       "file_type": "code",
-      "norm_label": "valueerror",
+      "norm_label": "parse_boletin.py",
+      "source_file": "etl/transform/parse_boletin.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_transform_parse_boletin_py_dataframe",
+      "label": "DataFrame",
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "dataframe",
       "source_file": "",
       "source_location": ""
+    },
+    {
+      "id": "etl_transform_parse_boletin_py_path",
+      "label": "Path",
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "path",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "tests_test_parse_boletin",
+      "label": "test_parse_boletin.py",
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "code",
+      "norm_label": "test_parse_boletin.py",
+      "source_file": "tests/test_parse_boletin.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_transform_parse_boletin_rationale_1",
+      "label": "Parser del Bolet\u00edn Financiero Mensual (Superbancos) -- hojas BALANCE y PYG.\u2026",
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "rationale",
+      "norm_label": "parser del boletin financiero mensual (superbancos) -- hojas balance y pyg....",
+      "source_file": "etl/transform/parse_boletin.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_transform_parse_boletin_rationale_142",
+      "label": "MET reagrupa c\u00f3digos de BALANCE en categor\u00edas funcionales -- NO es una\u2026",
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "rationale",
+      "norm_label": "met reagrupa codigos de balance en categorias funcionales -- no es una...",
+      "source_file": "etl/transform/parse_boletin.py",
+      "source_location": "L142"
+    },
+    {
+      "id": "etl_transform_parse_boletin_rationale_168",
+      "label": "Devuelve {'balance': df, 'pyg': df, 'cuentas': df} -- 'cuentas' es el plan de\u2026",
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "rationale",
+      "norm_label": "devuelve {'balance': df, 'pyg': df, 'cuentas': df} -- 'cuentas' es el plan de...",
+      "source_file": "etl/transform/parse_boletin.py",
+      "source_location": "L168"
+    },
+    {
+      "id": "etl_transform_parse_boletin_rationale_37",
+      "label": "Comparaci\u00f3n robusta de nombres de columna de agregado entre plantillas de\u2026",
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "rationale",
+      "norm_label": "comparacion robusta de nombres de columna de agregado entre plantillas de...",
+      "source_file": "etl/transform/parse_boletin.py",
+      "source_location": "L37"
+    },
+    {
+      "id": "etl_transform_parse_boletin_rationale_86",
+      "label": "Boletines antiguos (~2021-2022) usan 'CODIGO' sin tilde -- comparaci\u00f3n\u2026",
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "parse_boletin.py",
+      "file_type": "rationale",
+      "norm_label": "boletines antiguos (~2021-2022) usan 'codigo' sin tilde -- comparacion...",
+      "source_file": "etl/transform/parse_boletin.py",
+      "source_location": "L86"
     },
     {
       "id": "powerbi_prototipo_diseno_bi_report_definition_pages_pages",
@@ -7011,17 +7123,6 @@
       "source_location": "L3"
     },
     {
-      "id": "marts_dim_banco",
-      "label": "marts.dim_banco",
-      "_origin": "ast",
-      "community": 119,
-      "community_name": "marts.vw_banco_ruc_colisiones",
-      "file_type": "code",
-      "norm_label": "marts.dim_banco",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
       "id": "sql_22_vw_banco_ruc_colisiones",
       "label": "22_vw_banco_ruc_colisiones.sql",
       "_origin": "ast",
@@ -7042,6 +7143,17 @@
       "norm_label": "marts.vw_banco_ruc_colisiones",
       "source_file": "sql/22_vw_banco_ruc_colisiones.sql",
       "source_location": "L18"
+    },
+    {
+      "id": "sql_22_vw_banco_ruc_colisiones_sql_marts_dim_banco",
+      "label": "marts.dim_banco",
+      "_origin": "ast",
+      "community": 119,
+      "community_name": "marts.vw_banco_ruc_colisiones",
+      "file_type": "code",
+      "norm_label": "marts.dim_banco",
+      "source_file": "",
+      "source_location": ""
     },
     {
       "id": "docs_glosario_cuentas",
@@ -7452,13 +7564,79 @@
       "source_location": "L71"
     },
     {
-      "id": "sql_22_vw_banco_ruc_colisiones_sql_marts_dim_banco",
-      "label": "marts.dim_banco",
+      "id": "sql_24_fix_staging_depositos_canton_null_safe_sql_staging_depositos",
+      "label": "staging.depositos",
       "_origin": "ast",
       "community": 120,
-      "community_name": "marts.dim_banco",
+      "community_name": "staging.depositos",
       "file_type": "code",
-      "norm_label": "marts.dim_banco",
+      "norm_label": "staging.depositos",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "etl_load_load_postgres_py_dataframe",
+      "label": "DataFrame",
+      "_origin": "ast",
+      "community": 121,
+      "community_name": "DataFrame",
+      "file_type": "code",
+      "norm_label": "dataframe",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "staging_cartera",
+      "label": "staging.cartera",
+      "_origin": "ast",
+      "community": 122,
+      "community_name": "staging.cartera",
+      "file_type": "code",
+      "norm_label": "staging.cartera",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "staging_depositos",
+      "label": "staging.depositos",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "staging.depositos",
+      "file_type": "code",
+      "norm_label": "staging.depositos",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_05_dim_banco_rework_sql_staging_cartera",
+      "label": "staging.cartera",
+      "_origin": "ast",
+      "community": 125,
+      "community_name": "staging.cartera",
+      "file_type": "code",
+      "norm_label": "staging.cartera",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_23_fix_staging_cartera_canton_null_safe",
+      "label": "23_fix_staging_cartera_canton_null_safe.sql",
+      "_origin": "ast",
+      "community": 126,
+      "community_name": "23_fix_staging_cartera_canton_null_safe.sql",
+      "file_type": "code",
+      "norm_label": "23_fix_staging_cartera_canton_null_safe.sql",
+      "source_file": "sql/23_fix_staging_cartera_canton_null_safe.sql",
+      "source_location": null
+    },
+    {
+      "id": "sql_23_fix_staging_cartera_canton_null_safe_sql_staging_cartera",
+      "label": "staging.cartera",
+      "_origin": "ast",
+      "community": 127,
+      "community_name": "staging.cartera",
+      "file_type": "code",
+      "norm_label": "staging.cartera",
       "source_file": "",
       "source_location": ""
     },
@@ -8882,39 +9060,6 @@
       "source_location": ""
     },
     {
-      "id": "etl_transform_parse_boletin",
-      "label": "parse_boletin.py",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "parse_boletin.py",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_transform_parse_boletin_py_dataframe",
-      "label": "DataFrame",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "dataframe",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_transform_parse_boletin_py_path",
-      "label": "Path",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "path",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
       "id": "etl_transform_parse_cartera",
       "label": "parse_cartera.py",
       "_origin": "ast",
@@ -9025,17 +9170,6 @@
       "source_location": ""
     },
     {
-      "id": "tests_test_parse_boletin",
-      "label": "test_parse_boletin.py",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "test_parse_boletin.py",
-      "source_file": "tests/test_parse_boletin.py",
-      "source_location": "L1"
-    },
-    {
       "id": "tests_test_transform",
       "label": "test_transform.py",
       "_origin": "ast",
@@ -9054,17 +9188,6 @@
       "community_name": "parse_cartera.py",
       "file_type": "code",
       "norm_label": "path",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "valueerror",
-      "label": "ValueError",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "valueerror",
       "source_file": "",
       "source_location": ""
     },
@@ -9133,61 +9256,6 @@
       "norm_label": "las fechas del origen ya vienen como fin de mes (ej. 31/01/2024); se normaliza...",
       "source_file": "etl/transform/common.py",
       "source_location": "L88"
-    },
-    {
-      "id": "etl_transform_parse_boletin_rationale_1",
-      "label": "Parser del Bolet\u00edn Financiero Mensual (Superbancos) -- hojas BALANCE y PYG.\u2026",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "rationale",
-      "norm_label": "parser del boletin financiero mensual (superbancos) -- hojas balance y pyg....",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_transform_parse_boletin_rationale_142",
-      "label": "MET reagrupa c\u00f3digos de BALANCE en categor\u00edas funcionales -- NO es una\u2026",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "rationale",
-      "norm_label": "met reagrupa codigos de balance en categorias funcionales -- no es una...",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L142"
-    },
-    {
-      "id": "etl_transform_parse_boletin_rationale_168",
-      "label": "Devuelve {'balance': df, 'pyg': df, 'cuentas': df} -- 'cuentas' es el plan de\u2026",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "rationale",
-      "norm_label": "devuelve {'balance': df, 'pyg': df, 'cuentas': df} -- 'cuentas' es el plan de...",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L168"
-    },
-    {
-      "id": "etl_transform_parse_boletin_rationale_37",
-      "label": "Comparaci\u00f3n robusta de nombres de columna de agregado entre plantillas de\u2026",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "rationale",
-      "norm_label": "comparacion robusta de nombres de columna de agregado entre plantillas de...",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L37"
-    },
-    {
-      "id": "etl_transform_parse_boletin_rationale_86",
-      "label": "Boletines antiguos (~2021-2022) usan 'CODIGO' sin tilde -- comparaci\u00f3n\u2026",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "rationale",
-      "norm_label": "boletines antiguos (~2021-2022) usan 'codigo' sin tilde -- comparacion...",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L86"
     },
     {
       "id": "etl_transform_parse_cartera_rationale_1",
@@ -9696,6 +9764,17 @@
       "source_location": ""
     },
     {
+      "id": "dataframe",
+      "label": "DataFrame",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "dataframe",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "date",
       "label": "date",
       "_origin": "ast",
@@ -9716,17 +9795,6 @@
       "norm_label": "load_postgres.py",
       "source_file": "etl/load/load_postgres.py",
       "source_location": "L1"
-    },
-    {
-      "id": "etl_load_load_postgres_py_dataframe",
-      "label": "DataFrame",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "dataframe",
-      "source_file": "",
-      "source_location": ""
     },
     {
       "id": "etl_pipeline",
@@ -9949,7 +10017,29 @@
       "source_location": "L1"
     },
     {
-      "id": "tests_test_integration_regressions_rationale_153",
+      "id": "tests_test_integration_regressions_rationale_112",
+      "label": "Regresi\u00f3n de sql/24_fix_staging_depositos_canton_null_safe.sql: dos filas con\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "regresion de sql/24_fix_staging_depositos_canton_null_safe.sql: dos filas con...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L112"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_148",
+      "label": "Regresi\u00f3n de sql/21_fact_saldo_cartera_pivot.sql: 3 filas EAV-shape (por_vencer\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "regresion de sql/21_fact_saldo_cartera_pivot.sql: 3 filas eav-shape (por_vencer...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L148"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_225",
       "label": "Cobertura de orquestaci\u00f3n (secci\u00f3n 2.3): round-trip real de\u2026",
       "_origin": "ast",
       "community": 23,
@@ -9957,18 +10047,7 @@
       "file_type": "rationale",
       "norm_label": "cobertura de orquestacion (seccion 2.3): round-trip real de...",
       "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L153"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_220",
-      "label": "CDC invariante #1 (gate por hash de archivo, raw.source_files -- ver\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "cdc invariante #1 (gate por hash de archivo, raw.source_files -- ver...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L220"
+      "source_location": "L225"
     },
     {
       "id": "tests_test_integration_regressions_rationale_25",
@@ -9980,6 +10059,17 @@
       "norm_label": "extrae, desde la misma constante _refresh_marts_sql que usa refresh_marts() en...",
       "source_file": "tests/test_integration_regressions.py",
       "source_location": "L25"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_292",
+      "label": "CDC invariante #1 (gate por hash de archivo, raw.source_files -- ver\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "cdc invariante #1 (gate por hash de archivo, raw.source_files -- ver...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L292"
     },
     {
       "id": "tests_test_integration_regressions_rationale_47",
@@ -9994,12 +10084,12 @@
     },
     {
       "id": "tests_test_integration_regressions_rationale_76",
-      "label": "Regresi\u00f3n de sql/21_fact_saldo_cartera_pivot.sql: 3 filas EAV-shape (por_vencer\u2026",
+      "label": "Regresi\u00f3n de sql/23_fix_staging_cartera_canton_null_safe.sql: dos filas con la\u2026",
       "_origin": "ast",
       "community": 23,
       "community_name": "pipeline.py",
       "file_type": "rationale",
-      "norm_label": "regresion de sql/21_fact_saldo_cartera_pivot.sql: 3 filas eav-shape (por_vencer...",
+      "norm_label": "regresion de sql/23_fix_staging_cartera_canton_null_safe.sql: dos filas con la...",
       "source_file": "tests/test_integration_regressions.py",
       "source_location": "L76"
     },
@@ -11776,6 +11866,17 @@
       "community_name": "resolver_banco_codigo",
       "file_type": "code",
       "norm_label": "path",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "etl_transform_banco_matching_py_valueerror",
+      "label": "ValueError",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "resolver_banco_codigo",
+      "file_type": "code",
+      "norm_label": "valueerror",
       "source_file": "",
       "source_location": ""
     },
@@ -13628,15 +13729,15 @@
       "source_location": ""
     },
     {
-      "id": "staging_cartera",
-      "label": "staging.cartera",
+      "id": "sql_24_fix_staging_depositos_canton_null_safe",
+      "label": "24_fix_staging_depositos_canton_null_safe.sql",
       "_origin": "ast",
       "community": 97,
-      "community_name": "staging.cartera",
+      "community_name": "24_fix_staging_depositos_canton_null_safe.sql",
       "file_type": "code",
-      "norm_label": "staging.cartera",
-      "source_file": "",
-      "source_location": ""
+      "norm_label": "24_fix_staging_depositos_canton_null_safe.sql",
+      "source_file": "sql/24_fix_staging_depositos_canton_null_safe.sql",
+      "source_location": null
     },
     {
       "id": "tests_init",
@@ -13863,7 +13964,7 @@
       "node_kind": "heading",
       "norm_label": "gestion de cambios de esquema",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L309"
+      "source_location": "L322"
     },
     {
       "id": "docs_gobernanza_datos_gobernanza_de_datos",
@@ -13887,7 +13988,7 @@
       "node_kind": "heading",
       "norm_label": "huecos de gobernanza conocidos",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L286"
+      "source_location": "L298"
     },
     {
       "id": "docs_gobernanza_datos_identidad_para_el_universo_completo_del_sistema_financiero_bce_2026_07_19",
@@ -14384,6 +14485,18 @@
     },
     {
       "source": "etl_pipeline_load_bce",
+      "target": "etl_extract_download_bce_download_all",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline_load_bce",
       "target": "etl_load_load_postgres_get_connection",
       "relation": "calls",
       "_origin": "ast",
@@ -14416,6 +14529,18 @@
       "context": "call",
       "source_file": "etl/pipeline.py",
       "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline_load_bce",
+      "target": "etl_transform_parse_bce_tasas_read_raw",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L135",
       "weight": 1.0
     },
     {
@@ -14464,6 +14589,18 @@
       "context": "call",
       "source_file": "etl/pipeline.py",
       "source_location": "L145",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline_load_boletin",
+      "target": "etl_extract_scrape_boletin_scrape",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L259",
       "weight": 1.0
     },
     {
@@ -14792,6 +14929,18 @@
     },
     {
       "source": "etl_pipeline_main",
+      "target": "etl_extract_scrape_superbancos_scrape",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L324",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline_main",
       "target": "etl_pipeline_load_years",
       "relation": "calls",
       "_origin": "ast",
@@ -14888,7 +15037,7 @@
     },
     {
       "source": "etl_transform_banco_matching_resolver_banco_codigo",
-      "target": "valueerror",
+      "target": "etl_transform_banco_matching_py_valueerror",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -16299,7 +16448,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L130",
+      "source_location": "L202",
       "weight": 1.0
     },
     {
@@ -16311,7 +16460,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L229",
+      "source_location": "L301",
       "weight": 1.0
     },
     {
@@ -16323,7 +16472,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L231",
+      "source_location": "L303",
       "weight": 1.0
     },
     {
@@ -16335,7 +16484,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L191",
+      "source_location": "L263",
       "weight": 1.0
     },
     {
@@ -16647,7 +16796,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L74",
+      "source_location": "L146",
       "weight": 1.0
     },
     {
@@ -16659,7 +16808,31 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L218",
+      "source_location": "L290",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_integration_regressions_test_staging_cartera_canton_null_safe_unique_regression",
+      "target": "integration",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "decorator",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_integration_regressions_test_staging_depositos_canton_null_safe_unique_regression",
+      "target": "integration",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "decorator",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L110",
       "weight": 1.0
     },
     {
@@ -16671,7 +16844,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L151",
+      "source_location": "L223",
       "weight": 1.0
     },
     {
@@ -16951,6 +17124,366 @@
       "weight": 1.0
     },
     {
+      "source": "etl_pipeline",
+      "target": "etl_extract_download_bce_download_all",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_extract_download_tasas_historicas_download_tasas_historicas",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_extract_scrape_boletin_scrape",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_extract_scrape_superbancos_scrape",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_get_connection",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_is_source_loaded",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_load_raw",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_load_raw_bce",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_load_raw_boletin",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_load_raw_tasas_referenciales",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_refresh_marts",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_register_source_file",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_upsert_banco_maestro_ruc",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_upsert_dim_cuenta_contable",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_upsert_staging_bce_tasas_activas",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_upsert_staging_bce_tasas_pasivas",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_upsert_staging_boletin_balance",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_upsert_staging_boletin_pyg",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_upsert_staging_cartera",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_upsert_staging_depositos",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_load_load_postgres_upsert_staging_tasas_referenciales",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_logging_utils_setup_logging",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_transform_common_sha256_file",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_transform_parse_bce_tasas_parse_tsa_file",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_transform_parse_bce_tasas_parse_tsp_file",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_transform_parse_bce_tasas_read_raw",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_transform_parse_boletin_parse_boletin_file",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_transform_parse_cartera_parse_cartera_file",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_transform_parse_depositos_parse_depositos_file",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_pipeline",
+      "target": "etl_transform_parse_tasas_historicas_parse_tasas_historicas_file",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L53",
+      "weight": 1.0
+    },
+    {
       "source": "etl_transform_categoria_deposito_matching",
       "target": "etl_transform_bce_plazo_matching_plazonoresueltoerror",
       "relation": "imports",
@@ -16960,6 +17493,18 @@
       "context": "import",
       "source_file": "etl/transform/categoria_deposito_matching.py",
       "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_transform_parse_bce_tasas",
+      "target": "etl_transform_banco_matching_resolver_entidad_bce",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L50",
       "weight": 1.0
     },
     {
@@ -16984,6 +17529,30 @@
       "context": "import",
       "source_file": "etl/transform/parse_bce_tasas.py",
       "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_transform_parse_bce_tasas",
+      "target": "etl_transform_common_normalize_provincia",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_transform_parse_bce_tasas",
+      "target": "etl_transform_common_sha256_file",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L58",
       "weight": 1.0
     },
     {
@@ -17140,6 +17709,18 @@
       "context": "import",
       "source_file": "etl/transform/parse_depositos.py",
       "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_transform_parse_depositos",
+      "target": "etl_transform_categoria_deposito_matching_resolver_categoria_deposito",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/transform/parse_depositos.py",
+      "source_location": "L15",
       "weight": 1.0
     },
     {
@@ -17368,6 +17949,54 @@
       "context": "import",
       "source_file": "tests/test_categoria_deposito_matching.py",
       "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_common",
+      "target": "etl_transform_common_sha256_file",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "tests/test_common.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_integration_regressions",
+      "target": "etl_load_load_postgres_is_source_loaded",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_integration_regressions",
+      "target": "etl_load_load_postgres_register_source_file",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_integration_regressions",
+      "target": "etl_load_load_postgres_upsert_staging_cartera",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L16",
       "weight": 1.0
     },
     {
@@ -18176,7 +18805,7 @@
     },
     {
       "source": "etl_load_load_postgres_load_raw",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18188,7 +18817,7 @@
     },
     {
       "source": "etl_load_load_postgres_load_raw_bce",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18200,7 +18829,7 @@
     },
     {
       "source": "etl_load_load_postgres_load_raw_boletin",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18212,7 +18841,7 @@
     },
     {
       "source": "etl_load_load_postgres_load_raw_tasas_referenciales",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18224,7 +18853,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_bce_via_temp",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18236,7 +18865,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_boletin_via_temp",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18248,7 +18877,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_dim_cuenta_contable",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18260,7 +18889,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_bce_tasas_activas",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18272,7 +18901,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_bce_tasas_pasivas",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18284,7 +18913,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_boletin_balance",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18296,7 +18925,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_boletin_pyg",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18308,7 +18937,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_cartera",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18320,7 +18949,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_depositos",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18332,7 +18961,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_tasas_referenciales",
-      "target": "etl_load_load_postgres_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19468,7 +20097,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L286",
+      "source_location": "L298",
       "weight": 1.0
     },
     {
@@ -19479,7 +20108,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L309",
+      "source_location": "L322",
       "weight": 1.0
     },
     {
@@ -28878,24 +29507,35 @@
     },
     {
       "source": "tests_test_integration_regressions",
+      "target": "tests_test_integration_regressions_test_staging_depositos_canton_null_safe_unique_regression",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L111",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_integration_regressions",
+      "target": "tests_test_integration_regressions_test_fact_saldo_cartera_pivot_invariant",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L147",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_integration_regressions",
       "target": "tests_test_integration_regressions_test_upsert_staging_cartera_round_trip_cdc_no_op",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L152",
-      "weight": 1.0
-    },
-    {
-      "source": "tests_test_integration_regressions",
-      "target": "tests_test_integration_regressions_test_source_file_hash_gate",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L219",
+      "source_location": "L224",
       "weight": 1.0
     },
     {
@@ -28911,6 +29551,17 @@
     },
     {
       "source": "tests_test_integration_regressions",
+      "target": "tests_test_integration_regressions_test_source_file_hash_gate",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L291",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_integration_regressions",
       "target": "tests_test_integration_regressions_test_dim_plazo_null_safe_unique_regression",
       "relation": "contains",
       "_origin": "ast",
@@ -28922,7 +29573,7 @@
     },
     {
       "source": "tests_test_integration_regressions",
-      "target": "tests_test_integration_regressions_test_fact_saldo_cartera_pivot_invariant",
+      "target": "tests_test_integration_regressions_test_staging_cartera_canton_null_safe_unique_regression",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -29186,7 +29837,7 @@
     },
     {
       "source": "etl_transform_banco_matching_banconoresueltoerror",
-      "target": "valueerror",
+      "target": "etl_transform_banco_matching_py_valueerror",
       "relation": "inherits",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -29197,7 +29848,7 @@
     },
     {
       "source": "etl_transform_banco_matching_entidadbcenomapeadaerror",
-      "target": "valueerror",
+      "target": "etl_transform_banco_matching_py_valueerror",
       "relation": "inherits",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -29977,25 +30628,36 @@
       "weight": 1.0
     },
     {
-      "source": "tests_test_integration_regressions_rationale_153",
+      "source": "tests_test_integration_regressions_rationale_112",
+      "target": "tests_test_integration_regressions_test_staging_depositos_canton_null_safe_unique_regression",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L112",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_integration_regressions_rationale_148",
+      "target": "tests_test_integration_regressions_test_fact_saldo_cartera_pivot_invariant",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_integration_regressions_rationale_225",
       "target": "tests_test_integration_regressions_test_upsert_staging_cartera_round_trip_cdc_no_op",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L153",
-      "weight": 1.0
-    },
-    {
-      "source": "tests_test_integration_regressions_rationale_220",
-      "target": "tests_test_integration_regressions_test_source_file_hash_gate",
-      "relation": "rationale_for",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L220",
+      "source_location": "L225",
       "weight": 1.0
     },
     {
@@ -30007,6 +30669,17 @@
       "confidence_score": 1.0,
       "source_file": "tests/test_integration_regressions.py",
       "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_integration_regressions_rationale_292",
+      "target": "tests_test_integration_regressions_test_source_file_hash_gate",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L292",
       "weight": 1.0
     },
     {
@@ -30022,7 +30695,7 @@
     },
     {
       "source": "tests_test_integration_regressions_rationale_76",
-      "target": "tests_test_integration_regressions_test_fact_saldo_cartera_pivot_invariant",
+      "target": "tests_test_integration_regressions_test_staging_cartera_canton_null_safe_unique_regression",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -30660,7 +31333,7 @@
     },
     {
       "source": "sql_22_vw_banco_ruc_colisiones_marts_vw_banco_ruc_colisiones",
-      "target": "marts_dim_banco",
+      "target": "sql_22_vw_banco_ruc_colisiones_sql_marts_dim_banco",
       "relation": "reads_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -31496,102 +32169,6 @@
       "weight": 1.0
     },
     {
-      "source": "etl_transform_common_extract_single_xlsx",
-      "target": "valueerror",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "etl/transform/common.py",
-      "source_location": "L36",
-      "weight": 1.0
-    },
-    {
-      "source": "etl_transform_common_find_base_sheets",
-      "target": "valueerror",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "etl/transform/common.py",
-      "source_location": "L48",
-      "weight": 1.0
-    },
-    {
-      "source": "etl_transform_parse_boletin_find_header_row",
-      "target": "valueerror",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "etl/transform/parse_boletin.py",
-      "source_location": "L104",
-      "weight": 1.0
-    },
-    {
-      "source": "etl_transform_parse_cartera_find_header_row",
-      "target": "valueerror",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "etl/transform/parse_cartera.py",
-      "source_location": "L61",
-      "weight": 1.0
-    },
-    {
-      "source": "etl_transform_parse_cartera_tipo_credito_from_sheet_name",
-      "target": "valueerror",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "etl/transform/parse_cartera.py",
-      "source_location": "L48",
-      "weight": 1.0
-    },
-    {
-      "source": "etl_transform_parse_depositos_find_header_row",
-      "target": "valueerror",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "etl/transform/parse_depositos.py",
-      "source_location": "L38",
-      "weight": 1.0
-    },
-    {
-      "source": "tests_test_integration_regressions_test_fact_saldo_cartera_pivot_invariant",
-      "target": "date",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L82",
-      "weight": 1.0
-    },
-    {
-      "source": "tests_test_integration_regressions_test_upsert_staging_cartera_round_trip_cdc_no_op",
-      "target": "date",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L159",
-      "weight": 1.0
-    },
-    {
       "source": "etl_pipeline_load_bce",
       "target": "etl_transform_parse_bce_tasas_parse_tsp_file",
       "relation": "indirect_call",
@@ -31821,5 +32398,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "18fbad238f5e7a08faf57098ba4032cbe95c841f"
+  "built_at_commit": "72eda786b481c898a72a540aee1475f1df626171"
 }
