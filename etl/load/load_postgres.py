@@ -91,7 +91,15 @@ def upsert_banco_maestro_ruc(conn, entidades: list[tuple[str, str, str, str]]) -
     ruc` únicamente: para bancos privados la fila ya existe (sembrada desde
     banco_maestro.csv) y no se toca `banco`/`tipo_entidad`, que siguen siendo dueños de
     ese valor -- load_banco_maestro_seed() los reafirma en cada refresh_marts(); para
-    entidades nuevas, el INSERT las crea con banco/tipo_entidad/ruc de una vez."""
+    entidades nuevas, el INSERT las crea con banco/tipo_entidad/ruc de una vez.
+
+    estado_validacion no se toca en el ON CONFLICT (se preserva el valor existente) y no
+    se lista en el INSERT -- una fila nueva hereda el DEFAULT 'AUTO_INGRESADO' de
+    staging.banco_maestro (sql/26_dim_banco_estado_validacion.sql) sin necesitar cambio
+    de código acá; si esa fila resulta ser uno de los 33 curados y esta función la creó
+    antes que load_banco_maestro_seed() corriera (orden posible en una base nueva),
+    load_banco_maestro_seed() la corrige a CONFIRMADO más adelante en el mismo
+    refresh_marts()."""
     if not entidades:
         return
     with conn.cursor() as cur:
@@ -112,7 +120,15 @@ def upsert_banco_maestro_ruc(conn, entidades: list[tuple[str, str, str, str]]) -
 def load_banco_maestro_seed(conn) -> None:
     """Siembra staging.banco_maestro desde etl/seeds/banco_maestro.csv -- el nombre a
     mostrar y tipo_entidad de cada banco_codigo, determinista sin importar qué variante
-    de texto llegó primero durante la carga."""
+    de texto llegó primero durante la carga.
+
+    estado_validacion = 'CONFIRMADO' siempre, en el INSERT y en el UPDATE del conflicto
+    (sql/26_dim_banco_estado_validacion.sql): estos ~33 banco_codigo son exactamente los
+    curados a mano en el CSV, así que cada corrida reafirma CONFIRMADO sin importar si la
+    fila ya existía (curada de siempre) o si upsert_banco_maestro_ruc() la creó primero
+    con el DEFAULT AUTO_INGRESADO (posible en una base nueva si load_bce() corre antes
+    que este seed) -- refresh_marts() llama a esta función antes de correr
+    _REFRESH_MARTS_SQL, así que el estado queda correcto antes de poblar marts.dim_banco."""
     with open(_SEEDS_DIR / "banco_maestro.csv", encoding="utf-8") as f:
         rows = [
             (r["banco_codigo"], r["banco"], r["tipo_entidad"])
@@ -121,10 +137,11 @@ def load_banco_maestro_seed(conn) -> None:
     with conn.cursor() as cur:
         cur.executemany(
             """
-            INSERT INTO staging.banco_maestro (banco_codigo, banco, tipo_entidad)
-            VALUES (%s, %s, %s)
+            INSERT INTO staging.banco_maestro (banco_codigo, banco, tipo_entidad, estado_validacion)
+            VALUES (%s, %s, %s, 'CONFIRMADO')
             ON CONFLICT (banco_codigo) DO UPDATE SET
-                banco = EXCLUDED.banco, tipo_entidad = EXCLUDED.tipo_entidad
+                banco = EXCLUDED.banco, tipo_entidad = EXCLUDED.tipo_entidad,
+                estado_validacion = 'CONFIRMADO'
             """,
             rows,
         )
@@ -553,9 +570,30 @@ ON CONFLICT (fecha_id) DO NOTHING;
 -- dim_banco: identidad ya resuelta en staging.banco_codigo (etl/transform/banco_matching.py);
 -- el nombre a mostrar y tipo_entidad vienen de staging.banco_maestro (sembrado desde
 -- etl/seeds/banco_maestro.csv), no de cualquier texto crudo que haya llegado primero.
-INSERT INTO marts.dim_banco (banco_codigo, banco, tipo_entidad, ruc)
-SELECT bm.banco_codigo, bm.banco, bm.tipo_entidad, bm.ruc
+-- estado_validacion (sql/26_dim_banco_estado_validacion.sql) se copia de
+-- staging.banco_maestro tal cual -- CONFIRMADO para los 33 curados (reafirmado en cada
+-- corrida por load_banco_maestro_seed(), llamado justo antes que esta sentencia dentro
+-- de refresh_marts()), AUTO_INGRESADO para las ~409 entidades auto-registradas por RUC.
+--
+-- segmento_entidad_id SÍ va en el SELECT/columna del INSERT (leído de la propia
+-- marts.dim_banco vía el LEFT JOIN de abajo) aunque esta sentencia nunca lo escribe en
+-- el SET del ON CONFLICT -- esa columna es propiedad del UPDATE separado más abajo
+-- (SCD1 desde los hechos BCE). Bug real encontrado y corregido 2026-08-30 al verificar
+-- CDC no-op para esta migración: como segmento_entidad_id NO estaba en la lista de
+-- columnas del INSERT, Postgres computaba `EXCLUDED.segmento_entidad_id` como NULL (el
+-- DEFAULT de una columna omitida en el INSERT, no el valor real de la fila en conflicto)
+-- -- eso hacía que `EXCLUDED.row_hash` (columna GENERATED, se recalcula para EXCLUDED
+-- también) casi nunca coincidiera con `marts.dim_banco.row_hash` real para cualquier
+-- banco con segmento_entidad_id ya poblado (prácticamente los 442), disparando un
+-- UPDATE real (`fecha_actualizacion = now()`) en CADA corrida de refresh_marts(), no
+-- solo cuando algo cambiaba de verdad. Preexistía desde sql/19_dim_segmento_entidad.sql
+-- (2026-07-25) -- no lo introdujo esta migración, solo quedó expuesto al verificar CDC
+-- no-op de punta a punta en vez de asumirlo. Con el LEFT JOIN, una fila nueva sigue
+-- resolviendo segmento_entidad_id = NULL correctamente (no hay fila existente que unir).
+INSERT INTO marts.dim_banco (banco_codigo, banco, tipo_entidad, ruc, estado_validacion, segmento_entidad_id)
+SELECT bm.banco_codigo, bm.banco, bm.tipo_entidad, bm.ruc, bm.estado_validacion, existente.segmento_entidad_id
 FROM staging.banco_maestro bm
+LEFT JOIN marts.dim_banco existente ON existente.banco_codigo = bm.banco_codigo
 WHERE bm.banco_codigo IN (
     SELECT DISTINCT banco_codigo FROM staging.cartera WHERE tipo_entidad = 'BANCO PRIVADO'
     UNION
@@ -570,12 +608,22 @@ WHERE bm.banco_codigo IN (
     SELECT DISTINCT banco_codigo FROM staging.boletin_pyg
 )
 ON CONFLICT (banco_codigo) DO UPDATE SET
-    banco = EXCLUDED.banco, tipo_entidad = EXCLUDED.tipo_entidad, ruc = EXCLUDED.ruc, fecha_actualizacion = now()
+    banco = EXCLUDED.banco, tipo_entidad = EXCLUDED.tipo_entidad, ruc = EXCLUDED.ruc,
+    estado_validacion = EXCLUDED.estado_validacion, fecha_actualizacion = now()
 WHERE marts.dim_banco.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
 -- translate() en vez de igualdad exacta: CAPCOL no es 100% consistente en su propia
 -- ortografía sin tilde (ver sql/20_dim_provincia.sql) -- normalize_provincia() en Python
 -- ya homologa las filas nuevas, esto es una red de seguridad adicional en SQL.
+--
+-- BUG conocido de este INNER JOIN (encontrado 2026-08-30, ver _log_cantones_no_resueltos
+-- más abajo): una fila de staging.cartera/depositos cuya `provincia` no matchea contra
+-- dim_provincia (ni exacto ni via translate()) se descarta acá SIN error ni fila
+-- huérfana visible -- el INNER JOIN simplemente no la selecciona. refresh_marts()
+-- corre _log_cantones_no_resueltos(conn) inmediatamente antes de este SQL para que ese
+-- descarte, si ocurre, quede en el log de cualquier corrida normal en vez de ser
+-- silencioso -- ver el docstring de esa función para la justificación de por qué es
+-- log-only y no un staging.catalogo_rechazos dedicado.
 INSERT INTO marts.dim_canton (canton, provincia_id)
 SELECT DISTINCT c.canton, dp.provincia_id FROM (
     SELECT canton, provincia FROM staging.cartera
@@ -732,6 +780,18 @@ WHERE marts.fact_colocaciones_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_has
 -- tipo 1) para análisis puntuales contra la situación actual, sin tener que ir a buscar
 -- la fila más reciente en los hechos semanales. Se resuelve tomando la fecha más
 -- reciente entre AMBOS hechos BCE (un banco puede aparecer solo en tsp o solo en tsa).
+--
+-- ADVERTENCIA de mantenimiento (bug real encontrado y corregido 2026-08-30 al agregar
+-- estado_validacion, sql/26_dim_banco_estado_validacion.sql): el WHERE de abajo
+-- RECALCULA a mano la misma expresión del row_hash GENERATED de marts.dim_banco (última
+-- definición en sql/26) porque este UPDATE no pasa por INSERT...ON CONFLICT/EXCLUDED --
+-- necesita decidir si vale la pena escribir ANTES de tocar la fila. Si esta fórmula
+-- queda desincronizada de la definición real de row_hash (como pasó acá: se agregó
+-- estado_validacion al GENERATED pero no aquí), la condición IS DISTINCT FROM queda
+-- permanentemente en true para toda fila con segmento_entidad_id -- CDC roto en
+-- silencio, cada refresh_marts() pisa fecha_actualizacion sin cambio real. Cualquier
+-- migración futura que extienda marts.dim_banco.row_hash DEBE actualizar esta línea en
+-- el mismo cambio, o este UPDATE deja de ser un no-op.
 UPDATE marts.dim_banco b
 SET segmento_entidad_id = latest.segmento_entidad_id, fecha_actualizacion = now()
 FROM (
@@ -744,7 +804,7 @@ FROM (
     ORDER BY banco_id, fecha_id DESC
 ) latest
 WHERE b.banco_id = latest.banco_id
-  AND b.row_hash IS DISTINCT FROM md5(b.banco || '|' || b.tipo_entidad || '|' || COALESCE(b.ruc, '') || '|' || COALESCE(latest.segmento_entidad_id::text, ''));
+  AND b.row_hash IS DISTINCT FROM md5(b.banco || '|' || b.tipo_entidad || '|' || COALESCE(b.ruc, '') || '|' || COALESCE(latest.segmento_entidad_id::text, '') || '|' || b.estado_validacion);
 
 -- TasasHistorico.htm: 4 tablas anchas, una por sección real (activa_maxima +
 -- activa_referencial comparten grano segmento -> misma tabla). staging.tasas_referenciales
@@ -841,8 +901,67 @@ WHERE marts.fact_pyg.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 """
 
 
+def _log_cantones_no_resueltos(conn) -> None:
+    """El INSERT de marts.dim_canton en _REFRESH_MARTS_SQL usa un INNER JOIN contra
+    dim_provincia (provincia_id es NOT NULL en dim_canton, así que no puede ser un LEFT
+    JOIN con NULL) -- toda fila de staging.cartera/staging.depositos cuya `provincia` no
+    resuelve contra dim_provincia (ni exacto ni via translate(), ver el comentario sobre
+    ese INSERT) queda descartada ahí sin error, sin fila huérfana, sin rastro. Bug real
+    encontrado 2026-08-30 al revisar load_postgres.py, no una feature nueva.
+
+    Se resuelve con logging (WARNING si hay filas afectadas, INFO si no), NO con una
+    tabla staging.catalogo_rechazos: a diferencia de dim_plazo/banco_codigo (catálogos
+    regulatorios cerrados donde un valor no resuelto significa un dato mal identificado
+    que un analista podría contar como otra cosa), dim_canton es geografía de bajo riesgo
+    -- el motivo de scope-out real ("agregar geografía sin curar caso por caso") no
+    aplica acá; y a fecha de esta función, 0 filas de staging.cartera/staging.depositos
+    caen en este caso (verificado contra la base viva, ver docs/gobernanza_datos.md).
+    Construir infraestructura de rechazos persistente para un caso con 0 filas afectadas
+    hoy sería sobre-ingeniería; si esta función alguna vez loguea un WARNING real, ESE es
+    el momento de evaluar si hace falta algo más que un log."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT c.provincia, count(*) AS filas, count(DISTINCT c.canton) AS cantones
+            FROM (
+                SELECT canton, provincia FROM staging.cartera
+                UNION ALL
+                SELECT canton, provincia FROM staging.depositos
+            ) c
+            WHERE c.canton IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM marts.dim_provincia dp
+                  WHERE dp.provincia = translate(c.provincia, 'ÁÉÍÓÚ', 'AEIOU')
+              )
+            GROUP BY c.provincia
+            ORDER BY filas DESC
+            """
+        )
+        rows = cur.fetchall()
+    if rows:
+        total_filas = sum(r[1] for r in rows)
+        detalle = ", ".join(
+            f"{provincia!r} ({filas} filas, {cantones} cantón(es) distintos)"
+            for provincia, filas, cantones in rows
+        )
+        log.warning(
+            "marts.dim_canton: %d fila(s) de staging.cartera/depositos con provincia "
+            "NO resoluble contra marts.dim_provincia -- el INNER JOIN de refresh_marts() "
+            "las va a DESCARTAR silenciosamente si esto no se corrige (%d provincia(s) "
+            "distintas afectadas: %s)",
+            total_filas,
+            len(rows),
+            detalle,
+        )
+    else:
+        log.info(
+            "marts.dim_canton: 0 filas con provincia no resoluble (verificado en esta corrida)"
+        )
+
+
 def refresh_marts(conn) -> None:
     load_banco_maestro_seed(conn)
+    _log_cantones_no_resueltos(conn)
     with conn.cursor() as cur:
         cur.execute(_REFRESH_MARTS_SQL)
     log.info("marts.* actualizado desde staging")

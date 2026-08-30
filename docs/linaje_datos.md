@@ -69,6 +69,17 @@ archivo (`etl/transform/parse_cartera.py::tipo_credito_from_sheet_name`, vía
 **Llave natural** `staging.cartera`: `(fecha, tipo_entidad, banco, canton, tipo_credito, estado_cartera)`.
 Código: `etl/transform/parse_cartera.py`, `etl/load/load_postgres.py::upsert_staging_cartera`.
 
+**Bug de descarte silencioso en el JOIN `staging.cartera`/`staging.depositos` →
+`dim_canton` (encontrado y mitigado 2026-08-30)**: `refresh_marts()` puebla
+`marts.dim_canton` con un `INNER JOIN` contra `marts.dim_provincia` (`provincia_id` es
+`NOT NULL`) — cualquier fila cuya `provincia` no matcheara ahí (ni exacto ni vía
+`translate()`) se descartaba sin error ni fila huérfana visible, para cartera y para
+depósitos. `etl/load/load_postgres.py::_log_cantones_no_resueltos()` corre al inicio de
+cada `refresh_marts()` y loguea WARNING con el detalle si esto ocurre (INFO "0 filas" si
+no) — verificado contra la base viva en esta sesión: **0 filas afectadas hoy** en ambas
+tablas. No se agregó una tabla de rechazos (`staging.catalogo_rechazos`) para este caso
+específico — ver la justificación completa en `docs/gobernanza_datos.md`.
+
 ## 2. CAPCOL — Depósitos
 
 Fuente: un solo Excel por año, hoja `BASE ...` con `TIPO DE DEPOSITO` ya como columna
@@ -108,7 +119,7 @@ como grano más fino dentro de cada provincia y se reagrega.
 | Campo origen | `raw.bce_tasas_pasivas.data` | Transformación (staging) | `staging.bce_tasas_pasivas` | `marts.fact_captaciones_depositos` |
 |---|---|---|---|---|
 | `semana` | `fecha` (derivada, `read_raw()`) | `pd.to_datetime(..., format="%d/%m/%Y")` | `fecha` | `dim_fecha` → `fecha_id` |
-| `razon_social`, `ruc`, `tipo_entidad` (original) | tal cual, sin resolver | `resolver_entidad_bce(razon_social, ruc, tipo_entidad)` — **dos caminos**: si `tipo_entidad == 'BANCOS PRIVADOS'`, identidad curada igual que siempre (`resolver_banco_codigo`, `banco_crosswalk.csv`, `BancoNoResueltoError` si no resuelve); si no, `banco_codigo = "BCE_" + ruc` **auto-registrado sin curación manual** (~420 entidades, inviable curar a mano una por una — ver `docs/gobernanza_datos.md`). El `ruc` de la fila se devuelve siempre, privados incluidos (2026-07-23) | `banco_codigo` | `dim_banco` (JOIN `banco_codigo`) → `banco_id`/`.ruc`. Todas las entidades pasan por `upsert_banco_maestro_ruc()` (crea la fila si no existe — no-privadas — y siempre actualiza `ruc`; `banco`/`tipo_entidad` de los privados los sigue fijando `load_banco_maestro_seed()` desde el CSV, `nombre = razon_social` tal cual solo para no-privados) |
+| `razon_social`, `ruc`, `tipo_entidad` (original) | tal cual, sin resolver | `resolver_entidad_bce(razon_social, ruc, tipo_entidad)` — **dos caminos**: si `tipo_entidad == 'BANCOS PRIVADOS'`, identidad curada igual que siempre (`resolver_banco_codigo`, `banco_crosswalk.csv`, `BancoNoResueltoError` si no resuelve, **sin** validación estructural de RUC — ver nota abajo); si no, `banco_codigo = "BCE_" + ruc` **auto-registrado sin curación manual** (~420 entidades, inviable curar a mano una por una — ver `docs/gobernanza_datos.md`), pero **desde 2026-08-30 el RUC pasa primero por `validar_ruc_estructura()`** (13 dígitos, provincia 01-24, tercer dígito 9/6, dígito verificador módulo 11 — algoritmo estándar de sociedades del SRI, verificado contra las 409 entidades no-privadas ya vigentes en `marts.dim_banco`, 0 rechazos falsos) — un RUC estructuralmente inválido lanza `RucInvalidoError` y bloquea esa fila en vez de auto-registrarse con una llave malformada. El `ruc` de la fila se devuelve siempre, privados incluidos (2026-07-23) | `banco_codigo` | `dim_banco` (JOIN `banco_codigo`) → `banco_id`/`.ruc`/`.estado_validacion` (`CONFIRMADO` para privados, `AUTO_INGRESADO` para auto-registrados, ver `docs/data_dictionary.md`). Todas las entidades pasan por `upsert_banco_maestro_ruc()` (crea la fila si no existe — no-privadas — y siempre actualiza `ruc`; `banco`/`tipo_entidad`/`estado_validacion='CONFIRMADO'` de los privados los sigue fijando `load_banco_maestro_seed()` desde el CSV, `nombre = razon_social` tal cual solo para no-privados) |
 | `instrumento_captacion` | tal cual | Validado contra `CATEGORIAS_VALIDAS` (11 valores; verificado 2026-07-19 que las 5 que realmente aparecen en tsp — con o sin filtro de entidad — están todas cubiertas) | `categoria_deposito` | `dim_categoria_deposito` → `categoria_deposito_id` |
 | `plazo` | tal cual | `resolver_plazo_bce()` (`bce_plazo_matching.py`) — quita prefijo ordinal (`"a. "`...), parsea rango en días (tsp: 7 buckets; verificado sin filtro, mismos 7 para todo el sistema) | `plazo_codigo`, `plazo_dias_desde`, `plazo_dias_hasta` | `dim_plazo` (JOIN `dias_desde`+`dias_hasta`) → `plazo_id` |
 | `provincia` | tal cual | `normalize_provincia()` (2026-07-25, antes `normalize_text()` — ver `docs/gobernanza_datos.md` "Normalización de provincia") | `provincia` | `dim_provincia` (JOIN `provincia`) → `fact_captaciones_depositos.provincia_id` |
@@ -186,6 +197,7 @@ catálogos auto-descubiertos.
 | Columna `CUENTA` | `dim_cuenta_contable.cuenta` | — (no se propaga a `staging.boletin_balance/pyg`, solo al plan de cuentas) | `dim_cuenta_contable.cuenta` |
 | *(derivado de `codigo`)* | `dim_cuenta_contable.nivel`, `.codigo_padre`, `.seccion` | `nivel = len(codigo)`; `codigo_padre` = 2 dígitos menos; `seccion` = primer dígito vía `_SECCION_POR_DIGITO` (1 ACTIVO...7 CUENTAS_DE_ORDEN) — **no** de la posición de la fila, porque en PYG los códigos 4 y 5 están intercalados por margen | `dim_cuenta_contable.seccion` |
 | Hoja `MET` (agrupación funcional) | `dim_cuenta_contable.grupo_met` | Primer grupo encontrado por código (**no es partición limpia** — un código puede aparecer en 2+ grupos, ver `docs/metricas_financieras.md`); solo aplica a `BALANCE`, `PYG` queda `NULL` | `dim_cuenta_contable.grupo_met` |
+| *(no viene de ninguna columna del archivo — atributo de gobernanza, no de negocio)* | `dim_cuenta_contable.estado_validacion` | Nueva 2026-08-30 (`sql/25_dim_cuenta_contable_estado_validacion.sql`) — `upsert_dim_cuenta_contable()` no la lista en su `INSERT`, así que toda cuenta descubierta de aquí en adelante hereda el `DEFAULT 'AUTO_INGRESADO'` sin cambio de código; las 1.736 cuentas preexistentes se marcaron `CONFIRMADO` en la migración (backfill explícito, no vía `DEFAULT`) | `dim_cuenta_contable.estado_validacion` |
 | Nombre de columna de banco individual (excluidas las 9 de agregado) | `banco` (crudo), `banco_codigo` | `resolver_banco_codigo(nombre, "BOLETIN")` | `dim_banco` → `fact_balance/fact_pyg.banco_id` |
 | Valor de celda (miles de USD, confirmado en el encabezado real "en miles de dólares") | `saldo_usd` (BALANCE) / `valor_usd` (PYG) | **× 1000** | `fact_balance.saldo_usd` / `fact_pyg.valor_usd` |
 | *(parámetro del pipeline, derivado del nombre de carpeta/archivo, no de una celda del Excel)* | `fecha` | — | `dim_fecha` → `fecha_id` |
@@ -206,13 +218,22 @@ Válidos para las 4 fuentes, no repetidos en cada tabla arriba:
   tiene su propia convención de nombre crudo (código corto CAPCOL/Boletín vs. razón
   social legal completa de BCE). Un nombre no resuelto lanza `BancoNoResueltoError` — la
   identidad de banco es curada (`etl/seeds/banco_crosswalk.csv`), nunca autogenerada.
+  Para BCE específicamente (`resolver_entidad_bce()`), desde 2026-08-30 el camino
+  no-privado además exige que el RUC pase `validar_ruc_estructura()` (`RucInvalidoError`
+  si falla) antes de auto-registrar `banco_codigo = "BCE_" + ruc` — ver sección 3/4 arriba
+  y `docs/gobernanza_datos.md`.
 - **Categoría de depósito / plazo**: resueltos antes de `staging.*` por
   `categoria_deposito_matching.py` (CAPCOL, BCE tsp) y `bce_plazo_matching.py` (BCE
   tsp/tsa) — mismo principio "fail loud, no autogenerar" que banco.
 - **CDC (`fecha_carga`/`fecha_actualizacion`/`row_hash`)**: se aplica en `staging.*` y en
   los `fact_*`/`dim_banco` de `marts` — nunca en `raw.*` (append-only, idempotente por
   archivo vía `source_hash`) ni en los catálogos pequeños de solo-catálogo (`dim_plazo`,
-  `dim_categoria_deposito`, `dim_segmento_credito`, `dim_subsegmento_credito`), que se
-  insertan/mapean una vez y no cambian. Detalle del patrón en `docs/architecture.md`.
+  `dim_categoria_deposito`, `dim_segmento_credito`, `dim_subsegmento_credito`,
+  `dim_cuenta_contable`, `staging.banco_maestro`), que se insertan/mapean/resiembran sin
+  guard de CDC propio. `estado_validacion` (2026-08-30, `dim_banco`/`dim_cuenta_contable`/
+  `staging.banco_maestro`) sigue esa misma línea: se extendió el `row_hash` existente
+  donde ya había uno (`dim_banco`), y se agregó sin `row_hash` donde nunca hubo uno
+  (`dim_cuenta_contable`, `staging.banco_maestro`). Detalle del patrón en
+  `docs/architecture.md`.
 - **`fecha_id` (marts)**: siempre `TO_CHAR(fecha, 'YYYYMMDD')::INT`, calculado en el
   `INSERT...SELECT` de `refresh_marts()` — nunca almacenado en `staging.*`.

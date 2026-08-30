@@ -56,6 +56,7 @@ erDiagram
         string tipo_entidad
         string ruc
         int segmento_entidad_id FK
+        string estado_validacion
     }
     dim_provincia {
         int provincia_id PK
@@ -99,6 +100,7 @@ erDiagram
         string codigo_padre
         string seccion
         string grupo_met
+        string estado_validacion
     }
 
     fact_saldo_cartera {
@@ -304,6 +306,15 @@ verificado explícitamente para cada fuente (`fecha_actualizacion` sin cambios e
 segunda corrida). `raw.*` sigue siendo append-only, idempotente por `source_hash` a nivel
 de archivo (vía `raw.source_files`).
 
+**Excepción deliberada**: `marts.dim_cuenta_contable` y `staging.banco_maestro` NO tienen
+`fecha_carga`/`fecha_actualizacion`/`row_hash` — no son hechos con carga incremental por
+`row_hash`, son catálogos que se resiembran/enriquecen en cada archivo/corrida
+(`ON CONFLICT DO UPDATE` sin guard de CDC porque no hay noción de "cambió de verdad" que
+proteger: `upsert_dim_cuenta_contable()` solo mejora `grupo_met` cuando antes era NULL,
+`load_banco_maestro_seed()`/`upsert_banco_maestro_ruc()` reafirman valores curados/RUC en
+cada corrida sin costo). `estado_validacion` (2026-08-30, `sql/25`/`sql/26`) se agregó a
+ambas tablas sin necesitar extender un `row_hash` que nunca existió ahí.
+
 **¿Por qué no Data Vault?** Data Vault (Hub/Link/Satellite) resuelve integrar muchas
 fuentes de alta velocidad de cambio con auditoría regulatoria estricta, normalmente como
 capa de integración *debajo* de un modelo Kimball. Con 3 fuentes y cadencia
@@ -408,8 +419,21 @@ las tablas de `staging`/`marts`, `saldo_total` en `fact_saldo_cartera`)
   `sql/11_schema_bce.sql:54,80,103,126`, `sql/12_schema_tasas_historicas.sql:49,63,75,85,100`,
   `sql/13_schema_boletin.sql:58,74,88,100`, `sql/15_rename_fact_tables.sql:37`,
   `sql/16_dim_segmento_normativo.sql:131`, `sql/17_dim_banco_ruc_sin_tamano.sql:21`,
-  `sql/19_dim_segmento_entidad.sql:32,41,53,63,77`, `sql/21_fact_saldo_cartera_pivot.sql:26`
-  (29 ocurrencias en total). `saldo_total` en `sql/21_fact_saldo_cartera_pivot.sql:22-23`.
+  `sql/19_dim_segmento_entidad.sql:32,41,53,63,77`, `sql/21_fact_saldo_cartera_pivot.sql:26`,
+  `sql/26_dim_banco_estado_validacion.sql:46` (2026-08-30, extiende el `row_hash` de
+  `marts.dim_banco` para cubrir `estado_validacion` — `marts.dim_cuenta_contable` gana
+  `estado_validacion` en `sql/25` pero esa tabla nunca tuvo `row_hash`/CDC propio, ver
+  `docs/data_dictionary.md`) (30 ocurrencias en total). `saldo_total` en
+  `sql/21_fact_saldo_cartera_pivot.sql:22-23`.
+- **Nota de mantenimiento real** (bug encontrado y corregido 2026-08-30, ver
+  `docs/gobernanza_datos.md`): el `UPDATE` SCD1 de `marts.dim_banco.segmento_entidad_id`
+  en `etl/load/load_postgres.py` (bloque `dim_banco.segmento_entidad_id: conveniencia...`)
+  no puede usar `EXCLUDED` (no es un `INSERT ... ON CONFLICT`), así que **recalcula a
+  mano** la misma expresión del `row_hash` `GENERATED` en su cláusula `WHERE`. Esa
+  fórmula duplicada quedó desincronizada una vez ya (se agregó `estado_validacion` al
+  `GENERATED` sin actualizar el recálculo manual) y rompió el no-op de CDC en silencio
+  hasta que se verificó explícitamente — cualquier migración futura que extienda este
+  `row_hash` debe tocar las 2 ubicaciones en el mismo cambio.
 - **SQL Server**: `columna AS (expresión) PERSISTED` — mismo concepto (columna calculada
   materializada, indexable), pero `MD5()` no existe nativo: se reemplaza por
   `CONVERT(VARCHAR(32), HASHBYTES('MD5', ...), 2)` (`HASHBYTES` devuelve `VARBINARY`).
