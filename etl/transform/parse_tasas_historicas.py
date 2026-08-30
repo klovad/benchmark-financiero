@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from etl.transform.bce_plazo_matching import PlazoNoResueltoError
+from etl.transform.bce_plazo_matching import PlazoNoResueltoError, validar_rango_plazo
 
 _NUM = re.compile(r"^-?\d+[.,]\d+$")
 
@@ -54,9 +54,12 @@ _PLAZO_SIN_TOPE = re.compile(r"^PLAZO\s+(\d+)\s+Y\s+M[AÁ]S$")
 # Universo verificado contra staging.tasas_referenciales seccion='pasiva_plazo'
 # (2026-08-22): esta fuente trae exactamente estos 6 buckets. Mismo criterio que
 # PLAZOS_TSP_VALIDOS/PLAZOS_TSA_VALIDOS (etl/transform/bce_plazo_matching.py) y
-# PLAZOS_VALIDOS (etl/transform/categoria_deposito_matching.py) -- que un texto nuevo
-# matchee el *shape* de _PLAZO_RANGO/_PLAZO_SIN_TOPE no basta para aceptarlo en el
-# dim_plazo compartido sin revisión deliberada.
+# PLAZOS_VALIDOS (etl/transform/categoria_deposito_matching.py): ya NO es un gate duro
+# (ver sql/27_dim_plazo_estado_validacion.sql), sigue siendo el universo CONFIRMADO -- un
+# texto nuevo que matchee el *shape* de _PLAZO_RANGO/_PLAZO_SIN_TOPE y tenga un rango
+# sano (validar_rango_plazo()) se acepta igual, aunque no esté acá, y se auto-ingresa en
+# marts.dim_plazo con estado_validacion='AUTO_INGRESADO' para revisión posterior. Solo un
+# shape no reconocido sigue abortando la carga.
 PLAZOS_VALIDOS = {
     "PLAZO 30-60",
     "PLAZO 61-90",
@@ -72,21 +75,28 @@ PLAZOS_VALIDOS = {
 
 
 def _resolver_plazo(texto: str) -> tuple[int, int | None]:
+    """Shape check primero (_PLAZO_RANGO/_PLAZO_SIN_TOPE), luego sanity de rango
+    (validar_rango_plazo()) -- ambos siguen siendo fallo duro (PlazoNoResueltoError) si
+    no matchean o el rango es inválido. Si shape+rango son válidos pero el texto no está
+    en PLAZOS_VALIDOS, se acepta igual: no es un gate, ver comentario de PLAZOS_VALIDOS
+    más arriba."""
     t = texto.strip().upper()
-    if t not in PLAZOS_VALIDOS:
-        raise PlazoNoResueltoError(
-            f"No se pudo resolver el plazo de TasasHistorico: '{texto}'. Si es un "
-            f"bucket nuevo y legítimo, agregarlo deliberadamente a PLAZOS_VALIDOS en "
-            f"etl/transform/parse_tasas_historicas.py (no relajar esta validación)."
-        )
+
     m = _PLAZO_RANGO.match(t)
     if m:
-        return int(m.group(1)), int(m.group(2))
+        desde, hasta = int(m.group(1)), int(m.group(2))
+        validar_rango_plazo(desde, hasta, texto)
+        return desde, hasta
+
     m = _PLAZO_SIN_TOPE.match(t)
     if m:
-        return int(m.group(1)), None
+        desde = int(m.group(1))
+        validar_rango_plazo(desde, None, texto)
+        return desde, None
+
     raise PlazoNoResueltoError(
-        f"No se pudo resolver el plazo de TasasHistorico: '{texto}'"
+        f"No se pudo resolver el plazo de TasasHistorico: '{texto}'. Formato no "
+        f"reconocido (ni 'PLAZO X-Y' ni 'PLAZO X Y MAS')."
     )
 
 

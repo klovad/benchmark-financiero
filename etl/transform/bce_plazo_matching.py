@@ -25,22 +25,52 @@ _MAS_ANIOS = re.compile(r"^M[AÁ]S\s+DE\s+(\d+)\s*A[ÑN]OS$")
 
 
 class PlazoNoResueltoError(ValueError):
-    """El texto crudo de plazo no matchea ningún patrón conocido, o matchea el patrón
-    pero no es un bucket conocido/verificado para esa fuente (ver PLAZOS_*_VALIDOS más
-    abajo) -- error único para dim_plazo sin importar la fuente (tsp, tsa, CAPCOL vía
+    """El texto crudo de plazo no matchea ningún patrón conocido (shape inválido), o
+    matchea el patrón pero el rango resultante es inválido (ej. dias_desde > dias_hasta)
+    -- error único para dim_plazo sin importar la fuente (tsp, tsa, CAPCOL vía
     categoria_deposito_matching.py, o TasasHistorico vía parse_tasas_historicas.py),
     igual que BancoNoResueltoError centraliza la identidad de banco en banco_matching.py.
+
+    Desde sql/27_dim_plazo_estado_validacion.sql, un texto que SÍ matchea un shape
+    conocido y tiene un rango sano pero NO está en el universo curado
+    (PLAZOS_*_VALIDOS más abajo) YA NO lanza este error: se deja pasar y se auto-ingresa
+    en marts.dim_plazo con estado_validacion='AUTO_INGRESADO' para revisión posterior
+    (ver validar_universo_plazos_bce). Solo shape inválido o rango inválido siguen
+    abortando la carga -- eso sigue siendo una anomalía real de parsing, no un bucket
+    nuevo legítimo.
     """
+
+
+def validar_rango_plazo(
+    dias_desde: int, dias_hasta: int | None, texto_original: str
+) -> None:
+    """Sanity check de rango, aplicado DESPUÉS de que el shape ya matcheó un patrón
+    conocido (ver resolver_plazo_bce, categoria_deposito_matching.resolver_categoria_deposito,
+    parse_tasas_historicas._resolver_plazo -- los 3 puntos de validación que además de
+    bce_plazo_matching.py resuelven texto crudo de plazo a un rango de días). dias_desde
+    no puede ser negativo; si dias_hasta está presente (bucket cerrado) debe ser >=
+    dias_desde. Un bucket abierto ('MAS DE N ...', dias_hasta=None) no cae en el segundo
+    caso. Un rango invertido o negativo es una anomalía real de parsing (ej. un regex que
+    matcheó un texto degenerado), no un bucket nuevo legítimo -- sigue fallando fuerte
+    igual que un shape no reconocido, nunca se relaja a AUTO_INGRESADO."""
+    if dias_desde < 0 or (dias_hasta is not None and dias_desde > dias_hasta):
+        raise PlazoNoResueltoError(
+            f"Rango de plazo inválido para '{texto_original}': dias_desde={dias_desde}, "
+            f"dias_hasta={dias_hasta}. Esto es una anomalía de parsing (ej. un rango "
+            f"invertido), no un bucket nuevo -- revisar el patrón regex o el dato fuente."
+        )
 
 
 # Universos verificados contra staging.bce_tasas_pasivas/activas (2026-08-22): tsp trae
 # exactamente estos 7 buckets, tsa exactamente estos 14 (a-n, con los últimos 6 en años).
 # dim_plazo es un catálogo COMPARTIDO entre fuentes (ver comentario en
-# sql/... / etl/load/load_postgres.py) -- que un texto nuevo matchee el *shape* de
-# resolver_plazo_bce() no basta para aceptarlo en dim_plazo sin revisión: si el BCE algún
-# día cambia la cantidad o el corte de buckets, eso debe fallar fuerte y forzar un cambio
-# deliberado acá (agregar el bucket nuevo a este set), no crecer silenciosamente vía
-# INSERT ... ON CONFLICT DO NOTHING en marts.dim_plazo.
+# sql/... / etl/load/load_postgres.py). Estos sets ya NO son un gate duro (ver
+# sql/27_dim_plazo_estado_validacion.sql): siguen siendo el universo CONFIRMADO -- todo
+# texto nuevo cuyo *shape* matchea resolver_plazo_bce() y cuyo rango es sano se acepta y
+# se auto-ingresa en marts.dim_plazo con estado_validacion='AUTO_INGRESADO' aunque no
+# esté acá, para revisión posterior en vez de abortar la carga completa. Si el BCE cambia
+# la cantidad/corte de buckets de forma que el texto YA NO matchea ningún shape conocido
+# (o produce un rango inválido), eso sí sigue fallando fuerte -- ver PlazoNoResueltoError.
 PLAZOS_TSP_VALIDOS = {
     "A. MENOS DE 30 DIAS",
     "B. 30 - 60 DIAS",
@@ -72,23 +102,33 @@ PLAZOS_TSA_VALIDOS = {
 def validar_universo_plazos_bce(
     plazos_crudos, universo_valido: set[str], fuente: str
 ) -> None:
-    """Valida que TODOS los valores crudos de `plazo` observados en un archivo tsp/tsa
-    estén en el universo conocido y verificado para esa fuente -- mismo patrón que
-    `segmento_credito`/`tipo_segmento` en parse_bce_tasas.py (`set(...) - VALIDOS`).
-    Lanza PlazoNoResueltoError si aparece un bucket no reconocido, en vez de dejarlo
-    pasar silenciosamente hacia marts.dim_plazo."""
+    """Chequeo de dos niveles para TODOS los valores crudos de `plazo` observados en un
+    archivo tsp/tsa que no están en `universo_valido` (mismo patrón de comparación por
+    set que `segmento_credito`/`tipo_segmento` en parse_bce_tasas.py):
+
+    1. Shape + rango: se resuelve cada desconocido vía resolver_plazo_bce(), que
+       propaga PlazoNoResueltoError tal cual si el texto no matchea ningún patrón
+       conocido o el rango resultante es inválido -- eso sigue siendo un fallo duro,
+       aborta la carga.
+    2. Si el shape matchea y el rango es sano pero el texto no está en
+       `universo_valido`: NO se lanza. Se deja pasar -- marts.dim_plazo lo auto-ingresa
+       con estado_validacion='AUTO_INGRESADO' (sql/27_dim_plazo_estado_validacion.sql)
+       para revisión posterior, en vez de abortar toda la carga por un bucket nuevo y
+       legítimo del BCE."""
     desconocidos = {str(p).strip().upper() for p in plazos_crudos} - universo_valido
-    if desconocidos:
-        raise PlazoNoResueltoError(
-            f"plazo desconocido en {fuente}: {sorted(desconocidos)}. Si es un bucket "
-            f"nuevo y legítimo del BCE, agregarlo deliberadamente a PLAZOS_{fuente.upper()}_VALIDOS "
-            f"en etl/transform/bce_plazo_matching.py (no relajar esta validación)."
-        )
+    for texto in desconocidos:
+        resolver_plazo_bce(texto)
 
 
 def resolver_plazo_bce(plazo_crudo: str) -> tuple[int, int | None]:
     """Devuelve (dias_desde, dias_hasta); dias_hasta es None si el bucket es abierto
-    ('MAS DE ...')."""
+    ('MAS DE ...'). Shape check vía los patrones _RANGO_DIAS/_MENOS_DIAS/_MAS_DIAS/
+    _RANGO_ANIOS/_MAS_ANIOS (PlazoNoResueltoError si ninguno matchea), seguido de un
+    sanity check de rango vía validar_rango_plazo() (PlazoNoResueltoError si el rango
+    resultante es inválido, ej. un 'MENOS DE 1 DIAS' degenerado) -- ambos casos siguen
+    siendo fallo duro. Un shape válido con rango sano SIEMPRE se acepta acá, sin importar
+    si el texto está en PLAZOS_TSP_VALIDOS/PLAZOS_TSA_VALIDOS: ese universo curado ya no
+    es un gate de esta función, ver validar_universo_plazos_bce()."""
     if not plazo_crudo or not plazo_crudo.strip():
         raise PlazoNoResueltoError("plazo vacío")
 
@@ -96,23 +136,34 @@ def resolver_plazo_bce(plazo_crudo: str) -> tuple[int, int | None]:
 
     m = _RANGO_DIAS.match(texto)
     if m:
-        return int(m.group(1)), int(m.group(2))
+        desde, hasta = int(m.group(1)), int(m.group(2))
+        validar_rango_plazo(desde, hasta, plazo_crudo)
+        return desde, hasta
 
     m = _MENOS_DIAS.match(texto)
     if m:
-        return 1, int(m.group(1)) - 1
+        desde, hasta = 1, int(m.group(1)) - 1
+        validar_rango_plazo(desde, hasta, plazo_crudo)
+        return desde, hasta
 
     m = _MAS_DIAS.match(texto)
     if m:
-        return int(m.group(1)), None
+        desde = int(m.group(1))
+        validar_rango_plazo(desde, None, plazo_crudo)
+        return desde, None
 
     m = _RANGO_ANIOS.match(texto)
     if m:
-        return int(m.group(1)) * DIAS_POR_ANIO, int(m.group(2)) * DIAS_POR_ANIO
+        desde = int(m.group(1)) * DIAS_POR_ANIO
+        hasta = int(m.group(2)) * DIAS_POR_ANIO
+        validar_rango_plazo(desde, hasta, plazo_crudo)
+        return desde, hasta
 
     m = _MAS_ANIOS.match(texto)
     if m:
-        return int(m.group(1)) * DIAS_POR_ANIO, None
+        desde = int(m.group(1)) * DIAS_POR_ANIO
+        validar_rango_plazo(desde, None, plazo_crudo)
+        return desde, None
 
     raise PlazoNoResueltoError(
         f"No se pudo resolver el plazo BCE para '{plazo_crudo}'. "

@@ -1,0 +1,69 @@
+-- dim_plazo tenía el gate de PLAZOS_TSP_VALIDOS/PLAZOS_TSA_VALIDOS/PLAZOS_VALIDOS
+-- (bce_plazo_matching.py, categoria_deposito_matching.py, parse_tasas_historicas.py)
+-- como un fail-fast absoluto desde sql/... (2026-08-27, ver docs/data_dictionary.md):
+-- un bucket de plazo con *shape* válido (matchea el regex de su fuente) pero que no
+-- estaba en el universo enumerado curado abortaba TODA la carga de esa fuente, igual
+-- que un shape realmente irreconocible. Eso trataba "bucket nuevo y legítimo del BCE"
+-- (algo que puede pasar sin que sea un error de nadie -- el BCE puede agregar un tramo
+-- de plazo nuevo) igual que "dato mal formado" (un shape que no matchea nada, o un
+-- rango invertido -- eso sí es siempre una anomalía real de parsing).
+--
+-- Cambio (aprobado por el usuario): dos niveles en los 4 puntos de validación de plazo
+-- (etl/transform/bce_plazo_matching.py::validar_universo_plazos_bce/resolver_plazo_bce,
+-- etl/transform/categoria_deposito_matching.py::resolver_categoria_deposito,
+-- etl/transform/parse_tasas_historicas.py::_resolver_plazo):
+--   1) Shape (regex) inválido, o rango inválido una vez resuelto (dias_desde < 0, o
+--      dias_desde > dias_hasta cuando dias_hasta no es NULL) -> PlazoNoResueltoError,
+--      SIGUE abortando la carga. Sigue siendo una anomalía real de parsing.
+--   2) Shape válido y rango sano, pero el texto no está en el universo enumerado
+--      (PLAZOS_TSP_VALIDOS/PLAZOS_TSA_VALIDOS/PLAZOS_VALIDOS) -> ya NO lanza. Se deja
+--      pasar y llega a marts.dim_plazo vía el INSERT ... ON CONFLICT DO NOTHING de
+--      siempre (etl/load/load_postgres.py, _REFRESH_MARTS_SQL) -- ahora marcado
+--      AUTO_INGRESADO en vez de fallar duro. Queda visible para revisión posterior
+--      (¿es un tramo nuevo real, o se solapa con un bucket ya existente y conviene
+--      curarlo?) sin bloquear ninguna de las otras filas de esa carga.
+--
+-- Por qué dim_plazo recibe este tratamiento y dim_segmento_credito/
+-- dim_subsegmento_credito/dim_categoria_deposito/dim_segmento_entidad NO: la distinción
+-- real es sintaxis vs. semántica regulatoria. dim_plazo es un catálogo abierto por RANGO
+-- NUMÉRICO -- "shape válido" ya significa "es un rango de días bien formado dentro de la
+-- sintaxis que usa esa fuente" (ej. "X - Y DIAS"), y un tramo de días nuevo que el BCE
+-- decida reportar (ej. un bucket adicional entre los que ya existen) es autoexplicativo:
+-- el propio dato (dias_desde, dias_hasta) ES la definición completa, no hace falta
+-- interpretación humana para saber qué significa. Los otros 4 catálogos (segmento de
+-- crédito, sub-segmento, categoría de depósito, segmento de entidad) son enumeraciones
+-- CERRADAS por definición normativa/regulatoria (ej. los 7 segmentos de crédito de la
+-- Junta de Política y Regulación Financiera, las 14 clasificaciones de tamaño de
+-- entidad) -- un texto nuevo ahí NO es autoexplicativo: podría ser un nombre nuevo para
+-- un concepto ya existente (requiere mapeo, ver sql/16_dim_segmento_normativo.sql), un
+-- error de tipeo de la fuente, o un concepto regulatorio genuinamente nuevo que cambia
+-- el universo -- distinguir esos 3 casos requiere revisión humana ANTES de aceptar la
+-- fila, no después. Por eso esos 4 catálogos se quedan con el fail-fast absoluto
+-- (SEGMENTOS_VALIDOS/CATEGORIAS_VALIDAS sin two-tier) y dim_plazo es el único de los 5
+-- catálogos "cerrados" que pasa a auto-ingesta con revisión posterior vía
+-- estado_validacion, mismo mecanismo que dim_cuenta_contable (sql/25) y dim_banco
+-- (sql/26).
+--
+-- Nota de portabilidad/CDC: verificado contra sql/08_dim_segmento_categoria_plazo.sql y
+-- sql/10_fix_null_unique_constraints.sql antes de escribir esta migración -- dim_plazo
+-- NO tiene fecha_carga/fecha_actualizacion/row_hash (a diferencia de dim_banco, sql/26).
+-- Se puebla vía INSERT ... SELECT ... ON CONFLICT (dias_desde, COALESCE(dias_hasta,-1))
+-- DO NOTHING (catálogo auto-descubierto, no upsert-con-CDC) -- mismo patrón sin-CDC que
+-- dim_cuenta_contable (sql/25), no el patrón con-CDC de dim_banco (sql/26). Los 4
+-- INSERT INTO marts.dim_plazo de _REFRESH_MARTS_SQL (etl/load/load_postgres.py) NO
+-- listan estado_validacion en su lista de columnas, así que toda fila nueva hereda el
+-- DEFAULT 'AUTO_INGRESADO' automáticamente, sin requerir ningún cambio de código en
+-- load_postgres.py -- idéntico al caso de upsert_dim_cuenta_contable() en sql/25.
+
+ALTER TABLE marts.dim_plazo
+    ADD COLUMN estado_validacion TEXT NOT NULL DEFAULT 'AUTO_INGRESADO'
+    CHECK (estado_validacion IN ('CONFIRMADO', 'AUTO_INGRESADO', 'RECHAZADO'));
+
+-- Backfill explícito (no se confía en el DEFAULT de la columna para las filas
+-- preexistentes): las 21 filas vivas hoy en marts.dim_plazo son exactamente los buckets
+-- de los universos curados PLAZOS_TSP_VALIDOS/PLAZOS_TSA_VALIDOS/PLAZOS_VALIDOS (CAPCOL)/
+-- PLAZOS_VALIDOS (TasasHistorico) verificados contra el histórico completo el
+-- 2026-08-27 (ver docs/gobernanza_datos.md, regla de calidad #1) -- se marcan CONFIRMADO.
+-- El DEFAULT de arriba solo aplica de aquí en adelante, a buckets nuevos que pasen el
+-- shape+rango check pero no estén en esos sets.
+UPDATE marts.dim_plazo SET estado_validacion = 'CONFIRMADO';

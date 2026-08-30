@@ -55,15 +55,31 @@ def test_empty_value_raises():
         resolver_categoria_deposito("")
 
 
-def test_plazo_bucket_con_shape_valido_pero_desconocido_lanza_plazo_error():
-    """dim_plazo es un catálogo abierto por rango, no debe crecer silenciosamente: un
-    texto que matchea el *shape* de un bucket de plazo CAPCOL ('DE X A Y DÍAS') pero no
-    es uno de los 5 buckets reales verificados en producción debe fallar fuerte, no
-    auto-aceptarse."""
-    with pytest.raises(PlazoNoResueltoError):
-        resolver_categoria_deposito("DE 500 A 600 DÍAS")
+def test_plazo_bucket_con_shape_valido_pero_desconocido_no_lanza():
+    """Desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el *shape* de
+    un bucket de plazo CAPCOL ('DE X A Y DÍAS') pero no es uno de los 5 buckets reales
+    verificados en producción YA NO aborta la carga -- se acepta y resuelve el rango
+    real, quedando marcado AUTO_INGRESADO cuando llega a marts.dim_plazo."""
+    categoria, desde, hasta = resolver_categoria_deposito("DE 500 A 600 DÍAS")
+    assert categoria == "DEPÓSITOS A PLAZO"
+    assert (desde, hasta) == (500, 600)
 
 
-def test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_lanza_plazo_error():
+def test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_no_lanza():
+    categoria, desde, hasta = resolver_categoria_deposito("DE MÁS DE 999 DÍAS")
+    assert categoria == "DEPÓSITOS A PLAZO"
+    assert (desde, hasta) == (999, None)
+
+
+def test_plazo_bucket_shape_invalido_sigue_lanzando():
+    """Un texto que no matchea ni _RANGO ni _SIN_TOPE ni CATEGORIAS_VALIDAS sigue siendo
+    fallo duro -- CategoriaNoResueltaError, no cambió con sql/27."""
+    with pytest.raises(CategoriaNoResueltaError):
+        resolver_categoria_deposito("DE ALGO A OTRO ALGO DÍAS")
+
+
+def test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error():
+    """Un shape válido con rango invertido (dias_desde > dias_hasta) es una anomalía real
+    de parsing, no un bucket nuevo legítimo -- sigue abortando la carga."""
     with pytest.raises(PlazoNoResueltoError):
-        resolver_categoria_deposito("DE MÁS DE 999 DÍAS")
+        resolver_categoria_deposito("DE 600 A 500 DÍAS")

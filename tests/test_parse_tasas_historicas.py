@@ -49,12 +49,26 @@ def test_resolver_plazo_todos_los_6_buckets_reales_resuelven():
     assert _resolver_plazo("Plazo 361 y más") == (361, None)
 
 
-def test_resolver_plazo_shape_valido_pero_fuera_del_universo_lanza_plazo_error():
-    """dim_plazo es compartido entre fuentes y no debe crecer silenciosamente: un texto
-    que matchea el shape de _PLAZO_RANGO ('PLAZO X-Y') pero no es uno de los 6 buckets
-    reales verificados en producción debe fallar fuerte."""
+def test_resolver_plazo_shape_valido_pero_fuera_del_universo_no_lanza():
+    """Desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el shape de
+    _PLAZO_RANGO ('PLAZO X-Y') pero no es uno de los 6 buckets reales verificados en
+    producción YA NO aborta la carga -- se acepta y resuelve el rango real, quedando
+    marcado AUTO_INGRESADO cuando llega a marts.dim_plazo."""
+    assert _resolver_plazo("Plazo 700-900") == (700, 900)
+
+
+def test_resolver_plazo_shape_invalido_sigue_lanzando():
+    """Un texto que no matchea ni _PLAZO_RANGO ni _PLAZO_SIN_TOPE sigue siendo fallo
+    duro -- no cambió con sql/27."""
     with pytest.raises(PlazoNoResueltoError):
-        _resolver_plazo("Plazo 999-1000")
+        _resolver_plazo("Plazo inventado sin numeros")
+
+
+def test_resolver_plazo_shape_valido_pero_rango_invertido_lanza_error():
+    """Un shape válido con rango invertido (dias_desde > dias_hasta) es una anomalía real
+    de parsing, no un bucket nuevo legítimo -- sigue abortando la carga."""
+    with pytest.raises(PlazoNoResueltoError):
+        _resolver_plazo("Plazo 900-700")
 
 
 def test_parse_filas_rastrea_seccion_sin_asumir_que_tabla_0_es_activa_maxima():
