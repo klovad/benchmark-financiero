@@ -56,13 +56,38 @@ def test_universo_tolera_minusculas_y_espacios_como_el_dato_real():
     )
 
 
-def test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_lanza():
-    """Un texto que matchea el shape de resolver_plazo_bce() (ej. un bucket "h." nuevo
-    que tsp nunca ha reportado) no debe entrar a marts.dim_plazo sin revisión."""
-    with pytest.raises(PlazoNoResueltoError):
-        validar_universo_plazos_bce(["h. MAS DE 1000 DIAS"], PLAZOS_TSP_VALIDOS, "tsp")
+def test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza():
+    """Desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el shape de
+    resolver_plazo_bce() (ej. un bucket "h." nuevo que tsp nunca ha reportado) YA NO
+    aborta la carga -- se deja pasar y se auto-ingresa en marts.dim_plazo con
+    estado_validacion='AUTO_INGRESADO' para revisión posterior (ver
+    etl/load/load_postgres.py, INSERT INTO marts.dim_plazo sin listar
+    estado_validacion -> hereda el DEFAULT)."""
+    validar_universo_plazos_bce(["h. MAS DE 1000 DIAS"], PLAZOS_TSP_VALIDOS, "tsp")
 
 
-def test_bucket_fuera_del_universo_tsa_lanza():
+def test_bucket_fuera_del_universo_tsa_no_lanza():
+    validar_universo_plazos_bce(["o. 12 - 20 AÑOS"], PLAZOS_TSA_VALIDOS, "tsa")
+
+
+def test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo():
+    """Un texto que NO matchea ningún shape regex conocido sigue siendo fallo duro --
+    esa parte del comportamiento no cambió con sql/27."""
     with pytest.raises(PlazoNoResueltoError):
-        validar_universo_plazos_bce(["o. 12 - 20 AÑOS"], PLAZOS_TSA_VALIDOS, "tsa")
+        validar_universo_plazos_bce(
+            ["ESTO NO ES UN PLAZO"], PLAZOS_TSP_VALIDOS, "tsp"
+        )
+
+
+def test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando():
+    """Un shape válido con rango invertido (dias_desde > dias_hasta) es una anomalía real
+    de parsing, no un bucket nuevo legítimo -- sigue abortando la carga."""
+    with pytest.raises(PlazoNoResueltoError):
+        resolver_plazo_bce("h. 100 - 50 DIAS")
+
+
+def test_bucket_shape_valido_fuera_del_universo_resuelve_rango_correcto():
+    """Ejercita el camino completo de auto-ingesta: un bucket nuevo y desconocido pero
+    con shape+rango válidos debe seguir resolviendo el rango real de días, no solo no
+    lanzar."""
+    assert resolver_plazo_bce("h. 1000 - 1100 DIAS") == (1000, 1100)
