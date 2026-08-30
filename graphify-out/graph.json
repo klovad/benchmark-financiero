@@ -10,24 +10,11 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "plazonoresueltoerror",
       "source_file": "etl/transform/bce_plazo_matching.py",
       "source_location": "L27"
-    },
-    {
-      "id": "etl_transform_categoria_deposito_matching_categorianoresueltaerror",
-      "label": "CategoriaNoResueltaError",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "categorianoresueltaerror",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L50"
     },
     {
       "id": "etl_transform_parse_bce_tasas_segmentonoresueltoerror",
@@ -35,7 +22,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 0,
+      "community": 128,
       "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "segmentonoresueltoerror",
@@ -48,12 +35,25 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 0,
+      "community": 128,
       "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "tiposegmentonoresueltoerror",
       "source_file": "etl/transform/parse_bce_tasas.py",
       "source_location": "L160"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching_categorianoresueltaerror",
+      "label": "CategoriaNoResueltaError",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
+      "file_type": "code",
+      "norm_label": "categorianoresueltaerror",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L53"
     },
     {
       "id": "etl_logging_utils_runidfilter",
@@ -113,11 +113,23 @@
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "resolver_plazo_bce()",
       "source_file": "etl/transform/bce_plazo_matching.py",
-      "source_location": "L89"
+      "source_location": "L123"
+    },
+    {
+      "id": "etl_transform_bce_plazo_matching_validar_rango_plazo",
+      "label": "validar_rango_plazo()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "PlazoNoResueltoError",
+      "file_type": "code",
+      "norm_label": "validar_rango_plazo()",
+      "source_file": "etl/transform/bce_plazo_matching.py",
+      "source_location": "L44"
     },
     {
       "id": "etl_transform_bce_plazo_matching_validar_universo_plazos_bce",
@@ -125,143 +137,71 @@
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "validar_universo_plazos_bce()",
       "source_file": "etl/transform/bce_plazo_matching.py",
-      "source_location": "L72"
+      "source_location": "L102"
     },
     {
-      "id": "etl_transform_categoria_deposito_matching_resolver_categoria_deposito",
-      "label": "resolver_categoria_deposito()",
+      "id": "tests_test_bce_plazo_matching_test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza",
+      "label": "test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza()",
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
-      "norm_label": "resolver_categoria_deposito()",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L54"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_add_common_columns",
-      "label": "_add_common_columns()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "_add_common_columns()",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L264"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_parse_tsa_file",
-      "label": "parse_tsa_file()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "parse_tsa_file()",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L318"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_parse_tsp_file",
-      "label": "parse_tsp_file()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "parse_tsp_file()",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L278"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_read_raw",
-      "label": "read_raw()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "read_raw()",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L185"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_resolve_identidad",
-      "label": "_resolve_identidad()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "_resolve_identidad()",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L231"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_resolve_segmento_entidad",
-      "label": "_resolve_segmento_entidad()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "_resolve_segmento_entidad()",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L164"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_single_csv_in_zip",
-      "label": "_single_csv_in_zip()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "_single_csv_in_zip()",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L174"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_weighted_agg",
-      "label": "_weighted_agg()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "_weighted_agg()",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L206"
-    },
-    {
-      "id": "tests_test_bce_plazo_matching_test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_lanza",
-      "label": "test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_lanza()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_lanza()",
+      "norm_label": "test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza()",
       "source_file": "tests/test_bce_plazo_matching.py",
       "source_location": "L59"
     },
     {
-      "id": "tests_test_bce_plazo_matching_test_bucket_fuera_del_universo_tsa_lanza",
-      "label": "test_bucket_fuera_del_universo_tsa_lanza()",
+      "id": "tests_test_bce_plazo_matching_test_bucket_fuera_del_universo_tsa_no_lanza",
+      "label": "test_bucket_fuera_del_universo_tsa_no_lanza()",
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
-      "norm_label": "test_bucket_fuera_del_universo_tsa_lanza()",
+      "norm_label": "test_bucket_fuera_del_universo_tsa_no_lanza()",
       "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L66"
+      "source_location": "L69"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo",
+      "label": "test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "PlazoNoResueltoError",
+      "file_type": "code",
+      "norm_label": "test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L73"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_bucket_shape_valido_fuera_del_universo_resuelve_rango_correcto",
+      "label": "test_bucket_shape_valido_fuera_del_universo_resuelve_rango_correcto()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "PlazoNoResueltoError",
+      "file_type": "code",
+      "norm_label": "test_bucket_shape_valido_fuera_del_universo_resuelve_rango_correcto()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L89"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando",
+      "label": "test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "PlazoNoResueltoError",
+      "file_type": "code",
+      "norm_label": "test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L82"
     },
     {
       "id": "tests_test_bce_plazo_matching_test_plazo_no_reconocido_lanza_error",
@@ -269,7 +209,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "test_plazo_no_reconocido_lanza_error()",
       "source_file": "tests/test_bce_plazo_matching.py",
@@ -281,7 +221,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "test_plazo_vacio_lanza_error()",
       "source_file": "tests/test_bce_plazo_matching.py",
@@ -293,7 +233,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "test_prefijo_ordinal_no_es_obligatorio_para_el_match()",
       "source_file": "tests/test_bce_plazo_matching.py",
@@ -305,7 +245,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "test_tsa_14_buckets_reales_resuelven_incluyendo_anios()",
       "source_file": "tests/test_bce_plazo_matching.py",
@@ -317,7 +257,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "test_tsp_7_buckets_reales_resuelven()",
       "source_file": "tests/test_bce_plazo_matching.py",
@@ -329,7 +269,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "test_universo_tolera_minusculas_y_espacios_como_el_dato_real()",
       "source_file": "tests/test_bce_plazo_matching.py",
@@ -341,7 +281,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "test_universo_tsa_completo_no_lanza()",
       "source_file": "tests/test_bce_plazo_matching.py",
@@ -353,19 +293,127 @@
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "test_universo_tsp_completo_no_lanza()",
       "source_file": "tests/test_bce_plazo_matching.py",
       "source_location": "L43"
     },
     {
+      "id": "etl_transform_parse_bce_tasas_add_common_columns",
+      "label": "_add_common_columns()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "_add_common_columns()",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L264"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_parse_tsa_file",
+      "label": "parse_tsa_file()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "parse_tsa_file()",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L318"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_parse_tsp_file",
+      "label": "parse_tsp_file()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "parse_tsp_file()",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L278"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_read_raw",
+      "label": "read_raw()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "read_raw()",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L185"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_resolve_identidad",
+      "label": "_resolve_identidad()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "_resolve_identidad()",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L231"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_resolve_segmento_entidad",
+      "label": "_resolve_segmento_entidad()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "_resolve_segmento_entidad()",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L164"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_single_csv_in_zip",
+      "label": "_single_csv_in_zip()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "_single_csv_in_zip()",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L174"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_weighted_agg",
+      "label": "_weighted_agg()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "_weighted_agg()",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L206"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching_resolver_categoria_deposito",
+      "label": "resolver_categoria_deposito()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
+      "file_type": "code",
+      "norm_label": "resolver_categoria_deposito()",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L57"
+    },
+    {
       "id": "tests_test_categoria_deposito_matching_test_all_13_real_capcol_values_resolve",
       "label": "test_all_13_real_capcol_values_resolve()",
       "_callable": true,
       "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
       "file_type": "code",
       "norm_label": "test_all_13_real_capcol_values_resolve()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -376,8 +424,8 @@
       "label": "test_empty_value_raises()",
       "_callable": true,
       "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
       "file_type": "code",
       "norm_label": "test_empty_value_raises()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -388,44 +436,68 @@
       "label": "test_plain_category_passes_through_without_plazo()",
       "_callable": true,
       "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
       "file_type": "code",
       "norm_label": "test_plain_category_passes_through_without_plazo()",
       "source_file": "tests/test_categoria_deposito_matching.py",
       "source_location": "L22"
     },
     {
-      "id": "tests_test_categoria_deposito_matching_test_plazo_bucket_con_shape_valido_pero_desconocido_lanza_plazo_error",
-      "label": "test_plazo_bucket_con_shape_valido_pero_desconocido_lanza_plazo_error()",
+      "id": "tests_test_categoria_deposito_matching_test_plazo_bucket_con_shape_valido_pero_desconocido_no_lanza",
+      "label": "test_plazo_bucket_con_shape_valido_pero_desconocido_no_lanza()",
       "_callable": true,
       "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
       "file_type": "code",
-      "norm_label": "test_plazo_bucket_con_shape_valido_pero_desconocido_lanza_plazo_error()",
+      "norm_label": "test_plazo_bucket_con_shape_valido_pero_desconocido_no_lanza()",
       "source_file": "tests/test_categoria_deposito_matching.py",
       "source_location": "L58"
     },
     {
-      "id": "tests_test_categoria_deposito_matching_test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_lanza_plazo_error",
-      "label": "test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_lanza_plazo_error()",
+      "id": "tests_test_categoria_deposito_matching_test_plazo_bucket_shape_invalido_sigue_lanzando",
+      "label": "test_plazo_bucket_shape_invalido_sigue_lanzando()",
       "_callable": true,
       "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
       "file_type": "code",
-      "norm_label": "test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_lanza_plazo_error()",
+      "norm_label": "test_plazo_bucket_shape_invalido_sigue_lanzando()",
       "source_file": "tests/test_categoria_deposito_matching.py",
-      "source_location": "L67"
+      "source_location": "L74"
+    },
+    {
+      "id": "tests_test_categoria_deposito_matching_test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error",
+      "label": "test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
+      "file_type": "code",
+      "norm_label": "test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error()",
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L81"
+    },
+    {
+      "id": "tests_test_categoria_deposito_matching_test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_no_lanza",
+      "label": "test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_no_lanza()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
+      "file_type": "code",
+      "norm_label": "test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_no_lanza()",
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L68"
     },
     {
       "id": "tests_test_categoria_deposito_matching_test_plazo_bucket_with_range_separates_categoria_and_plazo",
       "label": "test_plazo_bucket_with_range_separates_categoria_and_plazo()",
       "_callable": true,
       "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
       "file_type": "code",
       "norm_label": "test_plazo_bucket_with_range_separates_categoria_and_plazo()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -436,8 +508,8 @@
       "label": "test_plazo_bucket_without_upper_bound()",
       "_callable": true,
       "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
       "file_type": "code",
       "norm_label": "test_plazo_bucket_without_upper_bound()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -448,8 +520,8 @@
       "label": "test_unresolved_value_raises()",
       "_callable": true,
       "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
       "file_type": "code",
       "norm_label": "test_unresolved_value_raises()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -562,18 +634,6 @@
       "norm_label": "region_for_provincia()",
       "source_file": "etl/transform/common.py",
       "source_location": "L81"
-    },
-    {
-      "id": "etl_transform_common_sha256_file",
-      "label": "sha256_file()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "sha256_file()",
-      "source_file": "etl/transform/common.py",
-      "source_location": "L18"
     },
     {
       "id": "etl_transform_common_strip_accents",
@@ -766,30 +826,6 @@
       "norm_label": "db_conn()",
       "source_file": "tests/conftest.py",
       "source_location": "L8"
-    },
-    {
-      "id": "tests_test_common_test_sha256_file_is_content_sensitive",
-      "label": "test_sha256_file_is_content_sensitive()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "test_sha256_file_is_content_sensitive()",
-      "source_file": "tests/test_common.py",
-      "source_location": "L13"
-    },
-    {
-      "id": "tests_test_common_test_sha256_file_is_deterministic",
-      "label": "test_sha256_file_is_deterministic()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "test_sha256_file_is_deterministic()",
-      "source_file": "tests/test_common.py",
-      "source_location": "L6"
     },
     {
       "id": "tests_test_parse_boletin_test_aggregate_columns_normalizadas_cubren_variantes_2021_y_2026",
@@ -1476,6 +1512,42 @@
       "source_location": "L157"
     },
     {
+      "id": "etl_transform_common_sha256_file",
+      "label": "sha256_file()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "sha256_file()",
+      "source_file": "etl/transform/common.py",
+      "source_location": "L18"
+    },
+    {
+      "id": "tests_test_common_test_sha256_file_is_content_sensitive",
+      "label": "test_sha256_file_is_content_sensitive()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "test_sha256_file_is_content_sensitive()",
+      "source_file": "tests/test_common.py",
+      "source_location": "L13"
+    },
+    {
+      "id": "tests_test_common_test_sha256_file_is_deterministic",
+      "label": "test_sha256_file_is_deterministic()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "test_sha256_file_is_deterministic()",
+      "source_file": "tests/test_common.py",
+      "source_location": "L6"
+    },
+    {
       "id": "tests_test_integration_regressions_bce_tasas_pasivas_row",
       "label": "_bce_tasas_pasivas_row()",
       "_callable": true,
@@ -2133,7 +2205,7 @@
       "file_type": "code",
       "norm_label": "_categoria_label()",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L100"
+      "source_location": "L110"
     },
     {
       "id": "etl_transform_parse_tasas_historicas_clean_label",
@@ -2157,7 +2229,7 @@
       "file_type": "code",
       "norm_label": "_emitir()",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L128"
+      "source_location": "L138"
     },
     {
       "id": "etl_transform_parse_tasas_historicas_parse_filas",
@@ -2169,7 +2241,7 @@
       "file_type": "code",
       "norm_label": "_parse_filas()",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L169"
+      "source_location": "L179"
     },
     {
       "id": "etl_transform_parse_tasas_historicas_parse_tasas_historicas_file",
@@ -2181,7 +2253,7 @@
       "file_type": "code",
       "norm_label": "parse_tasas_historicas_file()",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L213"
+      "source_location": "L223"
     },
     {
       "id": "etl_transform_parse_tasas_historicas_resolver_plazo",
@@ -2193,7 +2265,7 @@
       "file_type": "code",
       "norm_label": "_resolver_plazo()",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L74"
+      "source_location": "L77"
     },
     {
       "id": "etl_transform_parse_tasas_historicas_segmento_label",
@@ -2205,7 +2277,7 @@
       "file_type": "code",
       "norm_label": "_segmento_label()",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L93"
+      "source_location": "L103"
     },
     {
       "id": "etl_transform_parse_tasas_historicas_to_float",
@@ -2253,7 +2325,7 @@
       "file_type": "code",
       "norm_label": "test_emitir_ignora_seccion_desconocida()",
       "source_file": "tests/test_parse_tasas_historicas.py",
-      "source_location": "L86"
+      "source_location": "L100"
     },
     {
       "id": "tests_test_parse_tasas_historicas_test_parse_filas_rastrea_seccion_sin_asumir_que_tabla_0_es_activa_maxima",
@@ -2265,7 +2337,7 @@
       "file_type": "code",
       "norm_label": "test_parse_filas_rastrea_seccion_sin_asumir_que_tabla_0_es_activa_maxima()",
       "source_file": "tests/test_parse_tasas_historicas.py",
-      "source_location": "L60"
+      "source_location": "L74"
     },
     {
       "id": "tests_test_parse_tasas_historicas_test_resolver_plazo_no_reconocido_lanza_error",
@@ -2292,16 +2364,40 @@
       "source_location": "L33"
     },
     {
-      "id": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_fuera_del_universo_lanza_plazo_error",
-      "label": "test_resolver_plazo_shape_valido_pero_fuera_del_universo_lanza_plazo_error()",
+      "id": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_invalido_sigue_lanzando",
+      "label": "test_resolver_plazo_shape_invalido_sigue_lanzando()",
       "_callable": true,
       "_origin": "ast",
       "community": 5,
       "community_name": "test_parse_tasas_historicas.py",
       "file_type": "code",
-      "norm_label": "test_resolver_plazo_shape_valido_pero_fuera_del_universo_lanza_plazo_error()",
+      "norm_label": "test_resolver_plazo_shape_invalido_sigue_lanzando()",
+      "source_file": "tests/test_parse_tasas_historicas.py",
+      "source_location": "L60"
+    },
+    {
+      "id": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_fuera_del_universo_no_lanza",
+      "label": "test_resolver_plazo_shape_valido_pero_fuera_del_universo_no_lanza()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "test_parse_tasas_historicas.py",
+      "file_type": "code",
+      "norm_label": "test_resolver_plazo_shape_valido_pero_fuera_del_universo_no_lanza()",
       "source_file": "tests/test_parse_tasas_historicas.py",
       "source_location": "L52"
+    },
+    {
+      "id": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_rango_invertido_lanza_error",
+      "label": "test_resolver_plazo_shape_valido_pero_rango_invertido_lanza_error()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "test_parse_tasas_historicas.py",
+      "file_type": "code",
+      "norm_label": "test_resolver_plazo_shape_valido_pero_rango_invertido_lanza_error()",
+      "source_file": "tests/test_parse_tasas_historicas.py",
+      "source_location": "L67"
     },
     {
       "id": "tests_test_parse_tasas_historicas_test_resolver_plazo_todos_los_6_buckets_reales_resuelven",
@@ -2344,7 +2440,7 @@
       "label": "bce_plazo_matching.py",
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "bce_plazo_matching.py",
       "source_file": "etl/transform/bce_plazo_matching.py",
@@ -2355,73 +2451,7 @@
       "label": "ValueError",
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "valueerror",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_transform_categoria_deposito_matching",
-      "label": "categoria_deposito_matching.py",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "categoria_deposito_matching.py",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_transform_categoria_deposito_matching_py_valueerror",
-      "label": "ValueError",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "valueerror",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas",
-      "label": "parse_bce_tasas.py",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "parse_bce_tasas.py",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_py_dataframe",
-      "label": "DataFrame",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "dataframe",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_py_path",
-      "label": "Path",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "path",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_py_valueerror",
-      "label": "ValueError",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "valueerror",
       "source_file": "",
@@ -2432,21 +2462,10 @@
       "label": "test_bce_plazo_matching.py",
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "code",
       "norm_label": "test_bce_plazo_matching.py",
       "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "tests_test_categoria_deposito_matching",
-      "label": "test_categoria_deposito_matching.py",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "test_categoria_deposito_matching.py",
-      "source_file": "tests/test_categoria_deposito_matching.py",
       "source_location": "L1"
     },
     {
@@ -2454,198 +2473,99 @@
       "label": "Resuelve el texto crudo de `plazo` del BCE (tsp/tsa) a un rango num\u00e9rico de\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "rationale",
       "norm_label": "resuelve el texto crudo de `plazo` del bce (tsp/tsa) a un rango numerico de...",
       "source_file": "etl/transform/bce_plazo_matching.py",
       "source_location": "L1"
     },
     {
-      "id": "etl_transform_bce_plazo_matching_rationale_28",
-      "label": "El texto crudo de plazo no matchea ning\u00fan patr\u00f3n conocido, o matchea el patr\u00f3n\u2026",
+      "id": "etl_transform_bce_plazo_matching_rationale_105",
+      "label": "Chequeo de dos niveles para TODOS los valores crudos de `plazo` observados en\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "rationale",
-      "norm_label": "el texto crudo de plazo no matchea ningun patron conocido, o matchea el patron...",
+      "norm_label": "chequeo de dos niveles para todos los valores crudos de `plazo` observados en...",
+      "source_file": "etl/transform/bce_plazo_matching.py",
+      "source_location": "L105"
+    },
+    {
+      "id": "etl_transform_bce_plazo_matching_rationale_124",
+      "label": "Devuelve (dias_desde, dias_hasta); dias_hasta es None si el bucket es abierto\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "PlazoNoResueltoError",
+      "file_type": "rationale",
+      "norm_label": "devuelve (dias_desde, dias_hasta); dias_hasta es none si el bucket es abierto...",
+      "source_file": "etl/transform/bce_plazo_matching.py",
+      "source_location": "L124"
+    },
+    {
+      "id": "etl_transform_bce_plazo_matching_rationale_28",
+      "label": "El texto crudo de plazo no matchea ning\u00fan patr\u00f3n conocido (shape inv\u00e1lido), o\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "PlazoNoResueltoError",
+      "file_type": "rationale",
+      "norm_label": "el texto crudo de plazo no matchea ningun patron conocido (shape invalido), o...",
       "source_file": "etl/transform/bce_plazo_matching.py",
       "source_location": "L28"
     },
     {
-      "id": "etl_transform_bce_plazo_matching_rationale_75",
-      "label": "Valida que TODOS los valores crudos de `plazo` observados en un archivo tsp/tsa\u2026",
+      "id": "etl_transform_bce_plazo_matching_rationale_47",
+      "label": "Sanity check de rango, aplicado DESPU\u00c9S de que el shape ya matche\u00f3 un patr\u00f3n\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "rationale",
-      "norm_label": "valida que todos los valores crudos de `plazo` observados en un archivo tsp/tsa...",
+      "norm_label": "sanity check de rango, aplicado despues de que el shape ya matcheo un patron...",
       "source_file": "etl/transform/bce_plazo_matching.py",
-      "source_location": "L75"
-    },
-    {
-      "id": "etl_transform_bce_plazo_matching_rationale_90",
-      "label": "Devuelve (dias_desde, dias_hasta); dias_hasta es None si el bucket es abierto\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "devuelve (dias_desde, dias_hasta); dias_hasta es none si el bucket es abierto...",
-      "source_file": "etl/transform/bce_plazo_matching.py",
-      "source_location": "L90"
-    },
-    {
-      "id": "etl_transform_categoria_deposito_matching_rationale_1",
-      "label": "Resuelve el texto crudo de `tipo_deposito` (CAPCOL) o `instrumento_captacion`\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "resuelve el texto crudo de `tipo_deposito` (capcol) o `instrumento_captacion`...",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_transform_categoria_deposito_matching_rationale_51",
-      "label": "El texto crudo no es ni una categor\u00eda conocida ni un bucket de plazo\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "el texto crudo no es ni una categoria conocida ni un bucket de plazo...",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L51"
-    },
-    {
-      "id": "etl_transform_categoria_deposito_matching_rationale_57",
-      "label": "Devuelve (categoria, dias_desde, dias_hasta). dias_* son None salvo que la\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "devuelve (categoria, dias_desde, dias_hasta). dias_* son none salvo que la...",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L57"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_1",
-      "label": "Parser de los archivos semanales de tasas de inter\u00e9s del BCE (tsp=pasivas,\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "parser de los archivos semanales de tasas de interes del bce (tsp=pasivas,...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_157",
-      "label": "segmento_credito de tsa no est\u00e1 en el universo sembrado de\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "segmento_credito de tsa no esta en el universo sembrado de...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L157"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_161",
-      "label": "tipo_segmento no est\u00e1 en el universo sembrado de dim_segmento_entidad.",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "tipo_segmento no esta en el universo sembrado de dim_segmento_entidad.",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L161"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_165",
-      "label": "Un tipo_segmento por (fecha, banco_codigo) -- atributo de la entidad, no del\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "un tipo_segmento por (fecha, banco_codigo) -- atributo de la entidad, no del...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L165"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_186",
-      "label": "Lee TODO el archivo por chunks directo desde el zip (sin extraer 700MB-1.75GB a\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "lee todo el archivo por chunks directo desde el zip (sin extraer 700mb-1.75gb a...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L186"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_209",
-      "label": "Colapsa cant\u00f3n dentro de cada provincia:\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "colapsa canton dentro de cada provincia:...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L209"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_234",
-      "label": "Resuelve banco_codigo/banco/tipo_entidad/ruc para TODAS las filas -- solo sobre\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "resuelve banco_codigo/banco/tipo_entidad/ruc para todas las filas -- solo sobre...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L234"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_281",
-      "label": "Devuelve (df_staging, entidades). `df_raw` permite reusar una lectura ya hecha\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "devuelve (df_staging, entidades). `df_raw` permite reusar una lectura ya hecha...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L281"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_321",
-      "label": "Devuelve (df_staging, entidades) -- ver parse_tsp_file.",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "devuelve (df_staging, entidades) -- ver parse_tsp_file.",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L321"
+      "source_location": "L47"
     },
     {
       "id": "tests_test_bce_plazo_matching_rationale_60",
-      "label": "Un texto que matchea el shape de resolver_plazo_bce() (ej. un bucket \"h.\" nuevo\u2026",
+      "label": "Desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el shape de\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "rationale",
-      "norm_label": "un texto que matchea el shape de resolver_plazo_bce() (ej. un bucket \"h.\" nuevo...",
+      "norm_label": "desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el shape de...",
       "source_file": "tests/test_bce_plazo_matching.py",
       "source_location": "L60"
     },
     {
-      "id": "tests_test_categoria_deposito_matching_rationale_59",
-      "label": "dim_plazo es un cat\u00e1logo abierto por rango, no debe crecer silenciosamente: un\u2026",
+      "id": "tests_test_bce_plazo_matching_rationale_74",
+      "label": "Un texto que NO matchea ning\u00fan shape regex conocido sigue siendo fallo duro --\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "PlazoNoResueltoError",
       "file_type": "rationale",
-      "norm_label": "dim_plazo es un catalogo abierto por rango, no debe crecer silenciosamente: un...",
-      "source_file": "tests/test_categoria_deposito_matching.py",
-      "source_location": "L59"
+      "norm_label": "un texto que no matchea ningun shape regex conocido sigue siendo fallo duro --...",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L74"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_rationale_83",
+      "label": "Un shape v\u00e1lido con rango invertido (dias_desde > dias_hasta) es una anomal\u00eda\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "PlazoNoResueltoError",
+      "file_type": "rationale",
+      "norm_label": "un shape valido con rango invertido (dias_desde > dias_hasta) es una anomalia...",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L83"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_rationale_90",
+      "label": "Ejercita el camino completo de auto-ingesta: un bucket nuevo y desconocido pero\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "PlazoNoResueltoError",
+      "file_type": "rationale",
+      "norm_label": "ejercita el camino completo de auto-ingesta: un bucket nuevo y desconocido pero...",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L90"
     },
     {
       "id": "postgresql_localhost_benchmark_cartera_depositos_marts_dim_banco",
@@ -3912,7 +3832,7 @@
       "node_kind": "heading",
       "norm_label": "decisiones de modelado relevantes",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L196"
+      "source_location": "L199"
     },
     {
       "id": "docs_data_dictionary_diccionario_de_datos",
@@ -3936,7 +3856,7 @@
       "node_kind": "heading",
       "norm_label": "dimensiones",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L10"
+      "source_location": "L12"
     },
     {
       "id": "docs_data_dictionary_hechos",
@@ -3948,7 +3868,7 @@
       "node_kind": "heading",
       "norm_label": "hechos",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L81"
+      "source_location": "L84"
     },
     {
       "id": "docs_data_dictionary_marts_dim_banco",
@@ -3960,7 +3880,7 @@
       "node_kind": "heading",
       "norm_label": "marts.dim_banco",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L20"
+      "source_location": "L22"
     },
     {
       "id": "docs_data_dictionary_marts_dim_canton",
@@ -3972,7 +3892,7 @@
       "node_kind": "heading",
       "norm_label": "marts.dim_canton",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L40"
+      "source_location": "L42"
     },
     {
       "id": "docs_data_dictionary_marts_dim_categoria_deposito",
@@ -3984,7 +3904,7 @@
       "node_kind": "heading",
       "norm_label": "marts.dim_categoria_deposito",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L60"
+      "source_location": "L62"
     },
     {
       "id": "docs_data_dictionary_marts_dim_cuenta_contable_plan_de_cuentas_del_bolet\u00edn_balance_pyg",
@@ -3996,7 +3916,7 @@
       "node_kind": "heading",
       "norm_label": "marts.dim_cuenta_contable (plan de cuentas del boletin, balance + pyg)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L71"
+      "source_location": "L74"
     },
     {
       "id": "docs_data_dictionary_marts_dim_fecha_grano_d\u00eda",
@@ -4008,7 +3928,7 @@
       "node_kind": "heading",
       "norm_label": "marts.dim_fecha (grano dia)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L12"
+      "source_location": "L14"
     },
     {
       "id": "docs_data_dictionary_marts_dim_plazo_cat\u00e1logo_por_rango_num\u00e9rico_compartido_entre_fuentes",
@@ -4020,7 +3940,7 @@
       "node_kind": "heading",
       "norm_label": "marts.dim_plazo (catalogo por rango numerico, compartido entre fuentes)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L64"
+      "source_location": "L66"
     },
     {
       "id": "docs_data_dictionary_marts_dim_provincia_2026_07_25_sql_20_dim_provincia_sql",
@@ -4032,7 +3952,7 @@
       "node_kind": "heading",
       "norm_label": "marts.dim_provincia (2026-07-25, `sql/20_dim_provincia.sql`)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L34"
+      "source_location": "L36"
     },
     {
       "id": "docs_data_dictionary_marts_dim_segmento_credito_nivel_grueso_2026_07_19_nombre_reasignado_antes_lo_ten\u00eda_la_tabla_ahora_dim_subsegmento_credito_ver_abajo",
@@ -4044,7 +3964,7 @@
       "node_kind": "heading",
       "norm_label": "marts.dim_segmento_credito (nivel grueso \u2014 2026-07-19: nombre reasignado, antes lo tenia la tabla ahora `dim_subsegmento_credito`, ver abajo)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L51"
+      "source_location": "L53"
     },
     {
       "id": "docs_data_dictionary_marts_dim_segmento_entidad_2026_07_25_sql_19_dim_segmento_entidad_sql",
@@ -4056,7 +3976,7 @@
       "node_kind": "heading",
       "norm_label": "marts.dim_segmento_entidad (2026-07-25, `sql/19_dim_segmento_entidad.sql`)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L46"
+      "source_location": "L48"
     },
     {
       "id": "docs_data_dictionary_marts_dim_subsegmento_credito_nivel_fino_de_bce_antes_dim_segmento_credito_renombrada_2026_07_19",
@@ -4068,7 +3988,7 @@
       "node_kind": "heading",
       "norm_label": "marts.dim_subsegmento_credito (nivel fino de bce; antes `dim_segmento_credito`, renombrada 2026-07-19)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L55"
+      "source_location": "L57"
     },
     {
       "id": "docs_data_dictionary_marts_fact_balance_fact_pyg_grano_fecha_banco_cuenta_contable_bolet\u00edn_mensual",
@@ -4080,7 +4000,7 @@
       "node_kind": "heading",
       "norm_label": "marts.fact_balance / fact_pyg (grano: fecha \u00d7 banco \u00d7 cuenta_contable) \u2014 boletin, mensual",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L124"
+      "source_location": "L127"
     },
     {
       "id": "docs_data_dictionary_marts_fact_colocaciones_cartera_antes_fact_tasas_activas_marts_fact_captaciones_depositos_antes_fact_tasas_pasivas_grano_fecha_banco_categor\u00eda_subsegmento_plazo_provincia_bce_tsa_tsp_semanal",
@@ -4092,7 +4012,7 @@
       "node_kind": "heading",
       "norm_label": "marts.fact_colocaciones_cartera (antes `fact_tasas_activas`) / marts.fact_captaciones_depositos (antes `fact_tasas_pasivas`) \u2014 grano: fecha \u00d7 banco \u00d7 categoria/subsegmento \u00d7 plazo \u00d7 provincia \u2014 bce tsa/tsp, semanal",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L106"
+      "source_location": "L109"
     },
     {
       "id": "docs_data_dictionary_marts_fact_saldo_cartera_antes_fact_cartera_grano_fecha_banco_cant\u00f3n_segmento_capcol_mensual",
@@ -4104,7 +4024,7 @@
       "node_kind": "heading",
       "norm_label": "marts.fact_saldo_cartera (antes `fact_cartera`) \u2014 grano: fecha \u00d7 banco \u00d7 canton \u00d7 segmento \u2014 capcol, mensual",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L90"
+      "source_location": "L93"
     },
     {
       "id": "docs_data_dictionary_marts_fact_saldo_depositos_antes_fact_depositos_grano_fecha_banco_cant\u00f3n_categoria_deposito_plazo_capcol_mensual",
@@ -4116,7 +4036,7 @@
       "node_kind": "heading",
       "norm_label": "marts.fact_saldo_depositos (antes `fact_depositos`) \u2014 grano: fecha \u00d7 banco \u00d7 canton \u00d7 categoria_deposito \u00d7 plazo \u2014 capcol, mensual",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L99"
+      "source_location": "L102"
     },
     {
       "id": "docs_data_dictionary_marts_fact_tasas_referenciales_cartera_antes_fact_tasas_referenciales_credito_fact_tasas_referenciales_depositos_instrumento_antes_fact_tasas_pasivas_instrumento_fact_tasas_referenciales_depositos_plazo_antes_fact_tasas_pasivas_plazo_fact_tasas_referenciales_sistema_sin_cambio_de_nombre_tasashistorico_htm_mensual_nivel_sistema_no_por_banco",
@@ -4128,7 +4048,7 @@
       "node_kind": "heading",
       "norm_label": "marts.fact_tasas_referenciales_cartera (antes `fact_tasas_referenciales_credito`) / fact_tasas_referenciales_depositos_instrumento (antes `fact_tasas_pasivas_instrumento`) / fact_tasas_referenciales_depositos_plazo (antes `fact_tasas_pasivas_plazo`) / fact_tasas_referenciales_sistema (sin cambio de nombre) \u2014 `tasashistorico.htm`, mensual, nivel sistema (no por banco)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L115"
+      "source_location": "L118"
     },
     {
       "id": "docs_data_dictionary_vista_de_gobernanza_marts_vw_banco_ruc_colisiones_sql_22_vw_banco_ruc_colisiones_sql",
@@ -4140,7 +4060,7 @@
       "node_kind": "heading",
       "norm_label": "vista de gobernanza \u2014 `marts.vw_banco_ruc_colisiones` (`sql/22_vw_banco_ruc_colisiones.sql`)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L143"
+      "source_location": "L146"
     },
     {
       "id": "docs_data_dictionary_vistas_anal\u00edticas_sql_04_indexes_views_sql",
@@ -4152,7 +4072,7 @@
       "node_kind": "heading",
       "norm_label": "vistas analiticas (`sql/04_indexes_views.sql`)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L127"
+      "source_location": "L130"
     },
     {
       "id": "docs_data_dictionary_vistas_de_bloques_de_construcci\u00f3n_balance_pyg_sql_18_glosario_cuentas_views_sql",
@@ -4164,7 +4084,7 @@
       "node_kind": "heading",
       "norm_label": "vistas de bloques de construccion \u2014 balance/pyg (`sql/18_glosario_cuentas_views.sql`)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L168"
+      "source_location": "L171"
     },
     {
       "id": "powerbi_prototipo_diseno_bi_report_definition_pages_page_prototipo_diseno_visuals_v09linetendenciaventana_visual",
@@ -7018,7 +6938,7 @@
       "node_kind": "heading",
       "norm_label": "alcance de los datos",
       "source_file": "README.md",
-      "source_location": "L145"
+      "source_location": "L148"
     },
     {
       "id": "readme_benchmark_de_cartera_dep\u00f3sitos_y_tasas_bancos_privados_del_ecuador",
@@ -7042,7 +6962,7 @@
       "node_kind": "heading",
       "norm_label": "estado del proyecto",
       "source_file": "README.md",
-      "source_location": "L167"
+      "source_location": "L170"
     },
     {
       "id": "readme_estructura",
@@ -7054,7 +6974,7 @@
       "node_kind": "heading",
       "norm_label": "estructura",
       "source_file": "README.md",
-      "source_location": "L82"
+      "source_location": "L85"
     },
     {
       "id": "readme_quickstart",
@@ -7066,7 +6986,7 @@
       "node_kind": "heading",
       "norm_label": "quickstart",
       "source_file": "README.md",
-      "source_location": "L39"
+      "source_location": "L42"
     },
     {
       "id": "readme_qu\u00e9_incluye",
@@ -7090,7 +7010,7 @@
       "node_kind": "heading",
       "norm_label": "tests y ci",
       "source_file": "README.md",
-      "source_location": "L108"
+      "source_location": "L111"
     },
     {
       "id": "data_samples_readme",
@@ -7781,26 +7701,246 @@
       "source_location": ""
     },
     {
-      "id": "etl_load_load_postgres_py_dataframe",
+      "id": "etl_transform_parse_bce_tasas",
+      "label": "parse_bce_tasas.py",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "parse_bce_tasas.py",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_py_dataframe",
       "label": "DataFrame",
       "_origin": "ast",
       "community": 128,
-      "community_name": "DataFrame",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "dataframe",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "etl_transform_banco_matching_py_path",
+      "id": "etl_transform_parse_bce_tasas_py_path",
       "label": "Path",
       "_origin": "ast",
-      "community": 129,
-      "community_name": "Path",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "path",
       "source_file": "",
       "source_location": ""
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_py_valueerror",
+      "label": "ValueError",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "valueerror",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_1",
+      "label": "Parser de los archivos semanales de tasas de inter\u00e9s del BCE (tsp=pasivas,\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "parser de los archivos semanales de tasas de interes del bce (tsp=pasivas,...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_157",
+      "label": "segmento_credito de tsa no est\u00e1 en el universo sembrado de\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "segmento_credito de tsa no esta en el universo sembrado de...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L157"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_161",
+      "label": "tipo_segmento no est\u00e1 en el universo sembrado de dim_segmento_entidad.",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "tipo_segmento no esta en el universo sembrado de dim_segmento_entidad.",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L161"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_165",
+      "label": "Un tipo_segmento por (fecha, banco_codigo) -- atributo de la entidad, no del\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "un tipo_segmento por (fecha, banco_codigo) -- atributo de la entidad, no del...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L165"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_186",
+      "label": "Lee TODO el archivo por chunks directo desde el zip (sin extraer 700MB-1.75GB a\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "lee todo el archivo por chunks directo desde el zip (sin extraer 700mb-1.75gb a...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L186"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_209",
+      "label": "Colapsa cant\u00f3n dentro de cada provincia:\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "colapsa canton dentro de cada provincia:...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L209"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_234",
+      "label": "Resuelve banco_codigo/banco/tipo_entidad/ruc para TODAS las filas -- solo sobre\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "resuelve banco_codigo/banco/tipo_entidad/ruc para todas las filas -- solo sobre...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L234"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_281",
+      "label": "Devuelve (df_staging, entidades). `df_raw` permite reusar una lectura ya hecha\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "devuelve (df_staging, entidades). `df_raw` permite reusar una lectura ya hecha...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L281"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_321",
+      "label": "Devuelve (df_staging, entidades) -- ver parse_tsp_file.",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "devuelve (df_staging, entidades) -- ver parse_tsp_file.",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L321"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching",
+      "label": "categoria_deposito_matching.py",
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
+      "file_type": "code",
+      "norm_label": "categoria_deposito_matching.py",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching_py_valueerror",
+      "label": "ValueError",
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
+      "file_type": "code",
+      "norm_label": "valueerror",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "tests_test_categoria_deposito_matching",
+      "label": "test_categoria_deposito_matching.py",
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
+      "file_type": "code",
+      "norm_label": "test_categoria_deposito_matching.py",
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching_rationale_1",
+      "label": "Resuelve el texto crudo de `tipo_deposito` (CAPCOL) o `instrumento_captacion`\u2026",
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
+      "file_type": "rationale",
+      "norm_label": "resuelve el texto crudo de `tipo_deposito` (capcol) o `instrumento_captacion`...",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching_rationale_54",
+      "label": "El texto crudo no es ni una categor\u00eda conocida ni un bucket de plazo\u2026",
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
+      "file_type": "rationale",
+      "norm_label": "el texto crudo no es ni una categoria conocida ni un bucket de plazo...",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L54"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching_rationale_60",
+      "label": "Devuelve (categoria, dias_desde, dias_hasta). dias_* son None salvo que la\u2026",
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
+      "file_type": "rationale",
+      "norm_label": "devuelve (categoria, dias_desde, dias_hasta). dias_* son none salvo que la...",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L60"
+    },
+    {
+      "id": "tests_test_categoria_deposito_matching_rationale_59",
+      "label": "Desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el *shape*\u2026",
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
+      "file_type": "rationale",
+      "norm_label": "desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el *shape*...",
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L59"
+    },
+    {
+      "id": "tests_test_categoria_deposito_matching_rationale_75",
+      "label": "Un texto que no matchea ni _RANGO ni _SIN_TOPE ni CATEGORIAS_VALIDAS sigue\u2026",
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
+      "file_type": "rationale",
+      "norm_label": "un texto que no matchea ni _rango ni _sin_tope ni categorias_validas sigue...",
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L75"
+    },
+    {
+      "id": "tests_test_categoria_deposito_matching_rationale_82",
+      "label": "Un shape v\u00e1lido con rango invertido (dias_desde > dias_hasta) es una anomal\u00eda\u2026",
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "resolver_categoria_deposito",
+      "file_type": "rationale",
+      "norm_label": "un shape valido con rango invertido (dias_desde > dias_hasta) es una anomalia...",
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L82"
     },
     {
       "id": "powerbi_benchmark_cartera_depositos_report_definition_report",
@@ -8023,46 +8163,249 @@
       "source_location": "L4"
     },
     {
-      "id": "etl_transform_banco_matching_py_valueerror",
-      "label": "ValueError",
+      "id": "docs_mantenimiento_catalogos",
+      "label": "mantenimiento_catalogos.md",
       "_origin": "ast",
       "community": 130,
-      "community_name": "ValueError",
-      "file_type": "code",
-      "norm_label": "valueerror",
-      "source_file": "",
-      "source_location": ""
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "page",
+      "norm_label": "mantenimiento_catalogos.md",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L1"
     },
     {
-      "id": "marts_dim_banco",
-      "label": "marts.dim_banco",
+      "id": "docs_mantenimiento_catalogos_1_dim_banco_camino_curado_33_bancos_privados",
+      "label": "1. `dim_banco` \u2014 camino curado (33 bancos privados)",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "1. `dim_banco` \u2014 camino curado (33 bancos privados)",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L39"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_2_dim_banco_camino_auto_registrado_409_entidades_no_privadas",
+      "label": "2. `dim_banco` \u2014 camino auto-registrado (409 entidades no-privadas)",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "2. `dim_banco` \u2014 camino auto-registrado (409 entidades no-privadas)",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L91"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_3_dim_segmento_credito_dim_subsegmento_credito",
+      "label": "3. `dim_segmento_credito` / `dim_subsegmento_credito`",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "3. `dim_segmento_credito` / `dim_subsegmento_credito`",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L140"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_4_dim_categoria_deposito",
+      "label": "4. `dim_categoria_deposito`",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "4. `dim_categoria_deposito`",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L184"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_5_dim_segmento_entidad",
+      "label": "5. `dim_segmento_entidad`",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "5. `dim_segmento_entidad`",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L220"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_6_dim_plazo_two_tier_4_puntos_de_entrada",
+      "label": "6. `dim_plazo` (two-tier, 4 puntos de entrada)",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "6. `dim_plazo` (two-tier, 4 puntos de entrada)",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L252"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_7_dim_cuenta_contable",
+      "label": "7. `dim_cuenta_contable`",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "7. `dim_cuenta_contable`",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L300"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_dim_banco",
+      "label": "`dim_banco`",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "`dim_banco`",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L341"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_dim_cuenta_contable",
+      "label": "`dim_cuenta_contable`",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "`dim_cuenta_contable`",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L390"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_dim_plazo",
+      "label": "`dim_plazo`",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "`dim_plazo`",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L370"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_los_3_cat\u00e1logos_con_estado_validacion_revisar_y_confirmar_filas_pendientes",
+      "label": "Los 3 cat\u00e1logos con `estado_validacion`: revisar y confirmar filas pendientes",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "los 3 catalogos con `estado_validacion`: revisar y confirmar filas pendientes",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L334"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_mantenimiento_de_cat\u00e1logos_resoluci\u00f3n_de_identidad",
+      "label": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "mantenimiento de catalogos / resolucion de identidad",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L1"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_por_qu\u00e9_esto_se_mantiene_simple_en_ci_cd_y_por_qu\u00e9_no_deber\u00eda_complicarse",
+      "label": "Por qu\u00e9 esto se mantiene simple en CI/CD (y por qu\u00e9 no deber\u00eda complicarse)",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "por que esto se mantiene simple en ci/cd (y por que no deberia complicarse)",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L412"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_tabla_de_referencia_r\u00e1pida",
+      "label": "Tabla de referencia r\u00e1pida",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "tabla de referencia rapida",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L18"
+    },
+    {
+      "id": "docs_mantenimiento_catalogos_ver_tambi\u00e9n",
+      "label": "Ver tambi\u00e9n",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "Mantenimiento de cat\u00e1logos / resoluci\u00f3n de identidad",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "ver tambien",
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L443"
+    },
+    {
+      "id": "etl_transform_parse_tasas_historicas_py_dataframe",
+      "label": "DataFrame",
       "_origin": "ast",
       "community": 131,
-      "community_name": "marts.dim_banco",
+      "community_name": "DataFrame",
       "file_type": "code",
-      "norm_label": "marts.dim_banco",
+      "norm_label": "dataframe",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "marts_dim_cuenta_contable",
-      "label": "marts.dim_cuenta_contable",
+      "id": "etl_transform_parse_tasas_historicas_py_path",
+      "label": "Path",
       "_origin": "ast",
       "community": 132,
-      "community_name": "marts.dim_cuenta_contable",
+      "community_name": "Path",
       "file_type": "code",
-      "norm_label": "marts.dim_cuenta_contable",
+      "norm_label": "path",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "staging_banco_maestro",
-      "label": "staging.banco_maestro",
+      "id": "marts_dim_plazo",
+      "label": "marts.dim_plazo",
       "_origin": "ast",
       "community": 133,
-      "community_name": "staging.banco_maestro",
+      "community_name": "marts.dim_plazo",
       "file_type": "code",
-      "norm_label": "staging.banco_maestro",
+      "norm_label": "marts.dim_plazo",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_27_dim_plazo_estado_validacion",
+      "label": "27_dim_plazo_estado_validacion.sql",
+      "_origin": "ast",
+      "community": 135,
+      "community_name": "27_dim_plazo_estado_validacion.sql",
+      "file_type": "code",
+      "norm_label": "27_dim_plazo_estado_validacion.sql",
+      "source_file": "sql/27_dim_plazo_estado_validacion.sql",
+      "source_location": null
+    },
+    {
+      "id": "sql_27_dim_plazo_estado_validacion_sql_marts_dim_plazo",
+      "label": "marts.dim_plazo",
+      "_origin": "ast",
+      "community": 136,
+      "community_name": "marts.dim_plazo",
+      "file_type": "code",
+      "norm_label": "marts.dim_plazo",
       "source_file": "",
       "source_location": ""
     },
@@ -9255,17 +9598,6 @@
       "source_location": "L1"
     },
     {
-      "id": "etl_transform_common_py_path",
-      "label": "Path",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "path",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
       "id": "etl_transform_parse_boletin",
       "label": "parse_boletin.py",
       "_origin": "ast",
@@ -9385,28 +9717,6 @@
       "norm_label": "conftest.py",
       "source_file": "tests/conftest.py",
       "source_location": "L1"
-    },
-    {
-      "id": "tests_test_common",
-      "label": "test_common.py",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "test_common.py",
-      "source_file": "tests/test_common.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "tests_test_common_py_path",
-      "label": "Path",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "parse_cartera.py",
-      "file_type": "code",
-      "norm_label": "path",
-      "source_file": "",
-      "source_location": ""
     },
     {
       "id": "tests_test_parse_boletin",
@@ -10036,17 +10346,6 @@
       "source_location": ""
     },
     {
-      "id": "dataframe",
-      "label": "DataFrame",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "dataframe",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
       "id": "date",
       "label": "date",
       "_origin": "ast",
@@ -10067,6 +10366,17 @@
       "norm_label": "load_postgres.py",
       "source_file": "etl/load/load_postgres.py",
       "source_location": "L1"
+    },
+    {
+      "id": "etl_load_load_postgres_py_dataframe",
+      "label": "DataFrame",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "dataframe",
+      "source_file": "",
+      "source_location": ""
     },
     {
       "id": "etl_pipeline",
@@ -10091,6 +10401,17 @@
       "source_location": ""
     },
     {
+      "id": "etl_transform_common_py_path",
+      "label": "Path",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "path",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "integration",
       "label": "integration",
       "_origin": "ast",
@@ -10098,6 +10419,28 @@
       "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "integration",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "tests_test_common",
+      "label": "test_common.py",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "test_common.py",
+      "source_file": "tests/test_common.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_test_common_py_path",
+      "label": "Path",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "path",
       "source_file": "",
       "source_location": ""
     },
@@ -12197,13 +12540,24 @@
       "source_location": "L1"
     },
     {
-      "id": "path",
+      "id": "etl_transform_banco_matching_py_path",
       "label": "Path",
       "_origin": "ast",
       "community": 4,
       "community_name": "resolver_banco_codigo",
       "file_type": "code",
       "norm_label": "path",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "etl_transform_banco_matching_py_valueerror",
+      "label": "ValueError",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "resolver_banco_codigo",
+      "file_type": "code",
+      "norm_label": "valueerror",
       "source_file": "",
       "source_location": ""
     },
@@ -12217,17 +12571,6 @@
       "norm_label": "test_banco_matching.py",
       "source_file": "tests/test_banco_matching.py",
       "source_location": "L1"
-    },
-    {
-      "id": "valueerror",
-      "label": "ValueError",
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "resolver_banco_codigo",
-      "file_type": "code",
-      "norm_label": "valueerror",
-      "source_file": "",
-      "source_location": ""
     },
     {
       "id": "etl_transform_banco_matching_rationale_1",
@@ -12571,6 +12914,17 @@
       "source_location": "L1"
     },
     {
+      "id": "dataframe",
+      "label": "DataFrame",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "test_parse_tasas_historicas.py",
+      "file_type": "code",
+      "norm_label": "dataframe",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "etl_transform_parse_tasas_historicas",
       "label": "parse_tasas_historicas.py",
       "_origin": "ast",
@@ -12582,18 +12936,7 @@
       "source_location": "L1"
     },
     {
-      "id": "etl_transform_parse_tasas_historicas_py_dataframe",
-      "label": "DataFrame",
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "test_parse_tasas_historicas.py",
-      "file_type": "code",
-      "norm_label": "dataframe",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_transform_parse_tasas_historicas_py_path",
+      "id": "path",
       "label": "Path",
       "_origin": "ast",
       "community": 5,
@@ -12626,7 +12969,7 @@
       "source_location": "L1"
     },
     {
-      "id": "etl_transform_parse_tasas_historicas_rationale_214",
+      "id": "etl_transform_parse_tasas_historicas_rationale_224",
       "label": "fecha: fin de mes correspondiente al archivo (ej. 2026-06-30 para\u2026",
       "_origin": "ast",
       "community": 5,
@@ -12634,21 +12977,54 @@
       "file_type": "rationale",
       "norm_label": "fecha: fin de mes correspondiente al archivo (ej. 2026-06-30 para...",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L214"
+      "source_location": "L224"
     },
     {
-      "id": "tests_test_parse_tasas_historicas_rationale_53",
-      "label": "dim_plazo es compartido entre fuentes y no debe crecer silenciosamente: un\u2026",
+      "id": "etl_transform_parse_tasas_historicas_rationale_78",
+      "label": "Shape check primero (_PLAZO_RANGO/_PLAZO_SIN_TOPE), luego sanity de rango\u2026",
       "_origin": "ast",
       "community": 5,
       "community_name": "test_parse_tasas_historicas.py",
       "file_type": "rationale",
-      "norm_label": "dim_plazo es compartido entre fuentes y no debe crecer silenciosamente: un...",
+      "norm_label": "shape check primero (_plazo_rango/_plazo_sin_tope), luego sanity de rango...",
+      "source_file": "etl/transform/parse_tasas_historicas.py",
+      "source_location": "L78"
+    },
+    {
+      "id": "tests_test_parse_tasas_historicas_rationale_53",
+      "label": "Desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el shape de\u2026",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "test_parse_tasas_historicas.py",
+      "file_type": "rationale",
+      "norm_label": "desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el shape de...",
       "source_file": "tests/test_parse_tasas_historicas.py",
       "source_location": "L53"
     },
     {
       "id": "tests_test_parse_tasas_historicas_rationale_61",
+      "label": "Un texto que no matchea ni _PLAZO_RANGO ni _PLAZO_SIN_TOPE sigue siendo fallo\u2026",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "test_parse_tasas_historicas.py",
+      "file_type": "rationale",
+      "norm_label": "un texto que no matchea ni _plazo_rango ni _plazo_sin_tope sigue siendo fallo...",
+      "source_file": "tests/test_parse_tasas_historicas.py",
+      "source_location": "L61"
+    },
+    {
+      "id": "tests_test_parse_tasas_historicas_rationale_68",
+      "label": "Un shape v\u00e1lido con rango invertido (dias_desde > dias_hasta) es una anomal\u00eda\u2026",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "test_parse_tasas_historicas.py",
+      "file_type": "rationale",
+      "norm_label": "un shape valido con rango invertido (dias_desde > dias_hasta) es una anomalia...",
+      "source_file": "tests/test_parse_tasas_historicas.py",
+      "source_location": "L68"
+    },
+    {
+      "id": "tests_test_parse_tasas_historicas_rationale_75",
       "label": "Regresi\u00f3n del bug real encontrado esta sesi\u00f3n: para un subconjunto de meses, la\u2026",
       "_origin": "ast",
       "community": 5,
@@ -12656,7 +13032,7 @@
       "file_type": "rationale",
       "norm_label": "regresion del bug real encontrado esta sesion: para un subconjunto de meses, la...",
       "source_file": "tests/test_parse_tasas_historicas.py",
-      "source_location": "L61"
+      "source_location": "L75"
     },
     {
       "id": "etl_transform_init",
@@ -14155,7 +14531,7 @@
       "node_kind": "heading",
       "norm_label": "bug real encontrado y corregido: null en `unique`/`on conflict`",
       "source_file": "docs/architecture.md",
-      "source_location": "L325"
+      "source_location": "L336"
     },
     {
       "id": "docs_architecture_carga_incremental_cdc_no_full_refresh",
@@ -14167,7 +14543,7 @@
       "node_kind": "heading",
       "norm_label": "carga incremental (cdc) \u2014 no full refresh",
       "source_file": "docs/architecture.md",
-      "source_location": "L290"
+      "source_location": "L298"
     },
     {
       "id": "docs_architecture_cat\u00e1logos_conformados_identidad_compartida_entre_fuentes",
@@ -14179,7 +14555,7 @@
       "node_kind": "heading",
       "norm_label": "catalogos conformados (identidad compartida entre fuentes)",
       "source_file": "docs/architecture.md",
-      "source_location": "L262"
+      "source_location": "L263"
     },
     {
       "id": "docs_architecture_estructura_real_de_los_archivos_fuente_verificado_no_solo_la_ficha_metodol\u00f3gica",
@@ -14191,7 +14567,7 @@
       "node_kind": "heading",
       "norm_label": "estructura real de los archivos fuente (verificado, no solo la ficha metodologica)",
       "source_file": "docs/architecture.md",
-      "source_location": "L347"
+      "source_location": "L358"
     },
     {
       "id": "docs_architecture_evaluaci\u00f3n_de_escalabilidad",
@@ -14203,7 +14579,7 @@
       "node_kind": "heading",
       "norm_label": "evaluacion de escalabilidad",
       "source_file": "docs/architecture.md",
-      "source_location": "L372"
+      "source_location": "L383"
     },
     {
       "id": "docs_architecture_flujo_de_datos",
@@ -14239,7 +14615,7 @@
       "node_kind": "heading",
       "norm_label": "por que playwright y no requests/httpx",
       "source_file": "docs/architecture.md",
-      "source_location": "L337"
+      "source_location": "L348"
     },
     {
       "id": "docs_architecture_portabilidad_de_motor_inventario_de_construcciones_espec\u00edficas_de_postgres",
@@ -14251,7 +14627,7 @@
       "node_kind": "heading",
       "norm_label": "portabilidad de motor \u2014 inventario de construcciones especificas de postgres",
       "source_file": "docs/architecture.md",
-      "source_location": "L407"
+      "source_location": "L418"
     },
     {
       "id": "docs_architecture_power_bi_c\u00f3mo_se_construy\u00f3_y_qu\u00e9_qued\u00f3_armado",
@@ -14263,7 +14639,7 @@
       "node_kind": "heading",
       "norm_label": "power bi: como se construyo y que quedo armado",
       "source_file": "docs/architecture.md",
-      "source_location": "L539"
+      "source_location": "L550"
     },
     {
       "id": "docs_gobernanza_datos",
@@ -14335,7 +14711,7 @@
       "node_kind": "heading",
       "norm_label": "gestion de cambios de esquema",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L364"
+      "source_location": "L392"
     },
     {
       "id": "docs_gobernanza_datos_gobernanza_de_datos",
@@ -14359,7 +14735,7 @@
       "node_kind": "heading",
       "norm_label": "huecos de gobernanza conocidos",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L337"
+      "source_location": "L365"
     },
     {
       "id": "docs_gobernanza_datos_identidad_para_el_universo_completo_del_sistema_financiero_bce_2026_07_19",
@@ -15420,7 +15796,7 @@
     },
     {
       "source": "etl_transform_banco_matching_resolver_banco_codigo",
-      "target": "valueerror",
+      "target": "etl_transform_banco_matching_py_valueerror",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -15571,11 +15947,23 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "etl/transform/bce_plazo_matching.py",
-      "source_location": "L93",
+      "source_location": "L133",
       "weight": 1.0
     },
     {
-      "source": "etl_transform_bce_plazo_matching_validar_universo_plazos_bce",
+      "source": "etl_transform_bce_plazo_matching_resolver_plazo_bce",
+      "target": "etl_transform_bce_plazo_matching_validar_rango_plazo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "etl/transform/bce_plazo_matching.py",
+      "source_location": "L140",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_transform_bce_plazo_matching_validar_rango_plazo",
       "target": "etl_transform_bce_plazo_matching_plazonoresueltoerror",
       "relation": "calls",
       "_origin": "ast",
@@ -15583,7 +15971,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "etl/transform/bce_plazo_matching.py",
-      "source_location": "L82",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_transform_bce_plazo_matching_validar_universo_plazos_bce",
+      "target": "etl_transform_bce_plazo_matching_resolver_plazo_bce",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "etl/transform/bce_plazo_matching.py",
+      "source_location": "L120",
       "weight": 1.0
     },
     {
@@ -15595,19 +15995,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L60",
+      "source_location": "L69",
       "weight": 1.0
     },
     {
       "source": "etl_transform_categoria_deposito_matching_resolver_categoria_deposito",
-      "target": "etl_transform_bce_plazo_matching_plazonoresueltoerror",
+      "target": "etl_transform_bce_plazo_matching_validar_rango_plazo",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L67",
+      "source_location": "L76",
       "weight": 1.0
     },
     {
@@ -16327,7 +16727,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L132",
+      "source_location": "L142",
       "weight": 1.0
     },
     {
@@ -16339,7 +16739,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L146",
+      "source_location": "L156",
       "weight": 1.0
     },
     {
@@ -16351,7 +16751,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L151",
+      "source_location": "L161",
       "weight": 1.0
     },
     {
@@ -16363,7 +16763,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L193",
+      "source_location": "L203",
       "weight": 1.0
     },
     {
@@ -16375,7 +16775,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L195",
+      "source_location": "L205",
       "weight": 1.0
     },
     {
@@ -16387,7 +16787,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L197",
+      "source_location": "L207",
       "weight": 1.0
     },
     {
@@ -16399,7 +16799,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L222",
+      "source_location": "L232",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_transform_parse_tasas_historicas_resolver_plazo",
+      "target": "etl_transform_bce_plazo_matching_validar_rango_plazo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "etl/transform/parse_tasas_historicas.py",
+      "source_location": "L88",
       "weight": 1.0
     },
     {
@@ -16411,7 +16823,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L77",
+      "source_location": "L97",
       "weight": 1.0
     },
     {
@@ -16679,7 +17091,7 @@
       "weight": 1.0
     },
     {
-      "source": "tests_test_bce_plazo_matching_test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_lanza",
+      "source": "tests_test_bce_plazo_matching_test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza",
       "target": "etl_transform_bce_plazo_matching_validar_universo_plazos_bce",
       "relation": "calls",
       "_origin": "ast",
@@ -16687,11 +17099,11 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L63",
+      "source_location": "L66",
       "weight": 1.0
     },
     {
-      "source": "tests_test_bce_plazo_matching_test_bucket_fuera_del_universo_tsa_lanza",
+      "source": "tests_test_bce_plazo_matching_test_bucket_fuera_del_universo_tsa_no_lanza",
       "target": "etl_transform_bce_plazo_matching_validar_universo_plazos_bce",
       "relation": "calls",
       "_origin": "ast",
@@ -16699,7 +17111,43 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L68",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_bce_plazo_matching_test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo",
+      "target": "etl_transform_bce_plazo_matching_validar_universo_plazos_bce",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L77",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_bce_plazo_matching_test_bucket_shape_valido_fuera_del_universo_resuelve_rango_correcto",
+      "target": "etl_transform_bce_plazo_matching_resolver_plazo_bce",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_bce_plazo_matching_test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando",
+      "target": "etl_transform_bce_plazo_matching_resolver_plazo_bce",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L86",
       "weight": 1.0
     },
     {
@@ -16835,7 +17283,7 @@
       "weight": 1.0
     },
     {
-      "source": "tests_test_categoria_deposito_matching_test_plazo_bucket_con_shape_valido_pero_desconocido_lanza_plazo_error",
+      "source": "tests_test_categoria_deposito_matching_test_plazo_bucket_con_shape_valido_pero_desconocido_no_lanza",
       "target": "etl_transform_categoria_deposito_matching_resolver_categoria_deposito",
       "relation": "calls",
       "_origin": "ast",
@@ -16843,11 +17291,35 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tests/test_categoria_deposito_matching.py",
-      "source_location": "L64",
+      "source_location": "L63",
       "weight": 1.0
     },
     {
-      "source": "tests_test_categoria_deposito_matching_test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_lanza_plazo_error",
+      "source": "tests_test_categoria_deposito_matching_test_plazo_bucket_shape_invalido_sigue_lanzando",
+      "target": "etl_transform_categoria_deposito_matching_resolver_categoria_deposito",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L78",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_categoria_deposito_matching_test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error",
+      "target": "etl_transform_categoria_deposito_matching_resolver_categoria_deposito",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L85",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_categoria_deposito_matching_test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_no_lanza",
       "target": "etl_transform_categoria_deposito_matching_resolver_categoria_deposito",
       "relation": "calls",
       "_origin": "ast",
@@ -17215,7 +17687,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tests/test_parse_tasas_historicas.py",
-      "source_location": "L87",
+      "source_location": "L101",
       "weight": 1.0
     },
     {
@@ -17227,7 +17699,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tests/test_parse_tasas_historicas.py",
-      "source_location": "L77",
+      "source_location": "L91",
       "weight": 1.0
     },
     {
@@ -17255,7 +17727,19 @@
       "weight": 1.0
     },
     {
-      "source": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_fuera_del_universo_lanza_plazo_error",
+      "source": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_invalido_sigue_lanzando",
+      "target": "etl_transform_parse_tasas_historicas_resolver_plazo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tests/test_parse_tasas_historicas.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_fuera_del_universo_no_lanza",
       "target": "etl_transform_parse_tasas_historicas_resolver_plazo",
       "relation": "calls",
       "_origin": "ast",
@@ -17264,6 +17748,18 @@
       "context": "call",
       "source_file": "tests/test_parse_tasas_historicas.py",
       "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_rango_invertido_lanza_error",
+      "target": "etl_transform_parse_tasas_historicas_resolver_plazo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tests/test_parse_tasas_historicas.py",
+      "source_location": "L71",
       "weight": 1.0
     },
     {
@@ -17712,14 +18208,14 @@
     },
     {
       "source": "etl_transform_parse_tasas_historicas_parse_filas",
-      "target": "etl_transform_parse_tasas_historicas_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L169",
+      "source_location": "L179",
       "weight": 1.0
     },
     {
@@ -18204,7 +18700,7 @@
     },
     {
       "source": "etl_transform_categoria_deposito_matching",
-      "target": "etl_transform_bce_plazo_matching_plazonoresueltoerror",
+      "target": "etl_transform_bce_plazo_matching_validar_rango_plazo",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18541,6 +19037,18 @@
     {
       "source": "etl_transform_parse_tasas_historicas",
       "target": "etl_transform_bce_plazo_matching_plazonoresueltoerror",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "etl/transform/parse_tasas_historicas.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_transform_parse_tasas_historicas",
+      "target": "etl_transform_bce_plazo_matching_validar_rango_plazo",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19572,7 +20080,7 @@
     },
     {
       "source": "etl_load_load_postgres_load_raw",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19584,7 +20092,7 @@
     },
     {
       "source": "etl_load_load_postgres_load_raw_bce",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19596,7 +20104,7 @@
     },
     {
       "source": "etl_load_load_postgres_load_raw_boletin",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19608,7 +20116,7 @@
     },
     {
       "source": "etl_load_load_postgres_load_raw_tasas_referenciales",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19620,7 +20128,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_bce_via_temp",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19632,7 +20140,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_boletin_via_temp",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19644,7 +20152,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_dim_cuenta_contable",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19656,7 +20164,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_bce_tasas_activas",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19668,7 +20176,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_bce_tasas_pasivas",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19680,7 +20188,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_boletin_balance",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19692,7 +20200,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_boletin_pyg",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19704,7 +20212,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_cartera",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19716,7 +20224,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_depositos",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19728,7 +20236,7 @@
     },
     {
       "source": "etl_load_load_postgres_upsert_staging_tasas_referenciales",
-      "target": "dataframe",
+      "target": "etl_load_load_postgres_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19788,7 +20296,7 @@
     },
     {
       "source": "etl_transform_banco_matching_cargar_csv",
-      "target": "path",
+      "target": "etl_transform_banco_matching_py_path",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19908,14 +20416,14 @@
     },
     {
       "source": "etl_transform_parse_tasas_historicas_parse_tasas_historicas_file",
-      "target": "etl_transform_parse_tasas_historicas_py_path",
+      "target": "path",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L213",
+      "source_location": "L223",
       "weight": 1.0
     },
     {
@@ -20064,14 +20572,14 @@
     },
     {
       "source": "etl_transform_parse_tasas_historicas_parse_tasas_historicas_file",
-      "target": "etl_transform_parse_tasas_historicas_py_dataframe",
+      "target": "dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L213",
+      "source_location": "L223",
       "weight": 1.0
     },
     {
@@ -20160,7 +20668,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L262",
+      "source_location": "L263",
       "weight": 1.0
     },
     {
@@ -20171,7 +20679,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L290",
+      "source_location": "L298",
       "weight": 1.0
     },
     {
@@ -20204,7 +20712,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L337",
+      "source_location": "L348",
       "weight": 1.0
     },
     {
@@ -20215,7 +20723,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L347",
+      "source_location": "L358",
       "weight": 1.0
     },
     {
@@ -20226,7 +20734,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L372",
+      "source_location": "L383",
       "weight": 1.0
     },
     {
@@ -20237,7 +20745,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L407",
+      "source_location": "L418",
       "weight": 1.0
     },
     {
@@ -20248,7 +20756,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L539",
+      "source_location": "L550",
       "weight": 1.0
     },
     {
@@ -20259,7 +20767,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L325",
+      "source_location": "L336",
       "weight": 1.0
     },
     {
@@ -20281,7 +20789,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L10",
+      "source_location": "L12",
       "weight": 1.0
     },
     {
@@ -20292,7 +20800,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L127",
+      "source_location": "L130",
       "weight": 1.0
     },
     {
@@ -20303,7 +20811,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L196",
+      "source_location": "L199",
       "weight": 1.0
     },
     {
@@ -20314,7 +20822,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L81",
+      "source_location": "L84",
       "weight": 1.0
     },
     {
@@ -20325,7 +20833,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L12",
+      "source_location": "L14",
       "weight": 1.0
     },
     {
@@ -20336,7 +20844,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L20",
+      "source_location": "L22",
       "weight": 1.0
     },
     {
@@ -20347,7 +20855,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L34",
+      "source_location": "L36",
       "weight": 1.0
     },
     {
@@ -20358,7 +20866,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L40",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -20369,7 +20877,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L46",
+      "source_location": "L48",
       "weight": 1.0
     },
     {
@@ -20380,7 +20888,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L51",
+      "source_location": "L53",
       "weight": 1.0
     },
     {
@@ -20391,7 +20899,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L55",
+      "source_location": "L57",
       "weight": 1.0
     },
     {
@@ -20402,7 +20910,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L60",
+      "source_location": "L62",
       "weight": 1.0
     },
     {
@@ -20413,7 +20921,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L64",
+      "source_location": "L66",
       "weight": 1.0
     },
     {
@@ -20424,51 +20932,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L71",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_data_dictionary_hechos",
-      "target": "docs_data_dictionary_marts_fact_colocaciones_cartera_antes_fact_tasas_activas_marts_fact_captaciones_depositos_antes_fact_tasas_pasivas_grano_fecha_banco_categor\u00eda_subsegmento_plazo_provincia_bce_tsa_tsp_semanal",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/data_dictionary.md",
-      "source_location": "L106",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_data_dictionary_hechos",
-      "target": "docs_data_dictionary_marts_fact_tasas_referenciales_cartera_antes_fact_tasas_referenciales_credito_fact_tasas_referenciales_depositos_instrumento_antes_fact_tasas_pasivas_instrumento_fact_tasas_referenciales_depositos_plazo_antes_fact_tasas_pasivas_plazo_fact_tasas_referenciales_sistema_sin_cambio_de_nombre_tasashistorico_htm_mensual_nivel_sistema_no_por_banco",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/data_dictionary.md",
-      "source_location": "L115",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_data_dictionary_hechos",
-      "target": "docs_data_dictionary_marts_fact_balance_fact_pyg_grano_fecha_banco_cuenta_contable_bolet\u00edn_mensual",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/data_dictionary.md",
-      "source_location": "L124",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_data_dictionary_hechos",
-      "target": "docs_data_dictionary_marts_fact_saldo_cartera_antes_fact_cartera_grano_fecha_banco_cant\u00f3n_segmento_capcol_mensual",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/data_dictionary.md",
-      "source_location": "L90",
+      "source_location": "L74",
       "weight": 1.0
     },
     {
@@ -20479,7 +20943,51 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L99",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_data_dictionary_hechos",
+      "target": "docs_data_dictionary_marts_fact_colocaciones_cartera_antes_fact_tasas_activas_marts_fact_captaciones_depositos_antes_fact_tasas_pasivas_grano_fecha_banco_categor\u00eda_subsegmento_plazo_provincia_bce_tsa_tsp_semanal",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/data_dictionary.md",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_data_dictionary_hechos",
+      "target": "docs_data_dictionary_marts_fact_tasas_referenciales_cartera_antes_fact_tasas_referenciales_credito_fact_tasas_referenciales_depositos_instrumento_antes_fact_tasas_pasivas_instrumento_fact_tasas_referenciales_depositos_plazo_antes_fact_tasas_pasivas_plazo_fact_tasas_referenciales_sistema_sin_cambio_de_nombre_tasashistorico_htm_mensual_nivel_sistema_no_por_banco",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/data_dictionary.md",
+      "source_location": "L118",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_data_dictionary_hechos",
+      "target": "docs_data_dictionary_marts_fact_balance_fact_pyg_grano_fecha_banco_cuenta_contable_bolet\u00edn_mensual",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/data_dictionary.md",
+      "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_data_dictionary_hechos",
+      "target": "docs_data_dictionary_marts_fact_saldo_cartera_antes_fact_cartera_grano_fecha_banco_cant\u00f3n_segmento_capcol_mensual",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/data_dictionary.md",
+      "source_location": "L93",
       "weight": 1.0
     },
     {
@@ -20490,7 +20998,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L143",
+      "source_location": "L146",
       "weight": 1.0
     },
     {
@@ -20501,7 +21009,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L168",
+      "source_location": "L171",
       "weight": 1.0
     },
     {
@@ -20864,7 +21372,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L337",
+      "source_location": "L365",
       "weight": 1.0
     },
     {
@@ -20875,7 +21383,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L364",
+      "source_location": "L392",
       "weight": 1.0
     },
     {
@@ -21063,6 +21571,171 @@
       "confidence_score": 1.0,
       "source_file": "docs/linaje_datos.md",
       "source_location": "L83",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos",
+      "target": "docs_mantenimiento_catalogos_mantenimiento_de_cat\u00e1logos_resoluci\u00f3n_de_identidad",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_los_3_cat\u00e1logos_con_estado_validacion_revisar_y_confirmar_filas_pendientes",
+      "target": "docs_mantenimiento_catalogos_dim_banco",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L341",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_los_3_cat\u00e1logos_con_estado_validacion_revisar_y_confirmar_filas_pendientes",
+      "target": "docs_mantenimiento_catalogos_dim_plazo",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L370",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_los_3_cat\u00e1logos_con_estado_validacion_revisar_y_confirmar_filas_pendientes",
+      "target": "docs_mantenimiento_catalogos_dim_cuenta_contable",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L390",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_mantenimiento_de_cat\u00e1logos_resoluci\u00f3n_de_identidad",
+      "target": "docs_mantenimiento_catalogos_3_dim_segmento_credito_dim_subsegmento_credito",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L140",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_mantenimiento_de_cat\u00e1logos_resoluci\u00f3n_de_identidad",
+      "target": "docs_mantenimiento_catalogos_tabla_de_referencia_r\u00e1pida",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_mantenimiento_de_cat\u00e1logos_resoluci\u00f3n_de_identidad",
+      "target": "docs_mantenimiento_catalogos_4_dim_categoria_deposito",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_mantenimiento_de_cat\u00e1logos_resoluci\u00f3n_de_identidad",
+      "target": "docs_mantenimiento_catalogos_5_dim_segmento_entidad",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L220",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_mantenimiento_de_cat\u00e1logos_resoluci\u00f3n_de_identidad",
+      "target": "docs_mantenimiento_catalogos_6_dim_plazo_two_tier_4_puntos_de_entrada",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L252",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_mantenimiento_de_cat\u00e1logos_resoluci\u00f3n_de_identidad",
+      "target": "docs_mantenimiento_catalogos_7_dim_cuenta_contable",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L300",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_mantenimiento_de_cat\u00e1logos_resoluci\u00f3n_de_identidad",
+      "target": "docs_mantenimiento_catalogos_los_3_cat\u00e1logos_con_estado_validacion_revisar_y_confirmar_filas_pendientes",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L334",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_mantenimiento_de_cat\u00e1logos_resoluci\u00f3n_de_identidad",
+      "target": "docs_mantenimiento_catalogos_1_dim_banco_camino_curado_33_bancos_privados",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_mantenimiento_de_cat\u00e1logos_resoluci\u00f3n_de_identidad",
+      "target": "docs_mantenimiento_catalogos_por_qu\u00e9_esto_se_mantiene_simple_en_ci_cd_y_por_qu\u00e9_no_deber\u00eda_complicarse",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L412",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_mantenimiento_de_cat\u00e1logos_resoluci\u00f3n_de_identidad",
+      "target": "docs_mantenimiento_catalogos_ver_tambi\u00e9n",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L443",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_mantenimiento_catalogos_mantenimiento_de_cat\u00e1logos_resoluci\u00f3n_de_identidad",
+      "target": "docs_mantenimiento_catalogos_2_dim_banco_camino_auto_registrado_409_entidades_no_privadas",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/mantenimiento_catalogos.md",
+      "source_location": "L91",
       "weight": 1.0
     },
     {
@@ -22442,6 +23115,28 @@
     },
     {
       "source": "etl_transform_bce_plazo_matching",
+      "target": "etl_transform_bce_plazo_matching_validar_universo_plazos_bce",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "etl/transform/bce_plazo_matching.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_transform_bce_plazo_matching",
+      "target": "etl_transform_bce_plazo_matching_resolver_plazo_bce",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "etl/transform/bce_plazo_matching.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_transform_bce_plazo_matching",
       "target": "etl_transform_bce_plazo_matching_plazonoresueltoerror",
       "relation": "contains",
       "_origin": "ast",
@@ -22453,24 +23148,13 @@
     },
     {
       "source": "etl_transform_bce_plazo_matching",
-      "target": "etl_transform_bce_plazo_matching_validar_universo_plazos_bce",
+      "target": "etl_transform_bce_plazo_matching_validar_rango_plazo",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "etl/transform/bce_plazo_matching.py",
-      "source_location": "L72",
-      "weight": 1.0
-    },
-    {
-      "source": "etl_transform_bce_plazo_matching",
-      "target": "etl_transform_bce_plazo_matching_resolver_plazo_bce",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "etl/transform/bce_plazo_matching.py",
-      "source_location": "L89",
+      "source_location": "L44",
       "weight": 1.0
     },
     {
@@ -22481,7 +23165,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L50",
+      "source_location": "L53",
       "weight": 1.0
     },
     {
@@ -22492,7 +23176,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L54",
+      "source_location": "L57",
       "weight": 1.0
     },
     {
@@ -22860,13 +23544,24 @@
     },
     {
       "source": "etl_transform_parse_tasas_historicas",
+      "target": "etl_transform_parse_tasas_historicas_segmento_label",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "etl/transform/parse_tasas_historicas.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_transform_parse_tasas_historicas",
       "target": "etl_transform_parse_tasas_historicas_categoria_label",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L100",
+      "source_location": "L110",
       "weight": 1.0
     },
     {
@@ -22877,7 +23572,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L128",
+      "source_location": "L138",
       "weight": 1.0
     },
     {
@@ -22888,7 +23583,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L169",
+      "source_location": "L179",
       "weight": 1.0
     },
     {
@@ -22899,7 +23594,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L213",
+      "source_location": "L223",
       "weight": 1.0
     },
     {
@@ -22932,18 +23627,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L74",
-      "weight": 1.0
-    },
-    {
-      "source": "etl_transform_parse_tasas_historicas",
-      "target": "etl_transform_parse_tasas_historicas_segmento_label",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L93",
+      "source_location": "L77",
       "weight": 1.0
     },
     {
@@ -29147,7 +29831,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L108",
+      "source_location": "L111",
       "weight": 1.0
     },
     {
@@ -29169,7 +29853,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L145",
+      "source_location": "L148",
       "weight": 1.0
     },
     {
@@ -29180,7 +29864,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L167",
+      "source_location": "L170",
       "weight": 1.0
     },
     {
@@ -29191,7 +29875,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L39",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -29202,7 +29886,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L82",
+      "source_location": "L85",
       "weight": 1.0
     },
     {
@@ -30219,7 +30903,7 @@
     },
     {
       "source": "tests_test_bce_plazo_matching",
-      "target": "tests_test_bce_plazo_matching_test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_lanza",
+      "target": "tests_test_bce_plazo_matching_test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -30230,13 +30914,46 @@
     },
     {
       "source": "tests_test_bce_plazo_matching",
-      "target": "tests_test_bce_plazo_matching_test_bucket_fuera_del_universo_tsa_lanza",
+      "target": "tests_test_bce_plazo_matching_test_bucket_fuera_del_universo_tsa_no_lanza",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L66",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_bce_plazo_matching",
+      "target": "tests_test_bce_plazo_matching_test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L73",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_bce_plazo_matching",
+      "target": "tests_test_bce_plazo_matching_test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L82",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_bce_plazo_matching",
+      "target": "tests_test_bce_plazo_matching_test_bucket_shape_valido_fuera_del_universo_resuelve_rango_correcto",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L89",
       "weight": 1.0
     },
     {
@@ -30307,7 +31024,7 @@
     },
     {
       "source": "tests_test_categoria_deposito_matching",
-      "target": "tests_test_categoria_deposito_matching_test_plazo_bucket_con_shape_valido_pero_desconocido_lanza_plazo_error",
+      "target": "tests_test_categoria_deposito_matching_test_plazo_bucket_con_shape_valido_pero_desconocido_no_lanza",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -30318,13 +31035,35 @@
     },
     {
       "source": "tests_test_categoria_deposito_matching",
-      "target": "tests_test_categoria_deposito_matching_test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_lanza_plazo_error",
+      "target": "tests_test_categoria_deposito_matching_test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_no_lanza",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tests/test_categoria_deposito_matching.py",
-      "source_location": "L67",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_categoria_deposito_matching",
+      "target": "tests_test_categoria_deposito_matching_test_plazo_bucket_shape_invalido_sigue_lanzando",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_categoria_deposito_matching",
+      "target": "tests_test_categoria_deposito_matching_test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L81",
       "weight": 1.0
     },
     {
@@ -30571,6 +31310,17 @@
     },
     {
       "source": "tests_test_parse_tasas_historicas",
+      "target": "tests_test_parse_tasas_historicas_test_emitir_ignora_seccion_desconocida",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_parse_tasas_historicas.py",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_parse_tasas_historicas",
       "target": "tests_test_parse_tasas_historicas_test_segmento_alias_agrega_el_guion_que_falta_en_esta_fuente",
       "relation": "contains",
       "_origin": "ast",
@@ -30648,7 +31398,7 @@
     },
     {
       "source": "tests_test_parse_tasas_historicas",
-      "target": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_fuera_del_universo_lanza_plazo_error",
+      "target": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_fuera_del_universo_no_lanza",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -30659,7 +31409,7 @@
     },
     {
       "source": "tests_test_parse_tasas_historicas",
-      "target": "tests_test_parse_tasas_historicas_test_parse_filas_rastrea_seccion_sin_asumir_que_tabla_0_es_activa_maxima",
+      "target": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_invalido_sigue_lanzando",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -30670,13 +31420,24 @@
     },
     {
       "source": "tests_test_parse_tasas_historicas",
-      "target": "tests_test_parse_tasas_historicas_test_emitir_ignora_seccion_desconocida",
+      "target": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_rango_invertido_lanza_error",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tests/test_parse_tasas_historicas.py",
-      "source_location": "L86",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_parse_tasas_historicas",
+      "target": "tests_test_parse_tasas_historicas_test_parse_filas_rastrea_seccion_sin_asumir_que_tabla_0_es_activa_maxima",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_parse_tasas_historicas.py",
+      "source_location": "L74",
       "weight": 1.0
     },
     {
@@ -30780,7 +31541,7 @@
     },
     {
       "source": "etl_transform_banco_matching_banconoresueltoerror",
-      "target": "valueerror",
+      "target": "etl_transform_banco_matching_py_valueerror",
       "relation": "inherits",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -30791,7 +31552,7 @@
     },
     {
       "source": "etl_transform_banco_matching_entidadbcenomapeadaerror",
-      "target": "valueerror",
+      "target": "etl_transform_banco_matching_py_valueerror",
       "relation": "inherits",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -30802,7 +31563,7 @@
     },
     {
       "source": "etl_transform_banco_matching_rucinvalidoerror",
-      "target": "valueerror",
+      "target": "etl_transform_banco_matching_py_valueerror",
       "relation": "inherits",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -30830,7 +31591,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L50",
+      "source_location": "L53",
       "weight": 1.0
     },
     {
@@ -31252,6 +32013,28 @@
       "weight": 1.0
     },
     {
+      "source": "etl_transform_bce_plazo_matching_rationale_105",
+      "target": "etl_transform_bce_plazo_matching_validar_universo_plazos_bce",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "etl/transform/bce_plazo_matching.py",
+      "source_location": "L105",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_transform_bce_plazo_matching_rationale_124",
+      "target": "etl_transform_bce_plazo_matching_resolver_plazo_bce",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "etl/transform/bce_plazo_matching.py",
+      "source_location": "L124",
+      "weight": 1.0
+    },
+    {
       "source": "etl_transform_bce_plazo_matching_rationale_28",
       "target": "etl_transform_bce_plazo_matching_plazonoresueltoerror",
       "relation": "rationale_for",
@@ -31263,25 +32046,14 @@
       "weight": 1.0
     },
     {
-      "source": "etl_transform_bce_plazo_matching_rationale_75",
-      "target": "etl_transform_bce_plazo_matching_validar_universo_plazos_bce",
+      "source": "etl_transform_bce_plazo_matching_rationale_47",
+      "target": "etl_transform_bce_plazo_matching_validar_rango_plazo",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "etl/transform/bce_plazo_matching.py",
-      "source_location": "L75",
-      "weight": 1.0
-    },
-    {
-      "source": "etl_transform_bce_plazo_matching_rationale_90",
-      "target": "etl_transform_bce_plazo_matching_resolver_plazo_bce",
-      "relation": "rationale_for",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "etl/transform/bce_plazo_matching.py",
-      "source_location": "L90",
+      "source_location": "L47",
       "weight": 1.0
     },
     {
@@ -31296,25 +32068,25 @@
       "weight": 1.0
     },
     {
-      "source": "etl_transform_categoria_deposito_matching_rationale_51",
+      "source": "etl_transform_categoria_deposito_matching_rationale_54",
       "target": "etl_transform_categoria_deposito_matching_categorianoresueltaerror",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L51",
+      "source_location": "L54",
       "weight": 1.0
     },
     {
-      "source": "etl_transform_categoria_deposito_matching_rationale_57",
+      "source": "etl_transform_categoria_deposito_matching_rationale_60",
       "target": "etl_transform_categoria_deposito_matching_resolver_categoria_deposito",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L57",
+      "source_location": "L60",
       "weight": 1.0
     },
     {
@@ -31549,14 +32321,25 @@
       "weight": 1.0
     },
     {
-      "source": "etl_transform_parse_tasas_historicas_rationale_214",
+      "source": "etl_transform_parse_tasas_historicas_rationale_224",
       "target": "etl_transform_parse_tasas_historicas_parse_tasas_historicas_file",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "etl/transform/parse_tasas_historicas.py",
-      "source_location": "L214",
+      "source_location": "L224",
+      "weight": 1.0
+    },
+    {
+      "source": "etl_transform_parse_tasas_historicas_rationale_78",
+      "target": "etl_transform_parse_tasas_historicas_resolver_plazo",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "etl/transform/parse_tasas_historicas.py",
+      "source_location": "L78",
       "weight": 1.0
     },
     {
@@ -31594,7 +32377,7 @@
     },
     {
       "source": "tests_test_bce_plazo_matching_rationale_60",
-      "target": "tests_test_bce_plazo_matching_test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_lanza",
+      "target": "tests_test_bce_plazo_matching_test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -31604,14 +32387,69 @@
       "weight": 1.0
     },
     {
+      "source": "tests_test_bce_plazo_matching_rationale_74",
+      "target": "tests_test_bce_plazo_matching_test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_bce_plazo_matching_rationale_83",
+      "target": "tests_test_bce_plazo_matching_test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L83",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_bce_plazo_matching_rationale_90",
+      "target": "tests_test_bce_plazo_matching_test_bucket_shape_valido_fuera_del_universo_resuelve_rango_correcto",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
       "source": "tests_test_categoria_deposito_matching_rationale_59",
-      "target": "tests_test_categoria_deposito_matching_test_plazo_bucket_con_shape_valido_pero_desconocido_lanza_plazo_error",
+      "target": "tests_test_categoria_deposito_matching_test_plazo_bucket_con_shape_valido_pero_desconocido_no_lanza",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tests/test_categoria_deposito_matching.py",
       "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_categoria_deposito_matching_rationale_75",
+      "target": "tests_test_categoria_deposito_matching_test_plazo_bucket_shape_invalido_sigue_lanzando",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L75",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_categoria_deposito_matching_rationale_82",
+      "target": "tests_test_categoria_deposito_matching_test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L82",
       "weight": 1.0
     },
     {
@@ -31759,7 +32597,7 @@
     },
     {
       "source": "tests_test_parse_tasas_historicas_rationale_53",
-      "target": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_fuera_del_universo_lanza_plazo_error",
+      "target": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_fuera_del_universo_no_lanza",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -31770,13 +32608,35 @@
     },
     {
       "source": "tests_test_parse_tasas_historicas_rationale_61",
-      "target": "tests_test_parse_tasas_historicas_test_parse_filas_rastrea_seccion_sin_asumir_que_tabla_0_es_activa_maxima",
+      "target": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_invalido_sigue_lanzando",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tests/test_parse_tasas_historicas.py",
       "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_parse_tasas_historicas_rationale_68",
+      "target": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_rango_invertido_lanza_error",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_parse_tasas_historicas.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_parse_tasas_historicas_rationale_75",
+      "target": "tests_test_parse_tasas_historicas_test_parse_filas_rastrea_seccion_sin_asumir_que_tabla_0_es_activa_maxima",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_parse_tasas_historicas.py",
+      "source_location": "L75",
       "weight": 1.0
     },
     {
@@ -33379,25 +34239,25 @@
       "weight": 0.8
     },
     {
-      "source": "tests_test_bce_plazo_matching_test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_lanza",
+      "source": "tests_test_bce_plazo_matching_test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo",
       "target": "etl_transform_bce_plazo_matching_plazonoresueltoerror",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L62",
+      "source_location": "L76",
       "weight": 0.8
     },
     {
-      "source": "tests_test_bce_plazo_matching_test_bucket_fuera_del_universo_tsa_lanza",
+      "source": "tests_test_bce_plazo_matching_test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando",
       "target": "etl_transform_bce_plazo_matching_plazonoresueltoerror",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L67",
+      "source_location": "L85",
       "weight": 0.8
     },
     {
@@ -33434,25 +34294,25 @@
       "weight": 0.8
     },
     {
-      "source": "tests_test_categoria_deposito_matching_test_plazo_bucket_con_shape_valido_pero_desconocido_lanza_plazo_error",
-      "target": "etl_transform_bce_plazo_matching_plazonoresueltoerror",
+      "source": "tests_test_categoria_deposito_matching_test_plazo_bucket_shape_invalido_sigue_lanzando",
+      "target": "etl_transform_categoria_deposito_matching_categorianoresueltaerror",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "tests/test_categoria_deposito_matching.py",
-      "source_location": "L63",
+      "source_location": "L77",
       "weight": 0.8
     },
     {
-      "source": "tests_test_categoria_deposito_matching_test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_lanza_plazo_error",
+      "source": "tests_test_categoria_deposito_matching_test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error",
       "target": "etl_transform_bce_plazo_matching_plazonoresueltoerror",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "tests/test_categoria_deposito_matching.py",
-      "source_location": "L68",
+      "source_location": "L84",
       "weight": 0.8
     },
     {
@@ -33467,17 +34327,28 @@
       "weight": 0.8
     },
     {
-      "source": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_fuera_del_universo_lanza_plazo_error",
+      "source": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_invalido_sigue_lanzando",
       "target": "etl_transform_bce_plazo_matching_plazonoresueltoerror",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "tests/test_parse_tasas_historicas.py",
-      "source_location": "L56",
+      "source_location": "L63",
+      "weight": 0.8
+    },
+    {
+      "source": "tests_test_parse_tasas_historicas_test_resolver_plazo_shape_valido_pero_rango_invertido_lanza_error",
+      "target": "etl_transform_bce_plazo_matching_plazonoresueltoerror",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "tests/test_parse_tasas_historicas.py",
+      "source_location": "L70",
       "weight": 0.8
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "5c45610651c06a64680dbd1d1e0821ec42150770"
+  "built_at_commit": "e77068aefc617913f5d5f8b8baa02156175df45b"
 }
