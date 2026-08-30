@@ -224,16 +224,27 @@ Válidos para las 4 fuentes, no repetidos en cada tabla arriba:
   y `docs/gobernanza_datos.md`.
 - **Categoría de depósito / plazo**: resueltos antes de `staging.*` por
   `categoria_deposito_matching.py` (CAPCOL, BCE tsp) y `bce_plazo_matching.py` (BCE
-  tsp/tsa) — mismo principio "fail loud, no autogenerar" que banco.
+  tsp/tsa) — mismo principio "fail loud, no autogenerar" que banco. **Plazo
+  específicamente** (los 4 puntos: `bce_plazo_matching.py` tsp/tsa,
+  `categoria_deposito_matching.py` CAPCOL, `parse_tasas_historicas.py` TasasHistorico) es
+  el único catálogo de este proyecto que desde 2026-08-30 (`sql/27_dim_plazo_estado_validacion.sql`)
+  relaja "fail loud" a dos niveles: shape regex inválido o rango inválido
+  (`dias_desde > dias_hasta`) sigue siendo `PlazoNoResueltoError` duro; shape+rango
+  válidos pero fuera del universo curado (`PLAZOS_*_VALIDOS`) ya no lanza, se auto-ingresa
+  en `dim_plazo` con `estado_validacion='AUTO_INGRESADO'` — ver `docs/data_dictionary.md`
+  y `docs/gobernanza_datos.md` (regla de calidad #1) para el detalle completo y la
+  justificación de por qué `dim_plazo` es la excepción entre los 5 catálogos "cerrados".
 - **CDC (`fecha_carga`/`fecha_actualizacion`/`row_hash`)**: se aplica en `staging.*` y en
   los `fact_*`/`dim_banco` de `marts` — nunca en `raw.*` (append-only, idempotente por
   archivo vía `source_hash`) ni en los catálogos pequeños de solo-catálogo (`dim_plazo`,
   `dim_categoria_deposito`, `dim_segmento_credito`, `dim_subsegmento_credito`,
   `dim_cuenta_contable`, `staging.banco_maestro`), que se insertan/mapean/resiembran sin
   guard de CDC propio. `estado_validacion` (2026-08-30, `dim_banco`/`dim_cuenta_contable`/
-  `staging.banco_maestro`) sigue esa misma línea: se extendió el `row_hash` existente
-  donde ya había uno (`dim_banco`), y se agregó sin `row_hash` donde nunca hubo uno
-  (`dim_cuenta_contable`, `staging.banco_maestro`). Detalle del patrón en
-  `docs/architecture.md`.
+  `staging.banco_maestro`/`dim_plazo`) sigue esa misma línea: se extendió el `row_hash`
+  existente donde ya había uno (`dim_banco`, `sql/26`), y se agregó sin `row_hash` donde
+  nunca hubo uno (`dim_cuenta_contable`/`staging.banco_maestro`, `sql/25`; `dim_plazo`,
+  `sql/27` — este último puramente aditivo, `ON CONFLICT DO NOTHING` sin `UPDATE`, así que
+  ni siquiera hay noción de "cambió de verdad" que un `row_hash` necesite proteger).
+  Detalle del patrón en `docs/architecture.md`.
 - **`fecha_id` (marts)**: siempre `TO_CHAR(fecha, 'YYYYMMDD')::INT`, calculado en el
   `INSERT...SELECT` de `refresh_marts()` — nunca almacenado en `staging.*`.

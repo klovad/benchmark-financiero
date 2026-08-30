@@ -134,7 +134,7 @@ gobernanza (rol, cadencia, volumen conocido). Nombres de tabla actualizados 2026
 | `dim_subsegmento_credito` (antes `dim_segmento_credito`) | Catálogo (universo BCE, no filtrado por entidad; nivel fino) | — | sembrado una vez (`sql/08`) | 26 filas |
 | `dim_segmento_entidad` | Catálogo, clasificación normativa de tamaño/estructura de la entidad (nueva 2026-07-25, `sql/19`) | — | sembrado una vez | 14 filas |
 | `dim_categoria_deposito` | Catálogo | — | sembrado una vez (`sql/08`) | 11 filas |
-| `dim_plazo` | Catálogo, fail-fast desde 2026-08-27 (antes: abierto, auto-descubierto sin validar — ver "Reglas de calidad" #1/#2 abajo) | — | crece solo cuando se agrega deliberadamente un bucket nuevo a `PLAZOS_TSP_VALIDOS`/`PLAZOS_TSA_VALIDOS`/`PLAZOS_VALIDOS` (CAPCOL)/`PLAZOS_VALIDOS` (TasasHistorico) | 21 filas (medido 2026-08-27 contra `marts.dim_plazo` — menos que 7+14+5+6=32 porque varios buckets coinciden exactamente en `(dias_desde, dias_hasta)` entre CAPCOL/tsp/tsa/TasasHistorico y comparten fila por el `UNIQUE (dias_desde, COALESCE(dias_hasta,-1))`; no fijo por diseño pero ya no crece sin revisión) |
+| `dim_plazo` | Catálogo, two-tier desde 2026-08-30 (`sql/27` — antes fail-fast absoluto desde 2026-08-27, antes de eso abierto/sin validar; `estado_validacion` distingue las 2 poblaciones directo en el dato, mismo mecanismo que `dim_cuenta_contable`/`sql/25`) — ver "Reglas de calidad" #1/#2 abajo | — | shape+rango inválidos siguen abortando la carga (`PlazoNoResueltoError`); un bucket con shape+rango válidos pero fuera de `PLAZOS_TSP_VALIDOS`/`PLAZOS_TSA_VALIDOS`/`PLAZOS_VALIDOS` (CAPCOL)/`PLAZOS_VALIDOS` (TasasHistorico) ya no aborta — se auto-ingresa como `AUTO_INGRESADO` | 21 filas, todas `CONFIRMADO` (medido 2026-08-30 contra `marts.dim_plazo` tras `sql/27` — mismas 21 de la medición 2026-08-27, menos que 7+14+5+6=32 porque varios buckets coinciden exactamente en `(dias_desde, dias_hasta)` entre CAPCOL/tsp/tsa/TasasHistorico y comparten fila por el `UNIQUE (dias_desde, COALESCE(dias_hasta,-1))`) |
 | `dim_cuenta_contable` | Catálogo (Catálogo Único de Cuentas) — `estado_validacion` (2026-08-30, `sql/25`) marca `CONFIRMADO` las cuentas preexistentes, `AUTO_INGRESADO` (default) las descubiertas de aquí en adelante sin curación | — | descubierto del Boletín | 1.736 cuentas (medido 2026-08-30 contra `marts.dim_cuenta_contable`, todas `CONFIRMADO` en el backfill retroactivo de `sql/25`) |
 | `fact_saldo_cartera` (antes `fact_cartera`) | Hecho, CAPCOL — 2026-07-25: `estado_cartera` pivotado a columnas (`saldo_por_vencer`/`saldo_no_devenga_intereses`/`saldo_vencida`/`saldo_total`), ver `sql/21` | Mensual | 2021-01 a 2026-06 | 123.322 filas (medido 2026-07-25, post-pivote — antes 369.966 con `estado_cartera` como fila) |
 | `fact_saldo_depositos` (antes `fact_depositos`) | Hecho, CAPCOL | Mensual | 2021-01 a 2026-06 | 251.247 filas (medido 2026-07-25) |
@@ -262,6 +262,34 @@ Todas verificadas en código, no solo documentadas:
    universos válidos codificados coinciden exactamente con el histórico completo
    ingerido en las 4 fuentes (tsp: 7, tsa: 14, CAPCOL: 5, TasasHistorico: 6) — ningún
    bucket real actual queda fuera.
+   **Relajado a two-tier el 2026-08-30 (`sql/27_dim_plazo_estado_validacion.sql`,
+   decisión explícita del usuario)**: el fail-fast absoluto de 2026-08-27 pasó a un
+   chequeo de 2 niveles en los mismos 4 puntos de validación —
+   (1) shape regex inválido, o rango inválido una vez resuelto
+   (`dias_desde < 0`, o `dias_desde > dias_hasta` con `dias_hasta` no NULL, ver
+   `bce_plazo_matching.py::validar_rango_plazo()`) sigue lanzando
+   `PlazoNoResueltoError` y abortando la carga; (2) shape válido + rango sano pero fuera
+   del universo enumerado ya NO lanza — se acepta y llega a `marts.dim_plazo`
+   `AUTO_INGRESADO` (columna nueva, `sql/27`) para revisión posterior, sin abortar el
+   resto de la carga. `dim_plazo` es el único de los 5 catálogos "cerrados" de este
+   proyecto que recibe este tratamiento — `dim_segmento_credito`/
+   `dim_subsegmento_credito`/`dim_categoria_deposito`/`dim_segmento_entidad` mantienen el
+   fail-fast absoluto sin two-tier, por la distinción sintaxis-vs-semántica-regulatoria
+   documentada en `docs/data_dictionary.md` (sección `dim_plazo`) y en el propio
+   comentario de `sql/27`: un rango numérico de días es autoexplicativo una vez que el
+   shape matcheó, un nombre nuevo de segmento/categoría regulatoria no lo es. Verificado:
+   los 4 universos previamente cerrados siguen coincidiendo exactamente con `staging.*`
+   completo tras el cambio (mismo alcance que la verificación de 2026-08-27), y una
+   corrida repetida del `INSERT ... ON CONFLICT DO NOTHING` de `dim_plazo` produce las
+   mismas 21 filas `CONFIRMADO` / 0 `AUTO_INGRESADO` en ambas pasadas — no genera ningún
+   cambio real (no hay `UPDATE` en este patrón, es puramente aditivo). Se ejerció el
+   camino de auto-ingesta con un bucket sintético shape-válido-pero-nunca-visto
+   (`"h. 1000 - 1100 DIAS"` para tsp) insertado y confirmado con
+   `estado_validacion='AUTO_INGRESADO'` contra la base viva, y luego eliminado (no forma
+   parte de los datos reales) — y con un bucket sintético shape-inválido confirmando que
+   sigue lanzando `PlazoNoResueltoError`. Cubierto por tests nuevos en
+   `tests/test_bce_plazo_matching.py`, `tests/test_categoria_deposito_matching.py`,
+   `tests/test_parse_tasas_historicas.py`.
 2. **Universo cerrado y validado en BCE**: `SEGMENTOS_VALIDOS` (26), `CATEGORIAS_VALIDAS`
    (11), `PLAZOS_TSP_VALIDOS` (7) y `PLAZOS_TSA_VALIDOS` (14) se validan explícitamente
    contra el valor real de cada fila de tsp/tsa antes de escribir a `staging.*` — un
@@ -379,3 +407,9 @@ consistentemente y debe mantenerse:
    (si cambian columnas), `docs/linaje_datos.md` (si cambia una transformación) y el
    diagrama ER en `docs/architecture.md` (si cambian tablas o relaciones) — los 3
    documentos deben describir el mismo estado vivo, no una versión pasada.
+
+Para el procedimiento paso a paso de qué hacer cuando falla un test de matching, un valor
+crudo no resuelve (`*NoResueltoError`) o aparece una fila `AUTO_INGRESADO` para revisar —
+qué archivo tocar, qué test agregar, qué query correr — ver
+`docs/mantenimiento_catalogos.md`. Ese documento es el runbook operativo; este documento
+(`gobernanza_datos.md`) sigue siendo la referencia de *por qué* cada regla existe.
