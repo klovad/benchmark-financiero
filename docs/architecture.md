@@ -90,6 +90,7 @@ erDiagram
         int dias_desde
         int dias_hasta
         string plazo_codigo
+        string estado_validacion
     }
     dim_cuenta_contable {
         int cuenta_id PK
@@ -285,7 +286,14 @@ llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
 - `dim_plazo` es un catálogo abierto por rango numérico de días, auto-descubierto por cada
   fuente (`INSERT ... ON CONFLICT DO NOTHING`) — **no se fuerza una equivalencia entre
   convenciones distintas** (ej. CAPCOL "DE MÁS DE 361 DÍAS" y BCE tsp "MAS DE 360 DIAS"
-  quedan como filas distintas, cada una con el límite real de su fuente).
+  quedan como filas distintas, cada una con el límite real de su fuente). Validación de 2
+  niveles en Python antes de `staging` (`bce_plazo_matching.py`/`categoria_deposito_matching.py`/
+  `parse_tasas_historicas.py`): shape regex inválido o rango inválido (`dias_desde > dias_hasta`)
+  sigue siendo fallo duro (`PlazoNoResueltoError`); shape+rango válidos pero fuera del
+  universo curado (`PLAZOS_*_VALIDOS`) ya no lanza — se auto-ingresa con
+  `estado_validacion='AUTO_INGRESADO'` (2026-08-30, `sql/27_dim_plazo_estado_validacion.sql`,
+  ver `docs/data_dictionary.md` para el detalle completo y por qué solo `dim_plazo` de los
+  5 catálogos "cerrados" recibe este tratamiento).
 
 ## Carga incremental (CDC) — no full refresh
 
@@ -306,14 +314,17 @@ verificado explícitamente para cada fuente (`fecha_actualizacion` sin cambios e
 segunda corrida). `raw.*` sigue siendo append-only, idempotente por `source_hash` a nivel
 de archivo (vía `raw.source_files`).
 
-**Excepción deliberada**: `marts.dim_cuenta_contable` y `staging.banco_maestro` NO tienen
-`fecha_carga`/`fecha_actualizacion`/`row_hash` — no son hechos con carga incremental por
-`row_hash`, son catálogos que se resiembran/enriquecen en cada archivo/corrida
-(`ON CONFLICT DO UPDATE` sin guard de CDC porque no hay noción de "cambió de verdad" que
-proteger: `upsert_dim_cuenta_contable()` solo mejora `grupo_met` cuando antes era NULL,
-`load_banco_maestro_seed()`/`upsert_banco_maestro_ruc()` reafirman valores curados/RUC en
-cada corrida sin costo). `estado_validacion` (2026-08-30, `sql/25`/`sql/26`) se agregó a
-ambas tablas sin necesitar extender un `row_hash` que nunca existió ahí.
+**Excepción deliberada**: `marts.dim_cuenta_contable`, `staging.banco_maestro` y
+`marts.dim_plazo` NO tienen `fecha_carga`/`fecha_actualizacion`/`row_hash` — no son
+hechos con carga incremental por `row_hash`, son catálogos que se resiembran/enriquecen
+(`dim_cuenta_contable`/`banco_maestro`, `ON CONFLICT DO UPDATE` sin guard de CDC porque
+no hay noción de "cambió de verdad" que proteger: `upsert_dim_cuenta_contable()` solo
+mejora `grupo_met` cuando antes era NULL, `load_banco_maestro_seed()`/
+`upsert_banco_maestro_ruc()` reafirman valores curados/RUC en cada corrida sin costo) o
+se auto-descubren de forma puramente aditiva (`dim_plazo`, `ON CONFLICT DO NOTHING`, sin
+`UPDATE` en absoluto — una fila que ya existe nunca se toca, así que no hay nada que un
+`row_hash` necesite proteger). `estado_validacion` (2026-08-30, `sql/25`/`sql/26`/`sql/27`)
+se agregó a las 3 tablas sin necesitar extender un `row_hash` que nunca existió ahí.
 
 **¿Por qué no Data Vault?** Data Vault (Hub/Link/Satellite) resuelve integrar muchas
 fuentes de alta velocidad de cambio con auditoría regulatoria estricta, normalmente como

@@ -34,7 +34,10 @@ la ficha metodológica) y `docs/metricas_financieras.md` el catálogo de indicad
 Boletín. `docs/gobernanza_datos.md` amarra todo lo anterior bajo un marco de gobernanza
 (responsable, clasificación, catálogo de metadatos por capa, reglas de calidad, huecos
 conocidos) y `docs/linaje_datos.md` traza cada campo `archivo fuente → raw → staging →
-marts` con la transformación exacta aplicada.
+marts` con la transformación exacta aplicada. `docs/mantenimiento_catalogos.md` es el
+runbook operativo para cuando falla un test/carga de matching de identidad (banco,
+segmento, categoría, plazo, cuenta contable): qué excepción esperar, en qué archivo
+arreglarlo y qué verificar después.
 
 ## Quickstart
 
