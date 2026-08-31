@@ -10,11 +10,24 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "plazonoresueltoerror",
       "source_file": "etl/transform/bce_plazo_matching.py",
       "source_location": "L27"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching_categorianoresueltaerror",
+      "label": "CategoriaNoResueltaError",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "categorianoresueltaerror",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L53"
     },
     {
       "id": "etl_transform_parse_bce_tasas_segmentonoresueltoerror",
@@ -22,7 +35,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 128,
+      "community": 0,
       "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "segmentonoresueltoerror",
@@ -35,7 +48,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 128,
+      "community": 0,
       "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "tiposegmentonoresueltoerror",
@@ -43,26 +56,13 @@
       "source_location": "L160"
     },
     {
-      "id": "etl_transform_categoria_deposito_matching_categorianoresueltaerror",
-      "label": "CategoriaNoResueltaError",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
-      "file_type": "code",
-      "norm_label": "categorianoresueltaerror",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L53"
-    },
-    {
       "id": "etl_logging_utils_runidfilter",
       "label": "_RunIdFilter",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
+      "community": 23,
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "_runidfilter",
       "source_file": "etl/logging_utils.py",
@@ -113,7 +113,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "resolver_plazo_bce()",
       "source_file": "etl/transform/bce_plazo_matching.py",
@@ -125,7 +125,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "validar_rango_plazo()",
       "source_file": "etl/transform/bce_plazo_matching.py",
@@ -137,174 +137,30 @@
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "validar_universo_plazos_bce()",
       "source_file": "etl/transform/bce_plazo_matching.py",
       "source_location": "L102"
     },
     {
-      "id": "tests_test_bce_plazo_matching_test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza",
-      "label": "test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza()",
+      "id": "etl_transform_categoria_deposito_matching_resolver_categoria_deposito",
+      "label": "resolver_categoria_deposito()",
       "_callable": true,
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
-      "norm_label": "test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza()",
-      "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L59"
-    },
-    {
-      "id": "tests_test_bce_plazo_matching_test_bucket_fuera_del_universo_tsa_no_lanza",
-      "label": "test_bucket_fuera_del_universo_tsa_no_lanza()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "PlazoNoResueltoError",
-      "file_type": "code",
-      "norm_label": "test_bucket_fuera_del_universo_tsa_no_lanza()",
-      "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L69"
-    },
-    {
-      "id": "tests_test_bce_plazo_matching_test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo",
-      "label": "test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "PlazoNoResueltoError",
-      "file_type": "code",
-      "norm_label": "test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo()",
-      "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L73"
-    },
-    {
-      "id": "tests_test_bce_plazo_matching_test_bucket_shape_valido_fuera_del_universo_resuelve_rango_correcto",
-      "label": "test_bucket_shape_valido_fuera_del_universo_resuelve_rango_correcto()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "PlazoNoResueltoError",
-      "file_type": "code",
-      "norm_label": "test_bucket_shape_valido_fuera_del_universo_resuelve_rango_correcto()",
-      "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L89"
-    },
-    {
-      "id": "tests_test_bce_plazo_matching_test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando",
-      "label": "test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "PlazoNoResueltoError",
-      "file_type": "code",
-      "norm_label": "test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando()",
-      "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L82"
-    },
-    {
-      "id": "tests_test_bce_plazo_matching_test_plazo_no_reconocido_lanza_error",
-      "label": "test_plazo_no_reconocido_lanza_error()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "PlazoNoResueltoError",
-      "file_type": "code",
-      "norm_label": "test_plazo_no_reconocido_lanza_error()",
-      "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L33"
-    },
-    {
-      "id": "tests_test_bce_plazo_matching_test_plazo_vacio_lanza_error",
-      "label": "test_plazo_vacio_lanza_error()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "PlazoNoResueltoError",
-      "file_type": "code",
-      "norm_label": "test_plazo_vacio_lanza_error()",
-      "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L38"
-    },
-    {
-      "id": "tests_test_bce_plazo_matching_test_prefijo_ordinal_no_es_obligatorio_para_el_match",
-      "label": "test_prefijo_ordinal_no_es_obligatorio_para_el_match()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "PlazoNoResueltoError",
-      "file_type": "code",
-      "norm_label": "test_prefijo_ordinal_no_es_obligatorio_para_el_match()",
-      "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L29"
-    },
-    {
-      "id": "tests_test_bce_plazo_matching_test_tsa_14_buckets_reales_resuelven_incluyendo_anios",
-      "label": "test_tsa_14_buckets_reales_resuelven_incluyendo_anios()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "PlazoNoResueltoError",
-      "file_type": "code",
-      "norm_label": "test_tsa_14_buckets_reales_resuelven_incluyendo_anios()",
-      "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L22"
-    },
-    {
-      "id": "tests_test_bce_plazo_matching_test_tsp_7_buckets_reales_resuelven",
-      "label": "test_tsp_7_buckets_reales_resuelven()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "PlazoNoResueltoError",
-      "file_type": "code",
-      "norm_label": "test_tsp_7_buckets_reales_resuelven()",
-      "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L12"
-    },
-    {
-      "id": "tests_test_bce_plazo_matching_test_universo_tolera_minusculas_y_espacios_como_el_dato_real",
-      "label": "test_universo_tolera_minusculas_y_espacios_como_el_dato_real()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "PlazoNoResueltoError",
-      "file_type": "code",
-      "norm_label": "test_universo_tolera_minusculas_y_espacios_como_el_dato_real()",
-      "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L51"
-    },
-    {
-      "id": "tests_test_bce_plazo_matching_test_universo_tsa_completo_no_lanza",
-      "label": "test_universo_tsa_completo_no_lanza()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "PlazoNoResueltoError",
-      "file_type": "code",
-      "norm_label": "test_universo_tsa_completo_no_lanza()",
-      "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L47"
-    },
-    {
-      "id": "tests_test_bce_plazo_matching_test_universo_tsp_completo_no_lanza",
-      "label": "test_universo_tsp_completo_no_lanza()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "PlazoNoResueltoError",
-      "file_type": "code",
-      "norm_label": "test_universo_tsp_completo_no_lanza()",
-      "source_file": "tests/test_bce_plazo_matching.py",
-      "source_location": "L43"
+      "norm_label": "resolver_categoria_deposito()",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L57"
     },
     {
       "id": "etl_transform_parse_bce_tasas_add_common_columns",
       "label": "_add_common_columns()",
       "_callable": true,
       "_origin": "ast",
-      "community": 128,
+      "community": 0,
       "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "_add_common_columns()",
@@ -316,7 +172,7 @@
       "label": "parse_tsa_file()",
       "_callable": true,
       "_origin": "ast",
-      "community": 128,
+      "community": 0,
       "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "parse_tsa_file()",
@@ -328,7 +184,7 @@
       "label": "parse_tsp_file()",
       "_callable": true,
       "_origin": "ast",
-      "community": 128,
+      "community": 0,
       "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "parse_tsp_file()",
@@ -340,7 +196,7 @@
       "label": "read_raw()",
       "_callable": true,
       "_origin": "ast",
-      "community": 128,
+      "community": 0,
       "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "read_raw()",
@@ -352,7 +208,7 @@
       "label": "_resolve_identidad()",
       "_callable": true,
       "_origin": "ast",
-      "community": 128,
+      "community": 0,
       "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "_resolve_identidad()",
@@ -364,7 +220,7 @@
       "label": "_resolve_segmento_entidad()",
       "_callable": true,
       "_origin": "ast",
-      "community": 128,
+      "community": 0,
       "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "_resolve_segmento_entidad()",
@@ -376,7 +232,7 @@
       "label": "_single_csv_in_zip()",
       "_callable": true,
       "_origin": "ast",
-      "community": 128,
+      "community": 0,
       "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "_single_csv_in_zip()",
@@ -388,7 +244,7 @@
       "label": "_weighted_agg()",
       "_callable": true,
       "_origin": "ast",
-      "community": 128,
+      "community": 0,
       "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "_weighted_agg()",
@@ -396,24 +252,168 @@
       "source_location": "L206"
     },
     {
-      "id": "etl_transform_categoria_deposito_matching_resolver_categoria_deposito",
-      "label": "resolver_categoria_deposito()",
+      "id": "tests_test_bce_plazo_matching_test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza",
+      "label": "test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza()",
       "_callable": true,
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
-      "norm_label": "resolver_categoria_deposito()",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L57"
+      "norm_label": "test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L59"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_bucket_fuera_del_universo_tsa_no_lanza",
+      "label": "test_bucket_fuera_del_universo_tsa_no_lanza()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "test_bucket_fuera_del_universo_tsa_no_lanza()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L69"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo",
+      "label": "test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L73"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_bucket_shape_valido_fuera_del_universo_resuelve_rango_correcto",
+      "label": "test_bucket_shape_valido_fuera_del_universo_resuelve_rango_correcto()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "test_bucket_shape_valido_fuera_del_universo_resuelve_rango_correcto()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L89"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando",
+      "label": "test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L82"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_plazo_no_reconocido_lanza_error",
+      "label": "test_plazo_no_reconocido_lanza_error()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "test_plazo_no_reconocido_lanza_error()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L33"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_plazo_vacio_lanza_error",
+      "label": "test_plazo_vacio_lanza_error()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "test_plazo_vacio_lanza_error()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L38"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_prefijo_ordinal_no_es_obligatorio_para_el_match",
+      "label": "test_prefijo_ordinal_no_es_obligatorio_para_el_match()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "test_prefijo_ordinal_no_es_obligatorio_para_el_match()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L29"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_tsa_14_buckets_reales_resuelven_incluyendo_anios",
+      "label": "test_tsa_14_buckets_reales_resuelven_incluyendo_anios()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "test_tsa_14_buckets_reales_resuelven_incluyendo_anios()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L22"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_tsp_7_buckets_reales_resuelven",
+      "label": "test_tsp_7_buckets_reales_resuelven()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "test_tsp_7_buckets_reales_resuelven()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L12"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_universo_tolera_minusculas_y_espacios_como_el_dato_real",
+      "label": "test_universo_tolera_minusculas_y_espacios_como_el_dato_real()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "test_universo_tolera_minusculas_y_espacios_como_el_dato_real()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L51"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_universo_tsa_completo_no_lanza",
+      "label": "test_universo_tsa_completo_no_lanza()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "test_universo_tsa_completo_no_lanza()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L47"
+    },
+    {
+      "id": "tests_test_bce_plazo_matching_test_universo_tsp_completo_no_lanza",
+      "label": "test_universo_tsp_completo_no_lanza()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "test_universo_tsp_completo_no_lanza()",
+      "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L43"
     },
     {
       "id": "tests_test_categoria_deposito_matching_test_all_13_real_capcol_values_resolve",
       "label": "test_all_13_real_capcol_values_resolve()",
       "_callable": true,
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "test_all_13_real_capcol_values_resolve()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -424,8 +424,8 @@
       "label": "test_empty_value_raises()",
       "_callable": true,
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "test_empty_value_raises()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -436,8 +436,8 @@
       "label": "test_plain_category_passes_through_without_plazo()",
       "_callable": true,
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "test_plain_category_passes_through_without_plazo()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -448,8 +448,8 @@
       "label": "test_plazo_bucket_con_shape_valido_pero_desconocido_no_lanza()",
       "_callable": true,
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "test_plazo_bucket_con_shape_valido_pero_desconocido_no_lanza()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -460,8 +460,8 @@
       "label": "test_plazo_bucket_shape_invalido_sigue_lanzando()",
       "_callable": true,
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "test_plazo_bucket_shape_invalido_sigue_lanzando()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -472,8 +472,8 @@
       "label": "test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error()",
       "_callable": true,
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -484,8 +484,8 @@
       "label": "test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_no_lanza()",
       "_callable": true,
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "test_plazo_bucket_sin_tope_con_shape_valido_pero_desconocido_no_lanza()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -496,8 +496,8 @@
       "label": "test_plazo_bucket_with_range_separates_categoria_and_plazo()",
       "_callable": true,
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "test_plazo_bucket_with_range_separates_categoria_and_plazo()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -508,8 +508,8 @@
       "label": "test_plazo_bucket_without_upper_bound()",
       "_callable": true,
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "test_plazo_bucket_without_upper_bound()",
       "source_file": "tests/test_categoria_deposito_matching.py",
@@ -520,12 +520,300 @@
       "label": "test_unresolved_value_raises()",
       "_callable": true,
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "test_unresolved_value_raises()",
       "source_file": "tests/test_categoria_deposito_matching.py",
       "source_location": "L48"
+    },
+    {
+      "id": "etl_load_load_postgres_upsert_staging_bce_tasas_pasivas",
+      "label": "upsert_staging_bce_tasas_pasivas()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "upsert_staging_bce_tasas_pasivas()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L407"
+    },
+    {
+      "id": "etl_pipeline_parse_fecha_from_boletin_filename",
+      "label": "parse_fecha_from_boletin_filename()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "parse_fecha_from_boletin_filename()",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L241"
+    },
+    {
+      "id": "etl_pipeline_parse_fecha_from_tasas_historicas_filename",
+      "label": "parse_fecha_from_tasas_historicas_filename()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "parse_fecha_from_tasas_historicas_filename()",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L157"
+    },
+    {
+      "id": "tests_test_integration_regressions_bce_tasas_pasivas_row",
+      "label": "_bce_tasas_pasivas_row()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "_bce_tasas_pasivas_row()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L329"
+    },
+    {
+      "id": "tests_test_integration_regressions_boletin_balance_row",
+      "label": "_boletin_balance_row()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "_boletin_balance_row()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L505"
+    },
+    {
+      "id": "tests_test_integration_regressions_cleanup_bce_tasas_pasivas",
+      "label": "_cleanup_bce_tasas_pasivas()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "_cleanup_bce_tasas_pasivas()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L349"
+    },
+    {
+      "id": "tests_test_integration_regressions_cleanup_boletin_balance",
+      "label": "_cleanup_boletin_balance()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "_cleanup_boletin_balance()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L518"
+    },
+    {
+      "id": "tests_test_integration_regressions_fact_saldo_cartera_pivot_statement",
+      "label": "_fact_saldo_cartera_pivot_statement()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "_fact_saldo_cartera_pivot_statement()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L26"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_dim_plazo_null_safe_unique_regression",
+      "label": "test_dim_plazo_null_safe_unique_regression()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_dim_plazo_null_safe_unique_regression()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L48"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_fact_saldo_cartera_pivot_invariant",
+      "label": "test_fact_saldo_cartera_pivot_invariant()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_fact_saldo_cartera_pivot_invariant()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L149"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_source_file_hash_gate",
+      "label": "test_source_file_hash_gate()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_source_file_hash_gate()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L293"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_staging_cartera_canton_null_safe_unique_regression",
+      "label": "test_staging_cartera_canton_null_safe_unique_regression()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_staging_cartera_canton_null_safe_unique_regression()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L77"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_staging_depositos_canton_null_safe_unique_regression",
+      "label": "test_staging_depositos_canton_null_safe_unique_regression()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_staging_depositos_canton_null_safe_unique_regression()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L113"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_upsert_staging_bce_tasas_pasivas_temp_table_on_commit_drop",
+      "label": "test_upsert_staging_bce_tasas_pasivas_temp_table_on_commit_drop()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_upsert_staging_bce_tasas_pasivas_temp_table_on_commit_drop()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L457"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_upsert_staging_bce_tasas_pasivas_temp_table_real_update",
+      "label": "test_upsert_staging_bce_tasas_pasivas_temp_table_real_update()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_upsert_staging_bce_tasas_pasivas_temp_table_real_update()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L413"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_upsert_staging_bce_tasas_pasivas_temp_table_row_count_and_cdc_no_op",
+      "label": "test_upsert_staging_bce_tasas_pasivas_temp_table_row_count_and_cdc_no_op()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_upsert_staging_bce_tasas_pasivas_temp_table_row_count_and_cdc_no_op()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L359"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_upsert_staging_boletin_balance_temp_table_real_update",
+      "label": "test_upsert_staging_boletin_balance_temp_table_real_update()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_upsert_staging_boletin_balance_temp_table_real_update()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L573"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_upsert_staging_boletin_balance_temp_table_row_count_and_cdc_no_op",
+      "label": "test_upsert_staging_boletin_balance_temp_table_row_count_and_cdc_no_op()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_upsert_staging_boletin_balance_temp_table_row_count_and_cdc_no_op()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L528"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_upsert_staging_cartera_round_trip_cdc_no_op",
+      "label": "test_upsert_staging_cartera_round_trip_cdc_no_op()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_upsert_staging_cartera_round_trip_cdc_no_op()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L226"
+    },
+    {
+      "id": "tests_test_pipeline_fecha_parsing_test_parse_fecha_boletin_no_matching_pattern_raises",
+      "label": "test_parse_fecha_boletin_no_matching_pattern_raises()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_parse_fecha_boletin_no_matching_pattern_raises()",
+      "source_file": "tests/test_pipeline_fecha_parsing.py",
+      "source_location": "L35"
+    },
+    {
+      "id": "tests_test_pipeline_fecha_parsing_test_parse_fecha_boletin_unrecognized_month_raises",
+      "label": "test_parse_fecha_boletin_unrecognized_month_raises()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_parse_fecha_boletin_unrecognized_month_raises()",
+      "source_file": "tests/test_pipeline_fecha_parsing.py",
+      "source_location": "L30"
+    },
+    {
+      "id": "tests_test_pipeline_fecha_parsing_test_parse_fecha_boletin_valid_filename",
+      "label": "test_parse_fecha_boletin_valid_filename()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_parse_fecha_boletin_valid_filename()",
+      "source_file": "tests/test_pipeline_fecha_parsing.py",
+      "source_location": "L25"
+    },
+    {
+      "id": "tests_test_pipeline_fecha_parsing_test_parse_fecha_tasas_historicas_no_matching_pattern_raises",
+      "label": "test_parse_fecha_tasas_historicas_no_matching_pattern_raises()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_parse_fecha_tasas_historicas_no_matching_pattern_raises()",
+      "source_file": "tests/test_pipeline_fecha_parsing.py",
+      "source_location": "L20"
+    },
+    {
+      "id": "tests_test_pipeline_fecha_parsing_test_parse_fecha_tasas_historicas_valid_filename",
+      "label": "test_parse_fecha_tasas_historicas_valid_filename()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_parse_fecha_tasas_historicas_valid_filename()",
+      "source_file": "tests/test_pipeline_fecha_parsing.py",
+      "source_location": "L15"
     },
     {
       "id": "etl_export_sample_parquet_export_full",
@@ -924,126 +1212,6 @@
       "source_location": "L54"
     },
     {
-      "id": "etl_extract_download_bce_download_all",
-      "label": "download_all()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "download_all()",
-      "source_file": "etl/extract/download_bce.py",
-      "source_location": "L39"
-    },
-    {
-      "id": "etl_extract_download_bce_download_bce_file",
-      "label": "download_bce_file()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "download_bce_file()",
-      "source_file": "etl/extract/download_bce.py",
-      "source_location": "L20"
-    },
-    {
-      "id": "etl_extract_download_tasas_historicas_download_tasas_historicas",
-      "label": "download_tasas_historicas()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "download_tasas_historicas()",
-      "source_file": "etl/extract/download_tasas_historicas.py",
-      "source_location": "L36"
-    },
-    {
-      "id": "etl_extract_download_tasas_historicas_meses_hasta_hoy",
-      "label": "_meses_hasta_hoy()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "_meses_hasta_hoy()",
-      "source_file": "etl/extract/download_tasas_historicas.py",
-      "source_location": "L25"
-    },
-    {
-      "id": "etl_extract_scrape_boletin_download_all_files",
-      "label": "_download_all_files()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "_download_all_files()",
-      "source_file": "etl/extract/scrape_boletin.py",
-      "source_location": "L51"
-    },
-    {
-      "id": "etl_extract_scrape_boletin_main",
-      "label": "main()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "main()",
-      "source_file": "etl/extract/scrape_boletin.py",
-      "source_location": "L97"
-    },
-    {
-      "id": "etl_extract_scrape_boletin_open_year_folder",
-      "label": "_open_year_folder()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "_open_year_folder()",
-      "source_file": "etl/extract/scrape_boletin.py",
-      "source_location": "L33"
-    },
-    {
-      "id": "etl_extract_scrape_boletin_reset_to_root",
-      "label": "_reset_to_root()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "_reset_to_root()",
-      "source_file": "etl/extract/scrape_boletin.py",
-      "source_location": "L26"
-    },
-    {
-      "id": "etl_extract_scrape_boletin_scrape",
-      "label": "scrape()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "scrape()",
-      "source_file": "etl/extract/scrape_boletin.py",
-      "source_location": "L81"
-    },
-    {
-      "id": "etl_extract_scrape_boletin_scrape_year",
-      "label": "scrape_year()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "scrape_year()",
-      "source_file": "etl/extract/scrape_boletin.py",
-      "source_location": "L73"
-    },
-    {
       "id": "etl_extract_scrape_superbancos_download_all_files",
       "label": "_download_all_files()",
       "_callable": true,
@@ -1128,28 +1296,124 @@
       "source_location": "L87"
     },
     {
-      "id": "etl_logging_utils_runidfilter_filter",
-      "label": ".filter()",
+      "id": "etl_extract_download_bce_download_all",
+      "label": "download_all()",
       "_callable": true,
       "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
+      "community": 23,
+      "community_name": "pipeline.py",
       "file_type": "code",
-      "norm_label": ".filter()",
-      "source_file": "etl/logging_utils.py",
-      "source_location": "L22"
+      "norm_label": "download_all()",
+      "source_file": "etl/extract/download_bce.py",
+      "source_location": "L39"
     },
     {
-      "id": "etl_logging_utils_setup_logging",
-      "label": "setup_logging()",
+      "id": "etl_extract_download_bce_download_bce_file",
+      "label": "download_bce_file()",
       "_callable": true,
       "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
+      "community": 23,
+      "community_name": "pipeline.py",
       "file_type": "code",
-      "norm_label": "setup_logging()",
-      "source_file": "etl/logging_utils.py",
-      "source_location": "L27"
+      "norm_label": "download_bce_file()",
+      "source_file": "etl/extract/download_bce.py",
+      "source_location": "L20"
+    },
+    {
+      "id": "etl_extract_download_tasas_historicas_download_tasas_historicas",
+      "label": "download_tasas_historicas()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "download_tasas_historicas()",
+      "source_file": "etl/extract/download_tasas_historicas.py",
+      "source_location": "L36"
+    },
+    {
+      "id": "etl_extract_download_tasas_historicas_meses_hasta_hoy",
+      "label": "_meses_hasta_hoy()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "_meses_hasta_hoy()",
+      "source_file": "etl/extract/download_tasas_historicas.py",
+      "source_location": "L25"
+    },
+    {
+      "id": "etl_extract_scrape_boletin_download_all_files",
+      "label": "_download_all_files()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "_download_all_files()",
+      "source_file": "etl/extract/scrape_boletin.py",
+      "source_location": "L51"
+    },
+    {
+      "id": "etl_extract_scrape_boletin_main",
+      "label": "main()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "main()",
+      "source_file": "etl/extract/scrape_boletin.py",
+      "source_location": "L97"
+    },
+    {
+      "id": "etl_extract_scrape_boletin_open_year_folder",
+      "label": "_open_year_folder()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "_open_year_folder()",
+      "source_file": "etl/extract/scrape_boletin.py",
+      "source_location": "L33"
+    },
+    {
+      "id": "etl_extract_scrape_boletin_reset_to_root",
+      "label": "_reset_to_root()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "_reset_to_root()",
+      "source_file": "etl/extract/scrape_boletin.py",
+      "source_location": "L26"
+    },
+    {
+      "id": "etl_extract_scrape_boletin_scrape",
+      "label": "scrape()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "scrape()",
+      "source_file": "etl/extract/scrape_boletin.py",
+      "source_location": "L81"
+    },
+    {
+      "id": "etl_extract_scrape_boletin_scrape_year",
+      "label": "scrape_year()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "scrape_year()",
+      "source_file": "etl/extract/scrape_boletin.py",
+      "source_location": "L73"
     },
     {
       "id": "etl_load_load_postgres_clean",
@@ -1356,18 +1620,6 @@
       "source_location": "L421"
     },
     {
-      "id": "etl_load_load_postgres_upsert_staging_bce_tasas_pasivas",
-      "label": "upsert_staging_bce_tasas_pasivas()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "upsert_staging_bce_tasas_pasivas()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L407"
-    },
-    {
       "id": "etl_load_load_postgres_upsert_staging_boletin_balance",
       "label": "upsert_staging_boletin_balance()",
       "_callable": true,
@@ -1426,6 +1678,30 @@
       "norm_label": "upsert_staging_tasas_referenciales()",
       "source_file": "etl/load/load_postgres.py",
       "source_location": "L375"
+    },
+    {
+      "id": "etl_logging_utils_runidfilter_filter",
+      "label": ".filter()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": ".filter()",
+      "source_file": "etl/logging_utils.py",
+      "source_location": "L22"
+    },
+    {
+      "id": "etl_logging_utils_setup_logging",
+      "label": "setup_logging()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "setup_logging()",
+      "source_file": "etl/logging_utils.py",
+      "source_location": "L27"
     },
     {
       "id": "etl_pipeline_load_bce",
@@ -1488,30 +1764,6 @@
       "source_location": "L311"
     },
     {
-      "id": "etl_pipeline_parse_fecha_from_boletin_filename",
-      "label": "parse_fecha_from_boletin_filename()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "parse_fecha_from_boletin_filename()",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L241"
-    },
-    {
-      "id": "etl_pipeline_parse_fecha_from_tasas_historicas_filename",
-      "label": "parse_fecha_from_tasas_historicas_filename()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "parse_fecha_from_tasas_historicas_filename()",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L157"
-    },
-    {
       "id": "etl_transform_common_sha256_file",
       "label": "sha256_file()",
       "_callable": true,
@@ -1546,258 +1798,6 @@
       "norm_label": "test_sha256_file_is_deterministic()",
       "source_file": "tests/test_common.py",
       "source_location": "L6"
-    },
-    {
-      "id": "tests_test_integration_regressions_bce_tasas_pasivas_row",
-      "label": "_bce_tasas_pasivas_row()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "_bce_tasas_pasivas_row()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L329"
-    },
-    {
-      "id": "tests_test_integration_regressions_boletin_balance_row",
-      "label": "_boletin_balance_row()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "_boletin_balance_row()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L505"
-    },
-    {
-      "id": "tests_test_integration_regressions_cleanup_bce_tasas_pasivas",
-      "label": "_cleanup_bce_tasas_pasivas()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "_cleanup_bce_tasas_pasivas()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L349"
-    },
-    {
-      "id": "tests_test_integration_regressions_cleanup_boletin_balance",
-      "label": "_cleanup_boletin_balance()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "_cleanup_boletin_balance()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L518"
-    },
-    {
-      "id": "tests_test_integration_regressions_fact_saldo_cartera_pivot_statement",
-      "label": "_fact_saldo_cartera_pivot_statement()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "_fact_saldo_cartera_pivot_statement()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L26"
-    },
-    {
-      "id": "tests_test_integration_regressions_test_dim_plazo_null_safe_unique_regression",
-      "label": "test_dim_plazo_null_safe_unique_regression()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_dim_plazo_null_safe_unique_regression()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L48"
-    },
-    {
-      "id": "tests_test_integration_regressions_test_fact_saldo_cartera_pivot_invariant",
-      "label": "test_fact_saldo_cartera_pivot_invariant()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_fact_saldo_cartera_pivot_invariant()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L149"
-    },
-    {
-      "id": "tests_test_integration_regressions_test_source_file_hash_gate",
-      "label": "test_source_file_hash_gate()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_source_file_hash_gate()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L293"
-    },
-    {
-      "id": "tests_test_integration_regressions_test_staging_cartera_canton_null_safe_unique_regression",
-      "label": "test_staging_cartera_canton_null_safe_unique_regression()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_staging_cartera_canton_null_safe_unique_regression()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L77"
-    },
-    {
-      "id": "tests_test_integration_regressions_test_staging_depositos_canton_null_safe_unique_regression",
-      "label": "test_staging_depositos_canton_null_safe_unique_regression()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_staging_depositos_canton_null_safe_unique_regression()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L113"
-    },
-    {
-      "id": "tests_test_integration_regressions_test_upsert_staging_bce_tasas_pasivas_temp_table_on_commit_drop",
-      "label": "test_upsert_staging_bce_tasas_pasivas_temp_table_on_commit_drop()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_upsert_staging_bce_tasas_pasivas_temp_table_on_commit_drop()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L457"
-    },
-    {
-      "id": "tests_test_integration_regressions_test_upsert_staging_bce_tasas_pasivas_temp_table_real_update",
-      "label": "test_upsert_staging_bce_tasas_pasivas_temp_table_real_update()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_upsert_staging_bce_tasas_pasivas_temp_table_real_update()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L413"
-    },
-    {
-      "id": "tests_test_integration_regressions_test_upsert_staging_bce_tasas_pasivas_temp_table_row_count_and_cdc_no_op",
-      "label": "test_upsert_staging_bce_tasas_pasivas_temp_table_row_count_and_cdc_no_op()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_upsert_staging_bce_tasas_pasivas_temp_table_row_count_and_cdc_no_op()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L359"
-    },
-    {
-      "id": "tests_test_integration_regressions_test_upsert_staging_boletin_balance_temp_table_real_update",
-      "label": "test_upsert_staging_boletin_balance_temp_table_real_update()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_upsert_staging_boletin_balance_temp_table_real_update()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L573"
-    },
-    {
-      "id": "tests_test_integration_regressions_test_upsert_staging_boletin_balance_temp_table_row_count_and_cdc_no_op",
-      "label": "test_upsert_staging_boletin_balance_temp_table_row_count_and_cdc_no_op()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_upsert_staging_boletin_balance_temp_table_row_count_and_cdc_no_op()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L528"
-    },
-    {
-      "id": "tests_test_integration_regressions_test_upsert_staging_cartera_round_trip_cdc_no_op",
-      "label": "test_upsert_staging_cartera_round_trip_cdc_no_op()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_upsert_staging_cartera_round_trip_cdc_no_op()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L226"
-    },
-    {
-      "id": "tests_test_pipeline_fecha_parsing_test_parse_fecha_boletin_no_matching_pattern_raises",
-      "label": "test_parse_fecha_boletin_no_matching_pattern_raises()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_parse_fecha_boletin_no_matching_pattern_raises()",
-      "source_file": "tests/test_pipeline_fecha_parsing.py",
-      "source_location": "L35"
-    },
-    {
-      "id": "tests_test_pipeline_fecha_parsing_test_parse_fecha_boletin_unrecognized_month_raises",
-      "label": "test_parse_fecha_boletin_unrecognized_month_raises()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_parse_fecha_boletin_unrecognized_month_raises()",
-      "source_file": "tests/test_pipeline_fecha_parsing.py",
-      "source_location": "L30"
-    },
-    {
-      "id": "tests_test_pipeline_fecha_parsing_test_parse_fecha_boletin_valid_filename",
-      "label": "test_parse_fecha_boletin_valid_filename()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_parse_fecha_boletin_valid_filename()",
-      "source_file": "tests/test_pipeline_fecha_parsing.py",
-      "source_location": "L25"
-    },
-    {
-      "id": "tests_test_pipeline_fecha_parsing_test_parse_fecha_tasas_historicas_no_matching_pattern_raises",
-      "label": "test_parse_fecha_tasas_historicas_no_matching_pattern_raises()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_parse_fecha_tasas_historicas_no_matching_pattern_raises()",
-      "source_file": "tests/test_pipeline_fecha_parsing.py",
-      "source_location": "L20"
-    },
-    {
-      "id": "tests_test_pipeline_fecha_parsing_test_parse_fecha_tasas_historicas_valid_filename",
-      "label": "test_parse_fecha_tasas_historicas_valid_filename()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_parse_fecha_tasas_historicas_valid_filename()",
-      "source_file": "tests/test_pipeline_fecha_parsing.py",
-      "source_location": "L15"
     },
     {
       "id": "scripts_compute_indicadores_excel_cod",
@@ -2440,7 +2440,7 @@
       "label": "bce_plazo_matching.py",
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "bce_plazo_matching.py",
       "source_file": "etl/transform/bce_plazo_matching.py",
@@ -2451,7 +2451,73 @@
       "label": "ValueError",
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "valueerror",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching",
+      "label": "categoria_deposito_matching.py",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "categoria_deposito_matching.py",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching_py_valueerror",
+      "label": "ValueError",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "valueerror",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas",
+      "label": "parse_bce_tasas.py",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "parse_bce_tasas.py",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_py_dataframe",
+      "label": "DataFrame",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "dataframe",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_py_path",
+      "label": "Path",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "path",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_py_valueerror",
+      "label": "ValueError",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "valueerror",
       "source_file": "",
@@ -2462,10 +2528,21 @@
       "label": "test_bce_plazo_matching.py",
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "code",
       "norm_label": "test_bce_plazo_matching.py",
       "source_file": "tests/test_bce_plazo_matching.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_test_categoria_deposito_matching",
+      "label": "test_categoria_deposito_matching.py",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "code",
+      "norm_label": "test_categoria_deposito_matching.py",
+      "source_file": "tests/test_categoria_deposito_matching.py",
       "source_location": "L1"
     },
     {
@@ -2473,7 +2550,7 @@
       "label": "Resuelve el texto crudo de `plazo` del BCE (tsp/tsa) a un rango num\u00e9rico de\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "rationale",
       "norm_label": "resuelve el texto crudo de `plazo` del bce (tsp/tsa) a un rango numerico de...",
       "source_file": "etl/transform/bce_plazo_matching.py",
@@ -2484,7 +2561,7 @@
       "label": "Chequeo de dos niveles para TODOS los valores crudos de `plazo` observados en\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "rationale",
       "norm_label": "chequeo de dos niveles para todos los valores crudos de `plazo` observados en...",
       "source_file": "etl/transform/bce_plazo_matching.py",
@@ -2495,7 +2572,7 @@
       "label": "Devuelve (dias_desde, dias_hasta); dias_hasta es None si el bucket es abierto\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "rationale",
       "norm_label": "devuelve (dias_desde, dias_hasta); dias_hasta es none si el bucket es abierto...",
       "source_file": "etl/transform/bce_plazo_matching.py",
@@ -2506,7 +2583,7 @@
       "label": "El texto crudo de plazo no matchea ning\u00fan patr\u00f3n conocido (shape inv\u00e1lido), o\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "rationale",
       "norm_label": "el texto crudo de plazo no matchea ningun patron conocido (shape invalido), o...",
       "source_file": "etl/transform/bce_plazo_matching.py",
@@ -2517,18 +2594,150 @@
       "label": "Sanity check de rango, aplicado DESPU\u00c9S de que el shape ya matche\u00f3 un patr\u00f3n\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "rationale",
       "norm_label": "sanity check de rango, aplicado despues de que el shape ya matcheo un patron...",
       "source_file": "etl/transform/bce_plazo_matching.py",
       "source_location": "L47"
     },
     {
+      "id": "etl_transform_categoria_deposito_matching_rationale_1",
+      "label": "Resuelve el texto crudo de `tipo_deposito` (CAPCOL) o `instrumento_captacion`\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "resuelve el texto crudo de `tipo_deposito` (capcol) o `instrumento_captacion`...",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching_rationale_54",
+      "label": "El texto crudo no es ni una categor\u00eda conocida ni un bucket de plazo\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "el texto crudo no es ni una categoria conocida ni un bucket de plazo...",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L54"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching_rationale_60",
+      "label": "Devuelve (categoria, dias_desde, dias_hasta). dias_* son None salvo que la\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "devuelve (categoria, dias_desde, dias_hasta). dias_* son none salvo que la...",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L60"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_1",
+      "label": "Parser de los archivos semanales de tasas de inter\u00e9s del BCE (tsp=pasivas,\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "parser de los archivos semanales de tasas de interes del bce (tsp=pasivas,...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_157",
+      "label": "segmento_credito de tsa no est\u00e1 en el universo sembrado de\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "segmento_credito de tsa no esta en el universo sembrado de...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L157"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_161",
+      "label": "tipo_segmento no est\u00e1 en el universo sembrado de dim_segmento_entidad.",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "tipo_segmento no esta en el universo sembrado de dim_segmento_entidad.",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L161"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_165",
+      "label": "Un tipo_segmento por (fecha, banco_codigo) -- atributo de la entidad, no del\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "un tipo_segmento por (fecha, banco_codigo) -- atributo de la entidad, no del...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L165"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_186",
+      "label": "Lee TODO el archivo por chunks directo desde el zip (sin extraer 700MB-1.75GB a\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "lee todo el archivo por chunks directo desde el zip (sin extraer 700mb-1.75gb a...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L186"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_209",
+      "label": "Colapsa cant\u00f3n dentro de cada provincia:\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "colapsa canton dentro de cada provincia:...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L209"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_234",
+      "label": "Resuelve banco_codigo/banco/tipo_entidad/ruc para TODAS las filas -- solo sobre\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "resuelve banco_codigo/banco/tipo_entidad/ruc para todas las filas -- solo sobre...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L234"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_281",
+      "label": "Devuelve (df_staging, entidades). `df_raw` permite reusar una lectura ya hecha\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "devuelve (df_staging, entidades). `df_raw` permite reusar una lectura ya hecha...",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L281"
+    },
+    {
+      "id": "etl_transform_parse_bce_tasas_rationale_321",
+      "label": "Devuelve (df_staging, entidades) -- ver parse_tsp_file.",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "devuelve (df_staging, entidades) -- ver parse_tsp_file.",
+      "source_file": "etl/transform/parse_bce_tasas.py",
+      "source_location": "L321"
+    },
+    {
       "id": "tests_test_bce_plazo_matching_rationale_60",
       "label": "Desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el shape de\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "rationale",
       "norm_label": "desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el shape de...",
       "source_file": "tests/test_bce_plazo_matching.py",
@@ -2539,7 +2748,7 @@
       "label": "Un texto que NO matchea ning\u00fan shape regex conocido sigue siendo fallo duro --\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "rationale",
       "norm_label": "un texto que no matchea ningun shape regex conocido sigue siendo fallo duro --...",
       "source_file": "tests/test_bce_plazo_matching.py",
@@ -2550,7 +2759,7 @@
       "label": "Un shape v\u00e1lido con rango invertido (dias_desde > dias_hasta) es una anomal\u00eda\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "rationale",
       "norm_label": "un shape valido con rango invertido (dias_desde > dias_hasta) es una anomalia...",
       "source_file": "tests/test_bce_plazo_matching.py",
@@ -2561,11 +2770,44 @@
       "label": "Ejercita el camino completo de auto-ingesta: un bucket nuevo y desconocido pero\u2026",
       "_origin": "ast",
       "community": 0,
-      "community_name": "PlazoNoResueltoError",
+      "community_name": "parse_bce_tasas.py",
       "file_type": "rationale",
       "norm_label": "ejercita el camino completo de auto-ingesta: un bucket nuevo y desconocido pero...",
       "source_file": "tests/test_bce_plazo_matching.py",
       "source_location": "L90"
+    },
+    {
+      "id": "tests_test_categoria_deposito_matching_rationale_59",
+      "label": "Desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el *shape*\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el *shape*...",
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L59"
+    },
+    {
+      "id": "tests_test_categoria_deposito_matching_rationale_75",
+      "label": "Un texto que no matchea ni _RANGO ni _SIN_TOPE ni CATEGORIAS_VALIDAS sigue\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "un texto que no matchea ni _rango ni _sin_tope ni categorias_validas sigue...",
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L75"
+    },
+    {
+      "id": "tests_test_categoria_deposito_matching_rationale_82",
+      "label": "Un shape v\u00e1lido con rango invertido (dias_desde > dias_hasta) es una anomal\u00eda\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "parse_bce_tasas.py",
+      "file_type": "rationale",
+      "norm_label": "un shape valido con rango invertido (dias_desde > dias_hasta) es una anomalia...",
+      "source_file": "tests/test_categoria_deposito_matching.py",
+      "source_location": "L82"
     },
     {
       "id": "postgresql_localhost_benchmark_cartera_depositos_marts_dim_banco",
@@ -3832,7 +4074,7 @@
       "node_kind": "heading",
       "norm_label": "decisiones de modelado relevantes",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L199"
+      "source_location": "L201"
     },
     {
       "id": "docs_data_dictionary_diccionario_de_datos",
@@ -3868,7 +4110,7 @@
       "node_kind": "heading",
       "norm_label": "hechos",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L84"
+      "source_location": "L85"
     },
     {
       "id": "docs_data_dictionary_marts_dim_banco",
@@ -3916,7 +4158,7 @@
       "node_kind": "heading",
       "norm_label": "marts.dim_cuenta_contable (plan de cuentas del boletin, balance + pyg)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L74"
+      "source_location": "L75"
     },
     {
       "id": "docs_data_dictionary_marts_dim_fecha_grano_d\u00eda",
@@ -3940,7 +4182,7 @@
       "node_kind": "heading",
       "norm_label": "marts.dim_plazo (catalogo por rango numerico, compartido entre fuentes)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L66"
+      "source_location": "L67"
     },
     {
       "id": "docs_data_dictionary_marts_dim_provincia_2026_07_25_sql_20_dim_provincia_sql",
@@ -4000,7 +4242,7 @@
       "node_kind": "heading",
       "norm_label": "marts.fact_balance / fact_pyg (grano: fecha \u00d7 banco \u00d7 cuenta_contable) \u2014 boletin, mensual",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L127"
+      "source_location": "L129"
     },
     {
       "id": "docs_data_dictionary_marts_fact_colocaciones_cartera_antes_fact_tasas_activas_marts_fact_captaciones_depositos_antes_fact_tasas_pasivas_grano_fecha_banco_categor\u00eda_subsegmento_plazo_provincia_bce_tsa_tsp_semanal",
@@ -4012,7 +4254,7 @@
       "node_kind": "heading",
       "norm_label": "marts.fact_colocaciones_cartera (antes `fact_tasas_activas`) / marts.fact_captaciones_depositos (antes `fact_tasas_pasivas`) \u2014 grano: fecha \u00d7 banco \u00d7 categoria/subsegmento \u00d7 plazo \u00d7 provincia \u2014 bce tsa/tsp, semanal",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L109"
+      "source_location": "L111"
     },
     {
       "id": "docs_data_dictionary_marts_fact_saldo_cartera_antes_fact_cartera_grano_fecha_banco_cant\u00f3n_segmento_capcol_mensual",
@@ -4024,7 +4266,7 @@
       "node_kind": "heading",
       "norm_label": "marts.fact_saldo_cartera (antes `fact_cartera`) \u2014 grano: fecha \u00d7 banco \u00d7 canton \u00d7 segmento \u2014 capcol, mensual",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L93"
+      "source_location": "L94"
     },
     {
       "id": "docs_data_dictionary_marts_fact_saldo_depositos_antes_fact_depositos_grano_fecha_banco_cant\u00f3n_categoria_deposito_plazo_capcol_mensual",
@@ -4036,7 +4278,7 @@
       "node_kind": "heading",
       "norm_label": "marts.fact_saldo_depositos (antes `fact_depositos`) \u2014 grano: fecha \u00d7 banco \u00d7 canton \u00d7 categoria_deposito \u00d7 plazo \u2014 capcol, mensual",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L102"
+      "source_location": "L103"
     },
     {
       "id": "docs_data_dictionary_marts_fact_tasas_referenciales_cartera_antes_fact_tasas_referenciales_credito_fact_tasas_referenciales_depositos_instrumento_antes_fact_tasas_pasivas_instrumento_fact_tasas_referenciales_depositos_plazo_antes_fact_tasas_pasivas_plazo_fact_tasas_referenciales_sistema_sin_cambio_de_nombre_tasashistorico_htm_mensual_nivel_sistema_no_por_banco",
@@ -4048,7 +4290,7 @@
       "node_kind": "heading",
       "norm_label": "marts.fact_tasas_referenciales_cartera (antes `fact_tasas_referenciales_credito`) / fact_tasas_referenciales_depositos_instrumento (antes `fact_tasas_pasivas_instrumento`) / fact_tasas_referenciales_depositos_plazo (antes `fact_tasas_pasivas_plazo`) / fact_tasas_referenciales_sistema (sin cambio de nombre) \u2014 `tasashistorico.htm`, mensual, nivel sistema (no por banco)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L118"
+      "source_location": "L120"
     },
     {
       "id": "docs_data_dictionary_vista_de_gobernanza_marts_vw_banco_ruc_colisiones_sql_22_vw_banco_ruc_colisiones_sql",
@@ -4060,7 +4302,7 @@
       "node_kind": "heading",
       "norm_label": "vista de gobernanza \u2014 `marts.vw_banco_ruc_colisiones` (`sql/22_vw_banco_ruc_colisiones.sql`)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L146"
+      "source_location": "L148"
     },
     {
       "id": "docs_data_dictionary_vistas_anal\u00edticas_sql_04_indexes_views_sql",
@@ -4072,7 +4314,7 @@
       "node_kind": "heading",
       "norm_label": "vistas analiticas (`sql/04_indexes_views.sql`)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L130"
+      "source_location": "L132"
     },
     {
       "id": "docs_data_dictionary_vistas_de_bloques_de_construcci\u00f3n_balance_pyg_sql_18_glosario_cuentas_views_sql",
@@ -4084,7 +4326,7 @@
       "node_kind": "heading",
       "norm_label": "vistas de bloques de construccion \u2014 balance/pyg (`sql/18_glosario_cuentas_views.sql`)",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L171"
+      "source_location": "L173"
     },
     {
       "id": "powerbi_prototipo_diseno_bi_report_definition_pages_page_prototipo_diseno_visuals_v09linetendenciaventana_visual",
@@ -6717,7 +6959,7 @@
       "node_kind": "heading",
       "norm_label": "proximos pasos de investigacion (en orden)",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L324"
+      "source_location": "L338"
     },
     {
       "id": "docs_linaje_datos",
@@ -7250,7 +7492,7 @@
       "node_kind": "heading",
       "norm_label": "3. cuentas clave \u2014 pasivo (seccion `2`)",
       "source_file": "docs/glosario_cuentas.md",
-      "source_location": "L66"
+      "source_location": "L96"
     },
     {
       "id": "docs_glosario_cuentas_4_6_hueco_de_datos_conocido_pyg_c\u00f3digo_4",
@@ -7262,7 +7504,7 @@
       "node_kind": "heading",
       "norm_label": "4.6 hueco de datos conocido: pyg codigo `4`",
       "source_file": "docs/glosario_cuentas.md",
-      "source_location": "L102"
+      "source_location": "L146"
     },
     {
       "id": "docs_glosario_cuentas_4_cuentas_clave_patrimonio_ingresos_gastos_secciones_3_4_5",
@@ -7274,7 +7516,7 @@
       "node_kind": "heading",
       "norm_label": "4. cuentas clave \u2014 patrimonio, ingresos, gastos (secciones `3`, `4`, `5`)",
       "source_file": "docs/glosario_cuentas.md",
-      "source_location": "L86"
+      "source_location": "L130"
     },
     {
       "id": "docs_glosario_cuentas_5_bloques_que_combinan_balance_pyg_o_cruzan_periodos_series_de_tiempo",
@@ -7286,7 +7528,7 @@
       "node_kind": "heading",
       "norm_label": "5. bloques que combinan balance + pyg o cruzan periodos (series de tiempo)",
       "source_file": "docs/glosario_cuentas.md",
-      "source_location": "L118"
+      "source_location": "L162"
     },
     {
       "id": "docs_glosario_cuentas_6_qu\u00e9_no_cubre_este_documento_fuera_de_alcance_documentado_en_otro_lado",
@@ -7298,7 +7540,7 @@
       "node_kind": "heading",
       "norm_label": "6. que no cubre este documento (fuera de alcance, documentado en otro lado)",
       "source_file": "docs/glosario_cuentas.md",
-      "source_location": "L129"
+      "source_location": "L173"
     },
     {
       "id": "docs_glosario_cuentas_c\u00f3mo_usar_este_documento_al_escribir_un_ratio_nuevo",
@@ -7310,7 +7552,7 @@
       "node_kind": "heading",
       "norm_label": "como usar este documento al escribir un ratio nuevo",
       "source_file": "docs/glosario_cuentas.md",
-      "source_location": "L146"
+      "source_location": "L190"
     },
     {
       "id": "docs_glosario_cuentas_glosario_de_cuentas_cat\u00e1logo_\u00fanico_balance_y_pyg",
@@ -7430,7 +7672,7 @@
       "node_kind": "heading",
       "norm_label": "catalogo completo (48 indicadores, 12 categorias)",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L61"
+      "source_location": "L140"
     },
     {
       "id": "docs_metricas_financieras_cobertura_de_provisiones_para_cartera_improductiva_por_segmento_refinanciada_reestructurada_problem\u00e1tica",
@@ -7442,7 +7684,7 @@
       "node_kind": "heading",
       "norm_label": "cobertura de provisiones para cartera improductiva (por segmento, + refinanciada/reestructurada/problematica)",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L82"
+      "source_location": "L161"
     },
     {
       "id": "docs_metricas_financieras_eficiencia_financiera",
@@ -7454,7 +7696,7 @@
       "node_kind": "heading",
       "norm_label": "eficiencia financiera",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L107"
+      "source_location": "L186"
     },
     {
       "id": "docs_metricas_financieras_eficiencia_microecon\u00f3mica",
@@ -7466,7 +7708,7 @@
       "node_kind": "heading",
       "norm_label": "eficiencia microeconomica",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L95"
+      "source_location": "L174"
     },
     {
       "id": "docs_metricas_financieras_estructura_y_calidad_de_activos",
@@ -7478,7 +7720,7 @@
       "node_kind": "heading",
       "norm_label": "estructura y calidad de activos",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L66"
+      "source_location": "L145"
     },
     {
       "id": "docs_metricas_financieras_f\u00f3rmulas_verificadas",
@@ -7502,7 +7744,7 @@
       "node_kind": "heading",
       "norm_label": "grupos funcionales de `met` (candidatos a `grupo_met`)",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L136"
+      "source_location": "L215"
     },
     {
       "id": "docs_metricas_financieras_intermediaci\u00f3n_financiera",
@@ -7514,7 +7756,7 @@
       "node_kind": "heading",
       "norm_label": "intermediacion financiera",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L104"
+      "source_location": "L183"
     },
     {
       "id": "docs_metricas_financieras_liquidez",
@@ -7526,7 +7768,7 @@
       "node_kind": "heading",
       "norm_label": "liquidez",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L124"
+      "source_location": "L203"
     },
     {
       "id": "docs_metricas_financieras_m\u00e9tricas_financieras_bolet\u00edn_financiero_mensual_hoja_indicadores",
@@ -7541,6 +7783,18 @@
       "source_location": "L1"
     },
     {
+      "id": "docs_metricas_financieras_reconciliaci\u00f3n_cruzada_capcol_vs_balance_cartera_bruta_2026_08_30",
+      "label": "Reconciliaci\u00f3n cruzada CAPCOL vs. BALANCE \u2014 cartera bruta (2026-08-30)",
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "Cat\u00e1logo completo (48 indicadores, 12 categor\u00edas)",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "reconciliacion cruzada capcol vs. balance \u2014 cartera bruta (2026-08-30)",
+      "source_file": "docs/metricas_financieras.md",
+      "source_location": "L61"
+    },
+    {
       "id": "docs_metricas_financieras_rendimiento_de_la_cartera_por_vencer_por_segmento_refinanciada_reestructurada",
       "label": "Rendimiento de la cartera (por vencer, por segmento + refinanciada/reestructurada)",
       "_origin": "ast",
@@ -7550,7 +7804,7 @@
       "node_kind": "heading",
       "norm_label": "rendimiento de la cartera (por vencer, por segmento + refinanciada/reestructurada)",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L111"
+      "source_location": "L190"
     },
     {
       "id": "docs_metricas_financieras_rentabilidad",
@@ -7562,7 +7816,7 @@
       "node_kind": "heading",
       "norm_label": "rentabilidad",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L100"
+      "source_location": "L179"
     },
     {
       "id": "docs_metricas_financieras_suficiencia_patrimonial",
@@ -7574,7 +7828,7 @@
       "node_kind": "heading",
       "norm_label": "suficiencia patrimonial",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L63"
+      "source_location": "L142"
     },
     {
       "id": "docs_metricas_financieras_vulnerabilidad_del_patrimonio",
@@ -7586,7 +7840,7 @@
       "node_kind": "heading",
       "norm_label": "vulnerabilidad del patrimonio",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L127"
+      "source_location": "L206"
     },
     {
       "id": "docs_metricas_financieras_\u00edndice_de_capitalizaci\u00f3n",
@@ -7598,7 +7852,7 @@
       "node_kind": "heading",
       "norm_label": "indice de capitalizacion",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L131"
+      "source_location": "L210"
     },
     {
       "id": "docs_metricas_financieras_\u00edndices_de_morosidad_por_segmento_de_cartera",
@@ -7610,7 +7864,7 @@
       "node_kind": "heading",
       "norm_label": "indices de morosidad (por segmento de cartera)",
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L71"
+      "source_location": "L150"
     },
     {
       "id": "sql_24_fix_staging_depositos_canton_null_safe_sql_staging_depositos",
@@ -7701,246 +7955,224 @@
       "source_location": ""
     },
     {
-      "id": "etl_transform_parse_bce_tasas",
-      "label": "parse_bce_tasas.py",
+      "id": "date",
+      "label": "date",
       "_origin": "ast",
       "community": 128,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "test_integration_regressions.py",
       "file_type": "code",
-      "norm_label": "parse_bce_tasas.py",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_py_dataframe",
-      "label": "DataFrame",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "code",
-      "norm_label": "dataframe",
+      "norm_label": "date",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "etl_transform_parse_bce_tasas_py_path",
-      "label": "Path",
+      "id": "integration",
+      "label": "integration",
       "_origin": "ast",
       "community": 128,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "test_integration_regressions.py",
       "file_type": "code",
-      "norm_label": "path",
+      "norm_label": "integration",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "etl_transform_parse_bce_tasas_py_valueerror",
-      "label": "ValueError",
+      "id": "tests_test_integration_regressions",
+      "label": "test_integration_regressions.py",
       "_origin": "ast",
       "community": 128,
-      "community_name": "parse_bce_tasas.py",
+      "community_name": "test_integration_regressions.py",
       "file_type": "code",
-      "norm_label": "valueerror",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_1",
-      "label": "Parser de los archivos semanales de tasas de inter\u00e9s del BCE (tsp=pasivas,\u2026",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "parser de los archivos semanales de tasas de interes del bce (tsp=pasivas,...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
+      "norm_label": "test_integration_regressions.py",
+      "source_file": "tests/test_integration_regressions.py",
       "source_location": "L1"
     },
     {
-      "id": "etl_transform_parse_bce_tasas_rationale_157",
-      "label": "segmento_credito de tsa no est\u00e1 en el universo sembrado de\u2026",
+      "id": "tests_test_pipeline_fecha_parsing",
+      "label": "test_pipeline_fecha_parsing.py",
       "_origin": "ast",
       "community": 128,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "segmento_credito de tsa no esta en el universo sembrado de...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L157"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_161",
-      "label": "tipo_segmento no est\u00e1 en el universo sembrado de dim_segmento_entidad.",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "tipo_segmento no esta en el universo sembrado de dim_segmento_entidad.",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L161"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_165",
-      "label": "Un tipo_segmento por (fecha, banco_codigo) -- atributo de la entidad, no del\u2026",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "un tipo_segmento por (fecha, banco_codigo) -- atributo de la entidad, no del...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L165"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_186",
-      "label": "Lee TODO el archivo por chunks directo desde el zip (sin extraer 700MB-1.75GB a\u2026",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "lee todo el archivo por chunks directo desde el zip (sin extraer 700mb-1.75gb a...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L186"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_209",
-      "label": "Colapsa cant\u00f3n dentro de cada provincia:\u2026",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "colapsa canton dentro de cada provincia:...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L209"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_234",
-      "label": "Resuelve banco_codigo/banco/tipo_entidad/ruc para TODAS las filas -- solo sobre\u2026",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "resuelve banco_codigo/banco/tipo_entidad/ruc para todas las filas -- solo sobre...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L234"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_281",
-      "label": "Devuelve (df_staging, entidades). `df_raw` permite reusar una lectura ya hecha\u2026",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "devuelve (df_staging, entidades). `df_raw` permite reusar una lectura ya hecha...",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L281"
-    },
-    {
-      "id": "etl_transform_parse_bce_tasas_rationale_321",
-      "label": "Devuelve (df_staging, entidades) -- ver parse_tsp_file.",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "parse_bce_tasas.py",
-      "file_type": "rationale",
-      "norm_label": "devuelve (df_staging, entidades) -- ver parse_tsp_file.",
-      "source_file": "etl/transform/parse_bce_tasas.py",
-      "source_location": "L321"
-    },
-    {
-      "id": "etl_transform_categoria_deposito_matching",
-      "label": "categoria_deposito_matching.py",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
+      "community_name": "test_integration_regressions.py",
       "file_type": "code",
-      "norm_label": "categoria_deposito_matching.py",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "norm_label": "test_pipeline_fecha_parsing.py",
+      "source_file": "tests/test_pipeline_fecha_parsing.py",
       "source_location": "L1"
     },
     {
-      "id": "etl_transform_categoria_deposito_matching_py_valueerror",
-      "label": "ValueError",
+      "id": "etl_pipeline_rationale_158",
+      "label": "Extrae la fecha (fin de mes) de un nombre de archivo TasasVigenteMMAAAA.htm.\u2026",
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
-      "file_type": "code",
-      "norm_label": "valueerror",
-      "source_file": "",
-      "source_location": ""
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "extrae la fecha (fin de mes) de un nombre de archivo tasasvigentemmaaaa.htm....",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L158"
     },
     {
-      "id": "tests_test_categoria_deposito_matching",
-      "label": "test_categoria_deposito_matching.py",
+      "id": "etl_pipeline_rationale_242",
+      "label": "Extrae la fecha (fin de mes) de un nombre de archivo 'Bolet\u00edn Bancos <MES_ES>\u2026",
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
-      "file_type": "code",
-      "norm_label": "test_categoria_deposito_matching.py",
-      "source_file": "tests/test_categoria_deposito_matching.py",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "extrae la fecha (fin de mes) de un nombre de archivo 'boletin bancos <mes_es>...",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L242"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_1",
+      "label": "Tests de integraci\u00f3n (@pytest.mark.integration): requieren Postgres real ya\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "tests de integracion (@pytest.mark.integration): requieren postgres real ya...",
+      "source_file": "tests/test_integration_regressions.py",
       "source_location": "L1"
     },
     {
-      "id": "etl_transform_categoria_deposito_matching_rationale_1",
-      "label": "Resuelve el texto crudo de `tipo_deposito` (CAPCOL) o `instrumento_captacion`\u2026",
+      "id": "tests_test_integration_regressions_rationale_114",
+      "label": "Regresi\u00f3n de sql/24_fix_staging_depositos_canton_null_safe.sql: dos filas con\u2026",
       "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
       "file_type": "rationale",
-      "norm_label": "resuelve el texto crudo de `tipo_deposito` (capcol) o `instrumento_captacion`...",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "norm_label": "regresion de sql/24_fix_staging_depositos_canton_null_safe.sql: dos filas con...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L114"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_150",
+      "label": "Regresi\u00f3n de sql/21_fact_saldo_cartera_pivot.sql: 3 filas EAV-shape (por_vencer\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "regresion de sql/21_fact_saldo_cartera_pivot.sql: 3 filas eav-shape (por_vencer...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L150"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_227",
+      "label": "Cobertura de orquestaci\u00f3n (secci\u00f3n 2.3): round-trip real de\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "cobertura de orquestacion (seccion 2.3): round-trip real de...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L227"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_27",
+      "label": "Extrae, desde la misma constante _REFRESH_MARTS_SQL que usa refresh_marts() en\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "extrae, desde la misma constante _refresh_marts_sql que usa refresh_marts() en...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L27"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_294",
+      "label": "CDC invariante #1 (gate por hash de archivo, raw.source_files -- ver\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "cdc invariante #1 (gate por hash de archivo, raw.source_files -- ver...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L294"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_360",
+      "label": "Cobertura de orquestaci\u00f3n (secci\u00f3n 2.3): _upsert_bce_via_temp() v\u00eda\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "cobertura de orquestacion (seccion 2.3): _upsert_bce_via_temp() via...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L360"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_414",
+      "label": "Cobertura de orquestaci\u00f3n (secci\u00f3n 2.3): un cambio real de valor\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "cobertura de orquestacion (seccion 2.3): un cambio real de valor...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L414"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_458",
+      "label": "Verifica la promesa de `ON COMMIT DROP` en _upsert_bce_via_temp() (etl/load/\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "verifica la promesa de `on commit drop` en _upsert_bce_via_temp() (etl/load/...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L458"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_49",
+      "label": "Regresi\u00f3n de sql/10_fix_null_unique_constraints.sql: dos filas con la misma\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "regresion de sql/10_fix_null_unique_constraints.sql: dos filas con la misma...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L49"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_529",
+      "label": "Mismo criterio que\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "mismo criterio que...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L529"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_574",
+      "label": "Un cambio real de saldo_usd a trav\u00e9s de _upsert_boletin_via_temp() S\u00cd dispara\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "un cambio real de saldo_usd a traves de _upsert_boletin_via_temp() si dispara...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L574"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_78",
+      "label": "Regresi\u00f3n de sql/23_fix_staging_cartera_canton_null_safe.sql: dos filas con la\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "regresion de sql/23_fix_staging_cartera_canton_null_safe.sql: dos filas con la...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L78"
+    },
+    {
+      "id": "tests_test_pipeline_fecha_parsing_rationale_1",
+      "label": "Tests puros (sin DB ni red) para las funciones de fecha-desde-nombre-de-archivo\u2026",
+      "_origin": "ast",
+      "community": 128,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "tests puros (sin db ni red) para las funciones de fecha-desde-nombre-de-archivo...",
+      "source_file": "tests/test_pipeline_fecha_parsing.py",
       "source_location": "L1"
-    },
-    {
-      "id": "etl_transform_categoria_deposito_matching_rationale_54",
-      "label": "El texto crudo no es ni una categor\u00eda conocida ni un bucket de plazo\u2026",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
-      "file_type": "rationale",
-      "norm_label": "el texto crudo no es ni una categoria conocida ni un bucket de plazo...",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L54"
-    },
-    {
-      "id": "etl_transform_categoria_deposito_matching_rationale_60",
-      "label": "Devuelve (categoria, dias_desde, dias_hasta). dias_* son None salvo que la\u2026",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
-      "file_type": "rationale",
-      "norm_label": "devuelve (categoria, dias_desde, dias_hasta). dias_* son none salvo que la...",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L60"
-    },
-    {
-      "id": "tests_test_categoria_deposito_matching_rationale_59",
-      "label": "Desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el *shape*\u2026",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
-      "file_type": "rationale",
-      "norm_label": "desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el *shape*...",
-      "source_file": "tests/test_categoria_deposito_matching.py",
-      "source_location": "L59"
-    },
-    {
-      "id": "tests_test_categoria_deposito_matching_rationale_75",
-      "label": "Un texto que no matchea ni _RANGO ni _SIN_TOPE ni CATEGORIAS_VALIDAS sigue\u2026",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
-      "file_type": "rationale",
-      "norm_label": "un texto que no matchea ni _rango ni _sin_tope ni categorias_validas sigue...",
-      "source_file": "tests/test_categoria_deposito_matching.py",
-      "source_location": "L75"
-    },
-    {
-      "id": "tests_test_categoria_deposito_matching_rationale_82",
-      "label": "Un shape v\u00e1lido con rango invertido (dias_desde > dias_hasta) es una anomal\u00eda\u2026",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "resolver_categoria_deposito",
-      "file_type": "rationale",
-      "norm_label": "un shape valido con rango invertido (dias_desde > dias_hasta) es una anomalia...",
-      "source_file": "tests/test_categoria_deposito_matching.py",
-      "source_location": "L82"
     },
     {
       "id": "powerbi_benchmark_cartera_depositos_report_definition_report",
@@ -8353,39 +8585,6 @@
       "norm_label": "ver tambien",
       "source_file": "docs/mantenimiento_catalogos.md",
       "source_location": "L443"
-    },
-    {
-      "id": "etl_transform_parse_tasas_historicas_py_dataframe",
-      "label": "DataFrame",
-      "_origin": "ast",
-      "community": 131,
-      "community_name": "DataFrame",
-      "file_type": "code",
-      "norm_label": "dataframe",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_transform_parse_tasas_historicas_py_path",
-      "label": "Path",
-      "_origin": "ast",
-      "community": 132,
-      "community_name": "Path",
-      "file_type": "code",
-      "norm_label": "path",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "marts_dim_plazo",
-      "label": "marts.dim_plazo",
-      "_origin": "ast",
-      "community": 133,
-      "community_name": "marts.dim_plazo",
-      "file_type": "code",
-      "norm_label": "marts.dim_plazo",
-      "source_file": "",
-      "source_location": ""
     },
     {
       "id": "sql_27_dim_plazo_estado_validacion",
@@ -9906,72 +10105,6 @@
       "source_location": "L9"
     },
     {
-      "id": "etl_extract_download_bce",
-      "label": "download_bce.py",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "download_bce.py",
-      "source_file": "etl/extract/download_bce.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_extract_download_bce_py_path",
-      "label": "Path",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "path",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_extract_download_tasas_historicas",
-      "label": "download_tasas_historicas.py",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "download_tasas_historicas.py",
-      "source_file": "etl/extract/download_tasas_historicas.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_extract_download_tasas_historicas_py_path",
-      "label": "Path",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "path",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_extract_scrape_boletin",
-      "label": "scrape_boletin.py",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "scrape_boletin.py",
-      "source_file": "etl/extract/scrape_boletin.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_extract_scrape_boletin_py_path",
-      "label": "Path",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "path",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
       "id": "etl_extract_scrape_superbancos",
       "label": "scrape_superbancos.py",
       "_origin": "ast",
@@ -9994,72 +10127,6 @@
       "source_location": ""
     },
     {
-      "id": "etl_logging_utils",
-      "label": "logging_utils.py",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "logging_utils.py",
-      "source_file": "etl/logging_utils.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "logrecord",
-      "label": "LogRecord",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "code",
-      "norm_label": "logrecord",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_extract_download_bce_rationale_1",
-      "label": "Descarga directa de los archivos semanales de tasas de inter\u00e9s del BCE\u2026",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "rationale",
-      "norm_label": "descarga directa de los archivos semanales de tasas de interes del bce...",
-      "source_file": "etl/extract/download_bce.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_extract_download_bce_rationale_21",
-      "label": "clave: 'tsp' o 'tsa'. Descarga si no existe ya un archivo con ese nombre.",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "rationale",
-      "norm_label": "clave: 'tsp' o 'tsa'. descarga si no existe ya un archivo con ese nombre.",
-      "source_file": "etl/extract/download_bce.py",
-      "source_location": "L21"
-    },
-    {
-      "id": "etl_extract_download_tasas_historicas_rationale_1",
-      "label": "Descarga de las p\u00e1ginas mensuales TasasVigentes{MM}{YYYY}.htm del BCE (techos\u2026",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "rationale",
-      "norm_label": "descarga de las paginas mensuales tasasvigentes{mm}{yyyy}.htm del bce (techos...",
-      "source_file": "etl/extract/download_tasas_historicas.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_extract_scrape_boletin_rationale_1",
-      "label": "Descarga los ZIP del Bolet\u00edn Financiero Mensual (Balance y PyG) de bancos\u2026",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "rationale",
-      "norm_label": "descarga los zip del boletin financiero mensual (balance y pyg) de bancos...",
-      "source_file": "etl/extract/scrape_boletin.py",
-      "source_location": "L1"
-    },
-    {
       "id": "etl_extract_scrape_superbancos_rationale_1",
       "label": "Descarga los archivos ZIP de cartera y dep\u00f3sitos del portal CAPCOL de\u2026",
       "_origin": "ast",
@@ -10080,28 +10147,6 @@
       "norm_label": "vuelve al listado raiz de anos via el breadcrumb 'inicio'. ojo: recargar la...",
       "source_file": "etl/extract/scrape_superbancos.py",
       "source_location": "L27"
-    },
-    {
-      "id": "etl_logging_utils_rationale_1",
-      "label": "Configuracion de logging compartida por todo el pipeline. Reemplaza los\u2026",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "rationale",
-      "norm_label": "configuracion de logging compartida por todo el pipeline. reemplaza los...",
-      "source_file": "etl/logging_utils.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_logging_utils_rationale_28",
-      "label": "Configura el root logger una sola vez por proceso. Idempotente: si el root\u2026",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "scrape_superbancos.py",
-      "file_type": "rationale",
-      "norm_label": "configura el root logger una sola vez por proceso. idempotente: si el root...",
-      "source_file": "etl/logging_utils.py",
-      "source_location": "L28"
     },
     {
       "id": "sql_04_indexes_views",
@@ -10346,13 +10391,68 @@
       "source_location": ""
     },
     {
-      "id": "date",
-      "label": "date",
+      "id": "etl_extract_download_bce",
+      "label": "download_bce.py",
       "_origin": "ast",
       "community": 23,
       "community_name": "pipeline.py",
       "file_type": "code",
-      "norm_label": "date",
+      "norm_label": "download_bce.py",
+      "source_file": "etl/extract/download_bce.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_extract_download_bce_py_path",
+      "label": "Path",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "path",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "etl_extract_download_tasas_historicas",
+      "label": "download_tasas_historicas.py",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "download_tasas_historicas.py",
+      "source_file": "etl/extract/download_tasas_historicas.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_extract_download_tasas_historicas_py_path",
+      "label": "Path",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "path",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "etl_extract_scrape_boletin",
+      "label": "scrape_boletin.py",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "scrape_boletin.py",
+      "source_file": "etl/extract/scrape_boletin.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_extract_scrape_boletin_py_path",
+      "label": "Path",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "path",
       "source_file": "",
       "source_location": ""
     },
@@ -10377,6 +10477,17 @@
       "norm_label": "dataframe",
       "source_file": "",
       "source_location": ""
+    },
+    {
+      "id": "etl_logging_utils",
+      "label": "logging_utils.py",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "logging_utils.py",
+      "source_file": "etl/logging_utils.py",
+      "source_location": "L1"
     },
     {
       "id": "etl_pipeline",
@@ -10412,13 +10523,13 @@
       "source_location": ""
     },
     {
-      "id": "integration",
-      "label": "integration",
+      "id": "logrecord",
+      "label": "LogRecord",
       "_origin": "ast",
       "community": 23,
       "community_name": "pipeline.py",
       "file_type": "code",
-      "norm_label": "integration",
+      "norm_label": "logrecord",
       "source_file": "",
       "source_location": ""
     },
@@ -10445,25 +10556,47 @@
       "source_location": ""
     },
     {
-      "id": "tests_test_integration_regressions",
-      "label": "test_integration_regressions.py",
+      "id": "etl_extract_download_bce_rationale_1",
+      "label": "Descarga directa de los archivos semanales de tasas de inter\u00e9s del BCE\u2026",
       "_origin": "ast",
       "community": 23,
       "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_integration_regressions.py",
-      "source_file": "tests/test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "descarga directa de los archivos semanales de tasas de interes del bce...",
+      "source_file": "etl/extract/download_bce.py",
       "source_location": "L1"
     },
     {
-      "id": "tests_test_pipeline_fecha_parsing",
-      "label": "test_pipeline_fecha_parsing.py",
+      "id": "etl_extract_download_bce_rationale_21",
+      "label": "clave: 'tsp' o 'tsa'. Descarga si no existe ya un archivo con ese nombre.",
       "_origin": "ast",
       "community": 23,
       "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_pipeline_fecha_parsing.py",
-      "source_file": "tests/test_pipeline_fecha_parsing.py",
+      "file_type": "rationale",
+      "norm_label": "clave: 'tsp' o 'tsa'. descarga si no existe ya un archivo con ese nombre.",
+      "source_file": "etl/extract/download_bce.py",
+      "source_location": "L21"
+    },
+    {
+      "id": "etl_extract_download_tasas_historicas_rationale_1",
+      "label": "Descarga de las p\u00e1ginas mensuales TasasVigentes{MM}{YYYY}.htm del BCE (techos\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "descarga de las paginas mensuales tasasvigentes{mm}{yyyy}.htm del bce (techos...",
+      "source_file": "etl/extract/download_tasas_historicas.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_extract_scrape_boletin_rationale_1",
+      "label": "Descarga los ZIP del Bolet\u00edn Financiero Mensual (Balance y PyG) de bancos\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "descarga los zip del boletin financiero mensual (balance y pyg) de bancos...",
+      "source_file": "etl/extract/scrape_boletin.py",
       "source_location": "L1"
     },
     {
@@ -10566,6 +10699,28 @@
       "source_location": "L905"
     },
     {
+      "id": "etl_logging_utils_rationale_1",
+      "label": "Configuracion de logging compartida por todo el pipeline. Reemplaza los\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "configuracion de logging compartida por todo el pipeline. reemplaza los...",
+      "source_file": "etl/logging_utils.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_logging_utils_rationale_28",
+      "label": "Configura el root logger una sola vez por proceso. Idempotente: si el root\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "configura el root logger una sola vez por proceso. idempotente: si el root...",
+      "source_file": "etl/logging_utils.py",
+      "source_location": "L28"
+    },
+    {
       "id": "etl_pipeline_rationale_1",
       "label": "Orquestador end-to-end: extract (Playwright) -> transform (parsers) -> load\u2026",
       "_origin": "ast",
@@ -10577,17 +10732,6 @@
       "source_location": "L1"
     },
     {
-      "id": "etl_pipeline_rationale_158",
-      "label": "Extrae la fecha (fin de mes) de un nombre de archivo TasasVigenteMMAAAA.htm.\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "extrae la fecha (fin de mes) de un nombre de archivo tasasvigentemmaaaa.htm....",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L158"
-    },
-    {
       "id": "etl_pipeline_rationale_172",
       "label": "TasasHistorico.htm: a diferencia de tsp/tsa (un solo archivo acumulativo), ac\u00e1\u2026",
       "_origin": "ast",
@@ -10597,17 +10741,6 @@
       "norm_label": "tasashistorico.htm: a diferencia de tsp/tsa (un solo archivo acumulativo), aca...",
       "source_file": "etl/pipeline.py",
       "source_location": "L172"
-    },
-    {
-      "id": "etl_pipeline_rationale_242",
-      "label": "Extrae la fecha (fin de mes) de un nombre de archivo 'Bolet\u00edn Bancos <MES_ES>\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "extrae la fecha (fin de mes) de un nombre de archivo 'boletin bancos <mes_es>...",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L242"
     },
     {
       "id": "etl_pipeline_rationale_257",
@@ -10630,160 +10763,6 @@
       "norm_label": "bce tsp/tsa: descarga directa (sin playwright), un solo archivo cada uno con...",
       "source_file": "etl/pipeline.py",
       "source_location": "L99"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_1",
-      "label": "Tests de integraci\u00f3n (@pytest.mark.integration): requieren Postgres real ya\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "tests de integracion (@pytest.mark.integration): requieren postgres real ya...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_114",
-      "label": "Regresi\u00f3n de sql/24_fix_staging_depositos_canton_null_safe.sql: dos filas con\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "regresion de sql/24_fix_staging_depositos_canton_null_safe.sql: dos filas con...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L114"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_150",
-      "label": "Regresi\u00f3n de sql/21_fact_saldo_cartera_pivot.sql: 3 filas EAV-shape (por_vencer\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "regresion de sql/21_fact_saldo_cartera_pivot.sql: 3 filas eav-shape (por_vencer...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L150"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_227",
-      "label": "Cobertura de orquestaci\u00f3n (secci\u00f3n 2.3): round-trip real de\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "cobertura de orquestacion (seccion 2.3): round-trip real de...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L227"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_27",
-      "label": "Extrae, desde la misma constante _REFRESH_MARTS_SQL que usa refresh_marts() en\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "extrae, desde la misma constante _refresh_marts_sql que usa refresh_marts() en...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L27"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_294",
-      "label": "CDC invariante #1 (gate por hash de archivo, raw.source_files -- ver\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "cdc invariante #1 (gate por hash de archivo, raw.source_files -- ver...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L294"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_360",
-      "label": "Cobertura de orquestaci\u00f3n (secci\u00f3n 2.3): _upsert_bce_via_temp() v\u00eda\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "cobertura de orquestacion (seccion 2.3): _upsert_bce_via_temp() via...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L360"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_414",
-      "label": "Cobertura de orquestaci\u00f3n (secci\u00f3n 2.3): un cambio real de valor\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "cobertura de orquestacion (seccion 2.3): un cambio real de valor...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L414"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_458",
-      "label": "Verifica la promesa de `ON COMMIT DROP` en _upsert_bce_via_temp() (etl/load/\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "verifica la promesa de `on commit drop` en _upsert_bce_via_temp() (etl/load/...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L458"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_49",
-      "label": "Regresi\u00f3n de sql/10_fix_null_unique_constraints.sql: dos filas con la misma\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "regresion de sql/10_fix_null_unique_constraints.sql: dos filas con la misma...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L49"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_529",
-      "label": "Mismo criterio que\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "mismo criterio que...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L529"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_574",
-      "label": "Un cambio real de saldo_usd a trav\u00e9s de _upsert_boletin_via_temp() S\u00cd dispara\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "un cambio real de saldo_usd a traves de _upsert_boletin_via_temp() si dispara...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L574"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_78",
-      "label": "Regresi\u00f3n de sql/23_fix_staging_cartera_canton_null_safe.sql: dos filas con la\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "regresion de sql/23_fix_staging_cartera_canton_null_safe.sql: dos filas con la...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L78"
-    },
-    {
-      "id": "tests_test_pipeline_fecha_parsing_rationale_1",
-      "label": "Tests puros (sin DB ni red) para las funciones de fecha-desde-nombre-de-archivo\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "tests puros (sin db ni red) para las funciones de fecha-desde-nombre-de-archivo...",
-      "source_file": "tests/test_pipeline_fecha_parsing.py",
-      "source_location": "L1"
     },
     {
       "id": "sql_12_schema_tasas_historicas",
@@ -12914,17 +12893,6 @@
       "source_location": "L1"
     },
     {
-      "id": "dataframe",
-      "label": "DataFrame",
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "test_parse_tasas_historicas.py",
-      "file_type": "code",
-      "norm_label": "dataframe",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
       "id": "etl_transform_parse_tasas_historicas",
       "label": "parse_tasas_historicas.py",
       "_origin": "ast",
@@ -12936,7 +12904,18 @@
       "source_location": "L1"
     },
     {
-      "id": "path",
+      "id": "etl_transform_parse_tasas_historicas_py_dataframe",
+      "label": "DataFrame",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "test_parse_tasas_historicas.py",
+      "file_type": "code",
+      "norm_label": "dataframe",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "etl_transform_parse_tasas_historicas_py_path",
       "label": "Path",
       "_origin": "ast",
       "community": 5,
@@ -14711,7 +14690,7 @@
       "node_kind": "heading",
       "norm_label": "gestion de cambios de esquema",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L392"
+      "source_location": "L395"
     },
     {
       "id": "docs_gobernanza_datos_gobernanza_de_datos",
@@ -18208,7 +18187,7 @@
     },
     {
       "source": "etl_transform_parse_tasas_historicas_parse_filas",
-      "target": "dataframe",
+      "target": "etl_transform_parse_tasas_historicas_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -20416,7 +20395,7 @@
     },
     {
       "source": "etl_transform_parse_tasas_historicas_parse_tasas_historicas_file",
-      "target": "path",
+      "target": "etl_transform_parse_tasas_historicas_py_path",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -20572,7 +20551,7 @@
     },
     {
       "source": "etl_transform_parse_tasas_historicas_parse_tasas_historicas_file",
-      "target": "dataframe",
+      "target": "etl_transform_parse_tasas_historicas_py_dataframe",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -20800,7 +20779,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L130",
+      "source_location": "L132",
       "weight": 1.0
     },
     {
@@ -20811,7 +20790,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L199",
+      "source_location": "L201",
       "weight": 1.0
     },
     {
@@ -20822,7 +20801,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L84",
+      "source_location": "L85",
       "weight": 1.0
     },
     {
@@ -20921,7 +20900,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L66",
+      "source_location": "L67",
       "weight": 1.0
     },
     {
@@ -20932,7 +20911,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L74",
+      "source_location": "L75",
       "weight": 1.0
     },
     {
@@ -20943,7 +20922,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L102",
+      "source_location": "L103",
       "weight": 1.0
     },
     {
@@ -20954,7 +20933,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L109",
+      "source_location": "L111",
       "weight": 1.0
     },
     {
@@ -20965,7 +20944,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L118",
+      "source_location": "L120",
       "weight": 1.0
     },
     {
@@ -20976,7 +20955,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L127",
+      "source_location": "L129",
       "weight": 1.0
     },
     {
@@ -20987,7 +20966,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L93",
+      "source_location": "L94",
       "weight": 1.0
     },
     {
@@ -20998,7 +20977,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L146",
+      "source_location": "L148",
       "weight": 1.0
     },
     {
@@ -21009,7 +20988,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L171",
+      "source_location": "L173",
       "weight": 1.0
     },
     {
@@ -21152,7 +21131,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L324",
+      "source_location": "L338",
       "weight": 1.0
     },
     {
@@ -21185,29 +21164,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/glosario_cuentas.md",
-      "source_location": "L102",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_glosario_cuentas_glosario_de_cuentas_cat\u00e1logo_\u00fanico_balance_y_pyg",
-      "target": "docs_glosario_cuentas_5_bloques_que_combinan_balance_pyg_o_cruzan_periodos_series_de_tiempo",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/glosario_cuentas.md",
-      "source_location": "L118",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_glosario_cuentas_glosario_de_cuentas_cat\u00e1logo_\u00fanico_balance_y_pyg",
-      "target": "docs_glosario_cuentas_6_qu\u00e9_no_cubre_este_documento_fuera_de_alcance_documentado_en_otro_lado",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/glosario_cuentas.md",
-      "source_location": "L129",
+      "source_location": "L146",
       "weight": 1.0
     },
     {
@@ -21223,13 +21180,46 @@
     },
     {
       "source": "docs_glosario_cuentas_glosario_de_cuentas_cat\u00e1logo_\u00fanico_balance_y_pyg",
+      "target": "docs_glosario_cuentas_4_cuentas_clave_patrimonio_ingresos_gastos_secciones_3_4_5",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/glosario_cuentas.md",
+      "source_location": "L130",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_glosario_cuentas_glosario_de_cuentas_cat\u00e1logo_\u00fanico_balance_y_pyg",
+      "target": "docs_glosario_cuentas_5_bloques_que_combinan_balance_pyg_o_cruzan_periodos_series_de_tiempo",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/glosario_cuentas.md",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_glosario_cuentas_glosario_de_cuentas_cat\u00e1logo_\u00fanico_balance_y_pyg",
+      "target": "docs_glosario_cuentas_6_qu\u00e9_no_cubre_este_documento_fuera_de_alcance_documentado_en_otro_lado",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/glosario_cuentas.md",
+      "source_location": "L173",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_glosario_cuentas_glosario_de_cuentas_cat\u00e1logo_\u00fanico_balance_y_pyg",
       "target": "docs_glosario_cuentas_c\u00f3mo_usar_este_documento_al_escribir_un_ratio_nuevo",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/glosario_cuentas.md",
-      "source_location": "L146",
+      "source_location": "L190",
       "weight": 1.0
     },
     {
@@ -21251,18 +21241,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/glosario_cuentas.md",
-      "source_location": "L66",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_glosario_cuentas_glosario_de_cuentas_cat\u00e1logo_\u00fanico_balance_y_pyg",
-      "target": "docs_glosario_cuentas_4_cuentas_clave_patrimonio_ingresos_gastos_secciones_3_4_5",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/glosario_cuentas.md",
-      "source_location": "L86",
+      "source_location": "L96",
       "weight": 1.0
     },
     {
@@ -21383,7 +21362,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L392",
+      "source_location": "L395",
       "weight": 1.0
     },
     {
@@ -21751,90 +21730,13 @@
     },
     {
       "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
-      "target": "docs_metricas_financieras_rentabilidad",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/metricas_financieras.md",
-      "source_location": "L100",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
-      "target": "docs_metricas_financieras_intermediaci\u00f3n_financiera",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/metricas_financieras.md",
-      "source_location": "L104",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
-      "target": "docs_metricas_financieras_eficiencia_financiera",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/metricas_financieras.md",
-      "source_location": "L107",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
-      "target": "docs_metricas_financieras_rendimiento_de_la_cartera_por_vencer_por_segmento_refinanciada_reestructurada",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/metricas_financieras.md",
-      "source_location": "L111",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
-      "target": "docs_metricas_financieras_liquidez",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/metricas_financieras.md",
-      "source_location": "L124",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
-      "target": "docs_metricas_financieras_vulnerabilidad_del_patrimonio",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/metricas_financieras.md",
-      "source_location": "L127",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
-      "target": "docs_metricas_financieras_\u00edndice_de_capitalizaci\u00f3n",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/metricas_financieras.md",
-      "source_location": "L131",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
       "target": "docs_metricas_financieras_suficiencia_patrimonial",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L63",
+      "source_location": "L142",
       "weight": 1.0
     },
     {
@@ -21845,7 +21747,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L66",
+      "source_location": "L145",
       "weight": 1.0
     },
     {
@@ -21856,7 +21758,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L71",
+      "source_location": "L150",
       "weight": 1.0
     },
     {
@@ -21867,7 +21769,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L82",
+      "source_location": "L161",
       "weight": 1.0
     },
     {
@@ -21878,7 +21780,95 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L95",
+      "source_location": "L174",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
+      "target": "docs_metricas_financieras_rentabilidad",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/metricas_financieras.md",
+      "source_location": "L179",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
+      "target": "docs_metricas_financieras_intermediaci\u00f3n_financiera",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/metricas_financieras.md",
+      "source_location": "L183",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
+      "target": "docs_metricas_financieras_eficiencia_financiera",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/metricas_financieras.md",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
+      "target": "docs_metricas_financieras_rendimiento_de_la_cartera_por_vencer_por_segmento_refinanciada_reestructurada",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/metricas_financieras.md",
+      "source_location": "L190",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
+      "target": "docs_metricas_financieras_liquidez",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/metricas_financieras.md",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
+      "target": "docs_metricas_financieras_vulnerabilidad_del_patrimonio",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/metricas_financieras.md",
+      "source_location": "L206",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
+      "target": "docs_metricas_financieras_\u00edndice_de_capitalizaci\u00f3n",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/metricas_financieras.md",
+      "source_location": "L210",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_metricas_financieras_m\u00e9tricas_financieras_bolet\u00edn_financiero_mensual_hoja_indicadores",
+      "target": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/metricas_financieras.md",
+      "source_location": "L140",
       "weight": 1.0
     },
     {
@@ -21889,7 +21879,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/metricas_financieras.md",
-      "source_location": "L136",
+      "source_location": "L215",
       "weight": 1.0
     },
     {
@@ -21905,7 +21895,7 @@
     },
     {
       "source": "docs_metricas_financieras_m\u00e9tricas_financieras_bolet\u00edn_financiero_mensual_hoja_indicadores",
-      "target": "docs_metricas_financieras_cat\u00e1logo_completo_48_indicadores_12_categor\u00edas",
+      "target": "docs_metricas_financieras_reconciliaci\u00f3n_cruzada_capcol_vs_balance_cartera_bruta_2026_08_30",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -34350,5 +34340,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "e77068aefc617913f5d5f8b8baa02156175df45b"
+  "built_at_commit": "02ba759fba578c74b7f42f68b0e965914aee85d8"
 }
