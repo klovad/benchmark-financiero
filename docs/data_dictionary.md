@@ -62,6 +62,7 @@ runbook `docs/mantenimiento_catalogos.md`.
 ### marts.dim_categoria_deposito
 | categoria_deposito_id | serial | Llave sustituta |
 | categoria | text | 12 valores: 11 de CAPCOL/BCE + `DEPÓSITOS MONETARIOS` (agregado sin distinguir generan/no-generan intereses, encontrado en `TasasHistorico.htm`) |
+| **Hueco de alcance real frente al plan de cuentas regulatorio** (verificado 2026-08-30): este catálogo curado (`etl/transform/categoria_deposito_matching.py::CATEGORIAS_VALIDAS`, fail-fast) no tiene equivalente para 5 sub-cuentas nivel-6 de `marts.dim_cuenta_contable` bajo `codigo='21'` (BALANCE): `210120` EJECUCIÓN PRESUPUESTARIA, `210125` DEPÓSITOS DE OTRAS INSTITUCIONES PARA ENCAJE, `210130` CHEQUES CERTIFICADOS, `210131` CHEQUES DE EMERGENCIA, `210140` OTROS DEPÓSITOS — CAPCOL nunca reportó estas 5 como categoría de producto propia. Es la causa estructural de por qué `SUM(fact_saldo_depositos.saldo)` no reconcilia exactamente contra `fact_balance` `codigo='21'` (mediana −0,7376% por banco × fecha, explica ~48% del gap agregado del histórico). Detalle completo: `docs/gobernanza_datos.md` (tabla "Huecos de gobernanza conocidos") y `docs/glosario_cuentas.md` §3. | | |
 
 ### marts.dim_plazo (catálogo por rango numérico, compartido entre fuentes)
 | plazo_id | serial | Llave sustituta |
@@ -103,6 +104,7 @@ en `fact_colocaciones_cartera`; `morosidad` es derivable de `estado_cartera` si 
 | saldo | numeric | Saldo en USD |
 | numero_cuentas, numero_clientes | bigint | Sumados desde el detalle por cuenta contable del origen |
 | plazo_id | int, nullable | NULL salvo que `categoria_deposito = 'DEPÓSITOS A PLAZO'` |
+| **No reconcilia exactamente contra `fact_balance` `codigo='21'`** (verificado 2026-08-30) | `SUM(saldo)` por banco × fecha queda sistemáticamente por debajo del BALANCE (mediana de la diferencia %: −0,7376%) — hueco de alcance estructural de `dim_categoria_deposito`, no un bug. Detalle completo en la entrada de `dim_categoria_deposito` arriba y en `docs/gobernanza_datos.md`. | |
 
 `saldo_x_tasa`/`tasa_ponderada` también eliminadas (mismo motivo — ver `fact_captaciones_depositos`).
 

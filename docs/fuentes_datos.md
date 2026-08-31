@@ -303,9 +303,23 @@ bancos):
   secciones similares para `PASIVOS` (depósitos) y `PATRIMONIO` más abajo en la misma
   hoja (no confirmado todavía, pendiente de revisar filas >10). Esto es un **cruce de
   validación directo** contra los `Market Share`/`HHI` que ya calculamos en el modelo
-  Power BI de CAPCOL — si coinciden, valida el modelo; si no, hay una discrepancia que
-  investigar (posible causa: CAPCOL es saldo de cartera/depósitos por cantón, Boletín es
-  balance contable completo, no son necesariamente la misma cifra).
+  Power BI de CAPCOL.
+
+  **Pregunta resuelta 2026-08-30** (no vía la hoja `RK` en sí, sino comparando
+  directamente los agregados de ambas fuentes en Postgres): sí reconcilian, con una
+  diferencia despreciable en la gran mayoría del histórico — CAPCOL cartera agregada
+  (`fact_saldo_cartera`) vs. cartera bruta reconstruida del Boletín (`14 − 1499`,
+  `marts.vw_cartera_bruta`) da una diferencia % mediana de ~0% en 1.559 combinaciones
+  banco × fecha, 96,92% dentro de ±2%, con 4 bancos (AMIBANK, ATLANTIDA, PACIFICO, FINCA)
+  desviándose 2-6% en ventanas de fecha acotadas y no investigadas a fondo. Para
+  depósitos la reconciliación es más floja (mediana −0,7376%, CAPCOL siempre por debajo)
+  por un hueco de alcance real y entendido: `dim_categoria_deposito` no cubre 5
+  sub-cuentas nivel-6 de `21` (cheques certificados/emergencia, otros depósitos, 2
+  cuentas institucionales de nicho), que explican ~48% del gap agregado. Registro
+  completo con metodología, números exactos y consulta SQL: `docs/metricas_financieras.md`
+  (sección "Reconciliación cruzada CAPCOL vs. BALANCE — cartera bruta"),
+  `docs/glosario_cuentas.md` §2-3, y `docs/gobernanza_datos.md` (tabla "Huecos de
+  gobernanza conocidos", filas de los 4 bancos outlier y del hueco de `dim_categoria_deposito`).
 - **`INDICADORES`** (80 filas x 35 columnas): indicadores financieros regulatorios
   estilo CAMEL por banco — confirmado ver `SUFICIENCIA PATRIMONIAL`, `ESTRUCTURA Y
   CALIDAD DE ACTIVOS` como secciones, con métricas como `(PATRIMONIO + RESULTADOS) /
