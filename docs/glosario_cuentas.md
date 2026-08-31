@@ -42,15 +42,45 @@ cuentas contables cada vez que se documenta un ratio nuevo.
 | `11` | FONDOS DISPONIBLES | Caja + depósitos en BCE/bancos — el activo más líquido |
 | `13` | INVERSIONES | Portafolio de inversión (bruto) |
 | `1399` | (Provisión para inversiones) | Contra-cuenta de `13`, siempre negativa en el saldo |
-| `14` | CARTERA DE CRÉDITOS | El activo más grande de cualquier banco — todos los préstamos otorgados, brutos |
+| `14` | CARTERA DE CRÉDITOS | El activo más grande de cualquier banco — todos los préstamos otorgados, **ya neto de la provisión para incobrables** (ver nota abajo, corregida esta sesión — antes decía "brutos", que era incorrecto) |
 | `1499` | (Provisión para incobrables) | Contra-cuenta de `14`, siempre negativa — "el colchón" contra pérdidas esperadas de cartera |
 | `1401`–`1408`, `1473` | Cartera por segmento, "por vencer" | Productivo, Consumo, Inmobiliario, Microcrédito, Vivienda interés público, Educativo — la parte de la cartera que **está al día** |
 | `1425`–`1432`, `1479` | Cartera "que no devenga intereses", por segmento | Cartera en mora temprana — dejó de generar interés contable pero aún no se considera vencida |
 | `1449`–`1456`, `1485` (y variantes refinanciada/reestructurada) | Cartera "vencida", por segmento | Cartera en mora confirmada |
 | `18` | ACTIVO FIJO | Propiedad, planta y equipo |
 
-**Bloque — `cartera_bruta`** (`14 − 1499`): denominador de casi cualquier ratio de calidad
-de cartera. Vista: `marts.vw_cartera_bruta` (grano banco × fecha).
+**`codigo='14'` tal como lo publica el Boletín ya es NETO de provisión, no bruto**
+(corregido 2026-08-30, esta sesión — la versión anterior de este documento decía
+"brutos" y era incorrecta). Verificado contra la base viva: para cada combinación
+banco × fecha con datos en ambos lados (1.569 filas, cobertura completa), se cumple
+exactamente (a los 2 decimales) que
+
+```
+SUM(saldo_usd WHERE cc.codigo LIKE '14%' AND nivel=4 AND codigo <> '1499')   -- suma de las cuentas hijas nivel-4 de 14, sin la provisión
+    + saldo_usd(codigo='1499')                                              -- provisión, siempre negativa
+    = saldo_usd(codigo='14')                                                -- el valor publicado bajo '14'
+```
+
+Ejemplo verificado, PICHINCHA 2026-06-30: suma de hijas nivel-4 (sin `1499`) =
+`14.774.563.941,27`; `1499` = `-1.664.778.028,85`; suma = `13.109.785.912,42`, que
+coincide exactamente con el `saldo_usd` publicado bajo `codigo='14'`. Máxima diferencia
+absoluta en las 1.569 combinaciones banco × fecha verificadas: `0,00`. Es decir, el
+banco ya reporta `14` restando la provisión — **no hay que restar `1499` de nuevo para
+obtener el saldo neto**, `14` ya lo es.
+
+**Bloque — `cartera_bruta`** (`14 − 1499`): como `1499` siempre es negativo, restarlo de
+`14` **suma** su valor absoluto de vuelta — reconstruye el bruto (la suma de las cuentas
+hijas antes de aplicar la provisión), que es lo que la vista siempre implementó
+correctamente (el nombre y la lógica de `marts.vw_cartera_bruta` ya eran correctos; solo
+la prosa de este glosario describía mal el punto de partida `14`). Denominador de casi
+cualquier ratio de calidad de cartera. Vista: `marts.vw_cartera_bruta` (grano banco ×
+fecha, `sql/18_glosario_cuentas_views.sql`).
+
+**Reconciliación cruzada verificada con CAPCOL** (nueva, 2026-08-30): `SUM(fact_saldo_cartera.saldo_total)`
+agregado por banco × fecha (colapsando cantón/segmento) reconcilia con `vw_cartera_bruta`
+(`14 − 1499`) a una diferencia mediana de ~0% en las 1.559 combinaciones banco × fecha
+con datos en ambas fuentes — ver el registro completo, con las 4 excepciones bancarias
+conocidas, en `docs/metricas_financieras.md`.
 
 **Bloque — `cartera_improductiva`**: no es una sola cuenta. Es la suma de **todas** las
 cuentas nivel-4 bajo `14` (excluyendo `1499`) cuyo nombre contiene "QUE NO DEVENGA
@@ -80,6 +110,20 @@ segmento, para morosidad desagregada).
 de liquidez tal como lo usa el Excel (`IND_40`) — **no** confundir con solo
 `2101 + 210310` (error real que se cometió en una primera pasada de este mismo proyecto,
 corregido y verificado). Vista: `marts.vw_depositos_corto_plazo`.
+
+**CAPCOL vs. BALANCE — hueco de alcance real y entendido (verificado 2026-08-30)**: la
+suma agregada de `fact_saldo_depositos.saldo` (CAPCOL) por banco × fecha no reconcilia
+exactamente contra `codigo='21'` de BALANCE — CAPCOL queda sistemáticamente **por
+debajo**. `marts.dim_categoria_deposito` (12 valores curados, ver
+`etl/transform/categoria_deposito_matching.py::CATEGORIAS_VALIDAS`) no tiene equivalente
+para 5 sub-cuentas nivel-6 de `21` que sí existen en el Catálogo Único: `210120`
+(EJECUCIÓN PRESUPUESTARIA), `210125` (DEPÓSITOS DE OTRAS INSTITUCIONES PARA ENCAJE),
+`210130` (CHEQUES CERTIFICADOS), `210131` (CHEQUES DE EMERGENCIA) y `210140` (OTROS
+DEPÓSITOS) — es una limitación estructural real de la taxonomía de producto de CAPCOL
+frente al plan de cuentas regulatorio completo, no un bug. Detalle completo (magnitud
+del hueco, qué fracción explican estas 5 cuentas) en `docs/gobernanza_datos.md`, tabla
+"Huecos de gobernanza conocidos", y en `docs/data_dictionary.md` (entradas de
+`dim_categoria_deposito`/`fact_saldo_depositos`).
 
 ---
 
