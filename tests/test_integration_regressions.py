@@ -23,6 +23,23 @@ from etl.load.load_postgres import (
 )
 
 
+def _dim_canton_insert_statement() -> str:
+    """Extrae, de la misma _REFRESH_MARTS_SQL que usa refresh_marts() en producción, el
+    INSERT que auto-ingresa pares (canton, provincia) nuevos a marts.dim_canton (desde
+    staging.cartera/depositos/bce_tasas_pasivas/bce_tasas_activas, ver
+    sql/28_bce_canton_grain.sql) -- mismo criterio que _fact_saldo_cartera_pivot_statement
+    de abajo: probar el statement real sin pagar el costo de refresh_marts() completo.
+    """
+    statements = [s.strip() for s in _REFRESH_MARTS_SQL.split(";")]
+    matches = [s for s in statements if "INTO marts.dim_canton" in s]
+    assert len(matches) == 1, (
+        "No se pudo aislar (de forma única) el statement de dim_canton dentro de "
+        "_REFRESH_MARTS_SQL -- revisar si el SQL de refresh_marts() cambió de forma y "
+        "ajustar este extractor."
+    )
+    return matches[0]
+
+
 def _fact_saldo_cartera_pivot_statement() -> str:
     """Extrae, desde la misma constante _REFRESH_MARTS_SQL que usa refresh_marts() en
     producción, el statement que puebla marts.fact_saldo_cartera -- evita duplicar a
@@ -106,7 +123,9 @@ def test_staging_cartera_canton_null_safe_unique_regression(db_conn):
         rows = cur.fetchall()
 
     assert len(rows) == 1  # las 2 filas con canton NULL colapsan a 1, no 2
-    assert rows[0][0] == 999  # la segunda inserción actualizó la primera (mismo natural key)
+    assert (
+        rows[0][0] == 999
+    )  # la segunda inserción actualizó la primera (mismo natural key)
 
 
 @pytest.mark.integration
@@ -142,7 +161,9 @@ def test_staging_depositos_canton_null_safe_unique_regression(db_conn):
         rows = cur.fetchall()
 
     assert len(rows) == 1  # las 2 filas con canton NULL colapsan a 1, no 2
-    assert rows[0][0] == 999  # la segunda inserción actualizó la primera (mismo natural key)
+    assert (
+        rows[0][0] == 999
+    )  # la segunda inserción actualizó la primera (mismo natural key)
 
 
 @pytest.mark.integration
@@ -335,6 +356,7 @@ def _bce_tasas_pasivas_row(banco_codigo: str, **overrides) -> dict:
         "plazo_dias_hasta": 30,
         "plazo_codigo": "A",
         "provincia": "PICHINCHA",
+        "canton": "QUITO",
         "monto_total": 10000.0,
         "numero_operaciones": 12,
         "tasa_pasiva_efectiva": 3.25,
@@ -356,6 +378,52 @@ def _cleanup_bce_tasas_pasivas(conn, banco_codigo: str) -> None:
 
 
 @pytest.mark.integration
+def test_bce_canton_auto_ingresado_end_to_end(db_conn):
+    """Cobertura end-to-end del two-tier de canton_matching.py (nivel 2, ver
+    tests/test_canton_matching.py::test_canton_fuera_del_universo_sembrado_no_lanza_two_tier
+    para la parte sin DB): resolver_canton_bce() nunca lanza para un cantón fuera del
+    universo sembrado con provincia válida -- el auto-ingreso real a marts.dim_canton
+    ocurre en el INSERT de _REFRESH_MARTS_SQL (sql/28_bce_canton_grain.sql), no en
+    Python. Una fila de staging.bce_tasas_pasivas con un cantón inventado (pero
+    PICHINCHA, provincia real) debe terminar como fila NUEVA en marts.dim_canton con
+    estado_validacion='AUTO_INGRESADO' (el DEFAULT de la columna) tras correr ese
+    statement.
+
+    Deliberadamente SIN try/finally + commit() intermedio (a diferencia de los tests de
+    tabla temporal más abajo): este test no necesita ejercitar ON COMMIT DROP, así que
+    el rollback automático de `db_conn` al terminar alcanza para no dejar residuo -- ni
+    en staging.bce_tasas_pasivas ni en marts.dim_canton. Usar
+    `_cleanup_bce_tasas_pasivas()` (que hace su propio `conn.commit()`) acá sería un bug
+    real: comitearía primero el INSERT de marts.dim_canton de este mismo test (todavía
+    sin limpiar) antes de borrar la fila de staging, dejando el cantón de prueba
+    permanentemente en la base -- encontrado y corregido durante el desarrollo de este
+    test (verificado con `SELECT ... FROM marts.dim_canton WHERE canton = 'ZZTEST...'`
+    contra la base de desarrollo real antes y después del fix)."""
+    banco_codigo = "ZZTEST_CANTON_AUTOINGRESO"
+    canton_nuevo = "ZZTEST CANTON INVENTADO"
+    df = pd.DataFrame(
+        [
+            _bce_tasas_pasivas_row(
+                banco_codigo, canton=canton_nuevo, provincia="PICHINCHA"
+            )
+        ]
+    )
+
+    upsert_staging_bce_tasas_pasivas(db_conn, df)
+
+    with db_conn.cursor() as cur:
+        cur.execute(_dim_canton_insert_statement())
+        cur.execute(
+            "SELECT estado_validacion FROM marts.dim_canton WHERE canton = %s",
+            (canton_nuevo,),
+        )
+        row = cur.fetchone()
+
+    assert row is not None  # se auto-ingresó, no se descartó
+    assert row[0] == "AUTO_INGRESADO"
+
+
+@pytest.mark.integration
 def test_upsert_staging_bce_tasas_pasivas_temp_table_row_count_and_cdc_no_op(db_conn):
     """Cobertura de orquestación (sección 2.3): _upsert_bce_via_temp() vía
     upsert_staging_bce_tasas_pasivas(). (a) una carga a través de COPY -> tabla temporal
@@ -369,8 +437,12 @@ def test_upsert_staging_bce_tasas_pasivas_temp_table_row_count_and_cdc_no_op(db_
     banco_codigo = "ZZTEST_BCE_TEMP_CDC"
     df = pd.DataFrame(
         [
-            _bce_tasas_pasivas_row(banco_codigo, plazo_dias_desde=0, plazo_dias_hasta=30),
-            _bce_tasas_pasivas_row(banco_codigo, plazo_dias_desde=31, plazo_dias_hasta=60),
+            _bce_tasas_pasivas_row(
+                banco_codigo, plazo_dias_desde=0, plazo_dias_hasta=30
+            ),
+            _bce_tasas_pasivas_row(
+                banco_codigo, plazo_dias_desde=31, plazo_dias_hasta=60
+            ),
         ]
     )
 

@@ -5,6 +5,9 @@ Uso:
     python -m etl.pipeline extract --years 2021 2022 2023 2024 2025
     python -m etl.pipeline load --years 2021 2022 2023 2024 2025
     python -m etl.pipeline all --years 2021 2022 2023 2024 2025
+    python -m etl.pipeline bce
+    python -m etl.pipeline bce-reprocess-canton-grain  # backfill de un solo uso, ver
+                                                        # reprocess_bce_staging() más abajo
 """
 
 import argparse
@@ -28,6 +31,7 @@ from etl.load.load_postgres import (
     load_raw_tasas_referenciales,
     refresh_marts,
     register_source_file,
+    truncate_staging_bce,
     upsert_banco_maestro_ruc,
     upsert_dim_cuenta_contable,
     upsert_staging_bce_tasas_activas,
@@ -141,6 +145,58 @@ def load_bce(base_dir: Path = BCE_DIR) -> None:
             upsert_banco_maestro_ruc(conn, entidades)
             upsert_fn(conn, df_staging)
             register_source_file(conn, zip_path.name, source_hash, report_type)
+            conn.commit()
+        refresh_marts(conn)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def reprocess_bce_staging(base_dir: Path = BCE_DIR) -> None:
+    """Backfill de sql/28_bce_canton_grain.sql (cambio de grano provincia -> cantón,
+    2026-09-01, ver etl/transform/parse_bce_tasas.py y canton_matching.py): re-deriva
+    staging.bce_tasas_pasivas/activas -- y, vía refresh_marts(), fact_captaciones_depositos/
+    fact_colocaciones_cartera -- SIN re-descargar ni re-insertar en raw.*. Seguro porque:
+    (a) tsp/tsa son un solo zip acumulativo con el histórico completo ya en disco (no hay
+    'año' que iterar como en CAPCOL); (b) raw.bce_tasas_pasivas/activas.data (JSONB) ya
+    tenía `canton` en el payload desde siempre -- RAW_TSP_COLS/RAW_TSA_COLS no cambiaron
+    con esta migración, solo el parser dejó de descartar esa columna en _weighted_agg().
+
+    A diferencia de load_bce(), este NO respeta is_source_loaded(): el hash del archivo
+    tsp/tsa no cambió (es el mismo de siempre, ya registrado en raw.source_files), así
+    que ese gate diría "ya cargado" para siempre y load_bce() normal nunca dispararía el
+    reproceso -- correcto para una carga semanal normal, pero exactamente lo que hay que
+    saltarse para un backfill de un cambio de esquema. Por eso es una función aparte, no
+    un flag de load_bce(): el flujo normal de cargas semanales queda intacto y sigue
+    siendo 100% idempotente sin este comportamiento.
+
+    truncate_staging_bce() vacía staging.bce_tasas_pasivas/activas primero -- necesario
+    porque la llave natural de ambas tablas se extendió con `canton` (sql/28): sin este
+    TRUNCATE, un upsert normal dejaría las filas viejas (canton NULL, grano provincia)
+    como duplicados huérfanos junto a las nuevas (canton siempre poblado, grano cantón)
+    en vez de reemplazarlas -- ver el docstring de esa función para el detalle completo.
+
+    Comando de un solo uso para esta migración -- no forma parte del flujo semanal
+    normal (load_bce() no lo invoca)."""
+    files = download_bce_all(base_dir)
+    conn = get_connection()
+    try:
+        truncate_staging_bce(conn)
+        conn.commit()
+        for clave, parse_fn, upsert_fn in (
+            ("tsp", parse_tsp_file, upsert_staging_bce_tasas_pasivas),
+            ("tsa", parse_tsa_file, upsert_staging_bce_tasas_activas),
+        ):
+            zip_path = files[clave]
+            log.info(
+                "Reprocesando %s (backfill grano cantón, raw.* intacto)", zip_path.name
+            )
+            df_staging, entidades = parse_fn(zip_path)
+            upsert_banco_maestro_ruc(conn, entidades)
+            upsert_fn(conn, df_staging)
             conn.commit()
         refresh_marts(conn)
         conn.commit()
@@ -314,7 +370,15 @@ def main():
     )
     parser.add_argument(
         "stage",
-        choices=["extract", "load", "all", "bce", "tasas-historicas", "boletin"],
+        choices=[
+            "extract",
+            "load",
+            "all",
+            "bce",
+            "bce-reprocess-canton-grain",
+            "tasas-historicas",
+            "boletin",
+        ],
     )
     parser.add_argument("--years", nargs="+", type=int, default=DEFAULT_YEARS)
     parser.add_argument("--out", type=Path, default=RAW_DIR)
@@ -326,6 +390,8 @@ def main():
         load_years(args.years, args.out)
     if args.stage == "bce":
         load_bce()
+    if args.stage == "bce-reprocess-canton-grain":
+        reprocess_bce_staging()
     if args.stage == "tasas-historicas":
         load_tasas_historicas()
     if args.stage == "boletin":
