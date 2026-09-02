@@ -119,6 +119,7 @@ en `fact_colocaciones_cartera`; `morosidad` es derivable de `estado_cartera` si 
 
 ### marts.fact_colocaciones_cartera (antes `fact_tasas_activas`) / marts.fact_captaciones_depositos (antes `fact_tasas_pasivas`) — grano: fecha × banco × categoría/subsegmento × plazo × cantón — BCE tsa/tsp, semanal
 | subsegmento_id (solo cartera) | int, FK | `dim_subsegmento_credito.subsegmento_id` — nivel fino, columna llamada `segmento_id` hasta 2026-07-19 (ver `sql/16_dim_segmento_normativo.sql`) |
+| es_operacion_especial (solo cartera) | text | `'NO'` para la cartera BCE normal; `'SI'` para las Operaciones Especiales de Banco de Guayaquil (`sql/29_operaciones_especiales.sql`, integradas desde `operaciones_especiales.xlsx`). Entra a la llave única y al `row_hash`. |
 | canton_id | int, FK, nullable | `dim_canton.canton_id` (2026-09-01, `sql/28_bce_canton_grain.sql` — **reemplaza** `provincia_id`, ver bloque "Grano de BCE tsp/tsa" debajo). Provincia/región siguen disponibles vía el mismo snowflake que ya usan `fact_saldo_cartera`/`fact_saldo_depositos` de CAPCOL: `canton_id → dim_canton.provincia_id → dim_provincia` (o `marts.vw_dim_canton_geografia` para la versión ya resuelta con `es_geografia_conocida`) |
 | segmento_entidad_id | int, FK, nullable | `dim_segmento_entidad.segmento_entidad_id` (2026-07-25, ver esa tabla arriba) — clasificación de tamaño/estructura del banco EN ESA FECHA |
 | monto_total, numero_operaciones | numeric, int | Agregados de la semana reportados por el BCE |

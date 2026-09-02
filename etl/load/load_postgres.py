@@ -461,6 +461,26 @@ def upsert_staging_bce_tasas_activas(conn, df: pd.DataFrame) -> None:
     )
 
 
+def upsert_staging_operaciones_especiales(conn, df: pd.DataFrame) -> None:
+    """Inserta las filas de operaciones_especiales.xlsx en staging.bce_tasas_activas con
+    es_operacion_especial='SI' (la columna y la llave única ya la contemplan, sql/28).
+    `df` viene del parser parse_operaciones_especiales.py con la misma forma que
+    _BCE_TASAS_ACTIVAS_COLS + es_operacion_especial; el flag entra a la llave para que
+    conviva con filas 'NO' del mismo grano."""
+    cols = _BCE_TASAS_ACTIVAS_COLS + ["es_operacion_especial"]
+    key_cols = [
+        "fecha",
+        "banco_codigo",
+        "segmento_credito",
+        "plazo_dias_desde",
+        "plazo_dias_hasta",
+        "provincia",
+        "canton",
+        "es_operacion_especial",
+    ]
+    _upsert_bce_via_temp(conn, df, "bce_tasas_activas", cols, key_cols)
+
+
 def upsert_dim_cuenta_contable(conn, cuentas_df: pd.DataFrame) -> None:
     """Plan de cuentas descubierto en cada archivo del Boletín -- volumen pequeño
     (~1500 cuentas), executemany alcanza. grupo_met se actualiza si el archivo nuevo trae
@@ -801,7 +821,7 @@ WHERE marts.fact_captaciones_depositos.row_hash IS DISTINCT FROM EXCLUDED.row_ha
 -- canton_id: mismo patrón de resolución de 2 pasos que fact_captaciones_depositos arriba
 -- -- ver ese comentario para el detalle completo.
 INSERT INTO marts.fact_colocaciones_cartera
-    (fecha_id, banco_id, subsegmento_id, plazo_id, canton_id, monto_total, numero_operaciones, tasa_activa_efectiva, tasa_nominal, segmento_entidad_id)
+    (fecha_id, banco_id, subsegmento_id, plazo_id, canton_id, monto_total, numero_operaciones, tasa_activa_efectiva, tasa_nominal, segmento_entidad_id, es_operacion_especial)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     b.banco_id,
@@ -812,7 +832,8 @@ SELECT
     s.numero_operaciones,
     s.tasa_activa_efectiva,
     s.tasa_nominal,
-    se.segmento_entidad_id
+    se.segmento_entidad_id,
+    s.es_operacion_especial
 FROM staging.bce_tasas_activas s
 JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
 JOIN marts.dim_subsegmento_credito sg ON sg.subsegmento = s.segmento_credito
@@ -821,12 +842,13 @@ JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
 LEFT JOIN marts.dim_provincia dp ON dp.provincia = translate(s.provincia, 'ÁÉÍÓÚ', 'AEIOU')
 LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia_id = dp.provincia_id
 LEFT JOIN marts.dim_segmento_entidad se ON se.tipo_segmento = s.tipo_segmento
-ON CONFLICT (fecha_id, banco_id, subsegmento_id, plazo_id, COALESCE(canton_id, -1))
+ON CONFLICT (fecha_id, banco_id, subsegmento_id, plazo_id, COALESCE(canton_id, -1), es_operacion_especial)
 DO UPDATE SET monto_total = EXCLUDED.monto_total,
               numero_operaciones = EXCLUDED.numero_operaciones,
               tasa_activa_efectiva = EXCLUDED.tasa_activa_efectiva,
               tasa_nominal = EXCLUDED.tasa_nominal,
               segmento_entidad_id = EXCLUDED.segmento_entidad_id,
+              es_operacion_especial = EXCLUDED.es_operacion_especial,
               fecha_actualizacion = now()
 WHERE marts.fact_colocaciones_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 

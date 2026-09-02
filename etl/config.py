@@ -23,6 +23,11 @@ BCE_URLS = {
 }
 BCE_DIR = RAW_DIR / "bce"
 
+# Operaciones especiales (Banco de Guayaquil): xlsx con la misma estructura de BCE tsa,
+# marcadas es_operacion_especial='SI'. Descarga manual a data/raw desde SharePoint
+# DataEngineeringBG-FINANCIERO/BENCHMARK_TASAS (ver docs/fuentes_datos.md).
+OPERACIONES_ESPECIALES = RAW_DIR / "operaciones_especiales.xlsx"
+
 DB_CONFIG = {
     "host": os.getenv("POSTGRES_HOST", "localhost"),
     "port": int(os.getenv("POSTGRES_PORT", "5432")),

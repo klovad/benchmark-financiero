@@ -79,6 +79,10 @@ docker compose up -d
 # 6. Boletín Financiero Mensual (balance/PyG)
 .venv\Scripts\python -m etl.pipeline boletin --years 2021 2022 2023 2024 2025 2026
 
+# 6b. Operaciones Especiales (Banco de Guayaquil): requiere copiar primero el xlsx a data/raw
+#     (ver docs/fuentes_datos.md, sección "Operaciones Especiales")
+.venv\Scripts\python -m etl.pipeline operaciones-especiales
+
 # 7. Power BI: abrir powerbi/benchmark-cartera-depositos.pbip en Power BI Desktop
 ```
 
@@ -182,6 +186,10 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   2026-06 (páginas anteriores usan un layout HTML distinto, no soportado por el parser
   actual). Tasas activas máximas/referenciales por segmento, pasivas por instrumento y
   plazo, TPR/TAR/Tasa Legal/Tasa Máxima Convencional.
+- **Operaciones Especiales (Banco de Guayaquil)**: xlsx descargado manualmente a
+  `data/raw/operaciones_especiales.xlsx` (SharePoint interno), misma estructura que BCE
+  tsa pero marcado `es_operacion_especial='SI'`; se integra al mismo grano de
+  `marts.fact_colocaciones_cartera`. Íntegrado 2026-09-02 — ver `docs/fuentes_datos.md`.
 - **Boletín Financiero Mensual** (balance/PyG por banco): 2021-01 a 2026-06. Plan de
   cuentas jerárquico completo (Catálogo Único de Cuentas), valores en USD (fuente reporta
   en miles, normalizado al cargar).
