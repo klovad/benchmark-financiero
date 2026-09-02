@@ -95,7 +95,8 @@ etl/
   transform/           parsers por fuente + *_matching.py (identidad de banco/categoría/
                        plazo, resuelta en Python antes de staging -- ver architecture.md)
   load/                load_postgres.py: raw -> staging -> marts, upserts con CDC
-  seeds/                banco_maestro.csv / banco_crosswalk.csv (catálogos sembrados)
+  seeds/                banco_maestro.csv / banco_crosswalk.csv / canton_provincia.csv
+                       (catálogos sembrados)
 sql/                  DDL: 00 (roles/DB) + 01-03 (raw/staging/marts) + migraciones
                        incrementales 04+ (dim_banco/dim_fecha rework, catálogos
                        conformados, BCE, Boletín -- ver sql/*.sql); todo el directorio
@@ -118,22 +119,33 @@ data/samples/          muestra de marts.* en Parquet (versionada) para probar si
 `pyproject.toml`, `[tool.pytest.ini_options]`):
 
 - **Unit** (default, sin marker): parsers, matching de identidad de banco/categoría/
-  plazo, `sha256_file()` y el parseo de fecha-desde-nombre-de-archivo
+  plazo/cantón (incluyendo `_weighted_agg()`/`_resolve_canton()` de
+  `parse_bce_tasas.py` con `canton` en el grano, ver `sql/28_bce_canton_grain.sql`),
+  `sha256_file()` y el parseo de fecha-desde-nombre-de-archivo
   (`etl/pipeline.py::parse_fecha_from_*_filename`) -- puros, sin DB ni red.
 - **Integration** (`@pytest.mark.integration`, fixture `db_conn` en
   `tests/conftest.py`): requieren Postgres real ya migrado hasta el último `sql/*.sql`
   (ver Quickstart). Cubren las regresiones de `sql/10`/`sql/23`/`sql/24` (unicidad
   NULL-safe) y `sql/21` (invariante de grano del pivote de `fact_saldo_cartera`), un round-trip real de
   `upsert_staging_cartera()`/`register_source_file()`/`is_source_loaded()` verificando
-  el contrato de CDC (una segunda carga idéntica no dispara ningún `UPDATE`), y la
-  mecánica COPY/tabla-temporal de `_upsert_bce_via_temp()`/`_upsert_boletin_via_temp()`
+  el contrato de CDC (una segunda carga idéntica no dispara ningún `UPDATE`), el
+  auto-ingreso two-tier de `marts.dim_canton` de punta a punta (un cantón fuera del
+  universo sembrado pero con provincia válida termina `AUTO_INGRESADO`, no rechazado --
+  ver `resolver_canton_bce()`), y la mecánica COPY/tabla-temporal de
+  `_upsert_bce_via_temp()`/`_upsert_boletin_via_temp()`
   (vía `upsert_staging_bce_tasas_pasivas()`/`upsert_staging_boletin_balance()`): conteo
   de filas, CDC no-op, UPDATE real, y verificación contra `pg_tables` de que la tabla
   temporal existe (`pg_temp_N`) antes de un `commit()` y desaparece después (promesa de
   `ON COMMIT DROP`). La mayoría de estos tests nunca hacen `commit` -- `db_conn` siempre
   hace `rollback` al terminar, sin dejar residuos --, salvo los de tabla temporal: como
   `ON COMMIT DROP` solo dispara en un `commit` real, esos pocos sí comitean entre
-  llamadas y se limpian ellos mismos con `DELETE` + `commit()` en un `finally`.
+  llamadas y se limpian ellos mismos con `DELETE` + `commit()` en un `finally` (**cuidado
+  real, encontrado durante esta migración**: el helper de limpieza que usan esos tests,
+  `_cleanup_bce_tasas_pasivas()`, hace su propio `commit()` -- si un test nuevo lo
+  reutiliza sin necesitar realmente un `commit()` intermedio, comitea de paso cualquier
+  otro cambio hecho antes en la misma transacción, dejando residuo real en la base pese
+  a que `db_conn` en teoría siempre hace rollback; los tests que no necesitan probar
+  `ON COMMIT DROP` no deben llamar a ese helper).
 
 ```powershell
 .venv\Scripts\python -m pytest -m "not integration"   # unit -- sin Postgres
@@ -162,7 +174,14 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   identidad curada + 409 bancos públicos/cooperativas/mutualistas/sociedad financiera/
   tarjetas de crédito auto-registrados por RUC — ver `docs/gobernanza_datos.md`). Activas
   por segmento de crédito (26 valores), pasivas por categoría de depósito, ambas por
-  plazo y provincia.
+  plazo y cantón (2026-09-01: grano cambiado de provincia a cantón,
+  `sql/28_bce_canton_grain.sql` + reproceso del histórico completo, ver
+  `etl/transform/parse_bce_tasas.py`/`etl/transform/canton_matching.py`) —
+  provincia/región siguen disponibles vía `dim_canton.provincia_id → dim_provincia`.
+  `fact_captaciones_depositos`: 3.077.474 filas; `fact_colocaciones_cartera`: 7.756.581
+  filas (0 `canton_id` NULL en ambas, verificado tras el reproceso —
+  `python -m etl.pipeline bce-reprocess-canton-grain`, backfill de un solo uso para esta
+  migración, no forma parte del flujo semanal normal de `python -m etl.pipeline bce`).
 - **BCE `TasasHistorico.htm`** (techos y referenciales, nivel sistema): 2022-04 a
   2026-06 (páginas anteriores usan un layout HTML distinto, no soportado por el parser
   actual). Tasas activas máximas/referenciales por segmento, pasivas por instrumento y
@@ -208,8 +227,6 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   personalización (selector de métrica, comparador de periodo CY/PY, ventana móvil de
   tendencia) con estados reales (orientación horizontal, selección única forzada — corrige
   además un bug real: sin `strictSingleSelect` las medidas `SELECTEDVALUE(...)` podían caer
-  en `BLANK()`). Maqueta HTML del diseño:
-  [Artifact "Libro Mayor"](https://claude.ai/code/artifact/b11b6df0-3482-4d53-9bc5-317a5916d1cf).
-  Ver `docs/prototipo_diseno_powerbi.md` para la paleta, la tipografía, el detalle de cada
-  control, las divergencias explícitas entre la maqueta y el render real de Desktop, y cómo
-  exportar un `.pbit` real desde Desktop.
+  en `BLANK()`). Ver `docs/prototipo_diseno_powerbi.md` para la paleta, la tipografía, el
+  detalle de cada control, las divergencias explícitas entre la maqueta y el render real de
+  Desktop, y cómo exportar un `.pbit` real desde Desktop.

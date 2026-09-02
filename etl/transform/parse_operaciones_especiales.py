@@ -108,6 +108,7 @@ def parse_operaciones_especiales_file(xlsx_path: Path) -> pd.DataFrame:
         "plazo_dias_hasta",
         "plazo_codigo",
         "provincia",
+        "canton",
     ]
     result = _weighted_agg(df, group_cols, ["tasa_activa_efectiva", "tasa_nominal"])
     result = result.merge(segmento_entidad, on=["fecha", "banco_codigo"], how="left")

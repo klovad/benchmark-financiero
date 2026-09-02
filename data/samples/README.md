@@ -9,17 +9,21 @@ variantes: una muestra chica de un mes (`marts_AAAA-MM/`) y una ventana de años
 ## `marts_ultimos_5_anios/`
 
 Todo `marts.*` tal cual está en Postgres, limitado a los últimos 5 años calendario con
-datos (2022-2026 a esta fecha; 5.398.866 filas, ~201 MB — el histórico completo desde
-2008 pesa ~394 MB, se descartó versionar eso para no inflar el repo sin necesidad real).
-Los 10 catálogos (`dim_banco`, `dim_canton`, `dim_provincia`, `dim_segmento_credito`,
-`dim_subsegmento_credito`, `dim_segmento_entidad`, `dim_categoria_deposito`, `dim_plazo`,
-`dim_cuenta_contable`, `dim_fecha`) van completos en un solo archivo cada uno — son
-chicos y los hechos filtrados igual necesitan el catálogo completo para resolver sus FK
-(`dim_fecha` no se recorta a la ventana de 5 años tampoco, mismo motivo). Los 10 hechos
-se **particionan por año** (`{tabla}_{anio}.parquet`, vía `dim_fecha.anio`): sin
-particionar, `fact_colocaciones_cartera` del histórico completo pesaría 230 MB, por
-encima del límite de 100 MB/archivo de GitHub sin Git LFS; particionado, el archivo más
-grande de esta ventana pesa ~24 MB. Para reconstruir una tabla completa en pandas:
+datos (2022-2026 a esta fecha; 7.520.906 filas, ~300 MB — regenerado 2026-09-01 tras el
+cambio de grano de BCE a cantón, `sql/28_bce_canton_grain.sql`, que subió el conteo de
+`fact_captaciones_depositos`/`fact_colocaciones_cartera` ~1.6x; el histórico completo
+desde 2008 pesa más todavía, se descartó versionar eso para no inflar el repo sin
+necesidad real). Los 10 catálogos (`dim_banco`, `dim_canton`, `dim_provincia`,
+`dim_segmento_credito`, `dim_subsegmento_credito`, `dim_segmento_entidad`,
+`dim_categoria_deposito`, `dim_plazo`, `dim_cuenta_contable`, `dim_fecha`) van completos
+en un solo archivo cada uno — son chicos y los hechos filtrados igual necesitan el
+catálogo completo para resolver sus FK (`dim_fecha` no se recorta a la ventana de 5 años
+tampoco, mismo motivo; `dim_canton` va con las 228 filas post-`sql/28`, incluido el
+placeholder `NACIONAL`/`S-N`). Los 10 hechos se **particionan por año**
+(`{tabla}_{anio}.parquet`, vía `dim_fecha.anio`): sin particionar, el histórico completo
+de `fact_colocaciones_cartera` pesaría muy por encima del límite de 100 MB/archivo de
+GitHub sin Git LFS; particionado, el archivo más grande de esta ventana pesa ~37.5 MB
+(`fact_colocaciones_cartera_2023.parquet`). Para reconstruir una tabla completa en pandas:
 
 ```python
 import glob

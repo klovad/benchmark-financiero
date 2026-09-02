@@ -56,7 +56,8 @@ archivo (`etl/transform/parse_cartera.py::tipo_credito_from_sheet_name`, vía
 |---|---|---|---|
 | Nombre de hoja `BASE ...` | `tipo_credito` | Regex de palabras clave (`vivienda interes`→`vivienda_interes_publico`, `inmobiliario`, `productivo`→`comercial`, `consumo`, `microcredito`, `educativo`); orden importa, `vivienda interes` se evalúa antes que `inmobiliario` | `dim_segmento_credito` (JOIN por mapeo `tipo_credito`→`segmento`, ver `sql/16_dim_segmento_normativo.sql`) → `fact_saldo_cartera.segmento_id` (2026-07-19: antes columna directa `tipo_credito` sin FK) |
 | Columna `FECHA` | `fecha` | `month_end_date()` — normaliza a fin de mes | `dim_fecha` (JOIN por `fecha`) → `fact_saldo_cartera.fecha_id` |
-| Columna `ENTIDAD` | `banco`, `banco_codigo` | `normalize_banco()` + `resolver_banco_codigo(nombre, "CAPCOL")` (`banco_matching.py`) — falla con `BancoNoResueltoError` si no resuelve | `dim_banco` (JOIN por `banco_codigo`, poblado desde `staging.banco_maestro`) → `fact_saldo_cartera.banco_id` |
+| Columna `ENTIDAD` | `banco`, `banco_codigo` | `normalize_banco()` + `resolver_banco_codigo(nombre, "CAPCOL")` (`banco_matching.py`) — falla con `BancoNoResueltoError` si no resuelve. **Pendiente de implementación, diseño aprobado 2026-09-01** (`docs/fuentes_datos.md` sección 1.1): al integrar el sub-portal Banca Pública, 3 valores nuevos de `ENTIDAD` (`BANECUADOR B. P.`, `BANCO DE DESARROLLO DEL ECUADOR B.P.`, `CORPORACION FINANCIERA NACIONAL B.P.`) resuelven vía `etl/seeds/banco_crosswalk.csv` directo al `banco_codigo` `BCE_<ruc>` que BCE ya había auto-registrado — primera vez que el crosswalk apunta fuera de `etl/seeds/banco_maestro.csv` (ver riesgo de orden de carga en `docs/gobernanza_datos.md`) | `dim_banco` (JOIN por `banco_codigo`, poblado desde `staging.banco_maestro`) → `fact_saldo_cartera.banco_id` |
+| *(implícito, no una columna)* | `tipo_entidad` | **Hoy hardcodeado `'BANCO PRIVADO'` en `_parse_sheet()`** (`parse_cartera.py`) para toda fila, sin importar el origen — al integrar Banca Pública esto debe parametrizarse por sub-portal de origen (`'BANCO PUBLICO'` para `capcol-instituciones-publicas/`), pendiente en el carril de `data-engineer`; si se reapunta el scraper sin este cambio, las filas de Banca Pública quedarían mal etiquetadas `'BANCO PRIVADO'` sin error visible (ver `docs/fuentes_datos.md` sección 1.1, punto 2 de la lista de pendientes) | filtra el `WHERE s.tipo_entidad = ...` de `fact_saldo_cartera`/`fact_saldo_depositos` en `_REFRESH_MARTS_SQL` |
 | Columna `PROVINCIA` | `provincia` | `normalize_provincia()` (2026-07-25, antes `normalize_text()`) | `dim_provincia` (JOIN `provincia`, con `translate()` de respaldo para una fila histórica con tilde — ver `docs/gobernanza_datos.md`) → `dim_canton.provincia_id` |
 | Columna `CANTON` | `canton` | `normalize_text()` | `dim_canton` (JOIN `canton`+`provincia_id`) → `fact_saldo_cartera.canton_id` |
 | *(derivado de `PROVINCIA`)* | `region` | `region_for_provincia()` vía `PROVINCIA_REGION` (`etl/config.py`) | **No se materializa en `marts`** directamente — vive en `staging.cartera` (informativo) y en `dim_provincia.region` (única fuente de verdad en `marts`, 2026-07-25) |
@@ -111,10 +112,26 @@ provincia;canton;plazo;monto_total;numero_operaciones;tasa_pasiva_efectiva;tasa_
 **Sin filtro de `tipo_entidad`** (corregido 2026-07-19, ver "Principio" arriba): el
 archivo cubre 456 entidades reales del sistema financiero completo — 37 bancos privados,
 7 bancos públicos, 394 cooperativas de ahorro y crédito, 5 mutualistas, 12 sociedad
-financiera, 1 administradora de tarjetas de crédito. Grano final de
-`fact_captaciones_depositos` (antes `fact_tasas_pasivas`, renombrada 2026-07-19)
-`(fecha, banco, categoría, plazo, provincia)` — **sin cantón**: el archivo trae cantón
-como grano más fino dentro de cada provincia y se reagrega.
+financiera, 1 administradora de tarjetas de crédito.
+
+**Cambio de grano completado (2026-09-01, `sql/28_bce_canton_grain.sql` +
+`data-engineer`)**: el grano de `fact_captaciones_depositos` (antes `fact_tasas_pasivas`,
+renombrada 2026-07-19) pasó de `(fecha, banco, categoría, plazo, provincia)` — sin
+cantón, el archivo trae cantón como grano más fino dentro de cada provincia y
+`_weighted_agg()` lo reagregaba — a `(fecha, banco, categoría, plazo, cantón)`, igualando
+el patrón ya usado por CAPCOL. Esquema (`staging.bce_tasas_pasivas.canton`,
+`marts.dim_canton` expandido a 228 filas, `marts.fact_captaciones_depositos.canton_id`),
+función de resolución (`etl/transform/canton_matching.py::resolver_canton_bce()`) e
+integración en el parser (`_resolve_canton()`, `etl/transform/parse_bce_tasas.py`) están
+todos en producción. Reprocesado el histórico completo vía
+`etl/pipeline.py::reprocess_bce_staging()` (nuevo stage CLI
+`bce-reprocess-canton-grain`): `marts.fact_captaciones_depositos` quedó en **3.077.474
+filas** (0 con `canton_id` NULL), `marts.dim_canton` se mantuvo en 228 filas, todas
+`CONFIRMADO` (0 pares nuevos `AUTO_INGRESADO` — el universo sembrado en `sql/28` ya
+cubría el histórico real completo de BCE). 334.556 filas cayeron en el bucket
+`NACIONAL`/`S-N` (sin geografía desagregada, estructural para ciertos instrumentos — ver
+`docs/gobernanza_datos.md`, sumabilidad). La tabla de abajo describe el comportamiento
+**actual** del parser, ya no un objetivo pendiente.
 
 | Campo origen | `raw.bce_tasas_pasivas.data` | Transformación (staging) | `staging.bce_tasas_pasivas` | `marts.fact_captaciones_depositos` |
 |---|---|---|---|---|
@@ -122,21 +139,30 @@ como grano más fino dentro de cada provincia y se reagrega.
 | `razon_social`, `ruc`, `tipo_entidad` (original) | tal cual, sin resolver | `resolver_entidad_bce(razon_social, ruc, tipo_entidad)` — **dos caminos**: si `tipo_entidad == 'BANCOS PRIVADOS'`, identidad curada igual que siempre (`resolver_banco_codigo`, `banco_crosswalk.csv`, `BancoNoResueltoError` si no resuelve, **sin** validación estructural de RUC — ver nota abajo); si no, `banco_codigo = "BCE_" + ruc` **auto-registrado sin curación manual** (~420 entidades, inviable curar a mano una por una — ver `docs/gobernanza_datos.md`), pero **desde 2026-08-30 el RUC pasa primero por `validar_ruc_estructura()`** (13 dígitos, provincia 01-24, tercer dígito 9/6, dígito verificador módulo 11 — algoritmo estándar de sociedades del SRI, verificado contra las 409 entidades no-privadas ya vigentes en `marts.dim_banco`, 0 rechazos falsos) — un RUC estructuralmente inválido lanza `RucInvalidoError` y bloquea esa fila en vez de auto-registrarse con una llave malformada. El `ruc` de la fila se devuelve siempre, privados incluidos (2026-07-23) | `banco_codigo` | `dim_banco` (JOIN `banco_codigo`) → `banco_id`/`.ruc`/`.estado_validacion` (`CONFIRMADO` para privados, `AUTO_INGRESADO` para auto-registrados, ver `docs/data_dictionary.md`). Todas las entidades pasan por `upsert_banco_maestro_ruc()` (crea la fila si no existe — no-privadas — y siempre actualiza `ruc`; `banco`/`tipo_entidad`/`estado_validacion='CONFIRMADO'` de los privados los sigue fijando `load_banco_maestro_seed()` desde el CSV, `nombre = razon_social` tal cual solo para no-privados) |
 | `instrumento_captacion` | tal cual | Validado contra `CATEGORIAS_VALIDAS` (11 valores; verificado 2026-07-19 que las 5 que realmente aparecen en tsp — con o sin filtro de entidad — están todas cubiertas) | `categoria_deposito` | `dim_categoria_deposito` → `categoria_deposito_id` |
 | `plazo` | tal cual | `resolver_plazo_bce()` (`bce_plazo_matching.py`) — quita prefijo ordinal (`"a. "`...), parsea rango en días (tsp: 7 buckets; verificado sin filtro, mismos 7 para todo el sistema) | `plazo_codigo`, `plazo_dias_desde`, `plazo_dias_hasta` | `dim_plazo` (JOIN `dias_desde`+`dias_hasta`) → `plazo_id` |
-| `provincia` | tal cual | `normalize_provincia()` (2026-07-25, antes `normalize_text()` — ver `docs/gobernanza_datos.md` "Normalización de provincia") | `provincia` | `dim_provincia` (JOIN `provincia`) → `fact_captaciones_depositos.provincia_id` |
-| `canton` | tal cual (raw sí lo preserva) | Colapsado: se reagrega dentro de cada provincia (`_weighted_agg`), no pasa a staging | *(no está en staging)* | — |
-| `monto_total`, `numero_operaciones` | tal cual | `SUM` al colapsar cantón→provincia | igual | `fact_captaciones_depositos.monto_total`/`.numero_operaciones` |
-| `tasa_pasiva_efectiva`, `tasa_nominal` | tal cual | **Promedio ponderado por `monto_total`** de las filas donde esa tasa no es nula (denominador propio por columna) | igual | `fact_captaciones_depositos.tasa_pasiva_efectiva`/`.tasa_nominal` |
+| `provincia`, `canton` | tal cual (raw sí preserva ambos) | `_resolve_canton()` llama `resolver_canton_bce(canton, provincia)` (`etl/transform/canton_matching.py`) sobre las ~226 combinaciones distintas (patrón `_resolve_identidad`), resuelve el PAR completo (nunca cantón solo, por los homónimos en 2 provincias) y devuelve `(canton, provincia)` normalizados sin colapsar — `CantonNoResueltoError` si la provincia no resuelve, nunca por un cantón fuera del universo sembrado (two-tier) | `provincia`, `canton` (siempre poblado, columna agregada por `sql/28`) | `dim_canton` (JOIN `canton`+`provincia` vía `dim_provincia`) → `fact_captaciones_depositos.canton_id` (columna agregada por `sql/28`, reemplaza `provincia_id`) |
+| `monto_total`, `numero_operaciones` | tal cual | Sin agregar entre cantones — un valor por fila de cantón real (grano más fino ya alcanzado); `_weighted_agg()` se mantiene como red de seguridad ante duplicados reales del archivo fuente en la misma llave, no como colapso geográfico | igual | `fact_captaciones_depositos.monto_total`/`.numero_operaciones` |
+| `tasa_pasiva_efectiva`, `tasa_nominal` | tal cual | Tal cual, sin reagregar (ya al grano más fino real) salvo que existan duplicados exactos en la llave, en cuyo caso `_weighted_agg()` promedia ponderado por `monto_total` | igual | `fact_captaciones_depositos.tasa_pasiva_efectiva`/`.tasa_nominal` — **nunca sumar/promediar simple al reagregar a un nivel superior, siempre reponderar por `monto_total`** (ver `docs/gobernanza_datos.md`, sumabilidad) |
 | `tipo_segmento` | preservada en `raw.*` (columna original) | 2026-07-25 (antes descartada sin examinar su contenido, ver `docs/gobernanza_datos.md` "Clasificación normativa de entidad"): validada contra `TIPOS_SEGMENTO_VALIDOS` (14 valores), resuelta una vez por `(fecha, banco_codigo)` (`_resolve_segmento_entidad`, gana la fila de mayor `monto_total` en el puñado de casos donde no es estable dentro de la semana) | `tipo_segmento` | `dim_segmento_entidad` (JOIN `tipo_segmento`) → `fact_captaciones_depositos.segmento_entidad_id`; además `dim_banco.segmento_entidad_id` (última clasificación conocida, actualizada en `refresh_marts()`) |
 | `sector_financiero` | preservada en `raw.*` (columna original) | descartada, no pasa a staging (redundante con `dim_banco.tipo_entidad`) | — | — |
 
-**Llave natural** `staging.bce_tasas_pasivas`: `(fecha, banco_codigo, categoria_deposito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''))`.
-Código: `etl/transform/parse_bce_tasas.py::read_raw` (captura), `parse_tsp_file`
+**Llave natural** `staging.bce_tasas_pasivas`: `(fecha, banco_codigo, categoria_deposito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''), COALESCE(canton,''))`
+(`canton` agregado a la llave por `sql/28_bce_canton_grain.sql`, 2026-09-01 — antes sin
+`canton`). Código: `etl/transform/parse_bce_tasas.py::read_raw` (captura), `parse_tsp_file`
 (staging), `etl/transform/banco_matching.py::resolver_entidad_bce` (identidad),
-`etl/load/load_postgres.py::upsert_banco_maestro_ruc`. Verificado (2026-07-19): raw
-3.077.976 filas, staging = marts = 1.956.386 filas exactas (0 filas huérfanas en el
-JOIN a `dim_banco`), de las cuales 485.588 son de los 33 bancos privados curados
-(idéntico al conteo verificado antes del fix, confirma que el refactor no alteró ese
-subconjunto) y 1.470.798 de las ~399 entidades auto-registradas.
+`etl/transform/canton_matching.py::resolver_canton_bce` (geografía, integrada en
+`parse_tsp_file` vía `_resolve_canton()`),
+`etl/load/load_postgres.py::upsert_banco_maestro_ruc`. Conteos a grano provincia
+(2026-07-19, previo al cambio de grano): raw 3.077.976 filas, staging = marts =
+1.956.386 filas exactas (0 filas huérfanas en el JOIN a `dim_banco`), de las cuales
+485.588 son de los 33 bancos privados curados y 1.470.798 de las ~399 entidades
+auto-registradas. **Conteos a grano cantón, verificados en producción tras el reproceso
+completo (2026-09-01, `etl/pipeline.py::reprocess_bce_staging()`)**:
+`marts.fact_captaciones_depositos` = **3.077.474 filas** (0 con `canton_id` NULL) — el
+aumento real (~1.57x) quedó en línea con el estimado previo (~1.6x, medido sobre
+combinaciones distintas de jun-2026: 26.998 a grano cantón vs. 16.393 a grano provincia).
+`marts.dim_canton` se mantuvo en 228 filas, todas `CONFIRMADO` (0 pares nuevos
+`AUTO_INGRESADO` — el universo sembrado en `sql/28` ya cubría el histórico real
+completo).
 
 ## 4. BCE — tsa (tasas activas, semanal)
 
@@ -151,13 +177,20 @@ crédito).
 | `tasa_activa_efectiva` | `tasa_activa_efectiva` | Promedio ponderado por `monto_total` (igual que tsp) | `fact_colocaciones_cartera.tasa_activa_efectiva` |
 | *(resto de columnas: `semana`, `razon_social`/`ruc`/`tipo_entidad`, `plazo`, `provincia`, `canton`, `monto_total`, `numero_operaciones`, `tasa_nominal`)* | igual que tsp | igual que tsp (mismo `resolver_entidad_bce`, mismo `resolver_plazo_bce` — tsa usa 14 buckets, mezcla de días/años, verificado sin filtro) | igual que tsp |
 
-**Llave natural**: `(fecha, banco_codigo, segmento_credito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''))`.
-Código: `etl/transform/parse_bce_tasas.py::parse_tsa_file`. Verificado (2026-07-19): raw
-7.757.194 filas, staging = marts = 4.869.696 filas exactas, de las cuales 1.462.134 son
-de bancos privados (idéntico al conteo verificado antes del fix) y 3.407.562 de las
-~408 entidades auto-registradas. `marts.dim_banco` terminó con 442 bancos totales (33
-curados + 409 auto-registrados, algunos compartidos entre tsp/tsa deduplicados por
-`ON CONFLICT DO NOTHING` en `staging.banco_maestro`).
+**Llave natural**: `(fecha, banco_codigo, segmento_credito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''), COALESCE(canton,''))`
+(`canton` agregado por `sql/28_bce_canton_grain.sql`, 2026-09-01, mismo cambio de grano
+que tsp arriba, `resolver_canton_bce()` integrado en `parse_tsa_file` vía
+`_resolve_canton()`). Código: `etl/transform/parse_bce_tasas.py::parse_tsa_file`.
+Conteos a grano provincia (2026-07-19, previo al cambio de grano): raw 7.757.194 filas,
+staging = marts = 4.869.696 filas exactas, de las cuales 1.462.134 son de bancos privados
+y 3.407.562 de las ~408 entidades auto-registradas. `marts.dim_banco` terminó con 442
+bancos totales (33 curados + 409 auto-registrados, algunos compartidos entre tsp/tsa
+deduplicados por `ON CONFLICT DO NOTHING` en `staging.banco_maestro`). **Conteos a grano
+cantón, verificados en producción tras el reproceso completo (2026-09-01)**:
+`marts.fact_colocaciones_cartera` = **7.756.581 filas** (0 con `canton_id` NULL). De las
+3.077.474 + 7.756.581 filas combinadas de ambas fact tables, 334.556 cayeron en el
+bucket `NACIONAL`/`S-N` (geografía no desagregada, estructural por tipo de instrumento —
+ver `docs/gobernanza_datos.md`, sumabilidad).
 
 ## 5. BCE — `TasasHistorico.htm` (techos y referenciales, mensual, nivel sistema)
 

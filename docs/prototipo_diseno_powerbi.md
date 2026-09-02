@@ -19,11 +19,10 @@ Esta versión — **"Libro Mayor"** — parte de un concepto concreto anclado en
 (benchmark de mercado bancario, concentración/HHI, posiciones entre bancos): un lienzo
 oscuro tipo bóveda/terminal de mercado, un único acento de marca color bronce/latón, y
 cifras en tipografía monoespaciada para que los números de un KPI o de una tabla alineen
-como en un balance contable real. La maqueta HTML completa —paleta con hex reales,
-tipografía real, layout con nombres de campo/medida reales, y los 3 controles rediseñados
-con sus estados (reposo/hover/seleccionado)— está publicada aquí:
-
-**→ [Artifact: Libro Mayor](https://claude.ai/code/artifact/b11b6df0-3482-4d53-9bc5-317a5916d1cf)**
+como en un balance contable real. Existe una maqueta HTML completa —paleta con hex
+reales, tipografía real, layout con nombres de campo/medida reales, y los 3 controles
+rediseñados con sus estados (reposo/hover/seleccionado)— publicada como Artifact privado
+(link no incluido en el repo).
 
 Esa maqueta es el entregable que hay que revisar primero — el `.pbip` descrito abajo
 implementa lo mismo hasta donde el formato TMDL/PBIR lo permite (ver §7 para las
@@ -381,7 +380,7 @@ No requiere ninguna migración de base de datos adicional — usa las mismas tab
 `marts.dim_fecha`, `marts.dim_banco`, `marts.fact_saldo_cartera`,
 `marts.fact_saldo_depositos` que ya consume el reporte productivo.
 
-**Al abrir, comparar contra la maqueta HTML**
-(https://claude.ai/code/artifact/b11b6df0-3482-4d53-9bc5-317a5916d1cf) y anotar cualquier
-divergencia no prevista en §7 — esa lista se hizo con la mejor información disponible sin
-poder renderizar Desktop en este entorno, pero no reemplaza una revisión visual real.
+**Al abrir, comparar contra la maqueta HTML** (Artifact "Libro Mayor", link privado — ver
+nota arriba) y anotar cualquier divergencia no prevista en §7 — esa lista se hizo con la
+mejor información disponible sin poder renderizar Desktop en este entorno, pero no
+reemplaza una revisión visual real.
