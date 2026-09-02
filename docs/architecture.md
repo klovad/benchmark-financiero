@@ -2,10 +2,23 @@
 
 ## Flujo de datos
 
-El proyecto integra **3 fuentes independientes** en un único esquema estrella conformado.
+El proyecto integra **3 fuentes independientes** en un único esquema estrella conformado
+(un 4to sub-portal, Banca Pública de Superbancos, se suma a CAPCOL ampliando su cobertura
+de `tipo_entidad` sin ser una fuente nueva en sí — ver más abajo; una 5ta fuente real, SEPS,
+está diseñada y aprobada pero **no implementada**, ver `docs/fuentes_datos.md` sección 4).
 Cada fuente tiene su propio extractor/parser, pero todas convergen en la misma capa
 `marts.*` — la identidad de banco y los catálogos de producto/plazo son compartidos
 (resueltos en Python antes de `staging.*`, ver sección "Catálogos conformados" abajo).
+
+**Banca Pública** (`capcol-instituciones-publicas/`, investigado y diseñado 2026-09-01):
+mismo plugin/formato/grano que `capcol-bancos` — no es un sub-flujo nuevo en el diagrama de
+abajo, es CAPCOL cargando `tipo_entidad='BANCO PUBLICO'` además de `'BANCO PRIVADO'` en las
+mismas `raw.cartera`/`raw.depositos`/`staging.cartera`/`staging.depositos`/
+`fact_saldo_cartera`/`fact_saldo_depositos`. Cero migraciones de esquema necesarias (el
+`CHECK` de `dim_banco.tipo_entidad` y la 7ma fila `INVERSIÓN PÚBLICA` de
+`dim_segmento_credito` ya lo soportaban). Detalle completo, identidad, y qué falta
+(extractor/parser/`_REFRESH_MARTS_SQL`, carril de `data-engineer`) en
+`docs/fuentes_datos.md` sección 1.1.
 
 ```
 CAPCOL (cartera/depósitos)          BCE tsp/tsa (tasas semanales)      TasasHistorico.htm       Boletín (BALANCE/PYG)
@@ -279,7 +292,19 @@ llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
   corto de CAPCOL/Boletín, o los 2 renames reales de CAPCOL) se resuelve contra
   `etl/seeds/banco_crosswalk.csv`, sembrado a mano y versionado en git. Un nombre no
   resuelto **falla fuerte** (`BancoNoResueltoError`) — nunca se autogenera un banco nuevo
-  silenciosamente.
+  silenciosamente. **2026-09-01** (Banca Pública, `capcol-instituciones-publicas/`, ver
+  `docs/fuentes_datos.md` sección 1.1): primer uso del crosswalk donde `banco_codigo` no
+  apunta a un código curado de `etl/seeds/banco_maestro.csv` sino a un `BCE_<ruc>` que
+  `resolver_entidad_bce()` ya auto-registró en `marts.dim_banco` — deliberado, para que
+  los 3 bancos públicos que reporta este sub-portal (`BANECUADOR B. P.`, `BANCO DE
+  DESARROLLO DEL ECUADOR B.P.`, `CORPORACION FINANCIERA NACIONAL B.P.`) resuelvan a la
+  MISMA fila de `dim_banco` que ya generó BCE en vez de crear una identidad paralela. Esto
+  introduce una dependencia de orden de carga que no existía antes para CAPCOL/Boletín
+  (que siempre resolvían por identidad 100% curada, independiente de si BCE había corrido):
+  el `INNER JOIN` de `fact_saldo_cartera`/`fact_saldo_depositos` en `refresh_marts()`
+  descarta en silencio una fila cuyo `banco_codigo` todavía no exista en `marts.dim_banco`
+  — ver el detalle completo del riesgo y la mitigación recomendada en
+  `docs/mantenimiento_catalogos.md` sección 1 y `docs/fuentes_datos.md` sección 1.1.
 - `etl/transform/categoria_deposito_matching.py` y `bce_plazo_matching.py`: mismo patrón
   para separar categoría/plazo (CAPCOL mezclaba ambos conceptos en `tipo_deposito`) y para
   resolver los buckets de plazo con prefijo ordinal de BCE (`a. MENOS DE 30 DIAS`, etc.).

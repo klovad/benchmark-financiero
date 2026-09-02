@@ -50,6 +50,27 @@ def test_invalid_fuente_raises_value_error():
         resolver_banco_codigo("BP PICHINCHA", "OTRA_FUENTE")
 
 
+def test_capcol_banca_publica_resuelve_al_mismo_codigo_bce_por_ruc():
+    # Banca Pública (capcol-instituciones-publicas/, integrada 2026-09-01) reporta
+    # ENTIDAD con sufijo "B. P."/"B.P." que no coincide con ningún patrón de
+    # _por_regla() (no empieza con "BP "/"BANCO ", el sufijo no es S.A./C.A./LTDA) --
+    # los 3 nombres crudos observados en archivos reales (2021-2025) se resuelven vía
+    # banco_crosswalk.csv al MISMO banco_codigo "BCE_<ruc>" que ya generó
+    # resolver_entidad_bce() al auto-registrar estas entidades desde BCE tsp/tsa, para
+    # no crear una segunda identidad paralela para el mismo banco público. Los 3 RUC son
+    # los mismos ya vigentes en marts.dim_banco (verificado contra la base viva
+    # 2026-09-01) -- ver docs/fuentes_datos.md sección 1 y docs/gobernanza_datos.md.
+    assert resolver_banco_codigo("BANECUADOR B. P.", "CAPCOL") == "BCE_1768183520001"
+    assert (
+        resolver_banco_codigo("BANCO DE DESARROLLO DEL ECUADOR B.P.", "CAPCOL")
+        == "BCE_1760002950001"
+    )
+    assert (
+        resolver_banco_codigo("CORPORACION FINANCIERA NACIONAL B.P.", "CAPCOL")
+        == "BCE_1760003090001"
+    )
+
+
 def test_resolver_entidad_bce_privados_usa_crosswalk_curado():
     codigo, banco, tipo, ruc = resolver_entidad_bce(
         "BANCO PICHINCHA C.A.", "1790010937001", "BANCOS PRIVADOS"
