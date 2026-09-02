@@ -61,7 +61,22 @@ contra datos reales nuevos.
   `fuente,nombre_fuente,banco_codigo` — `fuente` es literal `CAPCOL`/`BCE`/`BOLETIN`,
   `nombre_fuente` el texto crudo tal cual aparece en la fuente [no importa mayúsculas,
   `_normalizar()` lo homologa], `banco_codigo` debe ser un código YA existente en
-  `etl/seeds/banco_maestro.csv`).
+  `etl/seeds/banco_maestro.csv` — **o, desde 2026-09-01 (Banca Pública, ver
+  `docs/fuentes_datos.md` sección 1.1), un `banco_codigo` `BCE_<ruc>` ya auto-registrado en
+  `marts.dim_banco` por `resolver_entidad_bce()`**, cuando el objetivo es que un nombre de
+  CAPCOL/BOLETIN apunte a la MISMA identidad que BCE ya generó para esa entidad en vez de
+  crear una identidad paralela. `resolver_banco_codigo()` no valida contra la base viva en
+  ningún caso (es una función pura, sin conexión a Postgres) — si el `banco_codigo` del
+  crosswalk no existe todavía en `marts.dim_banco` cuando el `INSERT` de `fact_saldo_cartera`/
+  `fact_saldo_depositos` corre, el `INNER JOIN` de esa sentencia en `_REFRESH_MARTS_SQL`
+  descarta la fila silenciosamente (mismo riesgo ya conocido para `dim_canton`, ver
+  `etl/load/load_postgres.py::_log_cantones_no_resueltos`) — para el caso `BCE_<ruc>` esto
+  significa que BCE tsp/tsa debe haberse cargado (al menos una vez, para poblar
+  `staging.banco_maestro` vía `upsert_banco_maestro_ruc()`) ANTES de que la carga de CAPCOL
+  para esa entidad llegue a `refresh_marts()`; verificar `SELECT banco_codigo FROM
+  marts.dim_banco WHERE banco_codigo = 'BCE_<ruc>'` devuelve 1 fila antes de confiar en que
+  el crosswalk nuevo va a producir hechos, no solo que `resolver_banco_codigo()` no lanzó
+  error).
 - **Banco genuinamente nuevo** (licencia bancaria nueva, nunca visto en ninguna fuente):
   primero agregar una fila a `etl/seeds/banco_maestro.csv` (columnas
   `banco_codigo,banco,tipo_entidad` — `banco_codigo` nuevo código canónico, `banco` nombre

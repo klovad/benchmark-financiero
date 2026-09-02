@@ -1,13 +1,19 @@
 # Diccionario de datos
 
 Esquema estrella en Postgres (`marts.*`), poblado desde 3 fuentes: CAPCOL (Superbancos,
-cartera/depósitos), BCE (tasas de interés) y Boletín Financiero Mensual (Superbancos,
-balance/PyG). Identidad de banco y catálogos de producto/plazo son compartidos entre
-fuentes (`etl/transform/banco_matching.py` y `categoria_deposito_matching.py` resuelven
-la identidad antes de que el dato llegue a `staging.*` — ver `docs/architecture.md` para
-el patrón de carga incremental por hash). Para qué hacer cuando un valor crudo no resuelve
-o aparece una fila `estado_validacion='AUTO_INGRESADO'` pendiente de revisión, ver el
-runbook `docs/mantenimiento_catalogos.md`.
+cartera/depósitos — incluye desde 2026-09-01 el sub-portal Banca Pública además de bancos
+privados, ver `docs/fuentes_datos.md` sección 1.1: mismas tablas, sin cambio de esquema),
+BCE (tasas de interés) y Boletín Financiero Mensual (Superbancos, balance/PyG). Identidad
+de banco y catálogos de producto/plazo son compartidos entre fuentes
+(`etl/transform/banco_matching.py` y `categoria_deposito_matching.py` resuelven la
+identidad antes de que el dato llegue a `staging.*` — ver `docs/architecture.md` para el
+patrón de carga incremental por hash). Para qué hacer cuando un valor crudo no resuelve o
+aparece una fila `estado_validacion='AUTO_INGRESADO'` pendiente de revisión, ver el runbook
+`docs/mantenimiento_catalogos.md`. Una 4ta fuente (SEPS — cooperativas y mutualistas) tiene
+diseño completo y aprobado pero **no está implementada**; sus tablas propuestas (2
+dimensiones + 1 fact nuevos, `staging.volumen_cartera`) NO aparecen en este documento
+porque no existen en el esquema vivo — ver `docs/fuentes_datos.md` sección 4 para el diseño
+completo.
 
 ## Dimensiones
 
@@ -25,7 +31,7 @@ runbook `docs/mantenimiento_catalogos.md`.
 | banco_id | serial | Llave sustituta |
 | banco_codigo | text | Identidad canónica resuelta en ETL (`banco_matching.py`), única entre las 3 fuentes |
 | banco | text | Nombre a mostrar (sembrado desde `etl/seeds/banco_maestro.csv`) |
-| tipo_entidad | text | 6 valores reales (CHECK constraint, `sql/07`): BANCO PRIVADO, BANCO PUBLICO, COOPERATIVA, MUTUALISTA, SOCIEDAD FINANCIERA, TARJETAS DE CREDITO — 442 bancos totales (33 privados con identidad curada + 409 auto-registrados por RUC desde BCE, ver `docs/gobernanza_datos.md`) |
+| tipo_entidad | text | 6 valores reales (CHECK constraint, `sql/07`): BANCO PRIVADO, BANCO PUBLICO, COOPERATIVA, MUTUALISTA, SOCIEDAD FINANCIERA, TARJETAS DE CREDITO — 442 bancos totales (33 privados con identidad curada + 409 auto-registrados por RUC desde BCE, ver `docs/gobernanza_datos.md`). **2026-09-01**: `BANCO PUBLICO` deja de ser un valor que solo escribe BCE — `staging.cartera`/`staging.depositos` (CAPCOL, sub-portal Banca Pública) también empiezan a traerlo, resuelto vía `etl/seeds/banco_crosswalk.csv` a la MISMA fila `BCE_<ruc>` que BCE ya había auto-registrado (no crea filas nuevas de `dim_banco`) — ver `docs/fuentes_datos.md` sección 1.1 |
 | ruc | text, nullable | Identificador fiscal, poblado desde BCE tsp/tsa (única fuente que lo trae) — 2026-07-23: activado también para los 33 bancos privados curados, antes se descartaba en ese camino (`sql/17_dim_banco_ruc_sin_tamano.sql`); 442/442 filas con `ruc`. **No es único por banco**: 7 `ruc` distintos son compartidos por 2+ `banco_codigo` (ver `docs/gobernanza_datos.md`, "Huecos de gobernanza conocidos", y la vista `marts.vw_banco_ruc_colisiones` más abajo para consultarlos directo). **Desde 2026-08-30, el RUC de las ~409 entidades no-privadas pasa por validación estructural real** antes de resolverse (`etl/transform/banco_matching.py::validar_ruc_estructura`, `sql/26` no toca esto — es puramente Python, ver `resolver_entidad_bce`) — 13 dígitos, código de provincia 01-24, tercer dígito 9 (sociedad privada/extranjera) o 6 (sector público), dígito verificador módulo 11. Un RUC no-privado que falle esta validación lanza `RucInvalidoError` (distinto de `EntidadBceNoMapeadaError`) y bloquea la carga en vez de auto-registrarse con un RUC malformado. Los 33 bancos privados curados **no** pasan por esta validación (su identidad ya está curada por nombre, el RUC es un atributo, no la llave) |
 | segmento_entidad_id | int, FK, nullable | `dim_segmento_entidad.segmento_entidad_id` — **última** clasificación normativa de tamaño/estructura conocida para el banco (2026-07-25, `sql/19_dim_segmento_entidad.sql`), SCD tipo 1, actualizada en cada `refresh_marts()` desde la fila más reciente de `fact_captaciones_depositos`/`fact_colocaciones_cartera`. Para análisis histórico (la clasificación cambia en el tiempo) usar el `segmento_entidad_id` de esos hechos, no este — ver tabla abajo |
 | estado_validacion | text, `CHECK IN ('CONFIRMADO','AUTO_INGRESADO','RECHAZADO')` | Nueva 2026-08-30 (`sql/26_dim_banco_estado_validacion.sql`). Distingue identidad **curada** (`CONFIRMADO` — los 33 bancos privados de `banco_maestro.csv`, reafirmado en cada `load_banco_maestro_seed()`) de identidad **auto-registrada sin revisión humana** (`AUTO_INGRESADO`, DEFAULT — las 409 entidades registradas por RUC vía `resolver_entidad_bce()`, ver "Identidad auto-registrada por RUC" en `docs/gobernanza_datos.md`, hueco ya documentado desde antes pero ahora consultable directo en el dato en vez de solo en texto). `RECHAZADO` reservado para uso futuro, ningún flujo actual lo escribe. Backfill retroactivo de esta migración: 33 filas a `CONFIRMADO`, 409 a `AUTO_INGRESADO`, discriminadas por `banco_codigo` (los auto-registrados siempre tienen prefijo `BCE_`, verificado exacto contra la base viva antes de escribir el backfill — sin solapamiento ni resto) |
@@ -95,7 +101,7 @@ captación (siempre); **saldo_** = medida de balance (CAPCOL, mensual); **coloca
 entre paréntesis en cada tabla, para quien busque referencias viejas.
 
 ### marts.fact_saldo_cartera (antes `fact_cartera`) — grano: fecha × banco × cantón × segmento — CAPCOL, mensual
-| segmento_id | int, FK | `dim_segmento_credito.segmento_id` (nivel grueso — CAPCOL nunca trae el sub-segmento fino de BCE). Hasta 2026-07-19 esta columna era `tipo_credito` (texto libre, sin FK); pasó a estar normalizada contra el mismo catálogo normativo que usan los hechos de BCE en vez de duplicar el nombre del segmento como texto suelto — ver `sql/16_dim_segmento_normativo.sql` |
+| segmento_id | int, FK | `dim_segmento_credito.segmento_id` (nivel grueso — CAPCOL nunca trae el sub-segmento fino de BCE). Hasta 2026-07-19 esta columna era `tipo_credito` (texto libre, sin FK); pasó a estar normalizada contra el mismo catálogo normativo que usan los hechos de BCE en vez de duplicar el nombre del segmento como texto suelto — ver `sql/16_dim_segmento_normativo.sql`. **Pendiente de implementación, diseño ya aprobado** (`docs/fuentes_datos.md` sección 1.1): el `INSERT` de `_REFRESH_MARTS_SQL` filtra hoy `WHERE s.tipo_entidad = 'BANCO PRIVADO'` — al integrar Banca Pública debe ampliarse a `IN ('BANCO PRIVADO', 'BANCO PUBLICO')`, y el segmento `INVERSIÓN PÚBLICA` (7ma fila de `dim_segmento_credito`, hoy poblada solo por BCE tsa) empezará a recibir filas de CAPCOL también |
 | saldo_por_vencer, saldo_no_devenga_intereses, saldo_vencida | numeric | Saldo en USD por estado de cartera. **2026-07-25** (`sql/21_fact_saldo_cartera_pivot.sql`): antes `estado_cartera` era una dimensión degenerada partiendo el saldo en 3 filas por combinación de `(fecha, banco, cantón, segmento)` — un antipatrón EAV, no una dimensión real (los 3 estados son medidas mutuamente excluyentes del mismo hecho, siempre presentes juntas). Pivotado a 3 columnas, mismo criterio que ya usaba `fact_tasas_referenciales_cartera` (2 columnas de medida en vez de "tipo_tasa"+"valor"). El grano pasó de 369.966 a 123.322 filas (÷3, exacto — no había combinaciones con menos de 3 estados) |
 | saldo_total | numeric, `GENERATED ALWAYS AS (...) STORED` | Suma de los 3 — una sola fuente de verdad, no algo que el ETL deba mantener sincronizado (mismo patrón que `row_hash` en todo el proyecto). `morosidad = (saldo_no_devenga_intereses + saldo_vencida) / saldo_total`, ya no requiere filtrar nada |
 

@@ -368,6 +368,57 @@ nuevo de `staging.bce_tasas_pasivas`/`bce_tasas_activas` — confirmado con
 resolver `canton_id` en vez de `provincia_id`, y reprocesar el histórico completo
 2008-2026 desde los ZIP ya descargados en `data/raw/bce/`.
 
+## Banca Pública (CAPCOL) integrada al diseño, SEPS diseñada — ninguna de las dos completamente cargada (2026-09-01)
+
+Investigación con Playwright (mismo mecanismo que `capcol-bancos`, ver "Por qué Playwright"
+en `docs/architecture.md`) contra la instancia Postgres nativa viva
+(`pg_postmaster_start_time()` confirmó ~7 días de uptime — no el contenedor
+`docker-compose` vacío). Detalle completo, columnas reales y todas las decisiones de
+identidad/grano en `docs/fuentes_datos.md` secciones 1.1 (Banca Pública) y 4 (SEPS,
+diseño aprobado, no implementada). Resumen de gobernanza:
+
+- **Banca Pública** (`capcol-instituciones-publicas/`): mismo plugin/formato/grano que
+  bancos privados, rango parseable 2021-2025 (coincide con lo ya cargado). **Cero
+  migraciones `sql/*.sql` necesarias** — `dim_banco.tipo_entidad` ya admitía
+  `'BANCO PUBLICO'` y `dim_segmento_credito` ya tenía la 7ma fila `INVERSIÓN PÚBLICA`
+  (ambas sembradas para BCE, nunca antes usadas por CAPCOL). **Único cambio aplicado en
+  esta sesión**: 3 filas nuevas en `etl/seeds/banco_crosswalk.csv` (`BANECUADOR B. P.`,
+  `BANCO DE DESARROLLO DEL ECUADOR B.P.`, `CORPORACION FINANCIERA NACIONAL B.P.`,
+  resolviendo cada una al `banco_codigo` `BCE_<ruc>` que `resolver_entidad_bce()` ya había
+  auto-registrado para esos 3 bancos públicos desde BCE tsp/tsa) y un test de regresión
+  nuevo (`tests/test_banco_matching.py::test_capcol_banca_publica_resuelve_al_mismo_codigo_bce_por_ruc`).
+  **Extractor/parser/`_REFRESH_MARTS_SQL` siguen sin implementar** (carril de
+  `data-engineer`, lista de 5 cambios en `docs/fuentes_datos.md` sección 1.1) — hasta que
+  eso ocurra, `marts.fact_saldo_cartera`/`fact_saldo_depositos` siguen sin ninguna fila
+  `tipo_entidad='BANCO PUBLICO'` real, el cambio de esta sesión solo deja la identidad
+  lista para cuando se cargue.
+- **Riesgo nuevo de orden de carga, documentado no mitigado con código**: es el primer caso
+  donde `etl/seeds/banco_crosswalk.csv` apunta a un `banco_codigo` que vive únicamente en
+  `staging.banco_maestro`/`marts.dim_banco` por el camino auto-registrado de BCE, no en
+  `etl/seeds/banco_maestro.csv`. `resolver_banco_codigo()` no valida contra la base viva
+  (función pura) — si alguna vez se reconstruye la base desde cero y CAPCOL Banca Pública
+  se carga antes que BCE tsp/tsa, el `INNER JOIN` de `fact_saldo_cartera`/
+  `fact_saldo_depositos` en `refresh_marts()` descartaría esas filas en silencio, sin error
+  (mismo patrón de riesgo ya conocido y parcialmente mitigado para `dim_canton` con
+  `_log_cantones_no_resueltos()`, ver fila de "Bug de descarte silencioso" arriba). Hoy no
+  es un problema real (las 3 filas de `dim_banco` ya existen en la base viva, verificado en
+  esta sesión), pero es una dependencia de orden que no existía antes para ninguna fuente
+  100%-curada — recomendado agregar un `_log_bancos_no_resueltos()` análogo cuando
+  `data-engineer` implemente la carga real.
+- **SEPS** (cooperativas + mutualistas): diseño completo aprobado en
+  `docs/fuentes_datos.md` sección 4 — depósitos conforma contra `fact_saldo_depositos` tal
+  cual (mismo grano, sin tabla nueva); cartera es un proceso de negocio distinto (volumen de
+  operaciones de crédito originadas, sin tasa) y necesita `marts.fact_volumen_cartera`
+  nueva + 2 dimensiones nuevas (`dim_actividad_economica`, `dim_destino_financiero`).
+  Identidad vía RUC nativo del archivo (`resolver_entidad_seps()` propuesta, reutiliza
+  `validar_ruc_estructura()`), con la misma clase de riesgo de orden de carga que Banca
+  Pública pero potencialmente más grave (SEPS es probable que traiga cooperativas que BCE
+  nunca vio, no solo 3 entidades ya confirmadas) — el diseño recomienda hacer
+  `upsert_banco_maestro_ruc()` fuente-agnóstico (invocable también desde SEPS, no solo
+  desde BCE) para que una entidad SEPS-only se auto-registre igual que las de BCE, en vez
+  de asumir que ya existe. **Nada de esto está implementado**: sin extractor, sin parser,
+  sin migración `sql/NN_*.sql`, sin filas en `marts.*`.
+
 ## Reglas de calidad de datos
 
 Todas verificadas en código, no solo documentadas:
@@ -508,6 +559,7 @@ asumir que un campo "debería" tener datos:
 
 | Hueco | Detalle | Dónde está documentado |
 |---|---|---|
+| **`etl/seeds/banco_crosswalk.csv` tiene 3 filas (Banca Pública) cuyo `banco_codigo` depende de que BCE tsp/tsa ya haya cargado — riesgo de orden, no un bug activo hoy** | Verificado 2026-09-01 contra la base viva: `BCE_1768183520001`/`BCE_1760002950001`/`BCE_1760003090001` ya existen en `marts.dim_banco`, así que el riesgo no se materializa hoy. Pero es la primera vez que el crosswalk apunta fuera de `etl/seeds/banco_maestro.csv` — si la base se reconstruyera desde cero con CAPCOL Banca Pública corriendo antes que BCE, el `INNER JOIN` de `fact_saldo_cartera`/`fact_saldo_depositos` descartaría esas filas en silencio. Mismo patrón de riesgo que `dim_canton` (mitigado ahí con `_log_cantones_no_resueltos()`), sin mitigación de código equivalente todavía para `banco_codigo`. | `docs/fuentes_datos.md` sección 1.1, `docs/mantenimiento_catalogos.md` sección 1, sección "Banca Pública (CAPCOL) integrada al diseño..." arriba |
 | ~~`dim_banco.tamano` / `dim_banco.ruc` nunca se pueblan~~ — **resuelto 2026-07-23, corregido de nuevo 2026-07-25** | `ruc` se activó: BCE tsp/tsa sí lo trae para todas las entidades, incluidos los 33 bancos privados curados — `resolver_entidad_bce()` lo descartaba en ese camino, ahora no. 442/442 filas con `ruc`. `tamano` se eliminó el 2026-07-23 con el diagnóstico "ninguna fuente trae GRANDE/MEDIANO/PEQUEÑO por banco individual" — **ese diagnóstico era incorrecto**: BCE tsp/tsa sí lo trae, bajo la columna `tipo_segmento`, que se venía descartando desde el inicio sin examinar su contenido (mismo patrón de error que ya pasó una vez con `ruc`: "columna siempre NULL" se asumió como "la fuente no lo tiene" sin verificar). Corregido 2026-07-25 con `dim_segmento_entidad` — ver fila abajo. | `sql/17_dim_banco_ruc_sin_tamano.sql`, `sql/19_dim_segmento_entidad.sql`, `docs/data_dictionary.md` |
 | **`tipo_segmento` de BCE (clasificación normativa de tamaño/estructura por entidad) se descartaba antes de `staging` sin examinar su contenido** — resuelto 2026-07-25 | El usuario preguntó dónde se había considerado ese campo; la respuesta honesta fue que no se había considerado — se documentaba como "preservada en raw, descartada, no pasa a staging" sin haber leído nunca sus valores reales. Al investigar: 14 valores reales, incluye exactamente la clasificación GRANDE/MEDIANO/PEQUEÑO que se había dado por "no obtenible" 2 días antes (ver fila de arriba), más segmentación JPRF-F-2023-074 por activos para cooperativas (SEGMENTO 1-5/SIN SEGMENTO). Es un atributo de la entidad **en cada fecha**, no fijo (verificado: cooperativas reales cambian de segmento con los años) — se modeló al grano semanal de los hechos BCE (`dim_segmento_entidad` + FK), no como columna estática, con `dim_banco.segmento_entidad_id` como conveniencia de "última clasificación conocida". | `sql/19_dim_segmento_entidad.sql`, `docs/data_dictionary.md` |
 | **Normalización de provincia** — `dim_canton.region` tenía 2 valores distintos para la misma provincia (bug real, no hipotético) | `marts.dim_canton` guardaba `provincia`/`region` como texto suelto, uno por fuente: `parse_cartera.py` derivaba `region` de `PROVINCIA_REGION` (`ORIENTE` para MORONA SANTIAGO), `parse_depositos.py` confiaba en la columna `REGION` del archivo fuente de Superbancos (`AMAZONICA` para la misma provincia) — distintos cantones de Morona Santiago terminaban con regiones distintas en `dim_canton` según de qué reporte vinieran. Encontrado 2026-07-25 al normalizar `provincia` en los hechos BCE (que solo traen provincia, sin cantón, y no tenían dimensión propia). Corregido con `dim_provincia` como única fuente de verdad para `region` (ya no se puede repetir: `dim_canton`/`fact_captaciones_depositos`/`fact_colocaciones_cartera` solo referencian `provincia_id`, `region` vive una sola vez) y `parse_depositos.py` ya no confía en la columna `REGION` del archivo. También normaliza ortografía: BCE trae provincias con tilde (`BOLÍVAR`), CAPCOL sin tilde salvo la Ñ (`BOLIVAR`, `CAÑAR`) — homologado con `normalize_provincia()`. | `sql/20_dim_provincia.sql`, `etl/transform/common.py::normalize_provincia`, `docs/data_dictionary.md` |
