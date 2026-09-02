@@ -37,7 +37,13 @@ Power BI (.pbip, Import desde Postgres)
 `dim_categoria_deposito`, `dim_plazo` y `dim_cuenta_contable` son compartidas solo por las
 fuentes que las necesitan (ver "Catálogos conformados" abajo). `dim_provincia` y
 `dim_segmento_entidad` (2026-07-25) son outriggers de `dim_canton`/`dim_banco`
-respectivamente. Detalle de cada columna en `docs/data_dictionary.md`.
+respectivamente. **`dim_canton` es FK directa tanto de CAPCOL (`fact_saldo_cartera`/
+`fact_saldo_depositos`) como de BCE tsp/tsa (`fact_captaciones_depositos`/
+`fact_colocaciones_cartera`, 2026-09-01, `sql/28_bce_canton_grain.sql`)** — antes BCE
+solo llegaba a `dim_provincia` (grano provincia, sin cantón); provincia/región de BCE se
+alcanzan hoy por el mismo snowflake que ya usaba CAPCOL (`canton_id → dim_provincia`), sin
+una segunda convención de geografía en el esquema. Detalle de cada columna en
+`docs/data_dictionary.md`.
 
 ```mermaid
 erDiagram
@@ -67,6 +73,7 @@ erDiagram
         int canton_id PK
         string canton
         int provincia_id FK
+        string estado_validacion
     }
     dim_segmento_entidad {
         int segmento_entidad_id PK
@@ -129,7 +136,7 @@ erDiagram
         int banco_id FK
         int categoria_deposito_id FK
         int plazo_id FK
-        int provincia_id FK
+        int canton_id FK
         int segmento_entidad_id FK
         numeric monto_total
         numeric tasa_pasiva_efectiva
@@ -139,7 +146,7 @@ erDiagram
         int banco_id FK
         int subsegmento_id FK
         int plazo_id FK
-        int provincia_id FK
+        int canton_id FK
         int segmento_entidad_id FK
         numeric monto_total
         numeric tasa_activa_efectiva
@@ -200,11 +207,11 @@ erDiagram
     dim_segmento_entidad ||--o{ fact_colocaciones_cartera : segmento_entidad_id
 
     dim_provincia ||--o{ dim_canton : provincia_id
-    dim_provincia ||--o{ fact_captaciones_depositos : provincia_id
-    dim_provincia ||--o{ fact_colocaciones_cartera : provincia_id
 
     dim_canton ||--o{ fact_saldo_cartera : canton_id
     dim_canton ||--o{ fact_saldo_depositos : canton_id
+    dim_canton ||--o{ fact_captaciones_depositos : canton_id
+    dim_canton ||--o{ fact_colocaciones_cartera : canton_id
 
     dim_segmento_credito ||--o{ fact_saldo_cartera : segmento_id
     dim_segmento_credito ||--o{ dim_subsegmento_credito : segmento_id
@@ -294,6 +301,17 @@ llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
   `estado_validacion='AUTO_INGRESADO'` (2026-08-30, `sql/27_dim_plazo_estado_validacion.sql`,
   ver `docs/data_dictionary.md` para el detalle completo y por qué solo `dim_plazo` de los
   5 catálogos "cerrados" recibe este tratamiento).
+- `dim_canton` (BCE tsp/tsa, 2026-09-01, `sql/28_bce_canton_grain.sql`) recibe el mismo
+  mecanismo two-tier que `dim_plazo` pero por una razón distinta: no es una de las 5
+  enumeraciones cerradas por definición normativa/regulatoria de arriba, es un catálogo
+  geográfico real y finito (INEC) — un cantón nuevo en el dato es autoexplicativo una vez
+  que la provincia ya es conocida, igual que un rango de días nuevo lo es para `dim_plazo`.
+  `etl/transform/canton_matching.py::resolver_canton_bce(canton, provincia)` resuelve
+  SIEMPRE por el par completo (nunca cantón solo — existen cantones reales homónimos en 2
+  provincias por reclasificación administrativa histórica, ej. `LA CONCORDIA`,
+  `SANTO DOMINGO`): provincia no resoluble → `CantonNoResueltoError`, fail-fast; par
+  cantón+provincia fuera del universo sembrado (`etl/seeds/canton_provincia.csv`, 228
+  pares) → no lanza, se auto-ingresa `AUTO_INGRESADO`.
 
 ## Carga incremental (CDC) — no full refresh
 
@@ -384,13 +402,18 @@ simple.
 
 - **Volumen no es el riesgo**: ~123k filas en `fact_saldo_cartera` (2026-07-25: pivotado
   a columnas por estado, antes ~370k — ver `sql/21_fact_saldo_cartera_pivot.sql`), ~251k
-  en `fact_saldo_depositos` (CAPCOL, 2021-01 a 2026-06); **~1.96M en
-  `fact_captaciones_depositos` y ~4.87M en `fact_colocaciones_cartera`**
-  (BCE semanal, histórico completo 2008-2026, sistema financiero completo — no solo
-  bancos privados, ver `docs/gobernanza_datos.md`); ~2.18M en `fact_balance` y ~192k en
-  `fact_pyg` (Boletín, 2021-2026). `raw.bce_tasas_pasivas`/`activas` son más grandes
-  todavía (~3.08M y ~7.76M filas respectivamente — grano cantón, sin agregar; los nombres
-  `raw.*` no cambiaron, solo los de `marts.*`). El BCE
+  en `fact_saldo_depositos` (CAPCOL, 2021-01 a 2026-06); **`fact_captaciones_depositos`/
+  `fact_colocaciones_cartera` en 0 filas a partir de 2026-09-01** (`sql/28_bce_canton_grain.sql`
+  cambió el grano de provincia a cantón y truncó ambas tablas — ver `docs/data_dictionary.md`
+  y `docs/gobernanza_datos.md` — a la espera del reproceso completo de `data-engineer`;
+  antes del cambio eran ~1.96M/~4.87M a grano provincia, y el volumen esperado a grano
+  cantón es ~1.6x más filas, medido comparando combinaciones distintas de un mes real:
+  26.998 a grano cantón vs. 16.393 a grano provincia en jun-2026) (BCE semanal, histórico
+  completo 2008-2026, sistema financiero completo — no solo bancos privados, ver
+  `docs/gobernanza_datos.md`); ~2.18M en `fact_balance` y ~192k en `fact_pyg` (Boletín,
+  2021-2026). `raw.bce_tasas_pasivas`/`activas` son más grandes todavía (~3.08M y ~7.76M
+  filas respectivamente — grano cantón, sin agregar; los nombres `raw.*` no cambiaron,
+  solo los de `marts.*`). El BCE
   semanal es el volumen dominante con margen — se cargó vía `COPY` (no `executemany`) por
   esa razón, ~10-100x más rápido a este volumen. Postgres lo maneja sin particionar ni
   tuning especial; `refresh_marts()` completo sobre todo el dataset acumulado toma
