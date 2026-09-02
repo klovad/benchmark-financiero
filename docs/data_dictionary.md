@@ -110,6 +110,7 @@ en `fact_colocaciones_cartera`; `morosidad` es derivable de `estado_cartera` si 
 
 ### marts.fact_colocaciones_cartera (antes `fact_tasas_activas`) / marts.fact_captaciones_depositos (antes `fact_tasas_pasivas`) — grano: fecha × banco × categoría/subsegmento × plazo × provincia — BCE tsa/tsp, semanal
 | subsegmento_id (solo cartera) | int, FK | `dim_subsegmento_credito.subsegmento_id` — nivel fino, columna llamada `segmento_id` hasta 2026-07-19 (ver `sql/16_dim_segmento_normativo.sql`) |
+| es_operacion_especial (solo cartera) | text | `'NO'` para la cartera BCE normal; `'SI'` para las Operaciones Especiales de Banco de Guayaquil (`sql/28_operaciones_especiales.sql`, integradas desde `operaciones_especiales.xlsx`). Entra a la llave única y al `row_hash`. |
 | provincia_id | int, FK, nullable | `dim_provincia.provincia_id` (2026-07-25, antes columna `provincia` texto suelto sin FK, ver `sql/20_dim_provincia.sql`) |
 | segmento_entidad_id | int, FK, nullable | `dim_segmento_entidad.segmento_entidad_id` (2026-07-25, ver esa tabla arriba) — clasificación de tamaño/estructura del banco EN ESA FECHA |
 | monto_total, numero_operaciones | numeric, int | Agregados de la semana reportados por el BCE |

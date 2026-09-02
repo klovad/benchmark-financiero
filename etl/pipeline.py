@@ -14,7 +14,7 @@ import logging
 import re
 from pathlib import Path
 
-from etl.config import BCE_DIR, DEFAULT_YEARS, RAW_DIR
+from etl.config import BCE_DIR, DEFAULT_YEARS, OPERACIONES_ESPECIALES, RAW_DIR
 from etl.extract.download_bce import download_all as download_bce_all
 from etl.extract.download_tasas_historicas import download_tasas_historicas
 from etl.extract.scrape_boletin import scrape as scrape_boletin
@@ -36,10 +36,12 @@ from etl.load.load_postgres import (
     upsert_staging_boletin_pyg,
     upsert_staging_cartera,
     upsert_staging_depositos,
+    upsert_staging_operaciones_especiales,
     upsert_staging_tasas_referenciales,
 )
 from etl.logging_utils import setup_logging
 from etl.transform.common import sha256_file
+from etl.transform.parse_operaciones_especiales import parse_operaciones_especiales_file
 from etl.transform.parse_bce_tasas import (
     RAW_TSA_COLS,
     RAW_TSP_COLS,
@@ -308,13 +310,45 @@ def load_boletin(years: list[int], base_dir: Path = RAW_DIR) -> None:
         conn.close()
 
 
+def load_operaciones_especiales(base_path: Path | None = None) -> None:
+    """Operaciones especiales (Banco de Guayaquil): un solo xlsx manual en data/raw con
+    la estructura de BCE tsa, marcado es_operacion_especial='SI'. Se parsea, se escribe
+    en staging.bce_tasas_activas con esa marca (conviviendo con las filas 'NO' del mismo
+    grano) y refresh_marts() lo propaga a marts.fact_colocaciones_cartera."""
+    path = base_path if base_path is not None else OPERACIONES_ESPECIALES
+    if not path.exists():
+        raise FileNotFoundError(
+            f"No existe {path} -- copiarlo a data/raw desde SharePoint "
+            f"(DataEngineeringBG-FINANCIERO/BENCHMARK_TASAS/operaciones_especiales.xlsx)"
+        )
+
+    conn = get_connection()
+    try:
+        source_hash = sha256_file(path)
+        if is_source_loaded(conn, path.name, source_hash):
+            log.info("Ya cargado, se omite: %s", path.name)
+            return
+        log.info("Procesando %s", path.name)
+        df = parse_operaciones_especiales_file(path)
+        upsert_staging_operaciones_especiales(conn, df)
+        register_source_file(conn, path.name, source_hash, "bce_tasas_activas")
+        conn.commit()
+        refresh_marts(conn)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Pipeline ETL benchmark cartera/depositos"
     )
     parser.add_argument(
         "stage",
-        choices=["extract", "load", "all", "bce", "tasas-historicas", "boletin"],
+        choices=["extract", "load", "all", "bce", "tasas-historicas", "boletin", "operaciones-especiales"],
     )
     parser.add_argument("--years", nargs="+", type=int, default=DEFAULT_YEARS)
     parser.add_argument("--out", type=Path, default=RAW_DIR)
@@ -330,6 +364,8 @@ def main():
         load_tasas_historicas()
     if args.stage == "boletin":
         load_boletin(args.years, args.out)
+    if args.stage == "operaciones-especiales":
+        load_operaciones_especiales(args.out)
 
 
 if __name__ == "__main__":

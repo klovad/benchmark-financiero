@@ -70,3 +70,7 @@ df = fact_saldo_cartera.merge(dim_banco, on="banco_id")
 Grano, tipos y relaciones de cada tabla: `docs/data_dictionary.md` y
 `docs/architecture.md` en la raíz del repo — el Parquet es un espejo 1:1 de `marts.*`,
 sin transformación adicional.
+
+Nota: `fact_colocaciones_cartera_*.parquet` incluye `es_operacion_especial` (`'NO'` para
+la cartera BCE normal, `'SI'` para las Operaciones Especiales de Banco de Guayaquil,
+integrada desde `operaciones_especiales.xlsx` — ver `docs/fuentes_datos.md`).

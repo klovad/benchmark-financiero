@@ -335,6 +335,31 @@ bancos):
   `COMPOS CART` (composición de cartera) podría dar una vista de cartera consistente con
   CAPCOL desde la óptica contable — a evaluar en el diseño de arquitectura.
 
+## Operaciones Especiales (Banco de Guayaquil) — ✅ integrada (2026-09-02)
+
+Fuente interna de cartera del Banco de Guayaquil que el tablero histórico de Benchmark
+Colocaciones-Captaciones anexaba a `Tabla_Activos` marcada `es_operacion_especial='SI'`.
+
+- **Acceso**: SharePoint `https://bancoguayaquil1.sharepoint.com/sites/DataEngineeringBG-FINANCIERO`
+  → `Documentos compartidos` → `FINANCIERO` → `BENCHMARK_TASAS` → `operaciones_especiales.xlsx`.
+  Descarga **manual** a `data/raw/operaciones_especiales.xlsx` (no se versiona; no hay
+  extractor programático — misma razón por la que el `.env` no se versiona).
+- **Estructura**: idéntica a BCE tsa — `semana, ruc, razon_social, sector_financiero,
+  tipo_entidad, tipo_segmento, provincia, canton, segmento_credito, plazo, monto_total,
+  numero_operaciones, tasa_activa_efectiva, tasa_nominal`. Solo `BANCO DE GUAYAQUIL S.A.`,
+  segmentos PRODUCTIVO - CORPORATIVO/EMPRESARIAL/PYMES, 2025-2026.
+- **Particularidades reales del archivo**: `ruc` viene como entero (pierde el cero inicial;
+  se rellena a 13 dígitos con `zfill`), `canton` tiene espacios al final (se hace `strip`).
+- **Grano**: se integra al mismo grano de `marts.fact_colocaciones_cartera` (fecha × banco ×
+  subsegmento × plazo × provincia), distinto por `es_operacion_especial='SI'` (la llave
+  única y `row_hash` de `staging.bce_tasas_activas`/`marts.fact_colocaciones_cartera` lo
+  incluyen — `sql/28_operaciones_especiales.sql`).
+- **Carga**: `python -m etl.pipeline operaciones-especiales`.
+- **Verificación**: el total SI (cartera en millones) por semana coincide con el tablero
+  anterior: 2026-03-05 = 24.5, 2026-03-12 = 12.379, 2026-03-19 = 12.052, 2026-03-26 = 7.743,
+  2026-04-02 = 11.748, 2026-04-30 = 1.833. Total 2025 SI = 632.789M; 2026 SI (hasta
+  2026-07-02) = 238.753M.
+
 ## Próximos pasos de investigación (en orden)
 
 1. ~~Terminar de caracterizar `tmp.zip`~~ ✅ Hecho — resultó ser pasivas mensuales, fuera
