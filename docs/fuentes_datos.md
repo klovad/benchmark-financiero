@@ -1,4 +1,4 @@
-﻿# Catálogo de fuentes de datos
+# Catálogo de fuentes de datos
 
 Registro vivo de cada fuente: qué es, cómo se accede, la estructura **real** descubierta
 (no solo la documentada), y el estado de integración. Se actualiza cada vez que se
