@@ -403,15 +403,15 @@ simple.
 - **Volumen no es el riesgo**: ~123k filas en `fact_saldo_cartera` (2026-07-25: pivotado
   a columnas por estado, antes ~370k — ver `sql/21_fact_saldo_cartera_pivot.sql`), ~251k
   en `fact_saldo_depositos` (CAPCOL, 2021-01 a 2026-06); **`fact_captaciones_depositos`/
-  `fact_colocaciones_cartera` en 0 filas a partir de 2026-09-01** (`sql/28_bce_canton_grain.sql`
-  cambió el grano de provincia a cantón y truncó ambas tablas — ver `docs/data_dictionary.md`
-  y `docs/gobernanza_datos.md` — a la espera del reproceso completo de `data-engineer`;
-  antes del cambio eran ~1.96M/~4.87M a grano provincia, y el volumen esperado a grano
-  cantón es ~1.6x más filas, medido comparando combinaciones distintas de un mes real:
-  26.998 a grano cantón vs. 16.393 a grano provincia en jun-2026) (BCE semanal, histórico
-  completo 2008-2026, sistema financiero completo — no solo bancos privados, ver
-  `docs/gobernanza_datos.md`); ~2.18M en `fact_balance` y ~192k en `fact_pyg` (Boletín,
-  2021-2026). `raw.bce_tasas_pasivas`/`activas` son más grandes todavía (~3.08M y ~7.76M
+  `fact_colocaciones_cartera` a grano cantón desde 2026-09-01** (`sql/28_bce_canton_grain.sql`
+  cambió el grano de provincia a cantón, `data-engineer` reprocesó el histórico completo el
+  mismo día — ver `docs/data_dictionary.md` y `docs/gobernanza_datos.md`): **3.077.474 /
+  7.756.581 filas**, 0 con `canton_id` NULL en ninguna (antes ~1.96M/~4.87M a grano
+  provincia — el aumento real, ~1.57x, quedó en línea con el ~1.6x estimado sobre
+  combinaciones distintas de jun-2026: 26.998 a grano cantón vs. 16.393 a grano provincia)
+  (BCE semanal, histórico completo 2008-2026, sistema financiero completo — no solo bancos
+  privados, ver `docs/gobernanza_datos.md`); ~2.18M en `fact_balance` y ~192k en `fact_pyg`
+  (Boletín, 2021-2026). `raw.bce_tasas_pasivas`/`activas` son más grandes todavía (~3.08M y ~7.76M
   filas respectivamente — grano cantón, sin agregar; los nombres `raw.*` no cambiaron,
   solo los de `marts.*`). El BCE
   semanal es el volumen dominante con margen — se cargó vía `COPY` (no `executemany`) por

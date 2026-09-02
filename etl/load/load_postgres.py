@@ -128,7 +128,8 @@ def load_banco_maestro_seed(conn) -> None:
     fila ya existía (curada de siempre) o si upsert_banco_maestro_ruc() la creó primero
     con el DEFAULT AUTO_INGRESADO (posible en una base nueva si load_bce() corre antes
     que este seed) -- refresh_marts() llama a esta función antes de correr
-    _REFRESH_MARTS_SQL, así que el estado queda correcto antes de poblar marts.dim_banco."""
+    _REFRESH_MARTS_SQL, así que el estado queda correcto antes de poblar marts.dim_banco.
+    """
     with open(_SEEDS_DIR / "banco_maestro.csv", encoding="utf-8") as f:
         rows = [
             (r["banco_codigo"], r["banco"], r["tipo_entidad"])
@@ -299,7 +300,7 @@ def _upsert_bce_via_temp(
         (
             f"COALESCE({c}, -1)"
             if c in ("plazo_dias_hasta",)
-            else (f"COALESCE({c}, '')" if c == "provincia" else c)
+            else (f"COALESCE({c}, '')" if c in ("provincia", "canton") else c)
         )
         for c in key_cols
     )
@@ -324,6 +325,7 @@ _BCE_TASAS_PASIVAS_COLS = [
     "plazo_dias_hasta",
     "plazo_codigo",
     "provincia",
+    "canton",
     "monto_total",
     "numero_operaciones",
     "tasa_pasiva_efectiva",
@@ -339,6 +341,7 @@ _BCE_TASAS_ACTIVAS_COLS = [
     "plazo_dias_hasta",
     "plazo_codigo",
     "provincia",
+    "canton",
     "monto_total",
     "numero_operaciones",
     "tasa_activa_efectiva",
@@ -404,6 +407,30 @@ def upsert_staging_tasas_referenciales(conn, df: pd.DataFrame) -> None:
     log.info("staging.tasas_referenciales: %d filas upsert", len(rows))
 
 
+def truncate_staging_bce(conn) -> None:
+    """Vacía staging.bce_tasas_pasivas/activas -- necesario ÚNICAMENTE para el reproceso
+    de backfill de sql/28_bce_canton_grain.sql (cambio de grano de provincia a cantón,
+    2026-09-01): la llave natural de ambas tablas se extendió con `canton` (nullable) --
+    las filas cargadas ANTES de esta migración (canton NULL, grano provincia) quedan con
+    una llave NATURAL DISTINTA a las que produce el parser ya reprocesado para el MISMO
+    dato fuente (canton siempre poblado tras el reproceso, incluido el placeholder
+    'NACIONAL') -- un upsert normal por ON CONFLICT las dejaría como filas duplicadas
+    huérfanas (grano provincia + grano cantón coexistiendo) en vez de reemplazarlas.
+
+    Seguro porque tsp/tsa son UN SOLO archivo acumulativo con el histórico semanal
+    completo (2008-actualidad), no incremental por año como CAPCOL -- reprocesar ese
+    archivo completo re-deriva el 100% del contenido real de estas 2 tablas desde cero,
+    sin pérdida de datos (raw.bce_tasas_pasivas/activas, con el histórico JSONB completo,
+    no se toca). NO usar para una carga normal -- el único llamador previsto es
+    etl/pipeline.py::reprocess_bce_staging(), un comando de backfill de un solo uso para
+    esta migración de esquema."""
+    with conn.cursor() as cur:
+        cur.execute("TRUNCATE staging.bce_tasas_pasivas, staging.bce_tasas_activas")
+    log.info(
+        "staging.bce_tasas_pasivas/activas: TRUNCATE (backfill de reproceso de grano cantón)"
+    )
+
+
 def upsert_staging_bce_tasas_pasivas(conn, df: pd.DataFrame) -> None:
     key_cols = [
         "fecha",
@@ -412,6 +439,7 @@ def upsert_staging_bce_tasas_pasivas(conn, df: pd.DataFrame) -> None:
         "plazo_dias_desde",
         "plazo_dias_hasta",
         "provincia",
+        "canton",
     ]
     _upsert_bce_via_temp(
         conn, df, "bce_tasas_pasivas", _BCE_TASAS_PASIVAS_COLS, key_cols
@@ -426,6 +454,7 @@ def upsert_staging_bce_tasas_activas(conn, df: pd.DataFrame) -> None:
         "plazo_dias_desde",
         "plazo_dias_hasta",
         "provincia",
+        "canton",
     ]
     _upsert_bce_via_temp(
         conn, df, "bce_tasas_activas", _BCE_TASAS_ACTIVAS_COLS, key_cols
@@ -624,11 +653,25 @@ WHERE marts.dim_banco.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 -- descarte, si ocurre, quede en el log de cualquier corrida normal en vez de ser
 -- silencioso -- ver el docstring de esa función para la justificación de por qué es
 -- log-only y no un staging.catalogo_rechazos dedicado.
+--
+-- staging.bce_tasas_pasivas/activas se suman a este mismo auto-ingreso desde
+-- sql/28_bce_canton_grain.sql (2026-09-01): un par (canton, provincia) de BCE fuera del
+-- universo curado en etl/seeds/canton_provincia.csv nunca fue rechazado por
+-- resolver_canton_bce() (two-tier, ver etl/transform/canton_matching.py) -- este INSERT es
+-- el punto donde efectivamente se auto-ingresa a marts.dim_canton con
+-- estado_validacion='AUTO_INGRESADO' (DEFAULT de la columna, sql/28), igual que un bucket
+-- nuevo de dim_plazo. A diferencia de CAPCOL, BCE ya normaliza canton/provincia en Python
+-- antes de staging, así que en la práctica coincide por igualdad exacta -- translate()
+-- sigue aplicando por si acaso, sin costo real.
 INSERT INTO marts.dim_canton (canton, provincia_id)
 SELECT DISTINCT c.canton, dp.provincia_id FROM (
     SELECT canton, provincia FROM staging.cartera
     UNION
     SELECT canton, provincia FROM staging.depositos
+    UNION
+    SELECT canton, provincia FROM staging.bce_tasas_pasivas
+    UNION
+    SELECT canton, provincia FROM staging.bce_tasas_activas
 ) c
 JOIN marts.dim_provincia dp ON dp.provincia = translate(c.provincia, 'ÁÉÍÓÚ', 'AEIOU')
 WHERE c.canton IS NOT NULL
@@ -718,14 +761,21 @@ DO UPDATE SET saldo = EXCLUDED.saldo,
               fecha_actualizacion = now()
 WHERE marts.fact_saldo_depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
+-- canton_id (antes provincia_id, sql/28_bce_canton_grain.sql): mismo patrón de
+-- resolución de 2 pasos que ya usan fact_saldo_cartera/fact_saldo_depositos (CAPCOL) --
+-- dim_provincia primero (para tener provincia_id), luego dim_canton por el PAR
+-- (canton, provincia_id), NUNCA canton solo (hay cantones homónimos en provincias
+-- distintas, ver canton_matching.py). El INSERT de marts.dim_canton más arriba en este
+-- mismo _REFRESH_MARTS_SQL ya corrió antes de esta sentencia, así que un par
+-- AUTO_INGRESADO nuevo de BCE ya existe en dim_canton para cuando este JOIN se ejecuta.
 INSERT INTO marts.fact_captaciones_depositos
-    (fecha_id, banco_id, categoria_deposito_id, plazo_id, provincia_id, monto_total, numero_operaciones, tasa_pasiva_efectiva, tasa_nominal, segmento_entidad_id)
+    (fecha_id, banco_id, categoria_deposito_id, plazo_id, canton_id, monto_total, numero_operaciones, tasa_pasiva_efectiva, tasa_nominal, segmento_entidad_id)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     b.banco_id,
     cd.categoria_deposito_id,
     pl.plazo_id,
-    dp.provincia_id,
+    c.canton_id,
     s.monto_total,
     s.numero_operaciones,
     s.tasa_pasiva_efectiva,
@@ -736,9 +786,10 @@ JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
 JOIN marts.dim_categoria_deposito cd ON cd.categoria = s.categoria_deposito
 JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
     AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
-LEFT JOIN marts.dim_provincia dp ON dp.provincia = s.provincia
+LEFT JOIN marts.dim_provincia dp ON dp.provincia = translate(s.provincia, 'ÁÉÍÓÚ', 'AEIOU')
+LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia_id = dp.provincia_id
 LEFT JOIN marts.dim_segmento_entidad se ON se.tipo_segmento = s.tipo_segmento
-ON CONFLICT (fecha_id, banco_id, categoria_deposito_id, plazo_id, COALESCE(provincia_id, -1))
+ON CONFLICT (fecha_id, banco_id, categoria_deposito_id, plazo_id, COALESCE(canton_id, -1))
 DO UPDATE SET monto_total = EXCLUDED.monto_total,
               numero_operaciones = EXCLUDED.numero_operaciones,
               tasa_pasiva_efectiva = EXCLUDED.tasa_pasiva_efectiva,
@@ -747,14 +798,16 @@ DO UPDATE SET monto_total = EXCLUDED.monto_total,
               fecha_actualizacion = now()
 WHERE marts.fact_captaciones_depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 
+-- canton_id: mismo patrón de resolución de 2 pasos que fact_captaciones_depositos arriba
+-- -- ver ese comentario para el detalle completo.
 INSERT INTO marts.fact_colocaciones_cartera
-    (fecha_id, banco_id, subsegmento_id, plazo_id, provincia_id, monto_total, numero_operaciones, tasa_activa_efectiva, tasa_nominal, segmento_entidad_id)
+    (fecha_id, banco_id, subsegmento_id, plazo_id, canton_id, monto_total, numero_operaciones, tasa_activa_efectiva, tasa_nominal, segmento_entidad_id)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
     b.banco_id,
     sg.subsegmento_id,
     pl.plazo_id,
-    dp.provincia_id,
+    c.canton_id,
     s.monto_total,
     s.numero_operaciones,
     s.tasa_activa_efectiva,
@@ -765,9 +818,10 @@ JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
 JOIN marts.dim_subsegmento_credito sg ON sg.subsegmento = s.segmento_credito
 JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
     AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
-LEFT JOIN marts.dim_provincia dp ON dp.provincia = s.provincia
+LEFT JOIN marts.dim_provincia dp ON dp.provincia = translate(s.provincia, 'ÁÉÍÓÚ', 'AEIOU')
+LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia_id = dp.provincia_id
 LEFT JOIN marts.dim_segmento_entidad se ON se.tipo_segmento = s.tipo_segmento
-ON CONFLICT (fecha_id, banco_id, subsegmento_id, plazo_id, COALESCE(provincia_id, -1))
+ON CONFLICT (fecha_id, banco_id, subsegmento_id, plazo_id, COALESCE(canton_id, -1))
 DO UPDATE SET monto_total = EXCLUDED.monto_total,
               numero_operaciones = EXCLUDED.numero_operaciones,
               tasa_activa_efectiva = EXCLUDED.tasa_activa_efectiva,
@@ -904,21 +958,32 @@ WHERE marts.fact_pyg.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 def _log_cantones_no_resueltos(conn) -> None:
     """El INSERT de marts.dim_canton en _REFRESH_MARTS_SQL usa un INNER JOIN contra
     dim_provincia (provincia_id es NOT NULL en dim_canton, así que no puede ser un LEFT
-    JOIN con NULL) -- toda fila de staging.cartera/staging.depositos cuya `provincia` no
-    resuelve contra dim_provincia (ni exacto ni via translate(), ver el comentario sobre
-    ese INSERT) queda descartada ahí sin error, sin fila huérfana, sin rastro. Bug real
-    encontrado 2026-08-30 al revisar load_postgres.py, no una feature nueva.
+    JOIN con NULL) -- toda fila de staging.cartera/staging.depositos/staging.bce_tasas_*
+    cuya `provincia` no resuelve contra dim_provincia (ni exacto ni via translate(), ver el
+    comentario sobre ese INSERT) queda descartada ahí sin error, sin fila huérfana, sin
+    rastro. Bug real encontrado 2026-08-30 al revisar load_postgres.py, no una feature
+    nueva.
+
+    staging.bce_tasas_pasivas/activas se agregan a esta misma consulta desde
+    sql/28_bce_canton_grain.sql (2026-09-01): en la práctica no deberían aportar NUNCA una
+    fila acá -- resolver_canton_bce() (etl/transform/canton_matching.py) ya hace fail-fast
+    en Python (CantonNoResueltoError) si la provincia cruda no resuelve, ANTES de que la
+    fila llegue a staging -- pero esta función es la red de seguridad de nivel SQL, no
+    Python: cubre el caso de que alguna vez se escriba a staging.bce_tasas_* por una ruta
+    que no pase por resolver_canton_bce() (ej. una migración de datos manual, un backfill
+    ad-hoc), mismo motivo por el que ya cubre staging.cartera/depositos aunque esas dos
+    tampoco deberían llegar acá bajo el flujo normal actual.
 
     Se resuelve con logging (WARNING si hay filas afectadas, INFO si no), NO con una
     tabla staging.catalogo_rechazos: a diferencia de dim_plazo/banco_codigo (catálogos
     regulatorios cerrados donde un valor no resuelto significa un dato mal identificado
     que un analista podría contar como otra cosa), dim_canton es geografía de bajo riesgo
     -- el motivo de scope-out real ("agregar geografía sin curar caso por caso") no
-    aplica acá; y a fecha de esta función, 0 filas de staging.cartera/staging.depositos
-    caen en este caso (verificado contra la base viva, ver docs/gobernanza_datos.md).
-    Construir infraestructura de rechazos persistente para un caso con 0 filas afectadas
-    hoy sería sobre-ingeniería; si esta función alguna vez loguea un WARNING real, ESE es
-    el momento de evaluar si hace falta algo más que un log."""
+    aplica acá; y a fecha de esta función, 0 filas de ninguna de las 4 tablas caen en este
+    caso (verificado contra la base viva, ver docs/gobernanza_datos.md). Construir
+    infraestructura de rechazos persistente para un caso con 0 filas afectadas hoy sería
+    sobre-ingeniería; si esta función alguna vez loguea un WARNING real, ESE es el momento
+    de evaluar si hace falta algo más que un log."""
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -927,6 +992,10 @@ def _log_cantones_no_resueltos(conn) -> None:
                 SELECT canton, provincia FROM staging.cartera
                 UNION ALL
                 SELECT canton, provincia FROM staging.depositos
+                UNION ALL
+                SELECT canton, provincia FROM staging.bce_tasas_pasivas
+                UNION ALL
+                SELECT canton, provincia FROM staging.bce_tasas_activas
             ) c
             WHERE c.canton IS NOT NULL
               AND NOT EXISTS (
@@ -945,10 +1014,10 @@ def _log_cantones_no_resueltos(conn) -> None:
             for provincia, filas, cantones in rows
         )
         log.warning(
-            "marts.dim_canton: %d fila(s) de staging.cartera/depositos con provincia "
-            "NO resoluble contra marts.dim_provincia -- el INNER JOIN de refresh_marts() "
-            "las va a DESCARTAR silenciosamente si esto no se corrige (%d provincia(s) "
-            "distintas afectadas: %s)",
+            "marts.dim_canton: %d fila(s) de staging.cartera/depositos/bce_tasas_pasivas/"
+            "bce_tasas_activas con provincia NO resoluble contra marts.dim_provincia -- "
+            "el INNER JOIN de refresh_marts() las va a DESCARTAR silenciosamente si esto "
+            "no se corrige (%d provincia(s) distintas afectadas: %s)",
             total_filas,
             len(rows),
             detalle,

@@ -20,11 +20,21 @@ curado de siempre (necesitan alinearse con CAPCOL/Boletín); el resto (~420 enti
 auto-registra por RUC -- ver `etl/transform/banco_matching.py::resolver_entidad_bce()`.
 
 El grano de fact_captaciones_depositos/fact_colocaciones_cartera (nombres desde
-2026-07-19, antes fact_tasas_pasivas/fact_tasas_activas) es (fecha, banco,
-categoria/segmento, plazo, provincia) -- SIN canton. El archivo trae canton como grano
-más fino dentro de cada provincia (confirmado: ej. GUAYAS tiene más filas que solo
-GUAYAQUIL), así que hay que reagregar: montos y operaciones se SUMAN, las tasas se
-promedian PONDERADAS por monto_total de cada fila (no un promedio simple entre cantones).
+2026-07-19, antes fact_tasas_pasivas/fact_tasas_activas) es, desde 2026-09-01
+(sql/28_bce_canton_grain.sql), (fecha, banco, categoria/segmento, plazo, cantón) --
+igualando el grano ya usado por CAPCOL (dim_canton como dimensión directa, dim_provincia
+como outrigger vía dim_canton.provincia_id). Antes de esa migración el grano era
+provincia (SIN cantón): el archivo trae cantón, pero se colapsaba dentro de provincia en
+este mismo `_weighted_agg()` porque `fact_captaciones_depositos`/`fact_colocaciones_cartera`
+solo tenían `provincia_id`. `canton`/`provincia` se resuelven contra
+`etl/transform/canton_matching.py::resolver_canton_bce()` (mismo catálogo compartido con
+CAPCOL, `marts.dim_canton`) ANTES de `_weighted_agg`, y ambos entran al `group_cols` --
+`_weighted_agg` se mantiene como red de seguridad real, no solo defensiva: el archivo
+fuente SÍ trae duplicados genuinos incluso al grano completo con cantón (verificado
+2026-09-01 contra tsp_desde_200801.zip: 1030 filas en grupos duplicados de 2, mismo
+RUC/fecha/instrumento/provincia/canton/plazo con montos distintos -- reportes corregidos
+o reenviados por la misma entidad para la misma semana). Montos y operaciones se SUMAN,
+las tasas se promedian PONDERADAS por monto_total de cada fila (no un promedio simple).
 
 `tipo_segmento` (columna original, ver docs/fuentes_datos.md) es la clasificación
 normativa de tamaño/estructura de CADA entidad -- BANCO GRANDE/MEDIANO/PEQUEÑO para
@@ -34,7 +44,7 @@ Detectada 2026-07-25 (el usuario preguntó dónde se había considerado -- no se
 considerado: se preservaba en raw.* pero se descartaba antes de staging sin examinar su
 contenido). Es un atributo de la ENTIDAD en esa fecha, no del instrumento/segmento de
 crédito -- se resuelve una sola vez por (fecha, banco_codigo) ANTES de la agregación por
-provincia (`_resolve_segmento_entidad`), no se incluye en el group_cols de
+cantón (`_resolve_segmento_entidad`), no se incluye en el group_cols de
 `_weighted_agg` para no multiplicar filas. Es estable dentro de (fecha, banco_codigo) en
 la inmensa mayoría de los casos; en los pocos donde no lo es (~1 en un millón de filas,
 verificado), se resuelve por la fila de mayor monto_total, mismo criterio de
@@ -54,8 +64,9 @@ from etl.transform.bce_plazo_matching import (
     resolver_plazo_bce,
     validar_universo_plazos_bce,
 )
+from etl.transform.canton_matching import resolver_canton_bce
 from etl.transform.categoria_deposito_matching import CATEGORIAS_VALIDAS
-from etl.transform.common import normalize_provincia, sha256_file
+from etl.transform.common import sha256_file
 
 CHUNK_SIZE = 300_000
 
@@ -206,10 +217,14 @@ def read_raw(zip_path: Path) -> pd.DataFrame:
 def _weighted_agg(
     df: pd.DataFrame, group_cols: list[str], tasa_cols: list[str]
 ) -> pd.DataFrame:
-    """Colapsa cantón dentro de cada provincia: SUM(monto_total)/SUM(numero_operaciones);
-    cada tasa se promedia ponderada por el monto_total de las filas donde esa tasa
-    específica no es nula (denominador propio por columna, no el monto_total agregado
-    total, para no sesgar si una fila tiene monto pero tasa en blanco)."""
+    """Colapsa `group_cols` (desde 2026-09-01 incluye `canton`, ver docstring del módulo):
+    SUM(monto_total)/SUM(numero_operaciones); cada tasa se promedia ponderada por el
+    monto_total de las filas donde esa tasa específica no es nula (denominador propio por
+    columna, no el monto_total agregado total, para no sesgar si una fila tiene monto pero
+    tasa en blanco). Con `canton` en `group_cols` esto ya no colapsa geografía (cada fila
+    resultante es prácticamente 1:1 con una fila fuente) pero sigue siendo necesaria como
+    red de seguridad real, no cosmética: el archivo fuente trae duplicados genuinos incluso
+    al grano completo con cantón (ver docstring del módulo)."""
     df = df.copy()
     for col in tasa_cols:
         df[f"_{col}_num"] = df[col] * df["monto_total"]
@@ -261,12 +276,32 @@ def _resolve_identidad(
     return df, entidades
 
 
+def _resolve_canton(df: pd.DataFrame) -> pd.DataFrame:
+    """Resuelve canton/provincia (canton_matching.py::resolver_canton_bce) solo sobre las
+    combinaciones DISTINTAS de (canton, provincia) crudas -- ~226 pares, no millones de
+    filas -- luego se pega de vuelta con merge() (mismo patrón que _resolve_identidad
+    para banco_codigo/RUC, cardinalidad baja frente al total de filas). Deja que
+    CantonNoResueltoError propague sin capturar -- mismo criterio que
+    SegmentoNoResueltoError/TipoSegmentoNoResueltoError en este módulo."""
+    claves = df[["canton", "provincia"]].drop_duplicates().reset_index(drop=True)
+    resueltas = claves.apply(
+        lambda r: resolver_canton_bce(r["canton"], r["provincia"]), axis=1
+    )
+    claves["canton_resuelto"] = [t[0] for t in resueltas]
+    claves["provincia_resuelta"] = [t[1] for t in resueltas]
+
+    df = df.merge(claves, on=["canton", "provincia"], how="left")
+    df["canton"] = df["canton_resuelto"]
+    df["provincia"] = df["provincia_resuelta"]
+    return df.drop(columns=["canton_resuelto", "provincia_resuelta"])
+
+
 def _add_common_columns(
     df: pd.DataFrame, plazos_validos: set[str], fuente: str
 ) -> tuple[pd.DataFrame, list[tuple[str, str, str, str]]]:
     df = df.copy()
     df, entidades = _resolve_identidad(df)
-    df["provincia"] = df["provincia"].apply(normalize_provincia)
+    df = _resolve_canton(df)
     df["plazo_codigo"] = df["plazo"]
     validar_universo_plazos_bce(df["plazo"].unique(), plazos_validos, fuente)
     plazo_lookup = {v: resolver_plazo_bce(v) for v in df["plazo"].unique()}
@@ -307,6 +342,7 @@ def parse_tsp_file(
         "plazo_dias_hasta",
         "plazo_codigo",
         "provincia",
+        "canton",
     ]
     result = _weighted_agg(df, group_cols, ["tasa_pasiva_efectiva", "tasa_nominal"])
     result = result.merge(segmento_entidad, on=["fecha", "banco_codigo"], how="left")
@@ -347,6 +383,7 @@ def parse_tsa_file(
         "plazo_dias_hasta",
         "plazo_codigo",
         "provincia",
+        "canton",
     ]
     result = _weighted_agg(df, group_cols, ["tasa_activa_efectiva", "tasa_nominal"])
     result = result.merge(segmento_entidad, on=["fecha", "banco_codigo"], how="left")
