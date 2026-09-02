@@ -12407,7 +12407,7 @@
       "node_kind": "heading",
       "norm_label": "10. como exportar un `.pbit` real desde este prototipo",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L363"
+      "source_location": "L362"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_11_c\u00f3mo_abrir_y_probar_el_prototipo",
@@ -12419,7 +12419,7 @@
       "node_kind": "heading",
       "norm_label": "11. como abrir y probar el prototipo",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L373"
+      "source_location": "L372"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_1_por_qu\u00e9_un_pbip_separado_y_no_una_p\u00e1gina_nueva_en_el_reporte_productivo",
@@ -12431,7 +12431,7 @@
       "node_kind": "heading",
       "norm_label": "1. por que un `.pbip` separado y no una pagina nueva en el reporte productivo",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L32"
+      "source_location": "L31"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_2_1_por_qu\u00e9_esto_no_es_okabe_ito_con_otro_nombre",
@@ -12443,7 +12443,7 @@
       "node_kind": "heading",
       "norm_label": "2.1 por que esto no es \"okabe\u2013ito con otro nombre\"",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L80"
+      "source_location": "L79"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_2_2_secuencial_y_qu\u00e9_no_tiene_campo_de_tema_global",
@@ -12455,7 +12455,7 @@
       "node_kind": "heading",
       "norm_label": "2.2 secuencial y que no tiene campo de tema global",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L113"
+      "source_location": "L112"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_2_paleta_de_color_libro_mayor",
@@ -12467,7 +12467,7 @@
       "node_kind": "heading",
       "norm_label": "2. paleta de color \u2014 \"libro mayor\"",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L55"
+      "source_location": "L54"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_3_tipograf\u00eda",
@@ -12479,7 +12479,7 @@
       "node_kind": "heading",
       "norm_label": "3. tipografia",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L122"
+      "source_location": "L121"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_4_layout_de_la_p\u00e1gina_prototipo",
@@ -12491,7 +12491,7 @@
       "node_kind": "heading",
       "norm_label": "4. layout de la pagina prototipo",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L157"
+      "source_location": "L156"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_5_1_qu\u00e9_cambi\u00f3_en_el_pbip_de_los_3_slicers_verificado_contra_el_schema_real",
@@ -12503,7 +12503,7 @@
       "node_kind": "heading",
       "norm_label": "5.1 que cambio en el `.pbip` de los 3 slicers (verificado contra el schema real)",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L194"
+      "source_location": "L193"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_5_2_lo_que_el_schema_no_expone_verificado_no_asumido",
@@ -12515,7 +12515,7 @@
       "node_kind": "heading",
       "norm_label": "5.2 lo que el schema **no** expone (verificado, no asumido)",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L225"
+      "source_location": "L224"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_5_3_los_mismos_3_patrones_de_datos_sin_cambios_de_fondo",
@@ -12527,7 +12527,7 @@
       "node_kind": "heading",
       "norm_label": "5.3 los mismos 3 patrones de datos (sin cambios de fondo)",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L239"
+      "source_location": "L238"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_5_controles_de_personalizaci\u00f3n_redise\u00f1ados_no_solo_re_coloreados",
@@ -12539,7 +12539,7 @@
       "node_kind": "heading",
       "norm_label": "5. controles de personalizacion \u2014 redisenados, no solo re-coloreados",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L187"
+      "source_location": "L186"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_6_accesibilidad",
@@ -12551,7 +12551,7 @@
       "node_kind": "heading",
       "norm_label": "6. accesibilidad",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L251"
+      "source_location": "L250"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_7_1_qu\u00e9_se_valid\u00f3_estructuralmente_aqu\u00ed_vs_qu\u00e9_falta_verificar_en_desktop",
@@ -12563,7 +12563,7 @@
       "node_kind": "heading",
       "norm_label": "7.1 que se valido estructuralmente aqui vs. que falta verificar en desktop",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L298"
+      "source_location": "L297"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_7_d\u00f3nde_el_pbip_diverge_de_la_maqueta_html_l\u00e9ase_antes_de_abrir_desktop",
@@ -12575,7 +12575,7 @@
       "node_kind": "heading",
       "norm_label": "7. donde el `.pbip` diverge de la maqueta html (lease antes de abrir desktop)",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L272"
+      "source_location": "L271"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_8_simplificaciones_deliberadas_del_modelo_sem\u00e1ntico_del_prototipo",
@@ -12587,7 +12587,7 @@
       "node_kind": "heading",
       "norm_label": "8. simplificaciones deliberadas del modelo semantico del prototipo",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L337"
+      "source_location": "L336"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_9_referencia_r\u00e1pida_campos_reales_usados",
@@ -12599,7 +12599,7 @@
       "node_kind": "heading",
       "norm_label": "9. referencia rapida: campos reales usados",
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L349"
+      "source_location": "L348"
     },
     {
       "id": "docs_prototipo_diseno_powerbi_prototipo_de_dise\u00f1o_power_bi_tema_libro_mayor_personalizaci\u00f3n_y_plantilla_de_p\u00e1gina",
@@ -23650,7 +23650,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L113",
+      "source_location": "L112",
       "weight": 1.0
     },
     {
@@ -23661,7 +23661,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L80",
+      "source_location": "L79",
       "weight": 1.0
     },
     {
@@ -23672,7 +23672,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L194",
+      "source_location": "L193",
       "weight": 1.0
     },
     {
@@ -23683,7 +23683,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L225",
+      "source_location": "L224",
       "weight": 1.0
     },
     {
@@ -23694,7 +23694,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L239",
+      "source_location": "L238",
       "weight": 1.0
     },
     {
@@ -23705,7 +23705,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L298",
+      "source_location": "L297",
       "weight": 1.0
     },
     {
@@ -23727,7 +23727,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L122",
+      "source_location": "L121",
       "weight": 1.0
     },
     {
@@ -23738,7 +23738,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L157",
+      "source_location": "L156",
       "weight": 1.0
     },
     {
@@ -23749,7 +23749,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L187",
+      "source_location": "L186",
       "weight": 1.0
     },
     {
@@ -23760,7 +23760,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L251",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -23771,7 +23771,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L272",
+      "source_location": "L271",
       "weight": 1.0
     },
     {
@@ -23782,7 +23782,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L32",
+      "source_location": "L31",
       "weight": 1.0
     },
     {
@@ -23793,7 +23793,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L337",
+      "source_location": "L336",
       "weight": 1.0
     },
     {
@@ -23804,7 +23804,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L349",
+      "source_location": "L348",
       "weight": 1.0
     },
     {
@@ -23815,7 +23815,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L363",
+      "source_location": "L362",
       "weight": 1.0
     },
     {
@@ -23826,7 +23826,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L373",
+      "source_location": "L372",
       "weight": 1.0
     },
     {
@@ -23837,7 +23837,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/prototipo_diseno_powerbi.md",
-      "source_location": "L55",
+      "source_location": "L54",
       "weight": 1.0
     },
     {
@@ -36578,5 +36578,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "4ae0b2e6d5ae2b5e2b7e6a75b671998a56e8b98f"
+  "built_at_commit": "ff6908c318c8050c1fe85df664f37b49f85997ca"
 }
