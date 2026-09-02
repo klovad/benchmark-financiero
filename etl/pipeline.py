@@ -45,7 +45,6 @@ from etl.load.load_postgres import (
 )
 from etl.logging_utils import setup_logging
 from etl.transform.common import sha256_file
-from etl.transform.parse_operaciones_especiales import parse_operaciones_especiales_file
 from etl.transform.parse_bce_tasas import (
     RAW_TSA_COLS,
     RAW_TSP_COLS,
@@ -56,6 +55,7 @@ from etl.transform.parse_bce_tasas import read_raw as read_raw_bce
 from etl.transform.parse_boletin import parse_boletin_file
 from etl.transform.parse_cartera import parse_cartera_file
 from etl.transform.parse_depositos import parse_depositos_file
+from etl.transform.parse_operaciones_especiales import parse_operaciones_especiales_file
 from etl.transform.parse_tasas_historicas import parse_tasas_historicas_file
 
 setup_logging()

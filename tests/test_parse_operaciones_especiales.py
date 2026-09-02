@@ -11,11 +11,11 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from etl.transform.parse_bce_tasas import SegmentoNoResueltoError
 from etl.transform.parse_operaciones_especiales import (
     COLUMNAS_EXPECTADAS,
     parse_operaciones_especiales_file,
 )
-from etl.transform.parse_bce_tasas import SegmentoNoResueltoError
 
 
 def _mini_xlsx(tmp_path: Path) -> Path:

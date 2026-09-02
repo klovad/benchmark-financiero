@@ -27,21 +27,15 @@ from pathlib import Path
 
 import pandas as pd
 
-from etl.transform.banco_matching import resolver_entidad_bce
-from etl.transform.bce_plazo_matching import (
-    PLAZOS_TSA_VALIDOS,
-    resolver_plazo_bce,
-    validar_universo_plazos_bce,
-)
-from etl.transform.common import normalize_provincia
+from etl.transform.bce_plazo_matching import PLAZOS_TSA_VALIDOS
 from etl.transform.parse_bce_tasas import (
-    TIPOS_SEGMENTO_VALIDOS,
     SEGMENTOS_VALIDOS,
+    TIPOS_SEGMENTO_VALIDOS,
+    SegmentoNoResueltoError,
+    TipoSegmentoNoResueltoError,
     _add_common_columns,
     _resolve_segmento_entidad,
     _weighted_agg,
-    TipoSegmentoNoResueltoError,
-    SegmentoNoResueltoError,
 )
 
 COLUMNAS_EXPECTADAS = {
