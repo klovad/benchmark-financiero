@@ -1,7 +1,7 @@
 # Graph Report - benchmark-bancos  (2026-09-01)
 
 ## Corpus Check
-- 116 files · ~90,999 words
+- 116 files · ~91,030 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `210db1f1`
+- Built from commit: `4ae0b2e6`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -146,10 +146,10 @@
 4. `resolver_categoria_deposito()` - 17 edges
 5. `parse_depositos_file()` - 17 edges
 6. `load_bce()` - 16 edges
-7. `load_boletin()` - 15 edges
-8. `sha256_file()` - 15 edges
+7. `sha256_file()` - 15 edges
+8. `load_boletin()` - 15 edges
 9. `resolver_entidad_bce()` - 15 edges
-10. `parse_tsp_file()` - 14 edges
+10. `resolver_plazo_bce()` - 14 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error()` --uses--> `PlazoNoResueltoError`  [INFERRED]
@@ -158,10 +158,10 @@
   tests/test_parse_tasas_historicas.py → etl/transform/bce_plazo_matching.py
 - `test_resolver_plazo_shape_valido_pero_rango_invertido_lanza_error()` --uses--> `PlazoNoResueltoError`  [INFERRED]
   tests/test_parse_tasas_historicas.py → etl/transform/bce_plazo_matching.py
-- `test_upsert_staging_cartera_round_trip_cdc_no_op()` --calls--> `upsert_staging_cartera()`  [EXTRACTED]
-  tests/test_integration_regressions.py → etl/load/load_postgres.py
-- `test_bce_canton_auto_ingresado_end_to_end()` --calls--> `upsert_staging_bce_tasas_pasivas()`  [EXTRACTED]
-  tests/test_integration_regressions.py → etl/load/load_postgres.py
+- `test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo()` --uses--> `PlazoNoResueltoError`  [INFERRED]
+  tests/test_bce_plazo_matching.py → etl/transform/bce_plazo_matching.py
+- `test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando()` --uses--> `PlazoNoResueltoError`  [INFERRED]
+  tests/test_bce_plazo_matching.py → etl/transform/bce_plazo_matching.py
 
 ## Import Cycles
 - None detected.
@@ -421,22 +421,22 @@ Cohesion: 0.08
 Nodes (43): date, parse_fecha_from_boletin_filename(), parse_fecha_from_tasas_historicas_filename(), Extrae la fecha (fin de mes) de un nombre de archivo TasasVigenteMMAAAA.htm.…, Extrae la fecha (fin de mes) de un nombre de archivo 'Boletín Bancos <MES_ES>…, integration, _bce_tasas_pasivas_row(), _boletin_balance_row() (+35 more)
 
 ## Knowledge Gaps
-- **538 isolated node(s):** `Qué incluye`, `Quickstart`, `Estructura`, `Tests y CI`, `Alcance de los datos` (+533 more)
+- **538 isolated node(s):** ``marts_ultimos_5_anios/``, ``marts_AAAA-MM/` (muestra de un mes)`, `Uso típico`, `projections`, `filters` (+533 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **60 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `upsert_staging_bce_tasas_pasivas()` connect `pipeline.py` to `test_integration_regressions.py`?**
+- **Why does `resolver_categoria_deposito()` connect `resolver_categoria_deposito` to `PlazoNoResueltoError`, `parse_cartera.py`?**
+  _High betweenness centrality (0.010) - this node is a cross-community bridge._
+- **Why does `resolver_canton_bce()` connect `resolver_canton_bce` to `parse_cartera.py`, `pipeline.py`?**
   _High betweenness centrality (0.009) - this node is a cross-community bridge._
 - **Why does `resolver_banco_codigo()` connect `resolver_banco_codigo` to `parse_cartera.py`?**
-  _High betweenness centrality (0.009) - this node is a cross-community bridge._
-- **Why does `resolver_canton_bce()` connect `resolver_canton_bce` to `parse_cartera.py`, `pipeline.py`?**
   _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **Are the 7 inferred relationships involving `PlazoNoResueltoError` (e.g. with `test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo()` and `test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando()`) actually correct?**
   _`PlazoNoResueltoError` has 7 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Qué incluye`, `Quickstart`, `Estructura` to the rest of the system?**
+- **What connects ``marts_ultimos_5_anios/``, ``marts_AAAA-MM/` (muestra de un mes)`, `Uso típico` to the rest of the system?**
   _538 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `PlazoNoResueltoError` be split into smaller, more focused modules?**
   _Cohesion score 0.12807881773399016 - nodes in this community are weakly interconnected._
