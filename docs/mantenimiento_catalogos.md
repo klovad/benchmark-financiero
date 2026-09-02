@@ -9,11 +9,11 @@ cada vez que esto pasa. Vive en un archivo aparte (no como sección de
 `gobernanza_datos.md`) porque es de un género distinto — se abre a mitad de un fallo real
 para copiar/pegar un comando, no se lee de corrido como una narrativa de decisiones.
 
-Este documento cubre los 7 catálogos que hoy resuelven identidad en Python antes de
+Este documento cubre los 8 catálogos que hoy resuelven identidad en Python antes de
 `staging.*` (principio de diseño en `docs/architecture.md`, sección "Catálogos
 conformados"): `dim_banco` (camino curado + camino auto-registrado), `dim_segmento_credito`/
 `dim_subsegmento_credito`, `dim_categoria_deposito`, `dim_segmento_entidad`, `dim_plazo`,
-`dim_cuenta_contable`.
+`dim_cuenta_contable`, `dim_canton`.
 
 ## Tabla de referencia rápida
 
@@ -26,13 +26,14 @@ conformados"): `dim_banco` (camino curado + camino auto-registrado), `dim_segmen
 | `dim_segmento_entidad` | `TipoSegmentoNoResueltoError` | `parse_bce_tasas.py:160` (raise :296-299 tsp, :336-339 tsa) | Fail-fast absoluto, sin two-tier |
 | `dim_plazo` | `PlazoNoResueltoError` (shape/rango inválido) | `etl/transform/bce_plazo_matching.py:27` (4 puntos de raise, ver sección) | **Two-tier**: shape+rango sano fuera del universo curado → `AUTO_INGRESADO`, no lanza |
 | `dim_cuenta_contable` | Ninguna — `ValueError` genérico solo ante bug de parsing (`_find_header_row`) | `etl/transform/parse_boletin.py:104-106` | Sin gate — todo código nuevo se auto-ingresa `AUTO_INGRESADO` por diseño |
+| `dim_canton` (BCE tsp/tsa) | `CantonNoResueltoError` (provincia no resoluble, o canton/provincia vacíos) | `etl/transform/canton_matching.py:81` (raise en `resolver_canton_bce()`) | **Two-tier**: provincia válida pero par (canton, provincia) fuera del universo curado → `AUTO_INGRESADO`, no lanza. Integración en `parse_bce_tasas.py` pendiente (carril de `data-engineer`, ver `docs/gobernanza_datos.md`) |
 
-`estado_validacion` (`CONFIRMADO`/`AUTO_INGRESADO`/`RECHAZADO`) solo existe en 3 tablas:
-`dim_banco` (`sql/26`), `dim_plazo` (`sql/27`), `dim_cuenta_contable` (`sql/25`) — ver
-sección dedicada más abajo para las queries copy-paste de revisión/confirmación de cada
-una. Los otros 4 catálogos son enumeraciones cerradas por definición normativa/regulatoria
-sin campo de revisión: un valor nuevo ahí siempre aborta la carga hasta que un humano lo
-resuelva en el código, nunca queda "pendiente" en la base.
+`estado_validacion` (`CONFIRMADO`/`AUTO_INGRESADO`/`RECHAZADO`) solo existe en 4 tablas:
+`dim_banco` (`sql/26`), `dim_plazo` (`sql/27`), `dim_cuenta_contable` (`sql/25`),
+`dim_canton` (`sql/28`) — ver sección dedicada más abajo para las queries copy-paste de
+revisión/confirmación de cada una. Los otros 4 catálogos son enumeraciones cerradas por
+definición normativa/regulatoria sin campo de revisión: un valor nuevo ahí siempre aborta
+la carga hasta que un humano lo resuelva en el código, nunca queda "pendiente" en la base.
 
 ---
 
@@ -134,7 +135,7 @@ hubo migración de esquema). Re-ejecutar: `pytest tests/test_banco_matching.py -
 
 **Nota**: una vez que una entidad *resuelve* (RUC válido, tipo mapeado), la fila nueva en
 `dim_banco` **sí se auto-ingresa** con `estado_validacion='AUTO_INGRESADO'` sin curación de
-nombre — eso no es un error, es el comportamiento de diseño (ver sección "Los 3 catálogos
+nombre — eso no es un error, es el comportamiento de diseño (ver sección "Los 4 catálogos
 con `estado_validacion`" más abajo para cómo revisarla/confirmarla).
 
 ## 3. `dim_segmento_credito` / `dim_subsegmento_credito`
@@ -329,14 +330,60 @@ la estructura real del archivo cambió. Re-ejecutar: `pytest tests/test_parse_bo
 `python -m etl.pipeline boletin --years <años afectados>`, verificar
 `staging.boletin_balance`/`boletin_pyg` == `marts.fact_balance`/`fact_pyg` en filas.
 
+## 8. `dim_canton` (two-tier, BCE tsp/tsa — 2026-09-01, `sql/28_bce_canton_grain.sql`)
+
+**Error**: `CantonNoResueltoError` — `etl/transform/canton_matching.py:81-97`, lanzado
+desde `resolver_canton_bce(canton, provincia)` en 2 casos: `canton`/`provincia` vacíos, o
+`provincia` (tras `normalize_provincia()`) no está entre las 24 provincias reales del
+Ecuador + `ZONA NO DELIMITADA` + `S/N` (`_PROVINCIAS_VALIDAS`, `canton_matching.py:66-68`).
+Se verá al correr `python -m etl.pipeline bce` una vez que `data-engineer` integre la
+llamada en `etl/transform/parse_bce_tasas.py` (a la fecha de esta entrada, esa integración
+sigue pendiente — ver "Cambio de grano de BCE a cantón" en `docs/gobernanza_datos.md`).
+
+**Camino sin error (two-tier, igual mecanismo que `dim_plazo`)**: provincia válida pero el
+par `(canton, provincia)` normalizado no está en el universo sembrado
+(`etl/seeds/canton_provincia.csv`, 228 pares, mismo universo que `sql/28` sembró en
+`marts.dim_canton` con `estado_validacion='CONFIRMADO'`) → **no lanza nada**. La fila
+llega a `marts.dim_canton` con `estado_validacion='AUTO_INGRESADO'` (DEFAULT) la próxima
+vez que `refresh_marts()` corra su `INSERT ... ON CONFLICT (canton, provincia_id) DO
+NOTHING`. Como con `dim_plazo`, esto **no se ve en ningún log de pipeline** — se descubre
+consultando `marts.dim_canton` (sección de abajo).
+
+**Dónde arreglarlo (caso fail-fast)**:
+- `provincia` no resuelve: revisar si BCE cambió la ortografía de una provincia existente
+  (poco probable, `normalize_provincia()` ya cubre tilde vs. sin tilde) o si agregó una
+  provincia genuinamente nueva — si es real, agregarla a
+  `etl/config.py::PROVINCIA_REGION` **y** una migración `sql/NN_....sql` que la siembre en
+  `marts.dim_provincia`.
+- `canton`/`provincia` vacíos: casi siempre bug de parsing (columna mal leída, fila de
+  encabezado colada) — revisar `etl/transform/parse_bce_tasas.py`, no relajar la validación
+  para aceptar vacíos.
+
+**Qué hacer (caso `AUTO_INGRESADO`)**: revisión, no reparación — igual que `dim_plazo`, ver
+sección de abajo. Antes de confirmar, verificar que sea un cantón real (no un typo de la
+fuente ni un alias de un cantón ya sembrado con otra forma de texto — ver
+`canton_matching.py::_ALIASES_BCE` para el precedente de 5 casos ya identificados así).
+
+**Después de arreglarlo**: tests en `tests/test_canton_matching.py` — patrón
+`test_provincia_no_resuelve_lanza_fail_fast` para el fail-fast,
+`test_canton_fuera_del_universo_sembrado_no_lanza_two_tier` para el camino
+`AUTO_INGRESADO`. Si se confirma un alias nuevo (mismo cantón, forma de texto distinta),
+agregarlo a `_ALIASES_BCE` **y** un test en `TestAliasesBce`. Docs:
+`docs/data_dictionary.md` (`dim_canton`, conteo), `docs/gobernanza_datos.md` (si cambia el
+conteo de filas `AUTO_INGRESADO`/`CONFIRMADO`). Re-ejecutar:
+`pytest tests/test_canton_matching.py -v`, el comando de pipeline, verificar
+`staging.bce_tasas_pasivas`/`bce_tasas_activas` == `marts.fact_captaciones_depositos`/
+`fact_colocaciones_cartera` en filas.
+
 ---
 
-## Los 3 catálogos con `estado_validacion`: revisar y confirmar filas pendientes
+## Los 4 catálogos con `estado_validacion`: revisar y confirmar filas pendientes
 
-Solo `dim_banco`, `dim_plazo` y `dim_cuenta_contable` tienen esta columna
-(`CHECK IN ('CONFIRMADO','AUTO_INGRESADO','RECHAZADO')`). `RECHAZADO` está reservado, ningún
-flujo actual lo escribe — usarlo manualmente si se decide que una fila auto-ingresada es
-inválida y no se quiere borrarla (preserva la fila para trazabilidad en vez de un `DELETE`).
+`dim_banco`, `dim_plazo`, `dim_cuenta_contable` y (desde 2026-09-01) `dim_canton` tienen
+esta columna (`CHECK IN ('CONFIRMADO','AUTO_INGRESADO','RECHAZADO')`). `RECHAZADO` está
+reservado, ningún flujo actual lo escribe — usarlo manualmente si se decide que una fila
+auto-ingresada es inválida y no se quiere borrarla (preserva la fila para trazabilidad en
+vez de un `DELETE`).
 
 ### `dim_banco`
 
@@ -406,6 +453,32 @@ UPDATE marts.dim_cuenta_contable
 SET estado_validacion = 'CONFIRMADO'
 WHERE reporte = 'BALANCE' AND codigo = '1105010105';
 ```
+
+### `dim_canton`
+
+**Encontrar filas pendientes**:
+```sql
+SELECT canton_id, canton, provincia_id
+FROM marts.dim_canton
+WHERE estado_validacion = 'AUTO_INGRESADO'
+ORDER BY canton;
+```
+
+**Confirmar una fila** — igual que `dim_plazo`/`dim_cuenta_contable`, el
+`INSERT INTO marts.dim_canton ... ON CONFLICT (canton, provincia_id) DO NOTHING` de
+`_REFRESH_MARTS_SQL` no lista `estado_validacion`, así que una fila ya existente **nunca
+se toca** de nuevo:
+```sql
+UPDATE marts.dim_canton
+SET estado_validacion = 'CONFIRMADO'
+WHERE canton_id = 250;
+```
+Antes de confirmar, verificar en `marts.vw_dim_canton_geografia` que no sea un alias de
+escritura de un cantón ya existente con otra forma de texto (ver
+`etl/transform/canton_matching.py::_ALIASES_BCE` para el precedente de 5 casos así) — si
+lo es, el fix correcto es agregarlo a `_ALIASES_BCE` y dejar la fila `AUTO_INGRESADO`
+huérfana sin usar (o `RECHAZADO` si se prefiere dejar constancia explícita), no confirmarla
+como cantón real independiente.
 
 ---
 

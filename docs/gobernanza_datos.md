@@ -65,8 +65,8 @@ de asumir que estas tablas son el archivo fuente sin tocar.
 |---|---|---|---|
 | `staging.cartera` | `(fecha, tipo_entidad, banco, COALESCE(canton,''), tipo_credito, estado_cartera)` | `banco_codigo` vía `banco_matching.py` | Sí |
 | `staging.depositos` | `(fecha, tipo_entidad, banco, COALESCE(canton,''), tipo_deposito)` | `banco_codigo` + `categoria_deposito`/`plazo_dias_*` vía `banco_matching.py` + `categoria_deposito_matching.py` | Sí |
-| `staging.bce_tasas_pasivas` | `(fecha, banco_codigo, categoria_deposito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''))` | `banco_codigo` + `plazo_dias_*` vía `resolver_entidad_bce()` + `bce_plazo_matching.py` — **todas las entidades del sistema financiero, no solo bancos privados** (corregido 2026-07-19, ver abajo) | Sí |
-| `staging.bce_tasas_activas` | `(fecha, banco_codigo, segmento_credito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''))` | igual + `segmento_credito` validado contra universo de 26 | Sí |
+| `staging.bce_tasas_pasivas` | `(fecha, banco_codigo, categoria_deposito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''), COALESCE(canton,''))` (`canton` agregado 2026-09-01, `sql/28_bce_canton_grain.sql`) | `banco_codigo` + `plazo_dias_*` vía `resolver_entidad_bce()` + `bce_plazo_matching.py` — **todas las entidades del sistema financiero, no solo bancos privados** (corregido 2026-07-19, ver abajo); `canton`/`provincia` vía `resolver_canton_bce()` (`etl/transform/canton_matching.py`), integración en el parser pendiente — ver "Cambio de grano de BCE a cantón" abajo | Sí |
+| `staging.bce_tasas_activas` | `(fecha, banco_codigo, segmento_credito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''), COALESCE(canton,''))` (`canton` agregado 2026-09-01) | igual + `segmento_credito` validado contra universo de 26 | Sí |
 | `staging.tasas_referenciales` | `(fecha, seccion, COALESCE(dimension_valor,''), COALESCE(plazo_dias_desde,-1), COALESCE(plazo_dias_hasta,-1), metrica)` | `dimension_valor` armonizado a los nombres ya sembrados en `dim_subsegmento_credito`/`dim_categoria_deposito` (alias explícitos, ver `linaje_datos.md`) | Sí |
 | `staging.boletin_balance` / `boletin_pyg` | `(fecha, banco_codigo, codigo)` | `banco_codigo` vía `banco_matching.py` (fuente `"BOLETIN"`) | Sí |
 | `staging.banco_maestro` | `banco_codigo` (PK) | Dos mecanismos: (1) sembrada desde `etl/seeds/banco_maestro.csv` para los ~33 bancos privados curados (`load_banco_maestro_seed`, banco/tipo_entidad); (2) **`ruc` poblado para TODAS las entidades y fila creada para las ~420 no-privadas** (`upsert_banco_maestro_ruc`, `ON CONFLICT DO UPDATE SET ruc`, 2026-07-23) — ver "Identidad para el universo completo del sistema financiero" abajo | No (se resiembra/complementa en cada corrida, `ON CONFLICT DO NOTHING`/`DO UPDATE` sin CDC propio) |
@@ -128,7 +128,7 @@ gobernanza (rol, cadencia, volumen conocido). Nombres de tabla actualizados 2026
 |---|---|---|---|---|
 | `dim_fecha` | Dimensión conformada, grano día | — | derivada del resto | 1.019 filas (medido 2026-07-25) |
 | `dim_banco` | Dimensión conformada — `estado_validacion` (2026-08-30, `sql/26`) distingue las 2 poblaciones directo en el dato | — | 2021–2026 | 442 (33 bancos privados curados = `estado_validacion='CONFIRMADO'` + 409 entidades BCE auto-registradas por RUC = `estado_validacion='AUTO_INGRESADO'` — cooperativas, bancos públicos, mutualistas, sociedad financiera, tarjetas de crédito; medido 2026-07-19, split confirmado de nuevo 2026-08-30) |
-| `dim_canton` | Dimensión conformada (2026-07-25: `provincia`/`region` texto → FK a `dim_provincia`) | — | derivada de CAPCOL | 132 filas (medido 2026-07-25) |
+| `dim_canton` | Dimensión conformada (2026-07-25: `provincia`/`region` texto → FK a `dim_provincia`; 2026-09-01: FK directa también de BCE tsp/tsa, antes solo de CAPCOL — ver "Cambio de grano de BCE a cantón" abajo) | — | derivada de CAPCOL + BCE | 228 filas (medido 2026-09-01 tras `sql/28_bce_canton_grain.sql`, todas `estado_validacion='CONFIRMADO'`; antes 132) |
 | `dim_provincia` | Dimensión conformada, outrigger de `dim_canton` y de los hechos BCE semanales (nueva 2026-07-25, `sql/20`) | — | sembrada una vez | 26 filas (24 provincias + `ZONA NO DELIMITADA` + `S/N`) |
 | `dim_segmento_credito` | Catálogo, segmento normativo de crédito (nivel grueso — 2026-07-19: nombre reasignado, ver "Normalización de la segmentación de crédito" abajo) | — | sembrado una vez (`sql/16`) | 7 filas |
 | `dim_subsegmento_credito` (antes `dim_segmento_credito`) | Catálogo (universo BCE, no filtrado por entidad; nivel fino) | — | sembrado una vez (`sql/08`) | 26 filas |
@@ -138,8 +138,8 @@ gobernanza (rol, cadencia, volumen conocido). Nombres de tabla actualizados 2026
 | `dim_cuenta_contable` | Catálogo (Catálogo Único de Cuentas) — `estado_validacion` (2026-08-30, `sql/25`) marca `CONFIRMADO` las cuentas preexistentes, `AUTO_INGRESADO` (default) las descubiertas de aquí en adelante sin curación | — | descubierto del Boletín | 1.736 cuentas (medido 2026-08-30 contra `marts.dim_cuenta_contable`, todas `CONFIRMADO` en el backfill retroactivo de `sql/25`) |
 | `fact_saldo_cartera` (antes `fact_cartera`) | Hecho, CAPCOL — 2026-07-25: `estado_cartera` pivotado a columnas (`saldo_por_vencer`/`saldo_no_devenga_intereses`/`saldo_vencida`/`saldo_total`), ver `sql/21` | Mensual | 2021-01 a 2026-06 | 123.322 filas (medido 2026-07-25, post-pivote — antes 369.966 con `estado_cartera` como fila) |
 | `fact_saldo_depositos` (antes `fact_depositos`) | Hecho, CAPCOL | Mensual | 2021-01 a 2026-06 | 251.247 filas (medido 2026-07-25) |
-| `fact_captaciones_depositos` (antes `fact_tasas_pasivas`) | Hecho, BCE tsp — **sistema financiero completo**, no solo bancos privados; `provincia_id`/`segmento_entidad_id` agregados 2026-07-25 (`sql/19`, `sql/20`) | Semanal | 2008-01 a 2026-07 (histórico completo) | 1.956.386 filas (medido 2026-07-25) |
-| `fact_colocaciones_cartera` (antes `fact_tasas_activas`) | Hecho, BCE tsa — **sistema financiero completo**, no solo bancos privados; `provincia_id`/`segmento_entidad_id` agregados 2026-07-25 (`sql/19`, `sql/20`) | Semanal | 2008-01 a 2026-07 (histórico completo) | 4.869.696 filas (medido 2026-07-25) |
+| `fact_captaciones_depositos` (antes `fact_tasas_pasivas`) | Hecho, BCE tsp — **sistema financiero completo**, no solo bancos privados; `segmento_entidad_id` agregado 2026-07-25 (`sql/19`); grano cambiado de provincia a cantón 2026-09-01 (`sql/28`, `canton_id` reemplaza `provincia_id`) | Semanal | 2008-01 a 2026-07 (histórico completo, previo al cambio de grano) | **0 filas** (`sql/28` truncó la tabla al cambiar de grano — sin `canton` poblado todavía en `staging`, no había forma de reconstruir sin colisionar el `UNIQUE` nuevo; pendiente el reproceso completo de `data-engineer`, medido 2026-09-01. Antes: 1.956.386 filas, medido 2026-07-25) |
+| `fact_colocaciones_cartera` (antes `fact_tasas_activas`) | Hecho, BCE tsa — **sistema financiero completo**, no solo bancos privados; `segmento_entidad_id` agregado 2026-07-25 (`sql/19`); grano cambiado de provincia a cantón 2026-09-01 (`sql/28`, `canton_id` reemplaza `provincia_id`) | Semanal | 2008-01 a 2026-07 (histórico completo, previo al cambio de grano) | **0 filas** (mismo motivo que `fact_captaciones_depositos` arriba, medido 2026-09-01. Antes: 4.869.696 filas, medido 2026-07-25) |
 | `fact_tasas_referenciales_cartera` (antes `fact_tasas_referenciales_credito`) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-08 a 2026-06 | 611 filas (medido 2026-07-25) |
 | `fact_tasas_referenciales_depositos_instrumento` (antes `fact_tasas_pasivas_instrumento`) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-04 a 2026-06 | 255 filas (medido 2026-07-25) |
 | `fact_tasas_referenciales_depositos_plazo` (antes `fact_tasas_pasivas_plazo`) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-04 a 2026-06 | 306 filas (medido 2026-07-25) |
@@ -240,6 +240,135 @@ Verificado: conteos idénticos antes/después de la migración en las 3 tablas a
 `refresh_marts()` corre sin error, CDC no-op confirmado (0 filas con
 `fecha_actualizacion > fecha_carga` tras el refresh), 37 tests pasan.
 
+## Cambio de grano de BCE a cantón (2026-09-01, `sql/28_bce_canton_grain.sql`)
+
+`fact_captaciones_depositos`/`fact_colocaciones_cartera` (BCE tsp/tsa) reportaban a grano
+`(fecha, banco, categoría/subsegmento, plazo, provincia)` — **sin cantón**: el archivo
+fuente SÍ trae cantón (columna `canton` en el CSV), pero
+`etl/transform/parse_bce_tasas.py::_weighted_agg()` lo colapsaba dentro de cada provincia
+ANTES de `staging` (montos sumados, tasas repromediadas ponderadas por monto). Mientras
+tanto CAPCOL (`fact_saldo_cartera`/`fact_saldo_depositos`) siempre reportó a grano cantón
+directo, vía FK a `marts.dim_canton`. El proyecto convivía con **2 convenciones de
+geografía distintas** para el mismo concepto de negocio (ubicación de la operación) —
+detectado al revisar por qué BCE no compartía `dim_canton` con CAPCOL pese a que ambas
+fuentes traen la columna.
+
+**Decisión**: unificar al patrón Kimball ya usado por CAPCOL — `dim_canton` como FK
+directa, `dim_provincia` como outrigger vía `dim_canton.provincia_id` (mismo patrón que
+`powerbi/benchmark-cartera-depositos.SemanticModel/definition/relationships.tmdl`,
+relaciones `r-cartera-canton` + `r-canton-provincia`, ya usaba para CAPCOL). Verificado
+contra la base viva antes de migrar (Postgres nativo, `pg_postmaster_start_time()`
+confirmó instancia de producción, no un contenedor `docker-compose` vacío):
+
+- **`dim_canton` estaba incompleto para BCE**: 132 filas (sembradas desde CAPCOL) de 219
+  nombres de cantón reales que trae BCE (excluyendo `NACIONAL`) — comparando insensible a
+  tildes, **95 pares `(canton, provincia)` son net-new** (cooperativas/mutualistas
+  pequeñas con oficina donde CAPCOL no opera, ej. `24 DE MAYO`, `ARCHIDONA`, `OLMEDO`,
+  `PUERTO QUITO`).
+- **5 pares NO se trataron como cantón nuevo** — son el mismo cantón físico que BCE
+  escribe con una forma de texto distinta a la ya sembrada desde CAPCOL, identificados con
+  `difflib` + verificación manual contra la división político-administrativa real del
+  Ecuador (para no fusionar cantones que en realidad son distintos, como `PUERTO QUITO` vs.
+  `QUITO`, que sí son cantones separados): `DISTRITO METROPOLITANO DE QUITO`→`QUITO`,
+  `EL EMPALME`→`EMPALME`, `GENERAL ANTONIO ELIZALDE`→`GENERAL ANTONIO ELIZALDE (BUCAY)`,
+  `PUEBLOVIEJO`→`PUEBLO VIEJO`, `SAN FRANCISCO DE ORELLANA`→`ORELLANA`. Viven como alias en
+  `etl/transform/canton_matching.py::_ALIASES_BCE`, resueltos en Python antes de `staging`
+  (principio de diseño de identidad/catálogo del proyecto) — nunca se agregaron como filas
+  nuevas de `dim_canton`.
+- **La clave compuesta `UNIQUE (canton, provincia_id)` de `dim_canton` ya soportaba
+  cantones homónimos en 2 provincias** sin rediseño — solo hacía falta poblarla con el par
+  completo de cada fila fuente en vez de asumir un solo `provincia_id` por nombre de
+  cantón. Casos reales (reclasificación administrativa histórica de Ecuador, no error de
+  dato): `LA CONCORDIA` (Esmeraldas / Santo Domingo de los Tsáchilas, ya existía así antes
+  de esta migración), `SANTO DOMINGO` (Pichincha / Santo Domingo de los Tsáchilas),
+  `BOLÍVAR` (Carchi / Manabí), `LORETO` y `AGUARICO` (Napo / Orellana, previos a la
+  creación de la provincia de Orellana en 1998).
+- **Placeholder de "sin cantón desagregado"**: `provincia='S/N' ⟺ canton='NACIONAL'` es
+  una relación 1:1 perfecta en las 3.077.976 filas de `raw.bce_tasas_pasivas` (cero
+  excepciones) — estructural, no un dato faltante: `DEPÓSITOS A PLAZO` trae cantón real en
+  99,9995% de las filas; `DEPÓSITOS DE AHORRO`, `DEPÓSITOS MONETARIOS QUE GENERAN
+  INTERESES`, `FONDOS DE TARJETAHABIENTES`, `OPERACIONES DE REPORTO` son 100% `NACIONAL`
+  siempre (productos sin oficina de apertura específica); para 2008-~2015 ningún
+  instrumento trae cantón todavía. Se agregó como fila normal de `dim_canton`
+  (`canton='NACIONAL'`, `provincia_id` de la fila `S/N` ya sembrada en
+  `sql/20_dim_provincia.sql`), mismo patrón que `ZONA NO DELIMITADA`/`LAS GOLONDRINAS` de
+  CAPCOL.
+- **`dim_canton.estado_validacion`** (nueva, mismo mecanismo two-tier que `dim_plazo`,
+  `sql/27`): las 228 filas resultantes (132 preexistentes + 96 sembradas por `sql/28`)
+  quedaron `CONFIRMADO`; un cantón nuevo insertado de aquí en adelante por
+  `refresh_marts()` (`ON CONFLICT (canton, provincia_id) DO NOTHING`) hereda el DEFAULT
+  `AUTO_INGRESADO`. A diferencia de los otros 4 catálogos "cerrados" del proyecto
+  (`dim_segmento_credito`/`dim_subsegmento_credito`/`dim_categoria_deposito`/
+  `dim_segmento_entidad`, que se quedan con fail-fast absoluto), `dim_canton` recibe este
+  tratamiento por ser un catálogo geográfico real y finito (INEC), no una enumeración
+  cerrada por definición normativa/regulatoria — mismo criterio que ya justificó el
+  two-tier de `dim_plazo`, ahora extendido a un 6to catálogo.
+  `etl/transform/canton_matching.py::resolver_canton_bce(canton, provincia)` resuelve
+  SIEMPRE por el par completo (nunca cantón solo, por los homónimos de arriba): provincia
+  no resoluble → `CantonNoResueltoError`, fail-fast; par fuera del universo sembrado
+  (`etl/seeds/canton_provincia.csv`, 228 pares) con provincia válida → no lanza, se
+  auto-ingresa.
+- **`marts.vw_dim_canton_geografia`** (vista nueva, `sql/28`): expone
+  `es_geografia_conocida = (region IS NOT NULL)` por `canton_id` vía `JOIN` a
+  `dim_provincia`. Se evaluó una columna `GENERATED ALWAYS AS (...) STORED` directo en
+  `dim_canton` para esto, pero Postgres no permite que una columna `GENERATED` referencie
+  otra tabla — `region` vive únicamente en `dim_provincia` (única fuente de verdad
+  deliberada desde `sql/20`, ver "Normalización de provincia" arriba); duplicarla como
+  columna propia de `dim_canton` habría reabierto exactamente esa redundancia. La vista da
+  la misma ergonomía sin duplicar dato.
+- **`provincia_id` se eliminó** de `fact_captaciones_depositos`/`fact_colocaciones_cartera`
+  (no se dejó en paralelo a `canton_id`) — provincia ya es derivable de `canton_id` vía
+  `dim_canton.provincia_id → dim_provincia`, mismo criterio de "una sola fuente de verdad
+  por atributo" que ya aplicó `sql/20` al eliminar `provincia`/`region` texto de
+  `dim_canton`.
+- **Ambas tablas quedaron en 0 filas** (`TRUNCATE`, mismo patrón que `sql/20` usó para
+  estas 2 tablas exactas al introducir `provincia_id` en su momento): a diferencia de esa
+  migración anterior (donde `staging.bce_tasas_*` ya tenía el histórico completo con
+  `provincia` homologada, lista para reconstruir sin reprocesar el archivo), acá **ninguna
+  fila de `staging` tiene todavía `canton` poblado** — la columna se agregó nullable en
+  esta misma migración, sin backfill posible sin volver a parsear el archivo fuente
+  (`etl/transform/parse_bce_tasas.py::_weighted_agg()` sigue colapsando cantón hasta que
+  `data-engineer` lo actualice). Eliminar `provincia_id` sin un reemplazo poblado habría
+  colapsado filas antes distintas por provincia en la misma llave — violaba el `UNIQUE`
+  nuevo. **No se pierde nada**: `staging.bce_tasas_pasivas`/`bce_tasas_activas` conserva el
+  histórico completo con `provincia` (y, tras el reproceso, `canton`) — las 2 tablas de
+  hechos son 100% derivables de ahí.
+- **Impacto de volumen esperado tras el reproceso**: jun-2026 tiene 26.998 combinaciones a
+  grano cantón vs. 16.393 a grano provincia (~1,6x) — `fact_captaciones_depositos` pasaría
+  de ~1,96M a ~3,2M filas aproximadamente. Manejable a esta escala (ya se cargan 3M/7,7M
+  filas en `raw.*` sin particionar, ver "Evaluación de escalabilidad" en
+  `docs/architecture.md`).
+- **Sumabilidad — advertencia explícita para cualquier reporte agregado**:
+  `monto_total`/`numero_operaciones` son sumables SIEMPRE, incluidas las filas
+  `canton='NACIONAL'` — verificado que `NACIONAL` nunca se solapa con cantón real para la
+  misma combinación (fecha, banco, instrumento, plazo), así que sumar TODO da el total
+  correcto. Un reporte que filtre solo cantones con `es_geografia_conocida=true`
+  (excluyendo `NACIONAL`) **subcontará** — para varios instrumentos perdería el 100% del
+  volumen, no un margen menor. `tasa_activa_efectiva`/`tasa_pasiva_efectiva`/
+  `tasa_nominal` nunca son sumables ni promediables simple — siempre reponderar por
+  `monto_total` al resumir a un nivel más agregado (mismo criterio que ya aplica
+  `_weighted_agg()`). A grano cantón la mediana es de pocas operaciones por fila (jun-2026:
+  67% de filas con ≤3 operaciones) — una tasa calculada sobre 1-2 operaciones es ruido
+  estadístico; se recomienda que la agregación POR DEFECTO de reportes de TASAS sea a nivel
+  provincia o superior, aunque el almacenamiento quede a grano cantón (para no perder el
+  dato crudo).
+- **Cero riesgo en Power BI**: confirmado que `fact_captaciones_depositos`/
+  `fact_colocaciones_cartera` no están modeladas todavía en
+  `powerbi/benchmark-cartera-depositos.SemanticModel/` — no hay nada que migrar ahí.
+
+**Pendiente, carril de `data-engineer`** (fuera del alcance de esta migración de esquema):
+actualizar `etl/transform/parse_bce_tasas.py` para dejar de colapsar cantón y llamar
+`resolver_canton_bce()`, actualizar el `INSERT ... ON CONFLICT` de
+`_upsert_bce_via_temp()`/`upsert_staging_bce_tasas_pasivas()` en
+`etl/load/load_postgres.py` (el `ON CONFLICT` hardcodeado ya no matchea el `UNIQUE INDEX`
+nuevo de `staging.bce_tasas_pasivas`/`bce_tasas_activas` — confirmado con
+`tests/test_integration_regressions.py`, 3 tests de la familia
+`test_upsert_staging_bce_tasas_pasivas_temp_table_*` fallan hoy con
+`InvalidColumnReference` hasta que se actualice), actualizar el `JOIN`/`INSERT` de
+`fact_captaciones_depositos`/`fact_colocaciones_cartera` en `_REFRESH_MARTS_SQL` para
+resolver `canton_id` en vez de `provincia_id`, y reprocesar el histórico completo
+2008-2026 desde los ZIP ya descargados en `data/raw/bce/`.
+
 ## Reglas de calidad de datos
 
 Todas verificadas en código, no solo documentadas:
@@ -277,7 +406,14 @@ Todas verificadas en código, no solo documentadas:
    fail-fast absoluto sin two-tier, por la distinción sintaxis-vs-semántica-regulatoria
    documentada en `docs/data_dictionary.md` (sección `dim_plazo`) y en el propio
    comentario de `sql/27`: un rango numérico de días es autoexplicativo una vez que el
-   shape matcheó, un nombre nuevo de segmento/categoría regulatoria no lo es. Verificado:
+   shape matcheó, un nombre nuevo de segmento/categoría regulatoria no lo es.
+   **`dim_canton` recibe el mismo mecanismo two-tier desde 2026-09-01**
+   (`sql/28_bce_canton_grain.sql`, `etl/transform/canton_matching.py::resolver_canton_bce`)
+   pero por una razón distinta a `dim_plazo`: no es uno de los 5 catálogos "cerrados" de
+   arriba, es un catálogo geográfico real y finito (INEC) — ver "Cambio de grano de BCE a
+   cantón" arriba para el detalle completo (provincia no resoluble → `CantonNoResueltoError`
+   fail-fast; par cantón+provincia fuera del universo sembrado con provincia válida → se
+   auto-ingresa). Verificado:
    los 4 universos previamente cerrados siguen coincidiendo exactamente con `staging.*`
    completo tras el cambio (mismo alcance que la verificación de 2026-08-27), y una
    corrida repetida del `INSERT ... ON CONFLICT DO NOTHING` de `dim_plazo` produce las
@@ -297,7 +433,10 @@ Todas verificadas en código, no solo documentadas:
    `SegmentoNoResueltoError`/`PlazoNoResueltoError`), no se descarta silenciosamente.
 3. **Índices únicos NULL-safe**: todo `UNIQUE`/`ON CONFLICT` sobre una columna nullable
    (`plazo_dias_hasta`, `plazo_id`, `provincia`, `staging.cartera.canton`,
-   `staging.depositos.canton`) usa `COALESCE(col, sentinela)` — bug real encontrado y
+   `staging.depositos.canton`, y desde 2026-09-01 `staging.bce_tasas_pasivas.canton`/
+   `staging.bce_tasas_activas.canton`/`fact_captaciones_depositos.canton_id`/
+   `fact_colocaciones_cartera.canton_id`, `sql/28_bce_canton_grain.sql`) usa
+   `COALESCE(col, sentinela)` desde el inicio — bug real encontrado y
    corregido en `sql/10_fix_null_unique_constraints.sql` (Postgres trata `NULL <> NULL`
    incluso bajo `UNIQUE`, lo que duplicaba filas silenciosamente).
    `staging.cartera.canton`/`staging.depositos.canton` tenían la misma forma de bug
@@ -390,6 +529,7 @@ asumir que un campo "debería" tener datos:
 | **Bug de CDC real en `marts.dim_banco`: `fecha_actualizacion` se pisaba en cada `refresh_marts()` sin cambio real** — preexistía desde `sql/19_dim_segmento_entidad.sql` (2026-07-25), encontrado y corregido 2026-08-30 | El `INSERT INTO marts.dim_banco ... ON CONFLICT` no listaba `segmento_entidad_id` entre sus columnas — Postgres computa `EXCLUDED.segmento_entidad_id` como el valor por defecto de una columna omitida del `INSERT` (`NULL`), no como el valor real de la fila en conflicto. Como `row_hash` (columna `GENERATED`) incluye `segmento_entidad_id`, `EXCLUDED.row_hash` casi nunca coincidía con el `row_hash` real de un banco con `segmento_entidad_id` ya poblado (prácticamente los 442) — el guard `WHERE row_hash IS DISTINCT FROM EXCLUDED.row_hash` disparaba un `UPDATE` real en **cada** corrida, no solo cuando algo cambiaba de verdad. Quedó expuesto al verificar CDC no-op de punta a punta para esta migración (`estado_validacion`) en vez de asumirlo — la migración en sí no lo introdujo, pero tampoco se habría descubierto sin esa verificación explícita. Corregido con un `LEFT JOIN` a la propia `marts.dim_banco` en el `INSERT` para que `segmento_entidad_id` (y por lo tanto `EXCLUDED.row_hash`) refleje el valor real actual — esa columna sigue sin escribirse en el `SET` del `ON CONFLICT`, la sigue manteniendo el `UPDATE` SCD1 separado. Verificado: 0 filas con `fecha_actualizacion` cambiada en una corrida de `refresh_marts()` sin datos nuevos (antes del fix: 442/442 cambiaban en cada corrida). | `etl/load/load_postgres.py` (INSERT de `dim_banco` en `_REFRESH_MARTS_SQL`), `docs/data_dictionary.md`, `docs/architecture.md` |
 | **4 bancos con desviación de 2-6% entre CAPCOL cartera y BALANCE cartera bruta en ventanas de fecha acotadas** — encontrado 2026-08-30, no investigado a fondo | La reconciliación cruzada `SUM(fact_saldo_cartera.saldo_total)` (banco × fecha) vs. `vw_cartera_bruta` (`14 − 1499`, ver `docs/glosario_cuentas.md` §2 y `docs/metricas_financieras.md`) reconcilia con mediana ~0% y 96,92% de las 1.559 combinaciones banco × fecha dentro de ±2% — pero **AMIBANK** (2023-05-31 a 2023-12-31, 8 de 22 meses de overlap, −4,92% a −5,92%), **ATLANTIDA** (2025-06-30 a 2026-05-31, 12 de 13 meses — casi toda su ventana de overlap, −2,00% a −4,87%), **PACIFICO** (2022-09-30 a 2024-10-31, 26 de 66 meses, −2,01% a −3,45%) y **FINCA** (2022-11-30 a 2022-12-31, 2 de 24 meses, −2,47% a −2,77%) se salen de esa tolerancia en esas ventanas específicas, siempre con CAPCOL por debajo de BALANCE. No se investigó la causa raíz esta sesión (hipótesis sin verificar: reclasificación de cartera fuera de las categorías de cantón/segmento de CAPCOL, timing de corte entre fuentes, o un problema de carga puntual para esos bancos/meses) — queda marcado para una pasada futura. | `docs/metricas_financieras.md` (tabla completa de la reconciliación), `docs/glosario_cuentas.md` §2 |
 | **CAPCOL depósitos no cubre 5 sub-cuentas nivel-6 del plan de cuentas regulatorio bajo `21` (BALANCE) — hueco de alcance real, no un bug** | `SUM(fact_saldo_depositos.saldo)` (banco × fecha) queda sistemáticamente **por debajo** de `codigo='21'` de BALANCE (mediana de la diferencia % por banco × fecha: −0,7376%; CAPCOL por debajo en 1.509/1.556 = 96,98% de las combinaciones; gap agregado sobre la suma total del histórico: −1,12%, `−$35.014.233.134,70` sobre `$3.127.015.362.802,94`). Causa estructural verificada: `marts.dim_categoria_deposito` (12 valores curados, `etl/transform/categoria_deposito_matching.py::CATEGORIAS_VALIDAS`) no tiene equivalente para 5 sub-cuentas nivel-6 de `21` que sí existen en el Catálogo Único — `210120` EJECUCIÓN PRESUPUESTARIA, `210125` DEPÓSITOS DE OTRAS INSTITUCIONES PARA ENCAJE (ambas institucionales/nicho), `210130` CHEQUES CERTIFICADOS, `210131` CHEQUES DE EMERGENCIA y `210140` OTROS DEPÓSITOS. `SUM(saldo_usd)` de esas 5 cuentas sobre el mismo conjunto banco × fecha con overlap explica el **47,81%** del gap agregado total (`$16.740.024.139,94` de `$35.014.233.134,70`) — el 52,19% restante no se explica por cuentas estructuralmente ausentes del catálogo CAPCOL; es probablemente hueco de reporte intermitente banco-mes dentro de categorías que CAPCOL sí tiene, no investigado más a fondo esta sesión. **No es un bug a corregir**: es una limitación real y permanente de la taxonomía de producto de CAPCOL frente al plan de cuentas regulatorio completo — CAPCOL nunca reportó esas 5 sub-cuentas como categoría propia, no es un valor que dejó de resolver. | `etl/transform/categoria_deposito_matching.py`, `docs/data_dictionary.md` (`dim_categoria_deposito`/`fact_saldo_depositos`), `docs/glosario_cuentas.md` §3 |
+| **`fact_captaciones_depositos`/`fact_colocaciones_cartera` en 0 filas desde 2026-09-01 — cambio de esquema aplicado, reproceso de datos pendiente** | `sql/28_bce_canton_grain.sql` cambió el grano de provincia a cantón (`canton_id` reemplaza `provincia_id`) y truncó ambas tablas — necesario porque `staging.bce_tasas_pasivas`/`bce_tasas_activas` todavía no tienen `canton` poblado (columna agregada nullable en la misma migración, `etl/transform/parse_bce_tasas.py::_weighted_agg()` sigue colapsando cantón), así que no había forma de reconstruir sin colisionar el `UNIQUE` nuevo. **No es un bug de datos, es un estado de transición esperado**: el esquema (migración + `etl/transform/canton_matching.py::resolver_canton_bce()`) está listo, pero el reproceso del parser + backfill del histórico 2008-2026 es responsabilidad de `data-engineer`, sigue pendiente a la fecha de esta nota. Mientras tanto, 3 tests de integración fallan (`tests/test_integration_regressions.py::test_upsert_staging_bce_tasas_pasivas_temp_table_*`) porque el `ON CONFLICT` hardcodeado en `_upsert_bce_via_temp()` (`etl/load/load_postgres.py`) ya no matchea el `UNIQUE INDEX` nuevo de `staging.bce_tasas_pasivas`/`bce_tasas_activas` — esperado, no una regresión oculta, corregible en el mismo cambio que actualice el parser. | `sql/28_bce_canton_grain.sql`, "Cambio de grano de BCE a cantón" arriba, `docs/data_dictionary.md`, `docs/linaje_datos.md` |
 | **`sql/18_glosario_cuentas_views.sql` (vistas `vw_cartera_bruta`/`vw_cartera_improductiva`/etc.) no está aplicado en la base de producción viva** — encontrado 2026-08-30 al intentar usar `marts.vw_cartera_bruta` para la reconciliación de arriba | `to_regclass`/`information_schema.views` confirma que ninguna de las vistas de `sql/18` existe en `marts` en la instancia nativa viva, pese a que migraciones **posteriores** (`sql/22`, `25`, `26`, `27`) sí están aplicadas (`dim_cuenta_contable.estado_validacion`, `dim_banco.estado_validacion`, `dim_plazo.estado_validacion`, `vw_banco_ruc_colisiones` existen y funcionan) — es decir, `sql/18` se saltó específicamente, no es que las migraciones se detuvieran en algún punto. Consistente con el propio comentario de cabecera de `sql/18` ("NO ejecutado todavía contra una instancia Postgres real (solo probado el equivalente en pandas)"), escrito cuando se creó el archivo — parece que nunca se corrió después tampoco. La reconciliación de esta sesión se hizo con la lógica de la vista expandida inline (ver consulta en `docs/metricas_financieras.md`) precisamente por esto. **No se aplicó la migración en esta sesión** (alcance explícito: solo documentación) — si alguien retoma el proyecto y `marts.vw_cartera_bruta` (u otra vista de `sql/18`) falla con "relation does not exist", esta es la causa; aplicar `sql/18_glosario_cuentas_views.sql` (es `CREATE OR REPLACE VIEW`, no destructivo) es la resolución directa. | `sql/18_glosario_cuentas_views.sql`, `docs/metricas_financieras.md` |
 
 ## Gestión de cambios de esquema

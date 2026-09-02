@@ -91,7 +91,8 @@ etl/
   transform/           parsers por fuente + *_matching.py (identidad de banco/categoría/
                        plazo, resuelta en Python antes de staging -- ver architecture.md)
   load/                load_postgres.py: raw -> staging -> marts, upserts con CDC
-  seeds/                banco_maestro.csv / banco_crosswalk.csv (catálogos sembrados)
+  seeds/                banco_maestro.csv / banco_crosswalk.csv / canton_provincia.csv
+                       (catálogos sembrados)
 sql/                  DDL: 00 (roles/DB) + 01-03 (raw/staging/marts) + migraciones
                        incrementales 04+ (dim_banco/dim_fecha rework, catálogos
                        conformados, BCE, Boletín -- ver sql/*.sql); todo el directorio
@@ -158,7 +159,11 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   identidad curada + 409 bancos públicos/cooperativas/mutualistas/sociedad financiera/
   tarjetas de crédito auto-registrados por RUC — ver `docs/gobernanza_datos.md`). Activas
   por segmento de crédito (26 valores), pasivas por categoría de depósito, ambas por
-  plazo y provincia.
+  plazo y cantón (2026-09-01: grano cambiado de provincia a cantón, `sql/28_bce_canton_grain.sql`
+  — provincia/región siguen disponibles vía `dim_canton.provincia_id → dim_provincia`.
+  **Reproceso del histórico pendiente**: `fact_captaciones_depositos`/
+  `fact_colocaciones_cartera` están en 0 filas hasta que se actualice el parser, ver
+  `docs/gobernanza_datos.md`).
 - **BCE `TasasHistorico.htm`** (techos y referenciales, nivel sistema): 2022-04 a
   2026-06 (páginas anteriores usan un layout HTML distinto, no soportado por el parser
   actual). Tasas activas máximas/referenciales por segmento, pasivas por instrumento y
