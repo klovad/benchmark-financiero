@@ -219,8 +219,6 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   personalización (selector de métrica, comparador de periodo CY/PY, ventana móvil de
   tendencia) con estados reales (orientación horizontal, selección única forzada — corrige
   además un bug real: sin `strictSingleSelect` las medidas `SELECTEDVALUE(...)` podían caer
-  en `BLANK()`). Maqueta HTML del diseño:
-  [Artifact "Libro Mayor"](https://claude.ai/code/artifact/b11b6df0-3482-4d53-9bc5-317a5916d1cf).
-  Ver `docs/prototipo_diseno_powerbi.md` para la paleta, la tipografía, el detalle de cada
-  control, las divergencias explícitas entre la maqueta y el render real de Desktop, y cómo
-  exportar un `.pbit` real desde Desktop.
+  en `BLANK()`). Ver `docs/prototipo_diseno_powerbi.md` para la paleta, la tipografía, el
+  detalle de cada control, las divergencias explícitas entre la maqueta y el render real de
+  Desktop, y cómo exportar un `.pbit` real desde Desktop.
