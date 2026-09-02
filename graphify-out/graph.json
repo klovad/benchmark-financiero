@@ -7481,7 +7481,7 @@
       "node_kind": "heading",
       "norm_label": "`marts_aaaa-mm/` (muestra de un mes)",
       "source_file": "data/samples/README.md",
-      "source_location": "L37"
+      "source_location": "L41"
     },
     {
       "id": "data_samples_readme_marts_ultimos_5_anios",
@@ -7517,7 +7517,7 @@
       "node_kind": "heading",
       "norm_label": "uso tipico",
       "source_file": "data/samples/README.md",
-      "source_location": "L61"
+      "source_location": "L65"
     },
     {
       "id": "sql_25_dim_cuenta_contable_estado_validacion",
@@ -22011,7 +22011,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "data/samples/README.md",
-      "source_location": "L37",
+      "source_location": "L41",
       "weight": 1.0
     },
     {
@@ -22022,7 +22022,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "data/samples/README.md",
-      "source_location": "L61",
+      "source_location": "L65",
       "weight": 1.0
     },
     {
@@ -36578,5 +36578,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "210db1f157d458ed8c268f66fc9f58edb424ff04"
+  "built_at_commit": "4ae0b2e6d5ae2b5e2b7e6a75b671998a56e8b98f"
 }
