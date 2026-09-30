@@ -1,23 +1,23 @@
-# Graph Report - benchmark-bancos  (2026-09-01)
+# Graph Report - benchmark-bancos  (2026-09-29)
 
 ## Corpus Check
-- 116 files · ~96,868 words
+- 116 files · ~98,792 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1393 nodes · 1871 edges · 137 communities (78 shown, 59 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 33 edges (avg confidence: 0.9)
+- 1402 nodes · 1899 edges · 138 communities (79 shown, 59 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 37 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `648f7397`
+- Built from commit: `fd00de03`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- parse_bce_tasas.py
+- PlazoNoResueltoError
 - benchmark_cartera_depositos
-- parse_cartera.py
+- parse_depositos_file
 - Prototipo de diseño Power BI — tema "Libro Mayor", personalización y plantilla de página
 - resolver_banco_codigo
 - test_parse_tasas_historicas.py
@@ -113,7 +113,7 @@
 - position
 - position
 - position
-- 2. BCE — Tasas de interés activas y pasivas (semanal) — 🔎 en investigación
+- 4. SEPS — Cooperativas de Ahorro y Crédito + Mutualistas de Vivienda — 🔎 **re-verificado con archivos reales 2025 (2026-09-29)**, no implementada
 - Linaje de datos
 - page-prototipo-diseno/page.json
 - Benchmark de cartera, depósitos y tasas — bancos privados del Ecuador
@@ -135,54 +135,55 @@
 - staging.bce_tasas_activas
 - staging.bce_tasas_pasivas
 - marts.dim_plazo
+- resolver_categoria_deposito
 
 ## God Nodes (most connected - your core abstractions)
 1. `resolver_canton_bce()` - 26 edges
-2. `resolver_banco_codigo()` - 23 edges
-3. `parse_depositos_file()` - 18 edges
-4. `PlazoNoResueltoError` - 17 edges
-5. `resolver_categoria_deposito()` - 17 edges
-6. `sha256_file()` - 17 edges
-7. `load_bce()` - 17 edges
+2. `resolver_banco_codigo()` - 24 edges
+3. `parse_depositos_file()` - 21 edges
+4. `load_bce()` - 17 edges
+5. `PlazoNoResueltoError` - 17 edges
+6. `resolver_categoria_deposito()` - 17 edges
+7. `sha256_file()` - 17 edges
 8. `load_boletin()` - 16 edges
-9. `resolver_plazo_bce()` - 15 edges
-10. `resolver_entidad_bce()` - 15 edges
+9. `resolver_entidad_bce()` - 16 edges
+10. `resolver_plazo_bce()` - 15 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error()` --uses--> `PlazoNoResueltoError`  [INFERRED]
+  tests/test_categoria_deposito_matching.py → etl/transform/bce_plazo_matching.py
 - `test_resolver_plazo_shape_invalido_sigue_lanzando()` --uses--> `PlazoNoResueltoError`  [INFERRED]
   tests/test_parse_tasas_historicas.py → etl/transform/bce_plazo_matching.py
 - `test_resolver_plazo_shape_valido_pero_rango_invertido_lanza_error()` --uses--> `PlazoNoResueltoError`  [INFERRED]
   tests/test_parse_tasas_historicas.py → etl/transform/bce_plazo_matching.py
-- `test_capcol_manabi_variants_resolve_to_same_codigo()` --calls--> `resolver_banco_codigo()`  [EXTRACTED]
-  tests/test_banco_matching.py → etl/transform/banco_matching.py
-- `test_capcol_amibank_variants_resolve_to_same_codigo()` --calls--> `resolver_banco_codigo()`  [EXTRACTED]
-  tests/test_banco_matching.py → etl/transform/banco_matching.py
-- `test_bce_legal_name_resolves_to_same_codigo_as_capcol()` --calls--> `resolver_banco_codigo()`  [EXTRACTED]
-  tests/test_banco_matching.py → etl/transform/banco_matching.py
+- `test_parse_fecha_tasas_historicas_no_matching_pattern_raises()` --calls--> `parse_fecha_from_tasas_historicas_filename()`  [EXTRACTED]
+  tests/test_pipeline_fecha_parsing.py → etl/pipeline.py
+- `test_parse_fecha_tasas_historicas_valid_filename()` --calls--> `parse_fecha_from_tasas_historicas_filename()`  [EXTRACTED]
+  tests/test_pipeline_fecha_parsing.py → etl/pipeline.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (137 total, 59 thin omitted)
+## Communities (138 total, 59 thin omitted)
 
-### Community 0 - "parse_bce_tasas.py"
-Cohesion: 0.06
-Nodes (68): PlazoNoResueltoError, ValueError, Resuelve el texto crudo de `plazo` del BCE (tsp/tsa) a un rango numérico de…, Chequeo de dos niveles para TODOS los valores crudos de `plazo` observados en…, Devuelve (dias_desde, dias_hasta); dias_hasta es None si el bucket es abierto…, El texto crudo de plazo no matchea ningún patrón conocido (shape inválido), o…, Sanity check de rango, aplicado DESPUÉS de que el shape ya matcheó un patrón…, resolver_plazo_bce() (+60 more)
+### Community 0 - "PlazoNoResueltoError"
+Cohesion: 0.13
+Nodes (27): PlazoNoResueltoError, ValueError, Resuelve el texto crudo de `plazo` del BCE (tsp/tsa) a un rango numérico de…, Chequeo de dos niveles para TODOS los valores crudos de `plazo` observados en…, Devuelve (dias_desde, dias_hasta); dias_hasta es None si el bucket es abierto…, El texto crudo de plazo no matchea ningún patrón conocido (shape inválido), o…, Sanity check de rango, aplicado DESPUÉS de que el shape ya matcheó un patrón…, resolver_plazo_bce() (+19 more)
 
 ### Community 1 - "benchmark_cartera_depositos"
 Cohesion: 0.10
 Nodes (40): "marts"."dim_banco", "marts"."dim_canton", "marts"."dim_categoria_deposito", "marts"."dim_cuenta_contable", "marts"."dim_fecha", "marts"."dim_plazo", "marts"."dim_provincia", "marts"."dim_segmento_credito" (+32 more)
 
-### Community 2 - "parse_cartera.py"
+### Community 2 - "parse_depositos_file"
 Cohesion: 0.06
-Nodes (60): export_full(), export_sample(), Path, Exporta marts.* a Parquet, para poder probar el modelo de datos (Power BI,…, extract_single_xlsx(), find_base_sheets(), month_end_date(), normalize_banco() (+52 more)
+Nodes (65): export_full(), export_sample(), Path, Exporta marts.* a Parquet, para poder probar el modelo de datos (Power BI,…, extract_single_xlsx(), find_base_sheets(), month_end_date(), normalize_banco() (+57 more)
 
 ### Community 3 - "Prototipo de diseño Power BI — tema "Libro Mayor", personalización y plantilla de página"
 Cohesion: 0.10
 Nodes (19): 0. Segundo intento — qué cambió y por qué, 10. Cómo exportar un `.pbit` real desde este prototipo, 11. Cómo abrir y probar el prototipo, 1. Por qué un `.pbip` separado y no una página nueva en el reporte productivo, 2.1 Por qué esto no es "Okabe–Ito con otro nombre", 2.2 Secuencial y qué no tiene campo de tema global, 2. Paleta de color — "Libro Mayor", 3. Tipografía (+11 more)
 
 ### Community 4 - "resolver_banco_codigo"
-Cohesion: 0.08
+Cohesion: 0.09
 Nodes (42): BancoNoResueltoError, _cargar_csv(), _crosswalk(), EntidadBceNoMapeadaError, maestro(), _normalizar(), _por_regla(), Path (+34 more)
 
 ### Community 5 - "test_parse_tasas_historicas.py"
@@ -246,8 +247,8 @@ Cohesion: 0.31
 Nodes (14): marts.fact_balance, marts.fact_pyg, marts.vw_activo_promedio_ytd, marts.vw_cartera_bruta, marts.vw_cartera_bruta_segmento, marts.vw_cartera_improductiva, marts.vw_cartera_improductiva_segmento, marts.vw_depositos_corto_plazo (+6 more)
 
 ### Community 20 - "resolver_canton_bce"
-Cohesion: 0.07
-Nodes (43): CantonNoResueltoError, es_canton_conocido(), normalize_canton(), ValueError, Resuelve el par (canton, provincia) crudo del BCE (tsp/tsa) contra el catálogo…, Universo de 228 pares (canton, provincia) ya sembrados en `marts.dim_canton`…, Resuelve un par crudo (canton, provincia) de BCE tsp/tsa al par normalizado…, True si el par (ya normalizado, tal como lo devuelve `resolver_canton_bce()`)… (+35 more)
+Cohesion: 0.05
+Nodes (65): CantonNoResueltoError, es_canton_conocido(), normalize_canton(), ValueError, Resuelve el par (canton, provincia) crudo del BCE (tsp/tsa) contra el catálogo…, Universo de 228 pares (canton, provincia) ya sembrados en `marts.dim_canton`…, Resuelve un par crudo (canton, provincia) de BCE tsp/tsa al par normalizado…, True si el par (ya normalizado, tal como lo devuelve `resolver_canton_bce()`)… (+57 more)
 
 ### Community 21 - "marts.vw_cartera_market_share"
 Cohesion: 0.33
@@ -259,7 +260,7 @@ Nodes (11): marts.fact_tasas_activas, marts.fact_tasas_pasivas, raw.bce_tasas_ac
 
 ### Community 23 - "pipeline.py"
 Cohesion: 0.05
-Nodes (93): Connection, date, _clean(), _copy_rows(), get_connection(), is_source_loaded(), load_banco_maestro_seed(), load_raw() (+85 more)
+Nodes (96): Connection, date, _clean(), _copy_rows(), get_connection(), is_source_loaded(), load_banco_maestro_seed(), load_raw() (+88 more)
 
 ### Community 24 - "12_schema_tasas_historicas.sql"
 Cohesion: 0.24
@@ -377,9 +378,9 @@ Nodes (25): name, general, header, selection, position, height, tabOrder, width 
 Cohesion: 0.08
 Nodes (25): name, general, header, selection, position, height, tabOrder, width (+17 more)
 
-### Community 111 - "2. BCE — Tasas de interés activas y pasivas (semanal) — 🔎 en investigación"
-Cohesion: 0.09
-Nodes (22): 1.1 Banca Pública (`capcol-instituciones-publicas/`) — ✅ diseño confirmado, esquema ya soporta la carga (2026-09-01), 1. CAPCOL — Cartera y Depósitos (Superbancos) — ✅ integrada, 2.1 `tsp_desde_200801.zip` (tasas pasivas / captaciones), 2.2 `tsa_desde_200801.zip` (tasas activas / colocaciones) — ✅ confirmado, 2.3 Tasas máximas y referenciales por segmento (`TasasHistorico.htm`) — ✅ cargado (Paso 4), 2.4 Mapeo `razon_social`/`ruc` (BCE) ↔ `banco` (CAPCOL/`marts.dim_banco`) — investigado, 2. BCE — Tasas de interés activas y pasivas (semanal) — 🔎 en investigación, 3.1 Hoja `BALANCE` (1399 filas x 35 columnas) (+14 more)
+### Community 111 - "4. SEPS — Cooperativas de Ahorro y Crédito + Mutualistas de Vivienda — 🔎 **re-verificado con archivos reales 2025 (2026-09-29)**, no implementada"
+Cohesion: 0.08
+Nodes (23): 1.1 Banca Pública (`capcol-instituciones-publicas/`) — ✅ diseño confirmado, esquema ya soporta la carga (2026-09-01), 1. CAPCOL — Cartera y Depósitos (Superbancos) — ✅ integrada, 2.1 `tsp_desde_200801.zip` (tasas pasivas / captaciones), 2.2 `tsa_desde_200801.zip` (tasas activas / colocaciones) — ✅ confirmado, 2.3 Tasas máximas y referenciales por segmento (`TasasHistorico.htm`) — ✅ cargado (Paso 4), 2.4 Mapeo `razon_social`/`ruc` (BCE) ↔ `banco` (CAPCOL/`marts.dim_banco`) — investigado, 2. BCE — Tasas de interés activas y pasivas (semanal) — 🔎 en investigación, 3.1 Hoja `BALANCE` (1399 filas x 35 columnas) (+15 more)
 
 ### Community 112 - "Linaje de datos"
 Cohesion: 0.20
@@ -409,25 +410,29 @@ Nodes (32): download_all(), download_bce_file(), Path, Descarga directa de los a
 Cohesion: 0.11
 Nodes (17): 1. `dim_banco` — camino curado (33 bancos privados), 2. `dim_banco` — camino auto-registrado (409 entidades no-privadas), 3. `dim_segmento_credito` / `dim_subsegmento_credito`, 4. `dim_categoria_deposito`, 5. `dim_segmento_entidad`, 6. `dim_plazo` (two-tier, 4 puntos de entrada), 7. `dim_cuenta_contable`, 8. `dim_canton` (two-tier, BCE tsp/tsa — 2026-09-01, `sql/28_bce_canton_grain.sql`) (+9 more)
 
+### Community 137 - "resolver_categoria_deposito"
+Cohesion: 0.17
+Nodes (19): CategoriaNoResueltaError, ValueError, Resuelve el texto crudo de `tipo_deposito` (CAPCOL) o `instrumento_captacion`…, El texto crudo no es ni una categoría conocida ni un bucket de plazo…, Devuelve (categoria, dias_desde, dias_hasta). dias_* son None salvo que la…, resolver_categoria_deposito(), Desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el *shape*…, Un texto que no matchea ni _RANGO ni _SIN_TOPE ni CATEGORIAS_VALIDAS sigue… (+11 more)
+
 ## Knowledge Gaps
-- **545 isolated node(s):** `Flujo de datos`, `Modelo de datos (esquema estrella)`, `Catálogos conformados (identidad compartida entre fuentes)`, `Bug real encontrado y corregido: NULL en `UNIQUE`/`ON CONFLICT``, `Por qué Playwright y no requests/httpx` (+540 more)
+- **546 isolated node(s):** `$schema`, `name`, `displayName`, `displayOption`, `height` (+541 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **59 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `resolver_canton_bce()` connect `resolver_canton_bce` to `parse_bce_tasas.py`, `parse_cartera.py`?**
-  _High betweenness centrality (0.007) - this node is a cross-community bridge._
-- **Why does `resolver_categoria_deposito()` connect `parse_bce_tasas.py` to `parse_cartera.py`?**
-  _High betweenness centrality (0.006) - this node is a cross-community bridge._
-- **Why does `parse_tasas_historicas_file()` connect `test_parse_tasas_historicas.py` to `pipeline.py`?**
+- **Why does `resolver_canton_bce()` connect `resolver_canton_bce` to `parse_depositos_file`?**
+  _High betweenness centrality (0.008) - this node is a cross-community bridge._
+- **Why does `resolver_plazo_bce()` connect `PlazoNoResueltoError` to `resolver_canton_bce`?**
   _High betweenness centrality (0.005) - this node is a cross-community bridge._
+- **Why does `parse_depositos_file()` connect `parse_depositos_file` to `resolver_categoria_deposito`, `resolver_banco_codigo`, `pipeline.py`?**
+  _High betweenness centrality (0.004) - this node is a cross-community bridge._
+- **Are the 4 inferred relationships involving `load_bce()` (e.g. with `upsert_staging_bce_tasas_activas()` and `upsert_staging_bce_tasas_pasivas()`) actually correct?**
+  _`load_bce()` has 4 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 7 inferred relationships involving `PlazoNoResueltoError` (e.g. with `test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo()` and `test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando()`) actually correct?**
   _`PlazoNoResueltoError` has 7 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Flujo de datos`, `Modelo de datos (esquema estrella)`, `Catálogos conformados (identidad compartida entre fuentes)` to the rest of the system?**
-  _545 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `parse_bce_tasas.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.05593607305936073 - nodes in this community are weakly interconnected._
-- **Should `benchmark_cartera_depositos` be split into smaller, more focused modules?**
-  _Cohesion score 0.10121951219512196 - nodes in this community are weakly interconnected._
+- **What connects `$schema`, `name`, `displayName` to the rest of the system?**
+  _546 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `PlazoNoResueltoError` be split into smaller, more focused modules?**
+  _Cohesion score 0.12807881773399016 - nodes in this community are weakly interconnected._

@@ -14,7 +14,7 @@ from pathlib import Path
 import openpyxl
 import pandas as pd
 
-from etl.config import TIPO_CREDITO_KEYWORDS
+from etl.config import TIPO_CREDITO_KEYWORDS, TIPOS_ENTIDAD_CAPCOL
 from etl.transform.banco_matching import resolver_banco_codigo
 from etl.transform.common import (
     extract_single_xlsx,
@@ -63,7 +63,7 @@ def _find_header_row(ws):
     )
 
 
-def _parse_sheet(ws, tipo_credito: str) -> list[dict]:
+def _parse_sheet(ws, tipo_credito: str, tipo_entidad: str) -> list[dict]:
     header_row_idx, cols = _find_header_row(ws)
 
     def get(row, key):
@@ -79,7 +79,7 @@ def _parse_sheet(ws, tipo_credito: str) -> list[dict]:
         banco = normalize_banco(get(row, "ENTIDAD"))
         base = {
             "fecha": month_end_date(fecha),
-            "tipo_entidad": "BANCO PRIVADO",
+            "tipo_entidad": tipo_entidad,
             "banco": banco,
             "banco_codigo": resolver_banco_codigo(banco, "CAPCOL"),
             "region": region_for_provincia(provincia),
@@ -95,7 +95,16 @@ def _parse_sheet(ws, tipo_credito: str) -> list[dict]:
     return records
 
 
-def parse_cartera_file(source_path: Path, extract_dir: Path) -> pd.DataFrame:
+def parse_cartera_file(
+    source_path: Path, extract_dir: Path, tipo_entidad: str = "BANCO PRIVADO"
+) -> pd.DataFrame:
+    """tipo_entidad lo decide el caller según el sub-portal CAPCOL de origen
+    (etl.config.CAPCOL_PORTALES) -- el archivo no lo trae y no se infiere del dato."""
+    if tipo_entidad not in TIPOS_ENTIDAD_CAPCOL:
+        raise ValueError(
+            f"tipo_entidad inválido para CAPCOL: {tipo_entidad!r} "
+            f"(debe ser uno de {sorted(TIPOS_ENTIDAD_CAPCOL)})"
+        )
     source_hash = sha256_file(source_path)
     xlsx_path = (
         extract_single_xlsx(source_path, extract_dir)
@@ -107,7 +116,7 @@ def parse_cartera_file(source_path: Path, extract_dir: Path) -> pd.DataFrame:
     records = []
     for sheet_name in find_base_sheets(wb):
         tipo_credito = tipo_credito_from_sheet_name(sheet_name)
-        records.extend(_parse_sheet(wb[sheet_name], tipo_credito))
+        records.extend(_parse_sheet(wb[sheet_name], tipo_credito, tipo_entidad))
     wb.close()
 
     df = pd.DataFrame.from_records(records)

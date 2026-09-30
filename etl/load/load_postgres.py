@@ -624,9 +624,9 @@ SELECT bm.banco_codigo, bm.banco, bm.tipo_entidad, bm.ruc, bm.estado_validacion,
 FROM staging.banco_maestro bm
 LEFT JOIN marts.dim_banco existente ON existente.banco_codigo = bm.banco_codigo
 WHERE bm.banco_codigo IN (
-    SELECT DISTINCT banco_codigo FROM staging.cartera WHERE tipo_entidad = 'BANCO PRIVADO'
+    SELECT DISTINCT banco_codigo FROM staging.cartera WHERE tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO')
     UNION
-    SELECT DISTINCT banco_codigo FROM staging.depositos WHERE tipo_entidad = 'BANCO PRIVADO'
+    SELECT DISTINCT banco_codigo FROM staging.depositos WHERE tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO')
     UNION
     SELECT DISTINCT banco_codigo FROM staging.bce_tasas_pasivas
     UNION
@@ -726,8 +726,9 @@ JOIN marts.dim_segmento_credito sg ON sg.segmento = CASE s.tipo_credito
     WHEN 'microcredito' THEN 'MICROCRÉDITO'
     WHEN 'vivienda_interes_publico' THEN 'VIVIENDA DE INTERÉS PÚBLICO'
     WHEN 'educativo' THEN 'EDUCATIVO'
+    WHEN 'inversion_publica' THEN 'INVERSIÓN PÚBLICA'  -- solo Banca Pública
 END
-WHERE s.tipo_entidad = 'BANCO PRIVADO'
+WHERE s.tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO')
 GROUP BY TO_CHAR(s.fecha, 'YYYYMMDD')::INT, b.banco_id, c.canton_id, sg.segmento_id
 ON CONFLICT (fecha_id, banco_id, COALESCE(canton_id, -1), segmento_id)
 DO UPDATE SET saldo_por_vencer = EXCLUDED.saldo_por_vencer,
@@ -753,7 +754,7 @@ LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia_id = dp.prov
 JOIN marts.dim_categoria_deposito cd ON cd.categoria = s.categoria_deposito
 LEFT JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
     AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
-WHERE s.tipo_entidad = 'BANCO PRIVADO'
+WHERE s.tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO')
 ON CONFLICT (fecha_id, banco_id, canton_id, categoria_deposito_id, COALESCE(plazo_id, -1))
 DO UPDATE SET saldo = EXCLUDED.saldo,
               numero_clientes = EXCLUDED.numero_clientes,
@@ -1028,9 +1029,48 @@ def _log_cantones_no_resueltos(conn) -> None:
         )
 
 
+def _log_bancos_no_resueltos(conn) -> None:
+    """Los INSERT de fact_saldo_cartera/fact_saldo_depositos hacen INNER JOIN contra
+    marts.dim_banco, que solo contiene banco_codigo presentes en staging.banco_maestro.
+    Banca Pública resuelve por crosswalk a filas BCE_<ruc> que solo existen si BCE ya
+    corrió al menos una vez (docs/fuentes_datos.md sección 1.1): en una base
+    reconstruida desde cero con CAPCOL cargado antes que BCE, esas filas se descartarían
+    sin error. Mismo criterio log-only que _log_cantones_no_resueltos()."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.tipo_entidad, s.banco_codigo, count(*) AS filas
+            FROM (
+                SELECT tipo_entidad, banco_codigo FROM staging.cartera
+                UNION ALL
+                SELECT tipo_entidad, banco_codigo FROM staging.depositos
+            ) s
+            WHERE NOT EXISTS (
+                SELECT 1 FROM staging.banco_maestro bm
+                WHERE bm.banco_codigo = s.banco_codigo
+            )
+            GROUP BY s.tipo_entidad, s.banco_codigo
+            ORDER BY filas DESC
+            """
+        )
+        rows = cur.fetchall()
+    if rows:
+        detalle = ", ".join(f"{c!r} [{t}] ({n} filas)" for t, c, n in rows)
+        log.warning(
+            "marts.dim_banco: %d banco_codigo de staging.cartera/depositos sin fila en "
+            "staging.banco_maestro -- el INNER JOIN de refresh_marts() DESCARTARÁ sus "
+            "filas (¿falta correr `python -m etl.pipeline bce` primero?): %s",
+            len(rows),
+            detalle,
+        )
+    else:
+        log.info("marts.dim_banco: 0 banco_codigo CAPCOL sin resolver (verificado en esta corrida)")
+
+
 def refresh_marts(conn) -> None:
     load_banco_maestro_seed(conn)
     _log_cantones_no_resueltos(conn)
+    _log_bancos_no_resueltos(conn)
     with conn.cursor() as cur:
         cur.execute(_REFRESH_MARTS_SQL)
     log.info("marts.* actualizado desde staging")

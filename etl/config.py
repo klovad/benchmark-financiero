@@ -9,6 +9,23 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = PROJECT_ROOT / os.getenv("SCRAPER_DOWNLOAD_DIR", "data/raw")
 
 CAPCOL_URL = "https://www.superbancos.gob.ec/estadisticas/portalestudios/capcol-bancos/"
+CAPCOL_INSTITUCIONES_PUBLICAS_URL = (
+    "https://www.superbancos.gob.ec/estadisticas/portalestudios/capcol-instituciones-publicas/"
+)
+
+# Sub-portales CAPCOL: mismo plugin, mismo layout de carpetas y mismas hojas BASE (ver
+# docs/fuentes_datos.md sección 1.1). tipo_entidad NO se infiere del dato -- lo fija el
+# sub-portal del que vino el archivo. subdir="" conserva el layout histórico de bancos
+# privados (data/raw/{año}/{cartera|depositos}) sin mover archivos ya descargados.
+CAPCOL_PORTALES = {
+    "privada": {"url": CAPCOL_URL, "tipo_entidad": "BANCO PRIVADO", "subdir": ""},
+    "publica": {
+        "url": CAPCOL_INSTITUCIONES_PUBLICAS_URL,
+        "tipo_entidad": "BANCO PUBLICO",
+        "subdir": "banca_publica",
+    },
+}
+TIPOS_ENTIDAD_CAPCOL = {p["tipo_entidad"] for p in CAPCOL_PORTALES.values()}
 BOLETIN_URL = "https://www.superbancos.gob.ec/estadisticas/portalestudios/bancos/"
 
 # BCE: tasas de interés semanales por banco. Convención de nombres t{s|m}{p|a} = tasas +
@@ -54,6 +71,8 @@ TIPO_CREDITO_KEYWORDS = {
     "consumo": "consumo",
     "microcredito": "microcredito",
     "educativo": "educativo",
+    # Solo Banca Pública: hoja 'BASE B PUBLICA INVERSION PUBLIC(A)'.
+    "inversion": "inversion_publica",
 }
 
 # Región geográfica de cada provincia del Ecuador (el archivo de cartera no trae región,

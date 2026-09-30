@@ -17,7 +17,7 @@ import logging
 import re
 from pathlib import Path
 
-from etl.config import BCE_DIR, DEFAULT_YEARS, RAW_DIR
+from etl.config import BCE_DIR, CAPCOL_PORTALES, DEFAULT_YEARS, RAW_DIR
 from etl.extract.download_bce import download_all as download_bce_all
 from etl.extract.download_tasas_historicas import download_tasas_historicas
 from etl.extract.scrape_boletin import scrape as scrape_boletin
@@ -62,34 +62,51 @@ log = logging.getLogger(__name__)
 EXTRACT_DIR = RAW_DIR.parent / "_tmp_extract"
 
 
-def load_years(years: list[int], base_dir: Path = RAW_DIR) -> None:
+def load_years(
+    years: list[int],
+    base_dir: Path = RAW_DIR,
+    portales: tuple[str, ...] = tuple(CAPCOL_PORTALES),
+) -> None:
+    """tipo_entidad de cada fila lo fija el sub-portal CAPCOL de donde vino el archivo
+    (etl.config.CAPCOL_PORTALES), no el parser. source_file se prefija con el subdir del
+    portal (ej. 'banca_publica/Cartera Consumo DICIEMBRE 2025.zip') porque
+    raw.source_files es UNIQUE por nombre y ambos portales usan nombres parecidos."""
     conn = get_connection()
     try:
-        for year in years:
-            for report_type, table, parse_fn, upsert_fn in (
-                ("cartera", "cartera", parse_cartera_file, upsert_staging_cartera),
-                (
-                    "depositos",
-                    "depositos",
-                    parse_depositos_file,
-                    upsert_staging_depositos,
-                ),
-            ):
-                report_dir = base_dir / str(year) / report_type
-                if not report_dir.exists():
-                    log.warning("No existe %s, se omite", report_dir)
-                    continue
-                for zip_path in sorted(report_dir.glob("*.zip")):
-                    source_hash = sha256_file(zip_path)
-                    if is_source_loaded(conn, zip_path.name, source_hash):
-                        log.info("Ya cargado, se omite: %s", zip_path.name)
+        for portal in portales:
+            cfg = CAPCOL_PORTALES[portal]
+            portal_dir = base_dir / cfg["subdir"] if cfg["subdir"] else base_dir
+            for year in years:
+                for report_type, table, parse_fn, upsert_fn in (
+                    ("cartera", "cartera", parse_cartera_file, upsert_staging_cartera),
+                    (
+                        "depositos",
+                        "depositos",
+                        parse_depositos_file,
+                        upsert_staging_depositos,
+                    ),
+                ):
+                    report_dir = portal_dir / str(year) / report_type
+                    if not report_dir.exists():
+                        log.warning("No existe %s, se omite", report_dir)
                         continue
-                    log.info("Procesando %s", zip_path.name)
-                    df = parse_fn(zip_path, EXTRACT_DIR)
-                    load_raw(conn, table, df, year)
-                    upsert_fn(conn, df)
-                    register_source_file(conn, zip_path.name, source_hash, report_type)
-                    conn.commit()
+                    for zip_path in sorted(report_dir.glob("*.zip")):
+                        source_key = (
+                            f"{cfg['subdir']}/{zip_path.name}"
+                            if cfg["subdir"]
+                            else zip_path.name
+                        )
+                        source_hash = sha256_file(zip_path)
+                        if is_source_loaded(conn, source_key, source_hash):
+                            log.info("Ya cargado, se omite: %s", source_key)
+                            continue
+                        log.info("Procesando %s (%s)", source_key, cfg["tipo_entidad"])
+                        df = parse_fn(zip_path, EXTRACT_DIR, cfg["tipo_entidad"])
+                        df["source_file"] = source_key
+                        load_raw(conn, table, df, year)
+                        upsert_fn(conn, df)
+                        register_source_file(conn, source_key, source_hash, report_type)
+                        conn.commit()
         refresh_marts(conn)
         conn.commit()
     except Exception:
@@ -382,12 +399,20 @@ def main():
     )
     parser.add_argument("--years", nargs="+", type=int, default=DEFAULT_YEARS)
     parser.add_argument("--out", type=Path, default=RAW_DIR)
+    parser.add_argument(
+        "--portales",
+        nargs="+",
+        choices=list(CAPCOL_PORTALES),
+        default=list(CAPCOL_PORTALES),
+        help="Sub-portales CAPCOL a extraer/cargar (default: todos)",
+    )
     args = parser.parse_args()
 
     if args.stage in ("extract", "all"):
-        scrape(args.years, args.out)
+        for portal in args.portales:
+            scrape(args.years, args.out, portal=portal)
     if args.stage in ("load", "all"):
-        load_years(args.years, args.out)
+        load_years(args.years, args.out, tuple(args.portales))
     if args.stage == "bce":
         load_bce()
     if args.stage == "bce-reprocess-canton-grain":

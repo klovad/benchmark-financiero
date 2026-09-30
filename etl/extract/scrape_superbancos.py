@@ -7,6 +7,9 @@ de carpetas vía AJAX. Por eso se automatiza con Playwright en vez de requests/h
 
 Estructura del portal: Año {YYYY} > {CARTERA|COLOCACIONES} / {DEPOSITOS|CAPTACIONES} > archivos .zip
 (los nombres de carpeta cambiaron en 2024; ver etl.config.FOLDER_NAMES).
+
+Mismo código para los sub-portales de bancos privados y Banca Pública
+(etl.config.CAPCOL_PORTALES): solo cambian la URL y el subdirectorio de destino.
 """
 
 import argparse
@@ -16,7 +19,7 @@ from pathlib import Path
 from playwright.sync_api import TimeoutError as PwTimeoutError
 from playwright.sync_api import sync_playwright
 
-from etl.config import CAPCOL_URL, DEFAULT_YEARS, FOLDER_NAMES, RAW_DIR
+from etl.config import CAPCOL_PORTALES, DEFAULT_YEARS, FOLDER_NAMES, RAW_DIR
 from etl.logging_utils import setup_logging
 
 setup_logging()
@@ -99,16 +102,22 @@ def scrape_year(page, year: int, out_dir: Path) -> dict[str, list[Path]]:
 
 
 def scrape(
-    years: list[int], out_dir: Path = RAW_DIR, headless: bool = True
+    years: list[int],
+    out_dir: Path = RAW_DIR,
+    headless: bool = True,
+    portal: str = "privada",
 ) -> dict[int, dict]:
+    cfg = CAPCOL_PORTALES[portal]
+    if cfg["subdir"]:
+        out_dir = out_dir / cfg["subdir"]
     all_results = {}
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=headless)
         page = browser.new_page(accept_downloads=True)
-        page.goto(CAPCOL_URL, wait_until="networkidle", timeout=60_000)
+        page.goto(cfg["url"], wait_until="networkidle", timeout=60_000)
         page.wait_for_timeout(2000)
         for year in years:
-            log.info("=== Año %s ===", year)
+            log.info("=== %s: Año %s ===", portal, year)
             all_results[year] = scrape_year(page, year, out_dir)
         browser.close()
     return all_results
@@ -120,8 +129,9 @@ def main():
     )
     parser.add_argument("--years", nargs="+", type=int, default=DEFAULT_YEARS)
     parser.add_argument("--out", type=Path, default=RAW_DIR)
+    parser.add_argument("--portal", choices=list(CAPCOL_PORTALES), default="privada")
     args = parser.parse_args()
-    results = scrape(args.years, args.out)
+    results = scrape(args.years, args.out, portal=args.portal)
     total = sum(len(v) for r in results.values() for v in r.values())
     log.info("Descarga completa: %d archivos", total)
 

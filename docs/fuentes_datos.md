@@ -140,7 +140,19 @@ necesarias para esta fuente** — es el caso raro donde el modelo ya estaba list
 que la fuente se investigara, precisamente porque el proyecto ya había resuelto
 `INVERSIÓN PÚBLICA`/`BANCO PUBLICO` para BCE.
 
-**Pendiente, carril de `data-engineer` (Fase 1, alcance bajo)** — cambios de código, no de
+**Estado 2026-09-29: puntos 1-4 implementados.** Solo queda el 5 (descarga, carga y
+verificación). `etl/config.py::CAPCOL_PORTALES` define cada sub-portal (`url`,
+`tipo_entidad`, `subdir`). El scraper (`scrape(..., portal=)`) y `load_years(...,
+portales=)` iteran sobre esa constante. Banca Pública se descarga a
+`data/raw/banca_publica/{año}/...` y se registra en `raw.source_files` con ese prefijo, para
+no chocar con los nombres de bancos privados (la columna es `UNIQUE`). Los parsers reciben
+`tipo_entidad` como argumento y rechazan cualquier valor fuera de `TIPOS_ENTIDAD_CAPCOL`.
+`_REFRESH_MARTS_SQL` usa `IN ('BANCO PRIVADO', 'BANCO PUBLICO')` y mapea
+`inversion_publica`. Se agregó `_log_bancos_no_resueltos()`, que emite un WARNING si un
+`banco_codigo` de staging CAPCOL no existe en `staging.banco_maestro` (p.ej. base
+reconstruida sin haber corrido BCE). Uso: `python -m etl.pipeline all --portales publica`.
+
+**Pendiente original, carril de `data-engineer` (Fase 1, alcance bajo)** — cambios de código, no de
 esquema:
 1. `etl/extract/scrape_superbancos.py` (o una copia paramétrica): apuntar a
    `CAPCOL_INSTITUCIONES_PUBLICAS_URL` (nueva constante en `etl/config.py`, mismo patrón
@@ -495,7 +507,123 @@ bancos):
   `COMPOS CART` (composición de cartera) podría dar una vista de cartera consistente con
   CAPCOL desde la óptica contable — a evaluar en el diseño de arquitectura.
 
-## 4. SEPS — Cooperativas de Ahorro y Crédito + Mutualistas de Vivienda — 📐 diseño aprobado, **no implementada** (Fase 2)
+## 4. SEPS — Cooperativas de Ahorro y Crédito + Mutualistas de Vivienda — 🔎 **re-verificado con archivos reales 2025 (2026-09-29)**, no implementada
+
+### 4.0 Revisión con archivos reales 2025 (2026-09-29) — **reemplaza 4.1-4.4 donde se contradicen**
+
+Descargados y perfilados en streaming (sin descomprimir a disco) desde
+`estadisticas.seps.gob.ec/index.php/estadisticas-sfps/`. Para cada tema, la SEPS publica
+**dos familias de archivos distintas**. El diseño original mezclaba las propiedades de ambas.
+
+| Tema | Archivo | Formato | ¿Trae entidad (RUC)? | Grano | Filas 2025 |
+|---|---|---|---|---|---|
+| Depósitos — *Reportes* | `2025-CAP.zip` → `Boletin_captaciones_Dic25_{S1,S2,S3,Mut}.xlsm`, hoja `Base_captaciones` | xlsm (~14 MB zip) | **Sí** (`RUC`, `RAZON SOCIAL`) | fecha × entidad × cantón × tipo depósito × estado operación | 120.045 |
+| Cartera — *Reportes* | `2025-COL.zip` → `Reporte_colocaciones_dic_2025_{S1,S2,S3,MUT}.xlsm`, hoja `Base_colocaciones` | xlsm (~237 MB zip) | **Sí** | fecha × entidad × cantón × subtipo × origen × estado × clase × actividad | 1.302.688 |
+| Depósitos — *Bases de datos* | `2025-CAP-Men.zip` → `.txt` TSV (1,3 GB) | TSV | **No** (solo `SEGMENTO`) | + parroquia, sexo, edad, instrucción, rango saldo, banda de plazo | 5.749.334 |
+| Cartera — *Bases de datos* ("Operaciones de crédito vigentes") | `2025-COL-MEN.zip` → `.txt` TSV (**11,3 GB**) | TSV | **No** | + parroquia, CIIU, destino, demografía | 16.426.673 |
+| Estados financieros | `2025_EEFF-Men.zip` → `.txt` TSV (418 MB) | TSV | **Sí** (`RUC`, `RAZON SOCIAL`) | fecha × entidad × cuenta (1, 2, 4 y 6 dígitos) | 2.954.291 |
+
+Los ZIP usan Deflate64 y `zipfile` de Python no los abre (`NotImplementedError`). Hay que
+usar `unzip -p` (o `7z`) como subproceso. Los números vienen con coma decimal y sin
+separador de miles.
+
+**1. La cartera "colocaciones" de la SEPS SÍ son saldos y SÍ conforma con
+`fact_saldo_cartera`.** Esto corrige la sección 4.2, que concluía lo contrario. El archivo se
+llama `Reporte_colocaciones`/`COL`, pero `Base_colocaciones` trae `CARTERA POR VENCER`,
+`CARTERA QUE NO DEVENGA INTERESES`, `CARTERA VENCIDA`, `CARTERA TOTAL`, `NUMERO
+OPERACIONES` y `NUMERO SUJETOS CREDITO`. Es la misma foto de stock por estado de morosidad
+que CAPCOL. El análisis anterior partió de `Base_vcredito`, del reporte *VOL*
+("Operaciones concedidas"), que es volumen de desembolsos: otro proceso de negocio.
+**`fact_volumen_cartera` deja de ser necesaria** para tener saldos por cantón. Queda solo
+como opción futura si se quiere el flujo de desembolsos.
+
+**2. Conciliación contra EEFF (por RUC × mes, 2025):**
+
+| Cruce | Pares comparados | Mediana dif. | Dentro de ±0,5% | Dentro de ±1% |
+|---|---|---|---|---|
+| `Base_captaciones.SALDO` vs. EEFF cuenta `21` (= 2101+2103+2104+2105) | 2.458 | 0,0000% | 99,8% | 99,9% |
+| `Base_colocaciones.CARTERA TOTAL` vs. EEFF `14 − 1499` | 2.219 | 0,0000% | 94,8% | 95,5% |
+
+Depósitos concilia casi exacto. Eso también confirma que sumar los 3 valores de
+`ESTADO OPERACIÓN` (NUEVA / VIGENTE / RENOVADA) **no** cuenta dos veces: son una partición
+del stock, no un filtro. En cartera, los pocos RUC fuera de ±5% se concentran en unas pocas
+entidades (p.ej. `0190006247001`, entre 80% y 94% por encima de EEFF en jul-dic).
+
+**3. ⚠️ Hueco real: el `.xlsm` de cartera del Segmento 1 solo trae julio-diciembre.**
+`Reporte_colocaciones_dic_2025_S1.xlsm` tiene 585.362 filas para 6 meses (45-46
+entidades). El año completo serían ~1,17 M filas, más que el límite de Excel (1.048.576).
+Hipótesis fuerte: la SEPS truncó el archivo. S2, S3 y Mut sí traen los 12 meses. En
+consecuencia, en ene-jun 2025 el reporte cubre 161 de 210 RUC: ~4,4 mil M USD frente a
+~19,2 mil M en EEFF. **Opciones, pendientes de decisión:**
+- (a) Aceptar el hueco de S1 en ene-jun y exponerlo como cobertura parcial.
+- (b) Buscar si la SEPS publica un corte de junio (u otro archivo) que traiga los meses
+  faltantes.
+- (c) Para S1 en ene-jun, usar la base TSV (sin entidad) solo en vistas agregadas por
+  segmento × cantón.
+
+Antes de cargar el histórico hay que revisar si 2021-2024 tienen el mismo truncamiento.
+
+**4. Las bases TSV (CAP-Men y COL-MEN) no sirven para benchmark por entidad**, porque no
+traen RUC ni razón social. Sí sirven para una vista del *sistema cooperativo* por segmento ×
+cantón × parroquia, con demografía. CAP-Men 2025 trae solo 10 cortes (faltan enero y
+febrero). Quedan fuera del alcance de v1.
+
+**5. Identidad: 209 de 211 RUC ya existen en `marts.dim_banco`.** Son 205 `COOPERATIVA` y 4
+`MUTUALISTA`, auto-registradas por BCE. Verificado contra la base nativa viva (uptime
+desde 2026-09-26). Faltan solo dos entidades de segundo piso:
+- `CORPORACION NACIONAL DE FINANZAS POPULARES Y SOLIDARIAS` (CONAFIPS, `1768168480001`).
+- `CAJA CENTRAL FINANCOOP` (`1791708040001`).
+
+Su `tipo_entidad` no calza en el `CHECK` actual de `dim_banco` (`sql/07`). Hay que decidir
+si se agrega un valor nuevo (p.ej. `'ENTIDAD DE SEGUNDO PISO'`) o si se excluyen. La
+resolución por RUC (`BCE_<ruc>`, sección 4.3) queda confirmada: no hace falta ningún
+crosswalk manual.
+
+**6. Estados financieros → `marts.fact_balance`/`fact_pyg` tal cual.** Mismo grano que el
+Boletín de Superbancos (fecha × entidad × cuenta), pero en USD completos, no en miles.
+También usa el mismo Catálogo Único de Cuentas:
+- De 1.214 códigos SEPS, 1.063 ya existen en `marts.dim_cuenta_contable`. De esos, 831
+  tienen descripción idéntica y el resto difiere en redacción menor (p.ej.
+  "interfinancieras" vs. "interbancarias").
+- Las cuentas que usan las vistas (`1`, `14`, `1499`, `21`, `2101`-`2105`, `4`, `5`) son
+  idénticas. Por eso `vw_cartera_bruta`, `vw_depositos_corto_plazo` y el resto funcionan sin
+  cambios para cooperativas.
+- Los 151 códigos que solo existen en SEPS (incluidas las cuentas de orden `6` y `7`) entran
+  por el two-tier que ya tiene `dim_cuenta_contable` (`AUTO_INGRESADO`, `sql/25`).
+- `1499` viene con signo negativo, igual que en Superbancos.
+
+**7. Vocabulario a mapear** (valores reales contados):
+- `TIPO DE DEPOSITO` (4 valores): `DEPOSITOS A PLAZO`, `DEPOSITOS RESTRINGIDOS` y
+  `DEPOSITOS DE GARANTIA` ya existen. `DEPOSITOS A LA VISTA` es **nuevo**: no está en
+  `CATEGORIAS_VALIDAS` y entra como 12vo valor, sin fusionarlo con otro (como ya proponía
+  4.2). El `.xlsm` **no** trae banda de plazo, así que `plazo_id` queda NULL para SEPS.
+- `SUBTIPO DE CREDITO` (7 valores) → `dim_segmento_credito`:
+  - `CONSUMO`, `MICROCREDITO`, `PRODUCTIVO` y `EDUCATIVO` mapean directo.
+  - `INMOBILARIO` (sic, le falta una "I") → `INMOBILIARIO`.
+  - `VIVIENDA DE INTERÉS SOCIAL Y PÚBLICO` → `VIVIENDA DE INTERÉS PÚBLICO`.
+  - `OPERACIONES CONTINGENTES` (~0,6 M USD, 102 filas) no es cuenta 14: **excluir**.
+- Estos atributos se suman al grano de `fact_saldo_cartera` en v1:
+  - `ESTADO OPERACION` de cartera (ORIGINAL / NOVADA / REFINANCIADA / REESTRUCTURADA /
+    RECOMPRA / …).
+  - `ORIGEN OPERACION` (7), `CLASE DE CREDITO` (2) y `ACTIVIDAD ECONOMICA` (24 secciones
+    CIIU).
+  - Si más adelante se quiere cartera por actividad económica, va en un outrigger aparte.
+- `LINEA CREDITO` viene 100% vacía.
+- `REGION`: la SEPS usa `AMAZONIA`/`INSULAR`. Se ignora y se deriva con
+  `region_for_provincia()`, igual que en CAPCOL.
+
+**Diseño revisado (reemplaza 4.4).** No hace falta ninguna fact table nueva:
+- Depósitos SEPS → `staging.depositos` → `fact_saldo_depositos`.
+- Cartera SEPS → `staging.cartera` → `fact_saldo_cartera`.
+- EEFF → `staging.boletin_balance`/`boletin_pyg` (o tablas `staging.seps_eeff_*`
+  equivalentes) → `fact_balance`/`fact_pyg`.
+
+`tipo_entidad` = `COOPERATIVA` o `MUTUALISTA` según el sufijo del archivo (`S1`-`S3` o
+`Mut`). Los filtros `IN (...)` de `_REFRESH_MARTS_SQL` se amplían a esos dos valores. La
+migración es mínima: tablas `raw.seps_*` (JSONB), ampliar el `CHECK` de
+`raw.source_files.report_type` y, si se incluyen CONAFIPS/FINANCOOP, el de `tipo_entidad`.
+El extractor es de descarga directa, sin Playwright (la sección 4.5 sigue vigente).
+
 
 Fuente: Superintendencia de Economía Popular y Solidaria,
 `https://estadisticas.seps.gob.ec/index.php/estadisticas-sfps/`, descarga directa

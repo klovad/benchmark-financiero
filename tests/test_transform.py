@@ -83,3 +83,32 @@ def test_parse_depositos_file_schema_and_no_duplicates():
     key_cols = ["fecha", "tipo_entidad", "banco", "canton", "tipo_deposito"]
     assert not df.duplicated(subset=key_cols).any()
     assert df["saldo"].notna().all()
+
+
+def test_tipo_credito_inversion_publica_banca_publica():
+    # Hoja real de capcol-instituciones-publicas (docs/fuentes_datos.md sección 1.1).
+    assert (
+        tipo_credito_from_sheet_name("BASE B PUBLICA INVERSION PUBLICA")
+        == "inversion_publica"
+    )
+    assert (
+        tipo_credito_from_sheet_name("BASE B PUBLICA INVERSION PUBLIC")
+        == "inversion_publica"
+    )
+
+
+def test_parsers_propagan_tipo_entidad_del_portal():
+    # El parser no debe hardcodear 'BANCO PRIVADO': lo fija el sub-portal de origen.
+    df = parse_cartera_file(_first_file("cartera"), EXTRACT_DIR, "BANCO PUBLICO")
+    assert set(df["tipo_entidad"]) == {"BANCO PUBLICO"}
+    df = parse_depositos_file(_first_file("depositos"), EXTRACT_DIR, "BANCO PUBLICO")
+    assert set(df["tipo_entidad"]) == {"BANCO PUBLICO"}
+
+
+def test_parsers_rechazan_tipo_entidad_fuera_de_capcol():
+    import pytest
+
+    with pytest.raises(ValueError, match="tipo_entidad inválido"):
+        parse_cartera_file(_first_file("cartera"), EXTRACT_DIR, "COOPERATIVA")
+    with pytest.raises(ValueError, match="tipo_entidad inválido"):
+        parse_depositos_file(_first_file("depositos"), EXTRACT_DIR, "COOPERATIVA")
