@@ -80,9 +80,9 @@ contra datos reales nuevos.
 - **Banco genuinamente nuevo** (licencia bancaria nueva, nunca visto en ninguna fuente):
   primero agregar una fila a `etl/seeds/banco_maestro.csv` (columnas
   `banco_codigo,banco,tipo_entidad` — `banco_codigo` nuevo código canónico, `banco` nombre
-  a mostrar, `tipo_entidad` uno de los 6 valores del `CHECK` de `sql/07_dim_banco_dim_fecha_rebuild.sql:24`:
+  a mostrar, `tipo_entidad` uno de los 7 valores del `CHECK` de `sql/29_dim_banco_tipo_segundo_piso.sql`:
   `BANCO PRIVADO`, `BANCO PUBLICO`, `COOPERATIVA`, `MUTUALISTA`, `SOCIEDAD FINANCIERA`,
-  `TARJETAS DE CREDITO`), y LUEGO la(s) fila(s) de crosswalk para cada variante de nombre
+  `TARJETAS DE CREDITO`, `ENTIDAD DE SEGUNDO PISO`), y LUEGO la(s) fila(s) de crosswalk para cada variante de nombre
   que use en CAPCOL/BCE/BOLETIN.
 - **Es en realidad un bug de parsing, no un banco nuevo**: si el nombre en el mensaje de
   error se ve como ruido (vacío, media palabra, contiene texto de encabezado de columna,

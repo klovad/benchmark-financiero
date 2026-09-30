@@ -549,6 +549,23 @@ Depósitos concilia casi exacto. Eso también confirma que sumar los 3 valores d
 del stock, no un filtro. En cartera, los pocos RUC fuera de ±5% se concentran en unas pocas
 entidades (p.ej. `0190006247001`, entre 80% y 94% por encima de EEFF en jul-dic).
 
+**3. ✅ Resuelto (2026-09-30): la cartera de S1 está partida por semestre dentro del mismo `.xlsm`.**
+Desde 2025, `Reporte_colocaciones_dic_2025_S1.xlsm` trae **dos** hojas base ocultas:
+`Base_colocaciones` (jul-dic, 585.362 filas) y `Base_colocacionesISEM` (ene-jun, 571.744
+filas). Tienen las mismas 18 columnas, pero en `ISEM` la columna `FECHA DE CORTE` viene como
+**serial de Excel** (`int`, 45688 = 2025-01-31, …, 45838 = 2025-06-30), no como fecha. El
+parser debe leer todas las hojas `Base_colocaciones*`, excluir `Base_para_actual` (hoja
+auxiliar de la portada, con una fecha fija 42916 = 2017-06-30 que no es un corte real) y
+convertir el serial a fecha. Con ambas hojas, el año queda completo: 206-211 RUC por mes, y
+la conciliación por RUC × mes contra EEFF `14 − 1499` da mediana 0,0000% (92,3% de los
+2.478 pares dentro de ±0,5%, 96,7% dentro de ±5%). El exceso agregado de +1,2% a +1,4% por
+mes se concentra en pocas entidades: `0190006247001` (mediana +76,5%), `1790075494001`
+(+73%), `1790451801001` (+19%). Quedan por revisar antes de publicarlas en un benchmark.
+Pendiente: confirmar la partición en 2021-2024, donde S1 era más chico y probablemente
+cabía en una sola hoja.
+
+<details><summary>Texto original del hallazgo (2026-09-29), antes de encontrar la hoja ISEM</summary>
+
 **3. ⚠️ Hueco real: el `.xlsm` de cartera del Segmento 1 solo trae julio-diciembre.**
 `Reporte_colocaciones_dic_2025_S1.xlsm` tiene 585.362 filas para 6 meses (45-46
 entidades). El año completo serían ~1,17 M filas, más que el límite de Excel (1.048.576).
@@ -563,6 +580,8 @@ consecuencia, en ene-jun 2025 el reporte cubre 161 de 210 RUC: ~4,4 mil M USD fr
 
 Antes de cargar el histórico hay que revisar si 2021-2024 tienen el mismo truncamiento.
 
+</details>
+
 **4. Las bases TSV (CAP-Men y COL-MEN) no sirven para benchmark por entidad**, porque no
 traen RUC ni razón social. Sí sirven para una vista del *sistema cooperativo* por segmento ×
 cantón × parroquia, con demografía. CAP-Men 2025 trae solo 10 cortes (faltan enero y
@@ -574,8 +593,10 @@ desde 2026-09-26). Faltan solo dos entidades de segundo piso:
 - `CORPORACION NACIONAL DE FINANZAS POPULARES Y SOLIDARIAS` (CONAFIPS, `1768168480001`).
 - `CAJA CENTRAL FINANCOOP` (`1791708040001`).
 
-Su `tipo_entidad` no calza en el `CHECK` actual de `dim_banco` (`sql/07`). Hay que decidir
-si se agrega un valor nuevo (p.ej. `'ENTIDAD DE SEGUNDO PISO'`) o si se excluyen. La
+Su `tipo_entidad` no calzaba en el `CHECK` de `dim_banco` (`sql/07`). **Decidido
+(2026-09-30):** nuevo valor `'ENTIDAD DE SEGUNDO PISO'`, en `sql/29_dim_banco_tipo_segundo_piso.sql`,
+ya aplicado a la base viva. Se registran como filas propias, no se fuerzan como
+`COOPERATIVA`. La
 resolución por RUC (`BCE_<ruc>`, sección 4.3) queda confirmada: no hace falta ningún
 crosswalk manual.
 
