@@ -1,6 +1,7 @@
 pandas>=2.2,<3
 pyarrow>=16.0
 openpyxl>=3.1
+stream-unzip>=0.0.99  # ZIPs SEPS con Deflate64 (zipfile de la stdlib no los abre)
 psycopg[binary]>=3.1,<4
 python-dotenv>=1.0
 playwright>=1.45,<2

@@ -5,7 +5,8 @@
 El proyecto integra **3 fuentes independientes** en un único esquema estrella conformado
 (un 4to sub-portal, Banca Pública de Superbancos, se suma a CAPCOL ampliando su cobertura
 de `tipo_entidad` sin ser una fuente nueva en sí — ver más abajo; una 5ta fuente real, SEPS,
-está diseñada y aprobada pero **no implementada**, ver `docs/fuentes_datos.md` sección 4).
+**implementada y cargada 2021-2025 el 2026-09-30**, ver bloque SEPS abajo y
+`docs/fuentes_datos.md` sección 4.0).
 Cada fuente tiene su propio extractor/parser, pero todas convergen en la misma capa
 `marts.*` — la identidad de banco y los catálogos de producto/plazo son compartidos
 (resueltos en Python antes de `staging.*`, ver sección "Catálogos conformados" abajo).
@@ -19,6 +20,17 @@ mismas `raw.cartera`/`raw.depositos`/`staging.cartera`/`staging.depositos`/
 `dim_segmento_credito` ya lo soportaban). Detalle completo, identidad, y qué falta
 (extractor/parser/`_REFRESH_MARTS_SQL`, carril de `data-engineer`) en
 `docs/fuentes_datos.md` sección 1.1.
+
+**SEPS** (cooperativas S1-S3 + mutualistas, `python -m etl.pipeline seps`): descarga
+directa (`etl/extract/download_seps.py`, sin Playwright) de 3 ZIP por año, parseados por
+`etl/transform/parse_seps.py`. **No agrega tablas**: captaciones entra a
+`staging.depositos` → `fact_saldo_depositos`, colocaciones (que son saldos) a
+`staging.cartera` → `fact_saldo_cartera`, y los estados financieros a
+`staging.boletin_balance/pyg` → `fact_balance`/`fact_pyg`. La identidad es el RUC del
+archivo, con la misma llave `BCE_<ruc>` que BCE ya había auto-registrado. Solo hubo tres
+migraciones: `sql/29` (tipo `ENTIDAD DE SEGUNDO PISO`), `sql/30` (categoría
+`DEPÓSITOS A LA VISTA`) y `sql/31` (`provincia` en la llave natural de staging, porque hay
+cantones homónimos que la SEPS sí reporta en el mismo mes).
 
 ```
 CAPCOL (cartera/depósitos)          BCE tsp/tsa (tasas semanales)      TasasHistorico.htm       Boletín (BALANCE/PYG)

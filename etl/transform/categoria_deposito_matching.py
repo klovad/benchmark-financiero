@@ -11,6 +11,7 @@ igual que banco_matching.py hace con la identidad de banco.
 """
 
 import re
+import unicodedata
 
 from etl.transform.bce_plazo_matching import validar_rango_plazo
 
@@ -26,6 +27,10 @@ CATEGORIAS_VALIDAS = {
     "DEPÓSITOS A PLAZO",
     "FONDOS DE TARJETAHABIENTES",
     "OPERACIONES DE REPORTO",
+    # SEPS (cooperativas/mutualistas): taxonomía simplificada vista/plazo/garantía/
+    # restringidos. No se fusiona con AHORRO/MONETARIOS por similitud de nombre -- ver
+    # docs/fuentes_datos.md sección 4.0 y sql/30_seps.sql.
+    "DEPÓSITOS A LA VISTA",
 }
 
 # CAPCOL: "DE 1 A 30 DÍAS", "DE 31 A 90 DÍAS", ..., "DE MÁS DE 361 DÍAS" -- buckets de
@@ -88,4 +93,30 @@ def resolver_categoria_deposito(
     raise CategoriaNoResueltaError(
         f"No se pudo resolver categoria_deposito para '{tipo_deposito_crudo}'. "
         f"Agregar el valor a CATEGORIAS_VALIDAS o un patrón de plazo nuevo."
+    )
+
+
+def _sin_tildes(texto: str) -> str:
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", texto) if not unicodedata.combining(c)
+    )
+
+
+_CATEGORIAS_SIN_TILDE = {_sin_tildes(c): c for c in CATEGORIAS_VALIDAS}
+
+
+def resolver_categoria_deposito_seps(tipo_deposito_crudo: str) -> str:
+    """SEPS escribe las categorías sin tilde ('DEPOSITOS A LA VISTA', 'DEPOSITOS DE
+    GARANTIA'); se comparan sin tildes contra CATEGORIAS_VALIDAS y se devuelve la forma
+    canónica con tildes (la que vive en marts.dim_categoria_deposito). SEPS no trae banda
+    de plazo en el reporte con entidad, así que no hay (dias_desde, dias_hasta).
+    Fail-fast igual que resolver_categoria_deposito()."""
+    if not tipo_deposito_crudo or not str(tipo_deposito_crudo).strip():
+        raise CategoriaNoResueltaError("tipo_deposito SEPS vacío")
+    clave = _sin_tildes(" ".join(str(tipo_deposito_crudo).upper().split()))
+    if clave in _CATEGORIAS_SIN_TILDE:
+        return _CATEGORIAS_SIN_TILDE[clave]
+    raise CategoriaNoResueltaError(
+        f"No se pudo resolver categoria_deposito SEPS para '{tipo_deposito_crudo}'. "
+        f"Agregar el valor a CATEGORIAS_VALIDAS (y a marts.dim_categoria_deposito)."
     )

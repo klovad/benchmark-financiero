@@ -74,9 +74,7 @@ def test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo():
     """Un texto que NO matchea ningún shape regex conocido sigue siendo fallo duro --
     esa parte del comportamiento no cambió con sql/27."""
     with pytest.raises(PlazoNoResueltoError):
-        validar_universo_plazos_bce(
-            ["ESTO NO ES UN PLAZO"], PLAZOS_TSP_VALIDOS, "tsp"
-        )
+        validar_universo_plazos_bce(["ESTO NO ES UN PLAZO"], PLAZOS_TSP_VALIDOS, "tsp")
 
 
 def test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando():

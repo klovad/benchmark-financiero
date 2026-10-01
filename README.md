@@ -79,6 +79,10 @@ docker compose up -d
 # 6. Boletín Financiero Mensual (balance/PyG)
 .venv\Scripts\python -m etl.pipeline boletin --years 2021 2022 2023 2024 2025 2026
 
+# 6b. SEPS (cooperativas S1-S3 + mutualistas: saldos de cartera/depósitos + EEFF).
+#     Correr despues de 5 (BCE) no es obligatorio: las entidades se auto-registran por RUC.
+.venv\Scripts\python -m etl.pipeline seps --years 2021 2022 2023 2024 2025
+
 # 7. Power BI: abrir powerbi/benchmark-cartera-depositos.pbip en Power BI Desktop
 ```
 
@@ -185,6 +189,12 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
 - **Boletín Financiero Mensual** (balance/PyG por banco): 2021-01 a 2026-06. Plan de
   cuentas jerárquico completo (Catálogo Único de Cuentas), valores en USD (fuente reporta
   en miles, normalizado al cargar).
+- **SEPS** (cooperativas de ahorro y crédito S1-S3 y mutualistas, 2021-01 a 2025-12,
+  mensual): saldos de cartera por estado y de depósitos por categoría, por entidad y
+  cantón, en las mismas tablas que CAPCOL; y estados financieros por entidad en
+  `fact_balance`/`fact_pyg`, para validar esos saldos contra las cuentas contables.
+  Segmentos 4-5 fuera de alcance (reportan trimestral). Ver `docs/fuentes_datos.md`
+  sección 4.0.
 
 ## Estado del proyecto
 

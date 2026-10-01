@@ -64,23 +64,24 @@ def _clean(value):
 
 def load_raw(conn, table: str, df: pd.DataFrame, anio: int) -> None:
     payload_cols = [c for c in df.columns if c not in ("source_file", "source_hash")]
-    rows = [
+    # COPY en vez de executemany: SEPS colocaciones produce cientos de miles de filas
+    # por año (CAPCOL, decenas de miles) -- mismo mecanismo que load_raw_bce/boletin.
+    rows = (
         (
-            row["source_file"],
-            row["source_hash"],
+            r["source_file"],
+            r["source_hash"],
             anio,
-            row["fecha"].month if pd.notna(row["fecha"]) else None,
-            json.dumps({c: _clean(row[c]) for c in payload_cols}, default=str),
+            r["fecha"].month if pd.notna(r["fecha"]) else None,
+            json.dumps({c: _clean(r[c]) for c in payload_cols}, default=str),
         )
-        for _, row in df.iterrows()
-    ]
-    with conn.cursor() as cur:
-        cur.executemany(
-            f"INSERT INTO raw.{table} (source_file, source_hash, anio, mes, data) "
-            f"VALUES (%s, %s, %s, %s, %s)",
-            rows,
-        )
-    log.info("raw.%s: %d filas insertadas", table, len(rows))
+        for r in df.to_dict("records")
+    )
+    n = _copy_rows(
+        conn,
+        f"COPY raw.{table} (source_file, source_hash, anio, mes, data) FROM STDIN",
+        rows,
+    )
+    log.info("raw.%s: %d filas insertadas", table, n)
 
 
 def upsert_banco_maestro_ruc(conn, entidades: list[tuple[str, str, str, str]]) -> None:
@@ -170,23 +171,43 @@ def upsert_staging_cartera(conn, df: pd.DataFrame) -> None:
         for r in df.itertuples(index=False)
     ]
     with conn.cursor() as cur:
-        cur.executemany(
+        cur.execute(
+            "CREATE TEMP TABLE _tmp_cartera (LIKE staging.cartera INCLUDING DEFAULTS) ON COMMIT DROP"
+        )
+    _copy_rows(
+        conn,
+        "COPY _tmp_cartera (fecha, tipo_entidad, banco, banco_codigo, region, provincia, "
+        "canton, tipo_credito, estado_cartera, saldo, source_file) FROM STDIN",
+        rows,
+    )
+    with conn.cursor() as cur:
+        cur.execute(
             """
             INSERT INTO staging.cartera
                 (fecha, tipo_entidad, banco, banco_codigo, region, provincia, canton, tipo_credito, estado_cartera, saldo, source_file)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (fecha, tipo_entidad, banco, COALESCE(canton, ''), tipo_credito, estado_cartera)
+            SELECT fecha, tipo_entidad, banco, banco_codigo, region, provincia, canton, tipo_credito, estado_cartera, saldo, source_file
+            FROM _tmp_cartera
+            ON CONFLICT (fecha, tipo_entidad, banco, COALESCE(provincia, ''), COALESCE(canton, ''), tipo_credito, estado_cartera)
             DO UPDATE SET saldo = EXCLUDED.saldo, region = EXCLUDED.region,
                           provincia = EXCLUDED.provincia, source_file = EXCLUDED.source_file,
                           banco_codigo = EXCLUDED.banco_codigo, fecha_actualizacion = now()
             WHERE staging.cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash
-            """,
-            rows,
+            """
         )
+        cur.execute("DROP TABLE _tmp_cartera")
     log.info("staging.cartera: %d filas upsert", len(rows))
 
 
 def upsert_staging_depositos(conn, df: pd.DataFrame) -> None:
+    df = df.copy()
+    for c in (
+        "plazo_dias_desde",
+        "plazo_dias_hasta",
+        "numero_clientes",
+        "numero_cuentas",
+    ):
+        # nullable Int64: COPY rechaza '30.0' en una columna INT
+        df[c] = pd.to_numeric(df[c]).astype("Int64")
     rows = [
         tuple(
             _clean(v)
@@ -210,14 +231,22 @@ def upsert_staging_depositos(conn, df: pd.DataFrame) -> None:
         )
         for r in df.itertuples(index=False)
     ]
+    cols = (
+        "fecha, tipo_entidad, banco, banco_codigo, region, provincia, canton, tipo_deposito, "
+        "categoria_deposito, plazo_dias_desde, plazo_dias_hasta, saldo, numero_clientes, "
+        "numero_cuentas, source_file"
+    )
     with conn.cursor() as cur:
-        cur.executemany(
-            """
-            INSERT INTO staging.depositos
-                (fecha, tipo_entidad, banco, banco_codigo, region, provincia, canton, tipo_deposito,
-                 categoria_deposito, plazo_dias_desde, plazo_dias_hasta, saldo, numero_clientes, numero_cuentas, source_file)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (fecha, tipo_entidad, banco, COALESCE(canton, ''), tipo_deposito)
+        cur.execute(
+            "CREATE TEMP TABLE _tmp_depositos (LIKE staging.depositos INCLUDING DEFAULTS) ON COMMIT DROP"
+        )
+    _copy_rows(conn, f"COPY _tmp_depositos ({cols}) FROM STDIN", rows)
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""
+            INSERT INTO staging.depositos ({cols})
+            SELECT {cols} FROM _tmp_depositos
+            ON CONFLICT (fecha, tipo_entidad, banco, COALESCE(provincia, ''), COALESCE(canton, ''), tipo_deposito)
             DO UPDATE SET saldo = EXCLUDED.saldo, numero_clientes = EXCLUDED.numero_clientes,
                           numero_cuentas = EXCLUDED.numero_cuentas, region = EXCLUDED.region,
                           provincia = EXCLUDED.provincia, source_file = EXCLUDED.source_file,
@@ -227,9 +256,9 @@ def upsert_staging_depositos(conn, df: pd.DataFrame) -> None:
                           plazo_dias_hasta = EXCLUDED.plazo_dias_hasta,
                           fecha_actualizacion = now()
             WHERE staging.depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash
-            """,
-            rows,
+            """
         )
+        cur.execute("DROP TABLE _tmp_depositos")
     log.info("staging.depositos: %d filas upsert", len(rows))
 
 
@@ -495,6 +524,35 @@ def upsert_dim_cuenta_contable(conn, cuentas_df: pd.DataFrame) -> None:
     log.info("marts.dim_cuenta_contable: %d filas upsert", len(rows))
 
 
+def insert_dim_cuenta_contable_seps(conn, cuentas_df: pd.DataFrame) -> None:
+    """Plan de cuentas de la SEPS (mismo Catálogo Único que Superbancos: 1.063 de 1.214
+    códigos SEPS 2025 ya existen). A diferencia de upsert_dim_cuenta_contable(), NO pisa
+    en conflicto: la descripción de un código compartido sigue siendo la de Superbancos
+    (la SEPS redacta distinto, p.ej. "interfinancieras" vs. "interbancarias"). Los
+    códigos solo-SEPS entran con el DEFAULT estado_validacion='AUTO_INGRESADO' (sql/25).
+    """
+    rows = [
+        tuple(
+            _clean(v)
+            for v in (r.reporte, r.codigo, r.cuenta, r.nivel, r.codigo_padre, r.seccion)
+        )
+        for r in cuentas_df.itertuples(index=False)
+    ]
+    with conn.cursor() as cur:
+        cur.executemany(
+            """
+            INSERT INTO marts.dim_cuenta_contable (reporte, codigo, cuenta, nivel, codigo_padre, seccion)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (reporte, codigo) DO NOTHING
+            """,
+            rows,
+        )
+    log.info(
+        "marts.dim_cuenta_contable: %d códigos SEPS vistos (solo se insertan los nuevos)",
+        len(rows),
+    )
+
+
 def load_raw_boletin(conn, table: str, df: pd.DataFrame, source_hash: str) -> None:
     payload_cols = [c for c in df.columns if c not in ("source_file",)]
     rows = (
@@ -624,9 +682,9 @@ SELECT bm.banco_codigo, bm.banco, bm.tipo_entidad, bm.ruc, bm.estado_validacion,
 FROM staging.banco_maestro bm
 LEFT JOIN marts.dim_banco existente ON existente.banco_codigo = bm.banco_codigo
 WHERE bm.banco_codigo IN (
-    SELECT DISTINCT banco_codigo FROM staging.cartera WHERE tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO')
+    SELECT DISTINCT banco_codigo FROM staging.cartera WHERE tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO')
     UNION
-    SELECT DISTINCT banco_codigo FROM staging.depositos WHERE tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO')
+    SELECT DISTINCT banco_codigo FROM staging.depositos WHERE tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO')
     UNION
     SELECT DISTINCT banco_codigo FROM staging.bce_tasas_pasivas
     UNION
@@ -728,7 +786,7 @@ JOIN marts.dim_segmento_credito sg ON sg.segmento = CASE s.tipo_credito
     WHEN 'educativo' THEN 'EDUCATIVO'
     WHEN 'inversion_publica' THEN 'INVERSIÓN PÚBLICA'  -- solo Banca Pública
 END
-WHERE s.tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO')
+WHERE s.tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO')
 GROUP BY TO_CHAR(s.fecha, 'YYYYMMDD')::INT, b.banco_id, c.canton_id, sg.segmento_id
 ON CONFLICT (fecha_id, banco_id, COALESCE(canton_id, -1), segmento_id)
 DO UPDATE SET saldo_por_vencer = EXCLUDED.saldo_por_vencer,
@@ -754,7 +812,7 @@ LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia_id = dp.prov
 JOIN marts.dim_categoria_deposito cd ON cd.categoria = s.categoria_deposito
 LEFT JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
     AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
-WHERE s.tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO')
+WHERE s.tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO')
 ON CONFLICT (fecha_id, banco_id, canton_id, categoria_deposito_id, COALESCE(plazo_id, -1))
 DO UPDATE SET saldo = EXCLUDED.saldo,
               numero_clientes = EXCLUDED.numero_clientes,
@@ -1064,7 +1122,9 @@ def _log_bancos_no_resueltos(conn) -> None:
             detalle,
         )
     else:
-        log.info("marts.dim_banco: 0 banco_codigo CAPCOL sin resolver (verificado en esta corrida)")
+        log.info(
+            "marts.dim_banco: 0 banco_codigo CAPCOL sin resolver (verificado en esta corrida)"
+        )
 
 
 def refresh_marts(conn) -> None:

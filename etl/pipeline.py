@@ -6,6 +6,7 @@ Uso:
     python -m etl.pipeline load --years 2021 2022 2023 2024 2025
     python -m etl.pipeline all --years 2021 2022 2023 2024 2025
     python -m etl.pipeline bce
+    python -m etl.pipeline seps --years 2021 2022 2023 2024 2025
     python -m etl.pipeline bce-reprocess-canton-grain  # backfill de un solo uso, ver
                                                         # reprocess_bce_staging() más abajo
 """
@@ -17,13 +18,15 @@ import logging
 import re
 from pathlib import Path
 
-from etl.config import BCE_DIR, CAPCOL_PORTALES, DEFAULT_YEARS, RAW_DIR
+from etl.config import BCE_DIR, CAPCOL_PORTALES, DEFAULT_YEARS, RAW_DIR, SEPS_DIR
 from etl.extract.download_bce import download_all as download_bce_all
+from etl.extract.download_seps import download_seps
 from etl.extract.download_tasas_historicas import download_tasas_historicas
 from etl.extract.scrape_boletin import scrape as scrape_boletin
 from etl.extract.scrape_superbancos import scrape
 from etl.load.load_postgres import (
     get_connection,
+    insert_dim_cuenta_contable_seps,
     is_source_loaded,
     load_raw,
     load_raw_bce,
@@ -54,6 +57,11 @@ from etl.transform.parse_bce_tasas import read_raw as read_raw_bce
 from etl.transform.parse_boletin import parse_boletin_file
 from etl.transform.parse_cartera import parse_cartera_file
 from etl.transform.parse_depositos import parse_depositos_file
+from etl.transform.parse_seps import (
+    parse_seps_captaciones_file,
+    parse_seps_colocaciones_file,
+    parse_seps_eeff_file,
+)
 from etl.transform.parse_tasas_historicas import parse_tasas_historicas_file
 
 setup_logging()
@@ -107,6 +115,79 @@ def load_years(
                         upsert_fn(conn, df)
                         register_source_file(conn, source_key, source_hash, report_type)
                         conn.commit()
+        refresh_marts(conn)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def load_seps(
+    years: list[int], base_dir: Path = SEPS_DIR, descargar: bool = True
+) -> None:
+    """SEPS (cooperativas S1-S3 + mutualistas): descarga directa + 3 reportes por año que
+    conforman contra tablas ya existentes (docs/fuentes_datos.md sección 4.0).
+
+    Orden por año: EEFF primero, porque trae la razón social completa. Así, una entidad
+    nueva (no vista antes por BCE) se registra en staging.banco_maestro con ese nombre y
+    no con la abreviatura de los reportes. Después van captaciones y colocaciones. Cada
+    archivo se commitea por separado y se registra en raw.source_files con clave
+    'seps/{año}/{archivo}', así que una re-corrida salta lo ya cargado."""
+    if descargar:
+        download_seps(years, base_dir)
+    conn = get_connection()
+    try:
+        for year in years:
+            for reporte in ("eeff", "captaciones", "colocaciones"):
+                report_dir = base_dir / str(year) / reporte
+                zips = sorted(report_dir.glob("*.zip")) if report_dir.exists() else []
+                if not zips:
+                    log.warning("No existe %s, se omite", report_dir)
+                    continue
+                for zip_path in zips:
+                    source_key = f"seps/{year}/{zip_path.name}"
+                    source_hash = sha256_file(zip_path)
+                    if is_source_loaded(conn, source_key, source_hash):
+                        log.info("Ya cargado, se omite: %s", source_key)
+                        continue
+                    log.info("Procesando %s", source_key)
+                    if reporte == "eeff":
+                        r = parse_seps_eeff_file(zip_path)
+                        upsert_banco_maestro_ruc(conn, r["entidades"])
+                        insert_dim_cuenta_contable_seps(conn, r["cuentas"])
+                        for df in (r["balance"], r["pyg"]):
+                            df["source_file"] = source_key
+                        load_raw_boletin(
+                            conn, "boletin_balance", r["balance"], source_hash
+                        )
+                        load_raw_boletin(conn, "boletin_pyg", r["pyg"], source_hash)
+                        upsert_staging_boletin_balance(conn, r["balance"])
+                        upsert_staging_boletin_pyg(conn, r["pyg"])
+                        register_source_file(
+                            conn, source_key, source_hash, "boletin_balance"
+                        )
+                    else:
+                        parse_fn, table, upsert_fn = {
+                            "captaciones": (
+                                parse_seps_captaciones_file,
+                                "depositos",
+                                upsert_staging_depositos,
+                            ),
+                            "colocaciones": (
+                                parse_seps_colocaciones_file,
+                                "cartera",
+                                upsert_staging_cartera,
+                            ),
+                        }[reporte]
+                        df, entidades = parse_fn(zip_path, EXTRACT_DIR)
+                        df["source_file"] = source_key
+                        upsert_banco_maestro_ruc(conn, entidades)
+                        load_raw(conn, table, df, year)
+                        upsert_fn(conn, df)
+                        register_source_file(conn, source_key, source_hash, table)
+                    conn.commit()
         refresh_marts(conn)
         conn.commit()
     except Exception:
@@ -395,6 +476,7 @@ def main():
             "bce-reprocess-canton-grain",
             "tasas-historicas",
             "boletin",
+            "seps",
         ],
     )
     parser.add_argument("--years", nargs="+", type=int, default=DEFAULT_YEARS)
@@ -421,6 +503,8 @@ def main():
         load_tasas_historicas()
     if args.stage == "boletin":
         load_boletin(args.years, args.out)
+    if args.stage == "seps":
+        load_seps(args.years)
 
 
 if __name__ == "__main__":

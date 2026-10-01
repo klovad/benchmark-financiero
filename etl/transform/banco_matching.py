@@ -164,7 +164,9 @@ _RUC_COEFS_SOCIEDAD_PRIVADA = [4, 3, 2, 7, 6, 5, 4, 3, 2]  # tercer dígito 9
 _RUC_COEFS_SECTOR_PUBLICO = [3, 2, 7, 6, 5, 4, 3, 2]  # tercer dígito 6
 
 
-def _ruc_digito_verificador_modulo11(digitos: list[int], coeficientes: list[int]) -> int | None:
+def _ruc_digito_verificador_modulo11(
+    digitos: list[int], coeficientes: list[int]
+) -> int | None:
     """Dígito verificador módulo 11 estándar (SRI Ecuador, sociedades). Devuelve None si
     el resultado matemático es 10 -- ese caso no tiene dígito verificador válido posible,
     así que cualquier RUC que caiga ahí es estructuralmente inválido por definición del
@@ -277,3 +279,31 @@ def resolver_entidad_bce(
 
     codigo = f"BCE_{ruc}"
     return codigo, str(razon_social).strip(), _TIPO_ENTIDAD_BCE[tipo_entidad_bce], ruc
+
+
+def resolver_entidad_seps(
+    razon_social: str, ruc, tipo_entidad: str
+) -> tuple[str, str, str, str]:
+    """Resuelve una entidad SEPS (cooperativa, mutualista o entidad de segundo piso) a
+    (banco_codigo, banco, tipo_entidad, ruc) -- misma llave `BCE_<ruc>` que ya usa
+    resolver_entidad_bce() para el universo auto-registrado, a propósito: 209 de las 211
+    entidades SEPS 2025 ya existen en marts.dim_banco por esa vía (verificado
+    2026-09-29), así que SEPS y BCE describen la MISMA fila de dim_banco sin crosswalk.
+
+    `tipo_entidad` lo decide el caller (sufijo de archivo S1/S2/S3 vs. Mut, o la lista
+    SEPS_RUC_SEGUNDO_PISO) -- la SEPS no lo trae como columna. Una entidad que ya existe
+    en staging.banco_maestro conserva su tipo_entidad (upsert_banco_maestro_ruc() solo
+    actualiza `ruc` en conflicto); este valor solo se usa si la entidad es nueva.
+
+    El RUC puede llegar como int desde Excel (pierde el 0 inicial de provincias 01-09):
+    se rellena a 13 dígitos antes de validar."""
+    if ruc is None or str(ruc).strip() == "":
+        raise RucInvalidoError(f"RUC vacío para la entidad SEPS '{razon_social}'")
+    ruc = str(int(ruc)) if isinstance(ruc, (int, float)) else str(ruc).strip()
+    ruc = ruc.zfill(13)
+    if not validar_ruc_estructura(ruc):
+        raise RucInvalidoError(
+            f"RUC '{ruc}' de la entidad SEPS '{razon_social}' no pasa la validación "
+            f"estructural -- ver validar_ruc_estructura() en banco_matching.py."
+        )
+    return f"BCE_{ruc}", str(razon_social).strip(), tipo_entidad, ruc

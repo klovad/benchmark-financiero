@@ -507,9 +507,53 @@ bancos):
   `COMPOS CART` (composición de cartera) podría dar una vista de cartera consistente con
   CAPCOL desde la óptica contable — a evaluar en el diseño de arquitectura.
 
-## 4. SEPS — Cooperativas de Ahorro y Crédito + Mutualistas de Vivienda — 🔎 **re-verificado con archivos reales 2025 (2026-09-29)**, no implementada
+## 4. SEPS — Cooperativas de Ahorro y Crédito + Mutualistas de Vivienda — ✅ **implementada y cargada 2021-2025 (2026-09-30)**
 
 ### 4.0 Revisión con archivos reales 2025 (2026-09-29) — **reemplaza 4.1-4.4 donde se contradicen**
+
+> **Implementado 2026-09-30.** Las subsecciones 4.1-4.6 quedan como registro histórico del
+> primer diseño; **este 4.0 es lo vigente**. Código: `etl/extract/download_seps.py`,
+> `etl/transform/parse_seps.py`, `etl/pipeline.py::load_seps`. Linaje campo a campo en
+> `docs/linaje_datos.md` sección 7. Variaciones de formato 2021-2025 absorbidas (verificadas
+> descargando los 15 archivos): en 2021 el ZIP de cartera trae dos juegos (`abr_2021` =
+> ene-abr con la segmentación previa a la reforma de mayo 2021, y `dic_2021` = may-dic);
+> en 2023 el archivo de S1 se llama `_SG1`; el EEFF 2021 usa `;`, encabezados con `_` y
+> BOM, y el decimal pasa de `.` a `,` en 2025. La partición semestral de S1 solo ocurre en
+> 2025: en 2021-2024 S1 cabía en una hoja (1,03 M filas en 2024).
+>
+> **Resultado de la carga 2021-01 a 2025-12** (base nativa viva, 2026-09-30):
+>
+> | Tabla | Filas SEPS | Entidades |
+> |---|---|---|
+> | `fact_saldo_cartera` | 805.470 (780.315 cooperativas, 19.351 mutualistas, 5.804 segundo piso) | 221 |
+> | `fact_saldo_depositos` | 334.768 | 221 |
+> | `fact_balance` | 2.699.804 | 220 |
+> | `fact_pyg` | 898.998 | 220 |
+>
+> Verificado: staging = marts en filas y en saldo (1.095.187.816.368,07 USD de cartera
+> acumulada), 0 `canton_id` NULL, 1 cantón nuevo `AUTO_INGRESADO` (ALFREDO BAQUERIZO
+> MORENO, Guayas), 2 entidades nuevas en `dim_banco` (CONAFIPS y FINANCOOP, `ENTIDAD DE
+> SEGUNDO PISO`). Las filas de bancos de `fact_saldo_cartera`, `fact_saldo_depositos` y
+> `fact_balance` no cambiaron (hash idéntico a la línea base previa a la carga). La segunda
+> corrida saltó los 15 archivos y no actualizó ninguna fila (CDC sin cambios).
+>
+> **Conciliación por entidad × mes contra EEFF, dentro de `marts`:**
+>
+> | Año | Depósitos vs. cuenta 21: mediana / ±0,5% | Cartera vs. 14 − 1499: mediana / ±0,5% / ±5% | Cartera, dif. agregada |
+> |---|---|---|---|
+> | 2021 | 0,0000% / 99,3% | 0,0000% / 93,7% / 98,0% | −0,38% |
+> | 2022 | 0,0000% / 99,6% | 0,0000% / 94,0% / 97,6% | −0,36% |
+> | 2023 | 0,0000% / 99,0% | 0,0000% / 92,6% / 97,9% | −0,12% |
+> | 2024 | 0,0000% / 99,6% | 0,0000% / 92,4% / 96,8% | +0,60% |
+> | 2025 | 0,0000% / 99,8% | 0,0000% / 92,3% / 96,7% | +1,32% |
+>
+> Entidades con desvío mediano de cartera mayor a 5% en los 60 meses, pendientes de
+> investigar antes de publicarlas en un benchmark: Mutualista Pichincha (+44,5%),
+> Mutualista Azuay (+34,0%), COAC Juventud Ecuatoriana Progresista (−8,1%), COAC Policía
+> Nacional (−7,0%). En las mutualistas, la hipótesis a validar es cartera reportada por
+> cantón que contablemente no está en la cuenta 14 (vendida o titularizada), pero no se ha
+> confirmado. `OPERACIONES CONTINGENTES` excluidas por año: 2023 1,4 M, 2024 30,3 M,
+> 2025 9,7 M USD.
 
 Descargados y perfilados en streaming (sin descomprimir a disco) desde
 `estadisticas.seps.gob.ec/index.php/estadisticas-sfps/`. Para cada tema, la SEPS publica
@@ -622,7 +666,7 @@ También usa el mismo Catálogo Único de Cuentas:
   - `CONSUMO`, `MICROCREDITO`, `PRODUCTIVO` y `EDUCATIVO` mapean directo.
   - `INMOBILARIO` (sic, le falta una "I") → `INMOBILIARIO`.
   - `VIVIENDA DE INTERÉS SOCIAL Y PÚBLICO` → `VIVIENDA DE INTERÉS PÚBLICO`.
-  - `OPERACIONES CONTINGENTES` (~0,6 M USD, 102 filas) no es cuenta 14: **excluir**.
+  - `OPERACIONES CONTINGENTES` no es cuenta 14: **excluir** (1,4 M USD en 2023, 30,3 M en 2024 y 9,7 M en 2025).
 - Estos atributos se suman al grano de `fact_saldo_cartera` en v1:
   - `ESTADO OPERACION` de cartera (ORIGINAL / NOVADA / REFINANCIADA / REESTRUCTURADA /
     RECOMPRA / …).

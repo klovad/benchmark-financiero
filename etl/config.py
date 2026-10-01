@@ -9,9 +9,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = PROJECT_ROOT / os.getenv("SCRAPER_DOWNLOAD_DIR", "data/raw")
 
 CAPCOL_URL = "https://www.superbancos.gob.ec/estadisticas/portalestudios/capcol-bancos/"
-CAPCOL_INSTITUCIONES_PUBLICAS_URL = (
-    "https://www.superbancos.gob.ec/estadisticas/portalestudios/capcol-instituciones-publicas/"
-)
+CAPCOL_INSTITUCIONES_PUBLICAS_URL = "https://www.superbancos.gob.ec/estadisticas/portalestudios/capcol-instituciones-publicas/"
 
 # Sub-portales CAPCOL: mismo plugin, mismo layout de carpetas y mismas hojas BASE (ver
 # docs/fuentes_datos.md sección 1.1). tipo_entidad NO se infiere del dato -- lo fija el
@@ -39,6 +37,33 @@ BCE_URLS = {
     "tsa": f"{BCE_BASE_URL}/tsa_desde_200801.zip",
 }
 BCE_DIR = RAW_DIR / "bce"
+
+# SEPS (cooperativas S1-S3 + mutualistas): descarga directa desde el plugin "Simple
+# Download Monitor" de WordPress -- sin Playwright. Los download_id no siguen ningún
+# patrón derivable del año: se recolectaron a mano del portal
+# (estadisticas.seps.gob.ec/index.php/estadisticas-sfps/, 2026-09-30). Al agregar un año
+# nuevo, copiar el id del link del año en cada sección:
+#   captaciones  -> Depósitos > Reportes (ZIP con Boletin_captaciones_*_{S1,S2,S3,Mut}.xlsm)
+#   colocaciones -> Cartera de crédito > Reportes, 2da fila (ZIP con
+#                   Reporte_colocaciones_*.xlsm = SALDOS de cartera, no volumen)
+#   eeff         -> Situación Financiera > Bases de Datos, 1ra fila (TSV, 6 dígitos)
+# Ver docs/fuentes_datos.md sección 4.0.
+SEPS_DIR = RAW_DIR / "seps"
+SEPS_DOWNLOAD_URL = (
+    "https://estadisticas.seps.gob.ec/?sdm_process_download=1&download_id={id}"
+)
+SEPS_DOWNLOAD_IDS = {
+    2021: {"captaciones": 906, "colocaciones": 1023, "eeff": 895},
+    2022: {"captaciones": 1133, "colocaciones": 1129, "eeff": 1818},
+    2023: {"captaciones": 1847, "colocaciones": 1830, "eeff": 1387},
+    2024: {"captaciones": 2365, "colocaciones": 2370, "eeff": 2330},
+    2025: {"captaciones": 2795, "colocaciones": 2799, "eeff": 2773},
+}
+# Entidades de segundo piso que la SEPS publica junto a las cooperativas (sql/29).
+SEPS_RUC_SEGUNDO_PISO = {
+    "1768168480001",  # CONAFIPS
+    "1791708040001",  # CAJA CENTRAL FINANCOOP
+}
 
 DB_CONFIG = {
     "host": os.getenv("POSTGRES_HOST", "localhost"),

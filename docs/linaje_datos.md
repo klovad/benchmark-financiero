@@ -242,6 +242,36 @@ anteriores, decisión explícita de alcance, ver `docs/fuentes_datos.md`).
 
 ---
 
+## 7. SEPS — Captaciones, Colocaciones (saldos) y Estados Financieros (2026-09-30)
+
+Fuente: portal `estadisticas.seps.gob.ec`, descarga directa por `download_id`
+(`etl/extract/download_seps.py`, ids en `etl/config.py::SEPS_DOWNLOAD_IDS`). Un ZIP por
+año y reporte, con Deflate64 (se lee con `stream_unzip`). Cobertura: cooperativas de
+segmentos 1-3 y mutualistas. Los segmentos 4-5 publican trimestralmente y quedan fuera de
+alcance. Código: `etl/transform/parse_seps.py`, `etl/pipeline.py::load_seps`. **No hay
+tablas nuevas**: los tres reportes conforman contra las de CAPCOL y del Boletín.
+
+| Campo origen | Destino | Transformación | `marts.*` |
+|---|---|---|---|
+| `RUC` (captaciones, colocaciones, EEFF) | `banco_codigo` | `resolver_entidad_seps()`: rellena a 13 dígitos (Excel puede entregarlo como int), valida estructura y devuelve `BCE_<ruc>`, la misma llave que BCE. Registra entidades nuevas con `upsert_banco_maestro_ruc()` | `dim_banco` → `banco_id` |
+| Sufijo del archivo (`_S1`/`_S2`/`_S3`/`_SG1` o `_Mut`/`_MUT`); en EEFF, `SEGMENTO` | `tipo_entidad` | `COOPERATIVA` o `MUTUALISTA`. RUC en `SEPS_RUC_SEGUNDO_PISO` → `ENTIDAD DE SEGUNDO PISO` (`sql/29`). Solo aplica a entidades nuevas: las que ya existen conservan el tipo que les puso BCE | `dim_banco.tipo_entidad` |
+| `RAZON SOCIAL` | `banco` (etiqueta de staging) | `"<razón social> (<ruc>)"`, porque la llave natural de `staging.cartera`/`depositos` usa `banco` y las razones sociales abreviadas de los reportes pueden repetirse | — (el nombre visible sale de `staging.banco_maestro`) |
+| `FECHA DE CORTE` | `fecha` | `datetime` o **serial de Excel** (hoja `Base_colocacionesISEM` 2025) → fin de mes. Se ignora la hoja `Base_para_actual` (auxiliar con fecha fija 2017-06-30) | `dim_fecha` |
+| `PROVINCIA`, `CANTON` | `provincia`, `canton`, `region` | `resolver_canton_bce()` (misma normalización y alias que BCE); `region` derivada de la provincia, no de la columna `REGION` de la fuente | `dim_canton` (two-tier) |
+| `TIPO DE DEPOSITO` (captaciones) | `tipo_deposito`, `categoria_deposito` | `resolver_categoria_deposito_seps()`: compara sin tildes contra `CATEGORIAS_VALIDAS`. `DEPÓSITOS A LA VISTA` es nueva (`sql/30`). Sin banda de plazo → `plazo_*` NULL | `dim_categoria_deposito`; `plazo_id` NULL |
+| `SALDO`, `NUMERO DE CLIENTES`, `NUMERO DE CUENTAS` | mismas medidas | Suma sobre `ESTADO OPERACIÓN` (NUEVA/VIGENTE/RENOVADA particionan el stock) | `fact_saldo_depositos` |
+| `SUBTIPO DE CREDITO` (colocaciones) | `tipo_credito` | `SUBTIPO_CREDITO_SEPS` → vocabulario CAPCOL (incluye la segmentación previa a mayo 2021: `CONSUMO/COMERCIAL PRIORITARIO/ORDINARIO`). `OPERACIONES CONTINGENTES` se excluye porque no es cuenta 14. Un valor nuevo hace fallar la carga | `dim_segmento_credito` |
+| `CARTERA POR VENCER` / `QUE NO DEVENGA INTERESES` / `VENCIDA` | `estado_cartera` + `saldo` (largo) | Suma sobre origen, estado y clase de operación y actividad económica (fuera del grano de `fact_saldo_cartera`) | `fact_saldo_cartera.saldo_*` |
+| EEFF `CUENTA`, `DESCRIPCION CUENTA` | `codigo`; `dim_cuenta_contable` | 4* y 5* → `PYG`; el resto → `BALANCE`. `insert_dim_cuenta_contable_seps()` hace `ON CONFLICT DO NOTHING`: un código compartido conserva la descripción de Superbancos | `fact_balance`/`fact_pyg.cuenta_id` |
+| EEFF `SALDO (USD)` / `SALDO_USD` | `saldo_usd` / `valor_usd` | Ya en USD (sin ×1000). Decimal `.` o `,` según el año; vacío o 0 se descarta (~70% de las filas; la ausencia equivale a 0) | `fact_balance.saldo_usd` / `fact_pyg.valor_usd` |
+
+**Raw**: los mismos `raw.depositos`/`raw.cartera`/`raw.boletin_*` (JSONB de la fila ya
+parseada). `raw.source_files` registra cada archivo como `seps/{año}/{archivo}`. Orden por
+año: primero EEFF (trae la razón social completa para las entidades nuevas), luego
+captaciones y colocaciones.
+
+---
+
 ## Patrones de transformación transversales
 
 Válidos para las 4 fuentes, no repetidos en cada tabla arriba:

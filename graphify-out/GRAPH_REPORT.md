@@ -1,16 +1,16 @@
 # Graph Report - benchmark-bancos  (2026-09-30)
 
 ## Corpus Check
-- 116 files · ~98,792 words
+- 117 files · ~99,205 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1402 nodes · 1865 edges · 144 communities (85 shown, 59 thin omitted)
+- 1404 nodes · 1865 edges · 146 communities (86 shown, 60 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 37 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7b946060`
+- Built from commit: `bfe1c82c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -142,6 +142,7 @@
 - config.py
 - parse_depositos_file
 - sha256_file
+- marts.dim_banco
 
 ## God Nodes (most connected - your core abstractions)
 1. `resolver_canton_bce()` - 26 edges
@@ -150,10 +151,10 @@
 4. `PlazoNoResueltoError` - 17 edges
 5. `resolver_categoria_deposito()` - 16 edges
 6. `resolver_entidad_bce()` - 16 edges
-7. `load_bce()` - 15 edges
-8. `load_boletin()` - 15 edges
-9. `parse_cartera_file()` - 15 edges
-10. `resolver_plazo_bce()` - 15 edges
+7. `resolver_plazo_bce()` - 15 edges
+8. `parse_cartera_file()` - 15 edges
+9. `load_bce()` - 15 edges
+10. `load_boletin()` - 15 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error()` --uses--> `PlazoNoResueltoError`  [INFERRED]
@@ -164,13 +165,13 @@
   tests/test_parse_tasas_historicas.py → etl/transform/bce_plazo_matching.py
 - `test_resolve_canton_propaga_cantonnoresueltoerror()` --uses--> `CantonNoResueltoError`  [INFERRED]
   tests/test_parse_bce_tasas.py → etl/transform/canton_matching.py
-- `test_parse_fecha_tasas_historicas_no_matching_pattern_raises()` --calls--> `parse_fecha_from_tasas_historicas_filename()`  [EXTRACTED]
-  tests/test_pipeline_fecha_parsing.py → etl/pipeline.py
+- `test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo()` --uses--> `PlazoNoResueltoError`  [INFERRED]
+  tests/test_bce_plazo_matching.py → etl/transform/bce_plazo_matching.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (144 total, 59 thin omitted)
+## Communities (146 total, 60 thin omitted)
 
 ### Community 0 - "PlazoNoResueltoError"
 Cohesion: 0.13
@@ -445,22 +446,22 @@ Cohesion: 0.36
 Nodes (7): extract_single_xlsx(), Path, Los ZIP de Superbancos contienen exactamente un .xlsx -- salvo boletines…, sha256_file(), Path, test_sha256_file_is_content_sensitive(), test_sha256_file_is_deterministic()
 
 ## Knowledge Gaps
-- **546 isolated node(s):** `1.1 Banca Pública (`capcol-instituciones-publicas/`) — ✅ diseño confirmado, esquema ya soporta la carga (2026-09-01)`, `2.1 `tsp_desde_200801.zip` (tasas pasivas / captaciones)`, `2.2 `tsa_desde_200801.zip` (tasas activas / colocaciones) — ✅ confirmado`, `2.3 Tasas máximas y referenciales por segmento (`TasasHistorico.htm`) — ✅ cargado (Paso 4)`, `2.4 Mapeo `razon_social`/`ruc` (BCE) ↔ `banco` (CAPCOL/`marts.dim_banco`) — investigado` (+541 more)
+- **546 isolated node(s):** `marts.dim_fecha (grano día)`, `marts.dim_banco`, `marts.dim_provincia (2026-07-25, `sql/20_dim_provincia.sql`)`, `marts.dim_canton`, `marts.dim_segmento_entidad (2026-07-25, `sql/19_dim_segmento_entidad.sql`)` (+541 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **59 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **60 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `parse_depositos_file()` connect `parse_depositos_file` to `parse_boletin.py`, `resolver_banco_codigo`, `resolver_categoria_deposito`, `parse_cartera_file`, `common.py`, `sha256_file`, `pipeline.py`?**
-  _High betweenness centrality (0.010) - this node is a cross-community bridge._
-- **Why does `validar_universo_plazos_bce()` connect `PlazoNoResueltoError` to `parse_bce_tasas.py`?**
-  _High betweenness centrality (0.009) - this node is a cross-community bridge._
-- **Why does `resolver_categoria_deposito()` connect `resolver_categoria_deposito` to `PlazoNoResueltoError`, `parse_depositos_file`?**
+  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+- **Why does `resolver_canton_bce()` connect `resolver_canton_bce` to `parse_bce_tasas.py`, `common.py`?**
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
+- **Why does `sha256_file()` connect `sha256_file` to `parse_bce_tasas.py`, `parse_cartera_file`, `common.py`, `parse_depositos_file`, `pipeline.py`?**
   _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **Are the 7 inferred relationships involving `PlazoNoResueltoError` (e.g. with `test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo()` and `test_bucket_shape_valido_pero_rango_invertido_sigue_lanzando()`) actually correct?**
   _`PlazoNoResueltoError` has 7 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `1.1 Banca Pública (`capcol-instituciones-publicas/`) — ✅ diseño confirmado, esquema ya soporta la carga (2026-09-01)`, `2.1 `tsp_desde_200801.zip` (tasas pasivas / captaciones)`, `2.2 `tsa_desde_200801.zip` (tasas activas / colocaciones) — ✅ confirmado` to the rest of the system?**
+- **What connects `marts.dim_fecha (grano día)`, `marts.dim_banco`, `marts.dim_provincia (2026-07-25, `sql/20_dim_provincia.sql`)` to the rest of the system?**
   _546 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `PlazoNoResueltoError` be split into smaller, more focused modules?**
   _Cohesion score 0.12807881773399016 - nodes in this community are weakly interconnected._

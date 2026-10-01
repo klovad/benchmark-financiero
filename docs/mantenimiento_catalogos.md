@@ -28,6 +28,24 @@ conformados"): `dim_banco` (camino curado + camino auto-registrado), `dim_segmen
 | `dim_cuenta_contable` | Ninguna — `ValueError` genérico solo ante bug de parsing (`_find_header_row`) | `etl/transform/parse_boletin.py:104-106` | Sin gate — todo código nuevo se auto-ingresa `AUTO_INGRESADO` por diseño |
 | `dim_canton` (BCE tsp/tsa) | `CantonNoResueltoError` (provincia no resoluble, o canton/provincia vacíos) | `etl/transform/canton_matching.py:81` (raise en `resolver_canton_bce()`) | **Two-tier**: provincia válida pero par (canton, provincia) fuera del universo curado → `AUTO_INGRESADO`, no lanza. Integración en `parse_bce_tasas.py` pendiente (carril de `data-engineer`, ver `docs/gobernanza_datos.md`) |
 
+**SEPS (2026-09-30)** agrega estos puntos de entrada a catálogos que ya existían:
+
+| Catálogo | Excepción | Dónde | Comportamiento |
+|---|---|---|---|
+| `dim_banco` (SEPS) | `RucInvalidoError` | `banco_matching.py::resolver_entidad_seps` | Fail-fast sobre el RUC. La entidad nueva se auto-registra (`AUTO_INGRESADO`) con `tipo_entidad` según el sufijo del archivo o `SEPS_RUC_SEGUNDO_PISO` (`etl/config.py`) |
+| `dim_segmento_credito` (SEPS) | `SubtipoCreditoSepsNoMapeadoError` | `etl/transform/parse_seps.py::SUBTIPO_CREDITO_SEPS` | Fail-fast absoluto. Agregar el valor al dict (valor `None` = excluir, como `OPERACIONES CONTINGENTES`) |
+| `dim_categoria_deposito` (SEPS) | `CategoriaNoResueltaError` | `categoria_deposito_matching.py::resolver_categoria_deposito_seps` | Fail-fast absoluto; compara sin tildes contra `CATEGORIAS_VALIDAS` |
+| `dim_canton` (SEPS) | `CantonNoResueltoError` | reutiliza `resolver_canton_bce()` | Two-tier, igual que BCE |
+| `dim_cuenta_contable` (SEPS) | — | `load_postgres.py::insert_dim_cuenta_contable_seps` | Sin gate; `ON CONFLICT DO NOTHING` (no pisa descripciones de Superbancos) |
+| Extractor SEPS | `ValueError` ("no redirigió a un .zip") | `etl/extract/download_seps.py` | El `download_id` del portal cambió o el año no se publicó: actualizar `etl/config.py::SEPS_DOWNLOAD_IDS` copiando el link del portal |
+
+**Año nuevo de SEPS**: agregar la fila del año a `SEPS_DOWNLOAD_IDS` (3 ids: Depósitos >
+Reportes; Cartera de crédito > Reportes, **segunda** fila, la del ZIP `YYYY-COL.zip`;
+Situación Financiera > Bases de Datos, primera fila) y correr
+`python -m etl.pipeline seps --years YYYY`. Si el parser falla por un formato nuevo (hoja
+partida, separador, encabezado), ver la lista de variaciones ya absorbidas en el docstring
+de `etl/transform/parse_seps.py`.
+
 `estado_validacion` (`CONFIRMADO`/`AUTO_INGRESADO`/`RECHAZADO`) solo existe en 4 tablas:
 `dim_banco` (`sql/26`), `dim_plazo` (`sql/27`), `dim_cuenta_contable` (`sql/25`),
 `dim_canton` (`sql/28`) — ver sección dedicada más abajo para las queries copy-paste de
@@ -228,8 +246,8 @@ de parser, no tocar el set.
 exacto — `test_unresolved_value_raises` (línea 48) / `test_empty_value_raises` (línea 53)
 para el fail-fast de categoría, `test_plazo_bucket_con_shape_valido_pero_desconocido_no_lanza`
 (línea 58) para el sub-caso two-tier de plazo. Extender el que aplique. Docs:
-`docs/data_dictionary.md` (`dim_categoria_deposito`, hoy 12 valores: 11 sembrados + 1 alias
-de `TasasHistorico`), `docs/gobernanza_datos.md`. Re-ejecutar:
+`docs/data_dictionary.md` (`dim_categoria_deposito`, hoy 13 valores: 11 sembrados + 1 alias
+de `TasasHistorico` + `DEPÓSITOS A LA VISTA` de SEPS, `sql/30`), `docs/gobernanza_datos.md`. Re-ejecutar:
 `pytest tests/test_categoria_deposito_matching.py -v`, el comando de pipeline, verificar
 conteos.
 

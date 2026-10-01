@@ -95,7 +95,7 @@ def test_staging_cartera_canton_null_safe_unique_regression(db_conn):
     """Regresión de sql/23_fix_staging_cartera_canton_null_safe.sql: dos filas con la
     misma llave natural (fecha, tipo_entidad, banco, tipo_credito, estado_cartera) salvo
     canton=NULL en ambas deben colapsar a una sola fila bajo el índice único NULL-safe
-    staging_cartera_natural_key_unique (fecha, tipo_entidad, banco, COALESCE(canton, ''),
+    staging_cartera_natural_key_unique (hoy _v2 con provincia, sql/31) (fecha, tipo_entidad, banco, COALESCE(canton, ''),
     tipo_credito, estado_cartera) -- antes del fix, el UNIQUE plano sobre `canton` (mismo
     bug class que sql/10_fix_null_unique_constraints.sql, NULL <> NULL incluso bajo
     UNIQUE) dejaba pasar ambas filas como filas distintas."""
@@ -110,7 +110,7 @@ def test_staging_cartera_canton_null_safe_unique_regression(db_conn):
                      estado_cartera, saldo, source_file)
                 VALUES (%s, 'BANCO PRIVADO', 'ZZ TEST BANK', %s, NULL, 'comercial',
                         'por_vencer', %s, 'test_integration')
-                ON CONFLICT (fecha, tipo_entidad, banco, COALESCE(canton, ''), tipo_credito, estado_cartera)
+                ON CONFLICT (fecha, tipo_entidad, banco, COALESCE(provincia, ''), COALESCE(canton, ''), tipo_credito, estado_cartera)
                 DO UPDATE SET saldo = EXCLUDED.saldo, fecha_actualizacion = now()
                 """,
                 (fecha, banco_codigo, saldo),
@@ -148,7 +148,7 @@ def test_staging_depositos_canton_null_safe_unique_regression(db_conn):
                      categoria_deposito, saldo, source_file)
                 VALUES (%s, 'BANCO PRIVADO', 'ZZ TEST BANK', %s, NULL, 'ahorro',
                         'DEPÓSITOS DE AHORRO', %s, 'test_integration')
-                ON CONFLICT (fecha, tipo_entidad, banco, COALESCE(canton, ''), tipo_deposito)
+                ON CONFLICT (fecha, tipo_entidad, banco, COALESCE(provincia, ''), COALESCE(canton, ''), tipo_deposito)
                 DO UPDATE SET saldo = EXCLUDED.saldo, fecha_actualizacion = now()
                 """,
                 (fecha, banco_codigo, saldo),
@@ -164,6 +164,48 @@ def test_staging_depositos_canton_null_safe_unique_regression(db_conn):
     assert (
         rows[0][0] == 999
     )  # la segunda inserción actualizó la primera (mismo natural key)
+
+
+@pytest.mark.integration
+def test_staging_cantones_homonimos_no_colisionan_regression(db_conn):
+    """Regresión de sql/31_staging_natural_key_provincia.sql: BOLÍVAR existe en Carchi y
+    en Manabí. La misma entidad, mes y producto en ambos cantones homónimos son 2 filas
+    reales -- antes la llave natural (sin provincia) las colapsaba y la segunda pisaba
+    el saldo de la primera (caso real: SEPS 2021, OSCUS / Magisterio Manabita)."""
+    fecha = date(2099, 4, 30)
+    with db_conn.cursor() as cur:
+        for tabla, extra_cols, extra_vals in (
+            ("cartera", "tipo_credito, estado_cartera", "'consumo', 'por_vencer'"),
+            ("depositos", "tipo_deposito, categoria_deposito",
+             "'DEPOSITOS A LA VISTA', 'DEPÓSITOS A LA VISTA'"),
+        ):  # fmt: skip
+            conflicto = (
+                "tipo_credito, estado_cartera"
+                if tabla == "cartera"
+                else "tipo_deposito"
+            )
+            for provincia, saldo in (("CARCHI", 217.58), ("MANABI", 36344.29)):
+                cur.execute(
+                    f"""
+                    INSERT INTO staging.{tabla}
+                        (fecha, tipo_entidad, banco, banco_codigo, provincia, canton,
+                         {extra_cols}, saldo, source_file)
+                    VALUES (%s, 'COOPERATIVA', 'ZZ TEST COOP', 'ZZTEST_HOMONIMO', %s,
+                            'BOLIVAR', {extra_vals}, %s, 'test_integration')
+                    ON CONFLICT (fecha, tipo_entidad, banco, COALESCE(provincia, ''),
+                                 COALESCE(canton, ''), {conflicto})
+                    DO UPDATE SET saldo = EXCLUDED.saldo
+                    """,
+                    (fecha, provincia, saldo),
+                )
+            cur.execute(
+                f"SELECT provincia, saldo FROM staging.{tabla} "
+                "WHERE banco_codigo = 'ZZTEST_HOMONIMO' ORDER BY provincia"
+            )
+            assert [(p, float(s)) for p, s in cur.fetchall()] == [
+                ("CARCHI", 217.58),
+                ("MANABI", 36344.29),
+            ]
 
 
 @pytest.mark.integration

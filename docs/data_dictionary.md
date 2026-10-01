@@ -70,7 +70,7 @@ completo.
 
 ### marts.dim_categoria_deposito
 | categoria_deposito_id | serial | Llave sustituta |
-| categoria | text | 12 valores: 11 de CAPCOL/BCE + `DEPÓSITOS MONETARIOS` (agregado sin distinguir generan/no-generan intereses, encontrado en `TasasHistorico.htm`) |
+| categoria | text | 13 valores: 11 de CAPCOL/BCE + `DEPÓSITOS MONETARIOS` (agregado sin distinguir generan/no-generan intereses, encontrado en `TasasHistorico.htm`) + `DEPÓSITOS A LA VISTA` (SEPS, `sql/30`, 2026-09-30: taxonomía cooperativa vista/plazo/garantía/restringidos; no se asimila a ahorro ni a monetarios) |
 | **Hueco de alcance real frente al plan de cuentas regulatorio** (verificado 2026-08-30): este catálogo curado (`etl/transform/categoria_deposito_matching.py::CATEGORIAS_VALIDAS`, fail-fast) no tiene equivalente para 5 sub-cuentas nivel-6 de `marts.dim_cuenta_contable` bajo `codigo='21'` (BALANCE): `210120` EJECUCIÓN PRESUPUESTARIA, `210125` DEPÓSITOS DE OTRAS INSTITUCIONES PARA ENCAJE, `210130` CHEQUES CERTIFICADOS, `210131` CHEQUES DE EMERGENCIA, `210140` OTROS DEPÓSITOS — CAPCOL nunca reportó estas 5 como categoría de producto propia. Es la causa estructural de por qué `SUM(fact_saldo_depositos.saldo)` no reconcilia exactamente contra `fact_balance` `codigo='21'` (mediana −0,7376% por banco × fecha, explica ~48% del gap agregado del histórico). Detalle completo: `docs/gobernanza_datos.md` (tabla "Huecos de gobernanza conocidos") y `docs/glosario_cuentas.md` §3. | | |
 
 ### marts.dim_plazo (catálogo por rango numérico, compartido entre fuentes)
@@ -100,7 +100,10 @@ captación (siempre); **saldo_** = medida de balance (CAPCOL, mensual); **coloca
 = techo/referencial a nivel sistema (BCE mensual, `TasasHistorico`). Nombre anterior
 entre paréntesis en cada tabla, para quien busque referencias viejas.
 
-### marts.fact_saldo_cartera (antes `fact_cartera`) — grano: fecha × banco × cantón × segmento — CAPCOL, mensual
+### marts.fact_saldo_cartera (antes `fact_cartera`) — grano: fecha × banco × cantón × segmento — CAPCOL + SEPS, mensual
+
+**Fuentes (2026-09-30)**: CAPCOL (bancos privados y públicos) y SEPS `Reporte_colocaciones` (cooperativas S1-S3, mutualistas y entidades de segundo piso). Para SEPS se suman fuera del grano el origen, el estado y la clase de la operación y la actividad económica, y se excluye `OPERACIONES CONTINGENTES`. Filtrar por `dim_banco.tipo_entidad` para no mezclar sectores en un benchmark.
+
 | segmento_id | int, FK | `dim_segmento_credito.segmento_id` (nivel grueso — CAPCOL nunca trae el sub-segmento fino de BCE). Hasta 2026-07-19 esta columna era `tipo_credito` (texto libre, sin FK); pasó a estar normalizada contra el mismo catálogo normativo que usan los hechos de BCE en vez de duplicar el nombre del segmento como texto suelto — ver `sql/16_dim_segmento_normativo.sql`. **Pendiente de implementación, diseño ya aprobado** (`docs/fuentes_datos.md` sección 1.1): el `INSERT` de `_REFRESH_MARTS_SQL` filtra hoy `WHERE s.tipo_entidad = 'BANCO PRIVADO'` — al integrar Banca Pública debe ampliarse a `IN ('BANCO PRIVADO', 'BANCO PUBLICO')`, y el segmento `INVERSIÓN PÚBLICA` (7ma fila de `dim_segmento_credito`, hoy poblada solo por BCE tsa) empezará a recibir filas de CAPCOL también |
 | saldo_por_vencer, saldo_no_devenga_intereses, saldo_vencida | numeric | Saldo en USD por estado de cartera. **2026-07-25** (`sql/21_fact_saldo_cartera_pivot.sql`): antes `estado_cartera` era una dimensión degenerada partiendo el saldo en 3 filas por combinación de `(fecha, banco, cantón, segmento)` — un antipatrón EAV, no una dimensión real (los 3 estados son medidas mutuamente excluyentes del mismo hecho, siempre presentes juntas). Pivotado a 3 columnas, mismo criterio que ya usaba `fact_tasas_referenciales_cartera` (2 columnas de medida en vez de "tipo_tasa"+"valor"). El grano pasó de 369.966 a 123.322 filas (÷3, exacto — no había combinaciones con menos de 3 estados) |
 | saldo_total | numeric, `GENERATED ALWAYS AS (...) STORED` | Suma de los 3 — una sola fuente de verdad, no algo que el ETL deba mantener sincronizado (mismo patrón que `row_hash` en todo el proyecto). `morosidad = (saldo_no_devenga_intereses + saldo_vencida) / saldo_total`, ya no requiere filtrar nada |
@@ -109,7 +112,10 @@ entre paréntesis en cada tabla, para quien busque referencias viejas.
 **se eliminaron** en `sql/15_rename_fact_tables.sql` — la tasa real por producto ya vive
 en `fact_colocaciones_cartera`; `morosidad` es derivable de `estado_cartera` si hace falta.
 
-### marts.fact_saldo_depositos (antes `fact_depositos`) — grano: fecha × banco × cantón × categoria_deposito × plazo — CAPCOL, mensual
+### marts.fact_saldo_depositos (antes `fact_depositos`) — grano: fecha × banco × cantón × categoria_deposito × plazo — CAPCOL + SEPS, mensual
+
+**Fuentes (2026-09-30)**: CAPCOL y SEPS `Boletin_captaciones`. SEPS no trae banda de plazo, así que sus filas tienen `plazo_id` NULL también en `DEPÓSITOS A PLAZO`. A diferencia de CAPCOL, SEPS **sí** concilia contra `fact_balance` `codigo='21'` (mediana 0,0000% por entidad × mes en 2025).
+
 | saldo | numeric | Saldo en USD |
 | numero_cuentas, numero_clientes | bigint | Sumados desde el detalle por cuenta contable del origen |
 | plazo_id | int, nullable | NULL salvo que `categoria_deposito = 'DEPÓSITOS A PLAZO'` |
@@ -138,8 +144,9 @@ confundir con las tasas efectivas por banco. `fact_tasas_referenciales_cartera.s
 (columna llamada `segmento_id` hasta 2026-07-19) FK a `dim_subsegmento_credito` — mismo
 nivel fino que `fact_colocaciones_cartera`, no el segmento normativo grueso.
 
-### marts.fact_balance / fact_pyg (grano: fecha × banco × cuenta_contable) — Boletín, mensual
-| saldo_usd / valor_usd | numeric | Ya en USD completos (`x1000` aplicado en el parser — la fuente reporta en miles) |
+### marts.fact_balance / fact_pyg (grano: fecha × banco × cuenta_contable) — Boletín + SEPS EEFF, mensual
+| saldo_usd / valor_usd | numeric | Ya en USD completos. Boletín: `x1000` aplicado en el parser (la fuente reporta en miles). SEPS: la fuente ya viene en USD |
+| **SEPS (2026-09-30)** | Estados financieros mensuales de cooperativas S1-S3 y mutualistas, a 6 dígitos. Cuentas `4*`/`5*` → `fact_pyg`; el resto → `fact_balance`. **No se cargan filas con saldo 0 o vacío** (~70% del archivo): un código ausente para una entidad y fecha equivale a 0. Mismo Catálogo Único de Cuentas: las vistas `vw_cartera_bruta`, `vw_depositos_corto_plazo`, etc. funcionan igual para cooperativas | |
 
 ## Vistas analíticas (`sql/04_indexes_views.sql`)
 

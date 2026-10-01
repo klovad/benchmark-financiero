@@ -7212,7 +7212,7 @@
       "node_kind": "heading",
       "norm_label": "4.1 estructura de archivos",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L640"
+      "source_location": "L661"
     },
     {
       "id": "docs_fuentes_datos_4_2_grano_y_conformidad_decisi\u00f3n_clave_2_fuentes_2_formas_de_negocio_distintas",
@@ -7224,7 +7224,7 @@
       "node_kind": "heading",
       "norm_label": "4.2 grano y conformidad \u2014 decision clave: 2 fuentes, 2 formas de negocio distintas",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L656"
+      "source_location": "L677"
     },
     {
       "id": "docs_fuentes_datos_4_3_identidad_de_entidad_ruc_nativo_en_el_archivo_mismo_patr\u00f3n_ruc_que_bce",
@@ -7236,7 +7236,7 @@
       "node_kind": "heading",
       "norm_label": "4.3 identidad de entidad \u2014 ruc nativo en el archivo, mismo patron ruc que bce",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L762"
+      "source_location": "L783"
     },
     {
       "id": "docs_fuentes_datos_4_4_nuevas_tablas_propuestas_ninguna_aplicada_dise\u00f1o_para_una_migraci\u00f3n_futura",
@@ -7248,7 +7248,7 @@
       "node_kind": "heading",
       "norm_label": "4.4 nuevas tablas propuestas (ninguna aplicada \u2014 diseno para una migracion futura)",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L812"
+      "source_location": "L833"
     },
     {
       "id": "docs_fuentes_datos_4_5_portabilidad_de_ingesta_seps_es_m\u00e1s_simple_que_capcol_no_m\u00e1s_compleja",
@@ -7260,7 +7260,7 @@
       "node_kind": "heading",
       "norm_label": "4.5 portabilidad de ingesta \u2014 seps es mas simple que capcol, no mas compleja",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L909"
+      "source_location": "L930"
     },
     {
       "id": "docs_fuentes_datos_4_6_fases_de_implementaci\u00f3n_qu\u00e9_queda_para_despu\u00e9s",
@@ -7272,7 +7272,7 @@
       "node_kind": "heading",
       "norm_label": "4.6 fases de implementacion \u2014 que queda para despues",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L921"
+      "source_location": "L942"
     },
     {
       "id": "docs_fuentes_datos_4_seps_cooperativas_de_ahorro_y_cr\u00e9dito_mutualistas_de_vivienda_re_verificado_con_archivos_reales_2025_2026_09_29_no_implementada",
@@ -7332,7 +7332,7 @@
       "node_kind": "heading",
       "norm_label": "proximos pasos de investigacion (en orden)",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L948"
+      "source_location": "L969"
     },
     {
       "id": "docs_linaje_datos",
@@ -9884,6 +9884,28 @@
       "norm_label": "los zip de superbancos contienen exactamente un .xlsx -- salvo boletines...",
       "source_file": "etl/transform/common.py",
       "source_location": "L27"
+    },
+    {
+      "id": "marts_dim_banco",
+      "label": "marts.dim_banco",
+      "_origin": "ast",
+      "community": 144,
+      "community_name": "marts.dim_banco",
+      "file_type": "code",
+      "norm_label": "marts.dim_banco",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_29_dim_banco_tipo_segundo_piso",
+      "label": "29_dim_banco_tipo_segundo_piso.sql",
+      "_origin": "ast",
+      "community": 145,
+      "community_name": "29_dim_banco_tipo_segundo_piso.sql",
+      "file_type": "code",
+      "norm_label": "29_dim_banco_tipo_segundo_piso.sql",
+      "source_file": "sql/29_dim_banco_tipo_segundo_piso.sql",
+      "source_location": null
     },
     {
       "id": "powerbi_benchmark_cartera_depositos_report_definition_pages_page_overview_visuals_v01kpisaldocartera_visual",
@@ -22704,7 +22726,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L640",
+      "source_location": "L661",
       "weight": 1.0
     },
     {
@@ -22715,7 +22737,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L656",
+      "source_location": "L677",
       "weight": 1.0
     },
     {
@@ -22726,7 +22748,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L762",
+      "source_location": "L783",
       "weight": 1.0
     },
     {
@@ -22737,7 +22759,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L812",
+      "source_location": "L833",
       "weight": 1.0
     },
     {
@@ -22748,7 +22770,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L909",
+      "source_location": "L930",
       "weight": 1.0
     },
     {
@@ -22759,7 +22781,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L921",
+      "source_location": "L942",
       "weight": 1.0
     },
     {
@@ -22814,7 +22836,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L948",
+      "source_location": "L969",
       "weight": 1.0
     },
     {
@@ -36939,5 +36961,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "7b946060be40c70999bbc023ddc947f9d58fbd74"
+  "built_at_commit": "bfe1c82c7030d58862e4a10d57ed71f70d0d1def"
 }
