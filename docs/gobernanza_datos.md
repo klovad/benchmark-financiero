@@ -419,6 +419,15 @@ diseño aprobado, no implementada). Resumen de gobernanza:
   de asumir que ya existe. **Nada de esto está implementado**: sin extractor, sin parser,
   sin migración `sql/NN_*.sql`, sin filas en `marts.*`.
 
+## Banca Pública cargada (2026-10-01)
+
+CAPCOL `capcol-instituciones-publicas/` 2021-2025, 3 entidades, `tipo_entidad='BANCO
+PUBLICO'`. Se cerró el riesgo de orden de carga de 2026-09-01: las 3 filas `BCE_<ruc>` ya
+existían y `_log_bancos_no_resueltos()` reportó 0. Pendiente de curación: el nombre
+visible del BdE en `dim_banco` es "BANCO DEL ESTADO" (razón social histórica en BCE).
+Para curarlo hay que llevar la entidad al camino curado (`banco_maestro.csv`), no basta
+con renombrarla en la base. Ver `docs/fuentes_datos.md` §1.1.
+
 ## SEPS implementada y cargada (2026-09-30)
 
 Supersede la viñeta "SEPS" de la sección anterior, que planteaba un

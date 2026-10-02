@@ -1,7 +1,7 @@
 # Graph Report - benchmark-bancos  (2026-10-01)
 
 ## Corpus Check
-- 122 files · ~106,200 words
+- 122 files · ~106,619 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9c3893f6`
+- Built from commit: `8f144c47`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -155,20 +155,20 @@
 6. `parse_depositos_file()` - 20 edges
 7. `parse_seps_captaciones_file()` - 18 edges
 8. `sha256_file()` - 18 edges
-9. `resolver_categoria_deposito()` - 16 edges
-10. `resolver_entidad_bce()` - 16 edges
+9. `resolver_entidad_bce()` - 16 edges
+10. `resolver_categoria_deposito()` - 16 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `test_categoria_deposito_seps_sin_tildes_a_canonica()` --uses--> `CategoriaNoResueltaError`  [INFERRED]
-  tests/test_parse_seps.py → etl/transform/categoria_deposito_matching.py
 - `test_resolve_canton_propaga_cantonnoresueltoerror()` --uses--> `CantonNoResueltoError`  [INFERRED]
   tests/test_parse_bce_tasas.py → etl/transform/canton_matching.py
-- `test_empty_value_raises()` --uses--> `CategoriaNoResueltaError`  [INFERRED]
-  tests/test_categoria_deposito_matching.py → etl/transform/categoria_deposito_matching.py
-- `test_plazo_bucket_shape_invalido_sigue_lanzando()` --uses--> `CategoriaNoResueltaError`  [INFERRED]
-  tests/test_categoria_deposito_matching.py → etl/transform/categoria_deposito_matching.py
-- `test_unresolved_value_raises()` --uses--> `CategoriaNoResueltaError`  [INFERRED]
-  tests/test_categoria_deposito_matching.py → etl/transform/categoria_deposito_matching.py
+- `test_categoria_deposito_seps_sin_tildes_a_canonica()` --uses--> `CategoriaNoResueltaError`  [INFERRED]
+  tests/test_parse_seps.py → etl/transform/categoria_deposito_matching.py
+- `test_colocaciones_subtipo_nuevo_falla_fuerte()` --uses--> `SubtipoCreditoSepsNoMapeadoError`  [INFERRED]
+  tests/test_parse_seps.py → etl/transform/parse_seps.py
+- `test_canton_none_lanza_error()` --uses--> `CantonNoResueltoError`  [INFERRED]
+  tests/test_canton_matching.py → etl/transform/canton_matching.py
+- `test_canton_vacio_lanza_error()` --uses--> `CantonNoResueltoError`  [INFERRED]
+  tests/test_canton_matching.py → etl/transform/canton_matching.py
 
 ## Import Cycles
 - None detected.
@@ -448,11 +448,11 @@ Nodes (4): sha256_file(), Path, test_sha256_file_is_content_sensitive(), test_sh
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `resolver_canton_bce()` connect `resolver_canton_bce` to `parse_seps.py`, `parse_bce_tasas.py`?**
-  _High betweenness centrality (0.011) - this node is a cross-community bridge._
-- **Why does `resolver_plazo_bce()` connect `parse_bce_tasas.py` to `test_parse_tasas_historicas.py`?**
   _High betweenness centrality (0.009) - this node is a cross-community bridge._
-- **Why does `resolver_categoria_deposito()` connect `test_parse_tasas_historicas.py` to `parse_depositos_file`?**
-  _High betweenness centrality (0.007) - this node is a cross-community bridge._
+- **Why does `sha256_file()` connect `sha256_file` to `parse_seps.py`, `parse_depositos_file`, `pipeline.py`, `parse_bce_tasas.py`?**
+  _High betweenness centrality (0.009) - this node is a cross-community bridge._
+- **Why does `parse_depositos_file()` connect `parse_depositos_file` to `test_banco_matching.py`, `test_parse_tasas_historicas.py`, `pipeline.py`, `sha256_file`, `resolver_canton_bce`?**
+  _High betweenness centrality (0.006) - this node is a cross-community bridge._
 - **Are the 4 inferred relationships involving `load_seps()` (e.g. with `upsert_staging_cartera()` and `upsert_staging_depositos()`) actually correct?**
   _`load_seps()` has 4 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 2 inferred relationships involving `parse_seps_eeff_file()` (e.g. with `_codigo_padre()` and `month_end_date()`) actually correct?**

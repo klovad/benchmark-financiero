@@ -163,7 +163,8 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
 
 ## Alcance de los datos
 
-- **CAPCOL** (cartera/depósitos): bancos privados, 2021-01 a 2026-06, mensual. Cartera por
+- **CAPCOL** (cartera/depósitos): bancos privados, 2021-01 a 2026-06, mensual; banca
+  pública (BanEcuador, CFN, BdE), 2021-01 a 2025-12. Cartera por
   tipo de crédito (comercial, consumo, inmobiliario, microcrédito, vivienda de interés
   público, educativo) y estado (por vencer / no devenga intereses / vencida). Depósitos
   por categoría (monetarios, ahorro, plazo por rango de días, garantía, restringidos,

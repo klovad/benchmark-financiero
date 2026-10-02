@@ -7617,7 +7617,7 @@
       "node_kind": "heading",
       "norm_label": "4.1 estructura de archivos",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L718"
+      "source_location": "L743"
     },
     {
       "id": "docs_fuentes_datos_4_2_grano_y_conformidad_decisi\u00f3n_clave_2_fuentes_2_formas_de_negocio_distintas",
@@ -7629,7 +7629,7 @@
       "node_kind": "heading",
       "norm_label": "4.2 grano y conformidad \u2014 decision clave: 2 fuentes, 2 formas de negocio distintas",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L734"
+      "source_location": "L759"
     },
     {
       "id": "docs_fuentes_datos_4_3_identidad_de_entidad_ruc_nativo_en_el_archivo_mismo_patr\u00f3n_ruc_que_bce",
@@ -7641,7 +7641,7 @@
       "node_kind": "heading",
       "norm_label": "4.3 identidad de entidad \u2014 ruc nativo en el archivo, mismo patron ruc que bce",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L840"
+      "source_location": "L865"
     },
     {
       "id": "docs_fuentes_datos_4_4_nuevas_tablas_propuestas_ninguna_aplicada_dise\u00f1o_para_una_migraci\u00f3n_futura",
@@ -7653,7 +7653,7 @@
       "node_kind": "heading",
       "norm_label": "4.4 nuevas tablas propuestas (ninguna aplicada \u2014 diseno para una migracion futura)",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L890"
+      "source_location": "L915"
     },
     {
       "id": "docs_fuentes_datos_4_5_portabilidad_de_ingesta_seps_es_m\u00e1s_simple_que_capcol_no_m\u00e1s_compleja",
@@ -7665,7 +7665,7 @@
       "node_kind": "heading",
       "norm_label": "4.5 portabilidad de ingesta \u2014 seps es mas simple que capcol, no mas compleja",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L987"
+      "source_location": "L1012"
     },
     {
       "id": "docs_fuentes_datos_4_6_fases_de_implementaci\u00f3n_qu\u00e9_queda_para_despu\u00e9s",
@@ -7677,7 +7677,7 @@
       "node_kind": "heading",
       "norm_label": "4.6 fases de implementacion \u2014 que queda para despues",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L999"
+      "source_location": "L1024"
     },
     {
       "id": "docs_fuentes_datos_4_seps_cooperativas_de_ahorro_y_cr\u00e9dito_mutualistas_de_vivienda_implementada_y_cargada_2021_2025_2026_09_30",
@@ -7737,7 +7737,7 @@
       "node_kind": "heading",
       "norm_label": "proximos pasos de investigacion (en orden)",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L1026"
+      "source_location": "L1051"
     },
     {
       "id": "docs_linaje_datos",
@@ -16639,7 +16639,7 @@
       "node_kind": "heading",
       "norm_label": "gestion de cambios de esquema",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L636"
+      "source_location": "L643"
     },
     {
       "id": "docs_gobernanza_datos_gobernanza_de_datos",
@@ -16663,7 +16663,7 @@
       "node_kind": "heading",
       "norm_label": "hueco encontrado 2026-09-30: `sql/18` nunca se aplico a la base viva",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L627"
+      "source_location": "L634"
     },
     {
       "id": "docs_gobernanza_datos_huecos_de_gobernanza_conocidos",
@@ -24995,6 +24995,28 @@
     },
     {
       "source": "docs_fuentes_datos_4_seps_cooperativas_de_ahorro_y_cr\u00e9dito_mutualistas_de_vivienda_implementada_y_cargada_2021_2025_2026_09_30",
+      "target": "docs_fuentes_datos_4_5_portabilidad_de_ingesta_seps_es_m\u00e1s_simple_que_capcol_no_m\u00e1s_compleja",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/fuentes_datos.md",
+      "source_location": "L1012",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_fuentes_datos_4_seps_cooperativas_de_ahorro_y_cr\u00e9dito_mutualistas_de_vivienda_implementada_y_cargada_2021_2025_2026_09_30",
+      "target": "docs_fuentes_datos_4_6_fases_de_implementaci\u00f3n_qu\u00e9_queda_para_despu\u00e9s",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/fuentes_datos.md",
+      "source_location": "L1024",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_fuentes_datos_4_seps_cooperativas_de_ahorro_y_cr\u00e9dito_mutualistas_de_vivienda_implementada_y_cargada_2021_2025_2026_09_30",
       "target": "docs_fuentes_datos_4_0_revisi\u00f3n_con_archivos_reales_2025_2026_09_29_reemplaza_4_1_4_4_donde_se_contradicen",
       "relation": "contains",
       "_origin": "ast",
@@ -25012,7 +25034,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L718",
+      "source_location": "L743",
       "weight": 1.0
     },
     {
@@ -25023,7 +25045,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L734",
+      "source_location": "L759",
       "weight": 1.0
     },
     {
@@ -25034,7 +25056,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L840",
+      "source_location": "L865",
       "weight": 1.0
     },
     {
@@ -25045,29 +25067,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L890",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_fuentes_datos_4_seps_cooperativas_de_ahorro_y_cr\u00e9dito_mutualistas_de_vivienda_implementada_y_cargada_2021_2025_2026_09_30",
-      "target": "docs_fuentes_datos_4_5_portabilidad_de_ingesta_seps_es_m\u00e1s_simple_que_capcol_no_m\u00e1s_compleja",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/fuentes_datos.md",
-      "source_location": "L987",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_fuentes_datos_4_seps_cooperativas_de_ahorro_y_cr\u00e9dito_mutualistas_de_vivienda_implementada_y_cargada_2021_2025_2026_09_30",
-      "target": "docs_fuentes_datos_4_6_fases_de_implementaci\u00f3n_qu\u00e9_queda_para_despu\u00e9s",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/fuentes_datos.md",
-      "source_location": "L999",
+      "source_location": "L915",
       "weight": 1.0
     },
     {
@@ -25078,7 +25078,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L1026",
+      "source_location": "L1051",
       "weight": 1.0
     },
     {
@@ -25386,7 +25386,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L636",
+      "source_location": "L643",
       "weight": 1.0
     },
     {
@@ -25419,7 +25419,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L627",
+      "source_location": "L634",
       "weight": 1.0
     },
     {
@@ -39951,5 +39951,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "9c3893f63a47707a6bb7344995542213e892c364"
+  "built_at_commit": "8f144c47a90830c71dc30609a98f2e0974489208"
 }
