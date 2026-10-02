@@ -565,7 +565,32 @@ bancos):
 > el reporte (ya concilian a 0% sin sumarla). **Decisión: no se corrige el dato.**
 > `fact_saldo_cartera` de una mutualista significa "cartera originada y administrada", no
 > "cartera en balance". Para comparar contra contabilidad, en mutualistas usar
-> `14 − 1499 + 7401{70,75}`. JEP y Policía Nacional (−7% a −8%) siguen sin explicar. `OPERACIONES CONTINGENTES` excluidas por año: 2023 1,4 M, 2024 30,3 M,
+> `14 − 1499 + 7401{70,75}`.
+>
+> **JEP y Policía Nacional — explicado con evidencia agregada (2026-10-01): tarjetas de
+> crédito.** Todo el faltante está en **consumo** (los demás segmentos cuadran casi al
+> centavo), principalmente en "por vencer". Ejemplos: JEP dic-2025, 1.051,0 M en el
+> reporte vs. 1.257,8 M en EEFF; Policía dic-2021, 748,7 vs. 836,1 M. La base mensual SEPS
+> rotula su cartera "cuenta 14, excepto tarjetas de crédito", y la SEPS publica aparte una
+> base de "Consumos de tarjetas de crédito". En el EEFF la cartera de tarjetas está dentro
+> de `1402`, sin subcuenta propia. Evidencia:
+> - Las 212 entidades sin `210145 FONDOS DE TARJETAHABIENTES` tienen diferencia mediana de
+>   consumo de **0,000%**. Las 11 emisoras tienen **−3,6%**, y las mayores diferencias son
+>   justo JEP (−13,3%), OSCUS (−10,0%) y Policía (−8,4%).
+> - Faltante agregado de consumo de las emisoras: ~230-270 M USD por mes. Cartera total de
+>   tarjetas SEPS (`YYYY-Tarjetas-MEN.zip`, sin RUC, total del sistema): ~330-350 M. La
+>   razón se mantiene estable en 0,70-0,80 durante 23 meses (2024-2025). No es 1 porque la
+>   base de tarjetas cubre a todas las emisoras SEPS y porque Mutualista Pichincha, también
+>   emisora, tiene el consumo inflado por el efecto VIP. Dic-2025 da 1,04, pero la base de
+>   tarjetas cae de 323 a 254 M ese mes, lo que sugiere un corte incompleto.
+>
+> No se puede confirmar por entidad: la base de tarjetas no trae RUC y el EEFF no separa
+> tarjetas dentro de 1402. **Decisión: no se corrige.** Para las emisoras,
+> `fact_saldo_cartera` segmento CONSUMO **excluye tarjetas de crédito**, mientras que la
+> cartera de consumo de los bancos (CAPCOL) sí las incluye. Verificado con BP Diners, cuya
+> cartera es casi toda de tarjetas: CAPCOL vs. Boletín `14 − 1499` da mediana 0,00% en 66
+> meses. Al comparar consumo entre
+> cooperativas emisoras y bancos, o contra el EEFF, hay que tenerlo presente. `OPERACIONES CONTINGENTES` excluidas por año: 2023 1,4 M, 2024 30,3 M,
 > 2025 9,7 M USD.
 
 Descargados y perfilados en streaming (sin descomprimir a disco) desde

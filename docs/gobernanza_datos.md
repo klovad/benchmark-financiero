@@ -624,6 +624,13 @@ queda +44,5% y Azuay +34,0% sobre `14 − 1499`; sumando las cuentas de orden `7
 así que no se pueden excluir por cantón. Se documenta y no se corrige: un benchmark de
 "cartera en balance" debe usar el EEFF para mutualistas, o advertir la diferencia.
 
+Efecto inverso en **consumo de cooperativas emisoras de tarjetas** (JEP −13,3%, OSCUS
+−10,0%, Policía −8,4%): `Reporte_colocaciones` excluye la cartera de tarjetas de crédito,
+que el EEFF sí incluye en `1402`. Las no emisoras concilian a 0,000%. Ver
+`docs/fuentes_datos.md` §4.0. Consecuencia para el benchmark: el consumo SEPS de una
+emisora no es comparable uno a uno con el consumo de un banco (CAPCOL), que sí incluye
+tarjetas.
+
 ### Hueco encontrado 2026-09-30: `sql/18` nunca se aplicó a la base viva
 
 Las vistas de bloques de construcción de `sql/18_glosario_cuentas_views.sql`
