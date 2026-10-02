@@ -550,9 +550,22 @@ bancos):
 > Entidades con desvío mediano de cartera mayor a 5% en los 60 meses, pendientes de
 > investigar antes de publicarlas en un benchmark: Mutualista Pichincha (+44,5%),
 > Mutualista Azuay (+34,0%), COAC Juventud Ecuatoriana Progresista (−8,1%), COAC Policía
-> Nacional (−7,0%). En las mutualistas, la hipótesis a validar es cartera reportada por
-> cantón que contablemente no está en la cuenta 14 (vendida o titularizada), pero no se ha
-> confirmado. `OPERACIONES CONTINGENTES` excluidas por año: 2023 1,4 M, 2024 30,3 M,
+> Nacional (−7,0%).
+>
+> **Mutualistas — explicado (2026-10-01).** Las dos mutualistas venden cartera de vivienda
+> de interés social y público a un fideicomiso (cuenta `1619` "cuentas por cobrar por
+> cartera de VIS/VIP vendida al fideicomiso") y siguen administrándola. Esa cartera sale
+> de la cuenta 14 y se registra en cuentas de orden acreedoras, pero `Reporte_colocaciones`
+> **la sigue reportando** como cartera de la entidad, marcada igual que la propia
+> (`CONCEDIDA POR LA ENTIDAD` / `ORIGINAL`), así que no se puede separar por cantón.
+> Prueba en los 60 meses: al sumar a `14 − 1499` la cartera en administración
+> (`740170` VIS/VIP en Azuay, `740175` inmobiliario en Pichincha), la diferencia mediana
+> pasa de +44,5% a +1,0% en Pichincha y de +34,0% a −1,95% en Azuay. Es propio de las
+> mutualistas: las cooperativas con cuentas `7401xx` en administración no la incluyen en
+> el reporte (ya concilian a 0% sin sumarla). **Decisión: no se corrige el dato.**
+> `fact_saldo_cartera` de una mutualista significa "cartera originada y administrada", no
+> "cartera en balance". Para comparar contra contabilidad, en mutualistas usar
+> `14 − 1499 + 7401{70,75}`. JEP y Policía Nacional (−7% a −8%) siguen sin explicar. `OPERACIONES CONTINGENTES` excluidas por año: 2023 1,4 M, 2024 30,3 M,
 > 2025 9,7 M USD.
 
 Descargados y perfilados en streaming (sin descomprimir a disco) desde
