@@ -1,7 +1,7 @@
 # Graph Report - benchmark-bancos  (2026-10-06)
 
 ## Corpus Check
-- 131 files · ~109,562 words
+- 131 files · ~109,572 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `ae76ffaf`
+- Built from commit: `1f8b37a7`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -54,7 +54,7 @@
 - page-tendencias/page.json
 - editorSettings.json
 - CLAUDE.md
-- scrape_boletin.py
+- config/__init__.py
 - 08_dim_segmento_categoria_plazo.sql
 - version.json
 - 02_schema_staging.sql
@@ -84,9 +84,9 @@
 - staging.depositos
 - marts.dim_plazo
 - marts.fact_depositos
-- settings.py
+- scrape_boletin.py
 - 01_schema_meta.sql
-- _log_bancos_no_resueltos
+- settings.py
 - marts.fact_captaciones_depositos
 - marts.fact_cartera
 - marts.fact_colocaciones_cartera
@@ -131,7 +131,7 @@
 - staging.banco_maestro
 - staging.cartera
 - staging.cartera
-- config/__init__.py
+- _log_bancos_no_resueltos
 - staging.bce_tasas_pasivas
 - Mantenimiento de catálogos / resolución de identidad
 - marts.fact_captaciones_depositos
@@ -349,9 +349,9 @@ Nodes (6): displayName, displayOption, height, name, $schema, width
 Cohesion: 0.29
 Nodes (6): autodetectRelationships, parallelQueryLoading, relationshipImportEnabled, $schema, shouldNotifyUserOfNameConflictResolution, typeDetectionEnabled
 
-### Community 39 - "scrape_boletin.py"
-Cohesion: 0.42
-Nodes (8): _download_all_files(), main(), _open_year_folder(), Path, Descarga los ZIP del Boletín Financiero Mensual (Balance y PyG) de bancos…, _reset_to_root(), scrape(), scrape_year()
+### Community 39 - "config/__init__.py"
+Cohesion: 0.20
+Nodes (6): fixture, Catálogos de dominio usados por los parsers: mapeos de vocabulario de las…, Configuración del proyecto, separada por responsabilidad: - `settings`: lo que…, Constantes de las fuentes externas: URLs, sub-portales, nombres de carpeta, ids…, db_conn(), Conexión a Postgres real para tests marcados @pytest.mark.integration. Nunca…
 
 ### Community 40 - "08_dim_segmento_categoria_plazo.sql"
 Cohesion: 0.50
@@ -373,7 +373,11 @@ Nodes (4): export_full(), export_sample(), Path, Exporta marts.* a Parquet, para
 Cohesion: 0.07
 Nodes (57): extract_single_xlsx(), find_base_sheets(), month_end_date(), normalize_banco(), normalize_provincia(), normalize_text(), Path, Los ZIP de Superbancos contienen exactamente un .xlsx -- salvo boletines… (+49 more)
 
-### Community 74 - "settings.py"
+### Community 74 - "scrape_boletin.py"
+Cohesion: 0.42
+Nodes (8): _download_all_files(), main(), _open_year_folder(), Path, Descarga los ZIP del Boletín Financiero Mensual (Balance y PyG) de bancos…, _reset_to_root(), scrape(), scrape_year()
+
+### Community 76 - "settings.py"
 Cohesion: 0.50
 Nodes (3): _find_project_root(), Path, Configuración que depende del entorno: rutas, base de datos y años a procesar.…
 
@@ -452,10 +456,6 @@ Nodes (4): `marts_AAAA-MM/` (muestra de un mes), `marts_ultimos_5_anios/`, Muest
 ### Community 117 - "prototipo-diseno-bi.Report/definition/pages/pages.json"
 Cohesion: 0.40
 Nodes (4): activePageName, pageOrder, $schema, page-prototipo-diseno
-
-### Community 128 - "config/__init__.py"
-Cohesion: 0.20
-Nodes (6): fixture, Catálogos de dominio usados por los parsers: mapeos de vocabulario de las…, Configuración del proyecto, separada por responsabilidad: - `settings`: lo que…, Constantes de las fuentes externas: URLs, sub-portales, nombres de carpeta, ids…, db_conn(), Conexión a Postgres real para tests marcados @pytest.mark.integration. Nunca…
 
 ### Community 130 - "Mantenimiento de catálogos / resolución de identidad"
 Cohesion: 0.11

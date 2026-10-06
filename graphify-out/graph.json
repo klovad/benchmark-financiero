@@ -377,16 +377,16 @@
       "source_location": "L384"
     },
     {
-      "id": "tests_conftest_db_conn",
-      "label": "db_conn()",
+      "id": "src_benchmark_bancos_load_load_postgres_log_bancos_no_resueltos",
+      "label": "_log_bancos_no_resueltos()",
       "_callable": true,
       "_origin": "ast",
       "community": 128,
-      "community_name": "config/__init__.py",
+      "community_name": "_log_bancos_no_resueltos",
       "file_type": "code",
-      "norm_label": "db_conn()",
-      "source_file": "tests/conftest.py",
-      "source_location": "L8"
+      "norm_label": "_log_bancos_no_resueltos()",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1025"
     },
     {
       "id": "src_benchmark_bancos_transform_categoria_deposito_matching_resolver_categoria_deposito",
@@ -1697,76 +1697,16 @@
       "source_location": "L57"
     },
     {
-      "id": "src_benchmark_bancos_extract_scrape_boletin_download_all_files",
-      "label": "_download_all_files()",
+      "id": "tests_conftest_db_conn",
+      "label": "db_conn()",
       "_callable": true,
       "_origin": "ast",
       "community": 39,
-      "community_name": "scrape_boletin.py",
+      "community_name": "config/__init__.py",
       "file_type": "code",
-      "norm_label": "_download_all_files()",
-      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
-      "source_location": "L50"
-    },
-    {
-      "id": "src_benchmark_bancos_extract_scrape_boletin_main",
-      "label": "main()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "scrape_boletin.py",
-      "file_type": "code",
-      "norm_label": "main()",
-      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
-      "source_location": "L96"
-    },
-    {
-      "id": "src_benchmark_bancos_extract_scrape_boletin_open_year_folder",
-      "label": "_open_year_folder()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "scrape_boletin.py",
-      "file_type": "code",
-      "norm_label": "_open_year_folder()",
-      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
-      "source_location": "L32"
-    },
-    {
-      "id": "src_benchmark_bancos_extract_scrape_boletin_reset_to_root",
-      "label": "_reset_to_root()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "scrape_boletin.py",
-      "file_type": "code",
-      "norm_label": "_reset_to_root()",
-      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
-      "source_location": "L25"
-    },
-    {
-      "id": "src_benchmark_bancos_extract_scrape_boletin_scrape",
-      "label": "scrape()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "scrape_boletin.py",
-      "file_type": "code",
-      "norm_label": "scrape()",
-      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
-      "source_location": "L80"
-    },
-    {
-      "id": "src_benchmark_bancos_extract_scrape_boletin_scrape_year",
-      "label": "scrape_year()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "scrape_boletin.py",
-      "file_type": "code",
-      "norm_label": "scrape_year()",
-      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
-      "source_location": "L72"
+      "norm_label": "db_conn()",
+      "source_file": "tests/conftest.py",
+      "source_location": "L8"
     },
     {
       "id": "src_benchmark_bancos_transform_banco_matching_cargar_csv",
@@ -2558,7 +2498,7 @@
       "file_type": "code",
       "norm_label": "export_full()",
       "source_file": "scripts/export_sample_parquet.py",
-      "source_location": "L68"
+      "source_location": "L72"
     },
     {
       "id": "scripts_export_sample_parquet_export_sample",
@@ -2570,7 +2510,7 @@
       "file_type": "code",
       "norm_label": "export_sample()",
       "source_file": "scripts/export_sample_parquet.py",
-      "source_location": "L101"
+      "source_location": "L105"
     },
     {
       "id": "src_benchmark_bancos_transform_bce_plazo_matching_resolver_plazo_bce",
@@ -3425,28 +3365,88 @@
       "source_location": "L91"
     },
     {
+      "id": "src_benchmark_bancos_extract_scrape_boletin_download_all_files",
+      "label": "_download_all_files()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 74,
+      "community_name": "scrape_boletin.py",
+      "file_type": "code",
+      "norm_label": "_download_all_files()",
+      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
+      "source_location": "L50"
+    },
+    {
+      "id": "src_benchmark_bancos_extract_scrape_boletin_main",
+      "label": "main()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 74,
+      "community_name": "scrape_boletin.py",
+      "file_type": "code",
+      "norm_label": "main()",
+      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
+      "source_location": "L96"
+    },
+    {
+      "id": "src_benchmark_bancos_extract_scrape_boletin_open_year_folder",
+      "label": "_open_year_folder()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 74,
+      "community_name": "scrape_boletin.py",
+      "file_type": "code",
+      "norm_label": "_open_year_folder()",
+      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
+      "source_location": "L32"
+    },
+    {
+      "id": "src_benchmark_bancos_extract_scrape_boletin_reset_to_root",
+      "label": "_reset_to_root()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 74,
+      "community_name": "scrape_boletin.py",
+      "file_type": "code",
+      "norm_label": "_reset_to_root()",
+      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
+      "source_location": "L25"
+    },
+    {
+      "id": "src_benchmark_bancos_extract_scrape_boletin_scrape",
+      "label": "scrape()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 74,
+      "community_name": "scrape_boletin.py",
+      "file_type": "code",
+      "norm_label": "scrape()",
+      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
+      "source_location": "L80"
+    },
+    {
+      "id": "src_benchmark_bancos_extract_scrape_boletin_scrape_year",
+      "label": "scrape_year()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 74,
+      "community_name": "scrape_boletin.py",
+      "file_type": "code",
+      "norm_label": "scrape_year()",
+      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
+      "source_location": "L72"
+    },
+    {
       "id": "src_benchmark_bancos_config_settings_find_project_root",
       "label": "_find_project_root()",
       "_callable": true,
       "_origin": "ast",
-      "community": 74,
+      "community": 76,
       "community_name": "settings.py",
       "file_type": "code",
       "norm_label": "_find_project_root()",
       "source_file": "src/benchmark_bancos/config/settings.py",
       "source_location": "L18"
-    },
-    {
-      "id": "src_benchmark_bancos_load_load_postgres_log_bancos_no_resueltos",
-      "label": "_log_bancos_no_resueltos()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 76,
-      "community_name": "_log_bancos_no_resueltos",
-      "file_type": "code",
-      "norm_label": "_log_bancos_no_resueltos()",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1025"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres",
@@ -8156,7 +8156,7 @@
       "node_kind": "heading",
       "norm_label": "`marts_aaaa-mm/` (muestra de un mes)",
       "source_file": "data/samples/README.md",
-      "source_location": "L48"
+      "source_location": "L45"
     },
     {
       "id": "data_samples_readme_marts_ultimos_5_anios",
@@ -8168,7 +8168,7 @@
       "node_kind": "heading",
       "norm_label": "`marts_ultimos_5_anios/`",
       "source_file": "data/samples/README.md",
-      "source_location": "L16"
+      "source_location": "L13"
     },
     {
       "id": "data_samples_readme_muestras_de_marts_en_parquet",
@@ -8192,7 +8192,7 @@
       "node_kind": "heading",
       "norm_label": "uso tipico",
       "source_file": "data/samples/README.md",
-      "source_location": "L72"
+      "source_location": "L69"
     },
     {
       "id": "sql_25_dim_cuenta_contable_estado_validacion",
@@ -8835,103 +8835,15 @@
       "source_location": ""
     },
     {
-      "id": "fixture",
-      "label": "fixture",
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_1026",
+      "label": "Los INSERT de fact_saldo_cartera/fact_saldo_depositos hacen INNER JOIN contra\u2026",
       "_origin": "ast",
       "community": 128,
-      "community_name": "config/__init__.py",
-      "file_type": "code",
-      "norm_label": "fixture",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "src_benchmark_bancos_config_domain",
-      "label": "domain.py",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "config/__init__.py",
-      "file_type": "code",
-      "norm_label": "domain.py",
-      "source_file": "src/benchmark_bancos/config/domain.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_benchmark_bancos_config_init",
-      "label": "config/__init__.py",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "config/__init__.py",
-      "file_type": "code",
-      "norm_label": "config/__init__.py",
-      "source_file": "src/benchmark_bancos/config/__init__.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_benchmark_bancos_config_sources",
-      "label": "sources.py",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "config/__init__.py",
-      "file_type": "code",
-      "norm_label": "sources.py",
-      "source_file": "src/benchmark_bancos/config/sources.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "tests_conftest",
-      "label": "conftest.py",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "config/__init__.py",
-      "file_type": "code",
-      "norm_label": "conftest.py",
-      "source_file": "tests/conftest.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_benchmark_bancos_config_domain_rationale_1",
-      "label": "Cat\u00e1logos de dominio usados por los parsers: mapeos de vocabulario de las\u2026",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "config/__init__.py",
+      "community_name": "_log_bancos_no_resueltos",
       "file_type": "rationale",
-      "norm_label": "catalogos de dominio usados por los parsers: mapeos de vocabulario de las...",
-      "source_file": "src/benchmark_bancos/config/domain.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_benchmark_bancos_config_init_rationale_1",
-      "label": "Configuraci\u00f3n del proyecto, separada por responsabilidad: - `settings`: lo que\u2026",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "config/__init__.py",
-      "file_type": "rationale",
-      "norm_label": "configuracion del proyecto, separada por responsabilidad: - `settings`: lo que...",
-      "source_file": "src/benchmark_bancos/config/__init__.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_benchmark_bancos_config_sources_rationale_1",
-      "label": "Constantes de las fuentes externas: URLs, sub-portales, nombres de carpeta, ids\u2026",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "config/__init__.py",
-      "file_type": "rationale",
-      "norm_label": "constantes de las fuentes externas: urls, sub-portales, nombres de carpeta, ids...",
-      "source_file": "src/benchmark_bancos/config/sources.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "tests_conftest_rationale_9",
-      "label": "Conexi\u00f3n a Postgres real para tests marcados @pytest.mark.integration. Nunca\u2026",
-      "_origin": "ast",
-      "community": 128,
-      "community_name": "config/__init__.py",
-      "file_type": "rationale",
-      "norm_label": "conexion a postgres real para tests marcados @pytest.mark.integration. nunca...",
-      "source_file": "tests/conftest.py",
-      "source_location": "L9"
+      "norm_label": "los insert de fact_saldo_cartera/fact_saldo_depositos hacen inner join contra...",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1026"
     },
     {
       "id": "sql_19_dim_segmento_entidad_sql_staging_bce_tasas_pasivas",
@@ -13899,37 +13811,103 @@
       "source_location": "L1"
     },
     {
-      "id": "src_benchmark_bancos_extract_scrape_boletin",
-      "label": "scrape_boletin.py",
+      "id": "fixture",
+      "label": "fixture",
       "_origin": "ast",
       "community": 39,
-      "community_name": "scrape_boletin.py",
+      "community_name": "config/__init__.py",
       "file_type": "code",
-      "norm_label": "scrape_boletin.py",
-      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_benchmark_bancos_extract_scrape_boletin_py_path",
-      "label": "Path",
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "scrape_boletin.py",
-      "file_type": "code",
-      "norm_label": "path",
+      "norm_label": "fixture",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "src_benchmark_bancos_extract_scrape_boletin_rationale_1",
-      "label": "Descarga los ZIP del Bolet\u00edn Financiero Mensual (Balance y PyG) de bancos\u2026",
+      "id": "src_benchmark_bancos_config_domain",
+      "label": "domain.py",
       "_origin": "ast",
       "community": 39,
-      "community_name": "scrape_boletin.py",
-      "file_type": "rationale",
-      "norm_label": "descarga los zip del boletin financiero mensual (balance y pyg) de bancos...",
-      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
+      "community_name": "config/__init__.py",
+      "file_type": "code",
+      "norm_label": "domain.py",
+      "source_file": "src/benchmark_bancos/config/domain.py",
       "source_location": "L1"
+    },
+    {
+      "id": "src_benchmark_bancos_config_init",
+      "label": "config/__init__.py",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "config/__init__.py",
+      "file_type": "code",
+      "norm_label": "config/__init__.py",
+      "source_file": "src/benchmark_bancos/config/__init__.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_benchmark_bancos_config_sources",
+      "label": "sources.py",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "config/__init__.py",
+      "file_type": "code",
+      "norm_label": "sources.py",
+      "source_file": "src/benchmark_bancos/config/sources.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_conftest",
+      "label": "conftest.py",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "config/__init__.py",
+      "file_type": "code",
+      "norm_label": "conftest.py",
+      "source_file": "tests/conftest.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_benchmark_bancos_config_domain_rationale_1",
+      "label": "Cat\u00e1logos de dominio usados por los parsers: mapeos de vocabulario de las\u2026",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "config/__init__.py",
+      "file_type": "rationale",
+      "norm_label": "catalogos de dominio usados por los parsers: mapeos de vocabulario de las...",
+      "source_file": "src/benchmark_bancos/config/domain.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_benchmark_bancos_config_init_rationale_1",
+      "label": "Configuraci\u00f3n del proyecto, separada por responsabilidad: - `settings`: lo que\u2026",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "config/__init__.py",
+      "file_type": "rationale",
+      "norm_label": "configuracion del proyecto, separada por responsabilidad: - `settings`: lo que...",
+      "source_file": "src/benchmark_bancos/config/__init__.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_benchmark_bancos_config_sources_rationale_1",
+      "label": "Constantes de las fuentes externas: URLs, sub-portales, nombres de carpeta, ids\u2026",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "config/__init__.py",
+      "file_type": "rationale",
+      "norm_label": "constantes de las fuentes externas: urls, sub-portales, nombres de carpeta, ids...",
+      "source_file": "src/benchmark_bancos/config/sources.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_conftest_rationale_9",
+      "label": "Conexi\u00f3n a Postgres real para tests marcados @pytest.mark.integration. Nunca\u2026",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "config/__init__.py",
+      "file_type": "rationale",
+      "norm_label": "conexion a postgres real para tests marcados @pytest.mark.integration. nunca...",
+      "source_file": "tests/conftest.py",
+      "source_location": "L9"
     },
     {
       "id": "src_benchmark_bancos_transform_banco_matching",
@@ -15978,36 +15956,36 @@
       "source_location": ""
     },
     {
-      "id": "src_benchmark_bancos_config_settings",
-      "label": "settings.py",
+      "id": "src_benchmark_bancos_extract_scrape_boletin",
+      "label": "scrape_boletin.py",
       "_origin": "ast",
       "community": 74,
-      "community_name": "settings.py",
+      "community_name": "scrape_boletin.py",
       "file_type": "code",
-      "norm_label": "settings.py",
-      "source_file": "src/benchmark_bancos/config/settings.py",
+      "norm_label": "scrape_boletin.py",
+      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
       "source_location": "L1"
     },
     {
-      "id": "src_benchmark_bancos_config_settings_py_path",
+      "id": "src_benchmark_bancos_extract_scrape_boletin_py_path",
       "label": "Path",
       "_origin": "ast",
       "community": 74,
-      "community_name": "settings.py",
+      "community_name": "scrape_boletin.py",
       "file_type": "code",
       "norm_label": "path",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "src_benchmark_bancos_config_settings_rationale_1",
-      "label": "Configuraci\u00f3n que depende del entorno: rutas, base de datos y a\u00f1os a procesar.\u2026",
+      "id": "src_benchmark_bancos_extract_scrape_boletin_rationale_1",
+      "label": "Descarga los ZIP del Bolet\u00edn Financiero Mensual (Balance y PyG) de bancos\u2026",
       "_origin": "ast",
       "community": 74,
-      "community_name": "settings.py",
+      "community_name": "scrape_boletin.py",
       "file_type": "rationale",
-      "norm_label": "configuracion que depende del entorno: rutas, base de datos y anos a procesar....",
-      "source_file": "src/benchmark_bancos/config/settings.py",
+      "norm_label": "descarga los zip del boletin financiero mensual (balance y pyg) de bancos...",
+      "source_file": "src/benchmark_bancos/extract/scrape_boletin.py",
       "source_location": "L1"
     },
     {
@@ -16033,15 +16011,37 @@
       "source_location": "L17"
     },
     {
-      "id": "src_benchmark_bancos_load_load_postgres_rationale_1026",
-      "label": "Los INSERT de fact_saldo_cartera/fact_saldo_depositos hacen INNER JOIN contra\u2026",
+      "id": "src_benchmark_bancos_config_settings",
+      "label": "settings.py",
       "_origin": "ast",
       "community": 76,
-      "community_name": "_log_bancos_no_resueltos",
+      "community_name": "settings.py",
+      "file_type": "code",
+      "norm_label": "settings.py",
+      "source_file": "src/benchmark_bancos/config/settings.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_benchmark_bancos_config_settings_py_path",
+      "label": "Path",
+      "_origin": "ast",
+      "community": 76,
+      "community_name": "settings.py",
+      "file_type": "code",
+      "norm_label": "path",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "src_benchmark_bancos_config_settings_rationale_1",
+      "label": "Configuraci\u00f3n que depende del entorno: rutas, base de datos y a\u00f1os a procesar.\u2026",
+      "_origin": "ast",
+      "community": 76,
+      "community_name": "settings.py",
       "file_type": "rationale",
-      "norm_label": "los insert de fact_saldo_cartera/fact_saldo_depositos hacen inner join contra...",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1026"
+      "norm_label": "configuracion que depende del entorno: rutas, base de datos y anos a procesar....",
+      "source_file": "src/benchmark_bancos/config/settings.py",
+      "source_location": "L1"
     },
     {
       "id": "sql_14_reload_bce_sin_filtro",
@@ -23234,7 +23234,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "scripts/export_sample_parquet.py",
-      "source_location": "L38",
+      "source_location": "L39",
       "weight": 1.0
     },
     {
@@ -24158,7 +24158,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "scripts/export_sample_parquet.py",
-      "source_location": "L68",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -24170,7 +24170,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "scripts/export_sample_parquet.py",
-      "source_location": "L101",
+      "source_location": "L105",
       "weight": 1.0
     },
     {
@@ -24839,7 +24839,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "data/samples/README.md",
-      "source_location": "L16",
+      "source_location": "L13",
       "weight": 1.0
     },
     {
@@ -24850,7 +24850,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "data/samples/README.md",
-      "source_location": "L48",
+      "source_location": "L45",
       "weight": 1.0
     },
     {
@@ -24861,7 +24861,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "data/samples/README.md",
-      "source_location": "L72",
+      "source_location": "L69",
       "weight": 1.0
     },
     {
@@ -33177,7 +33177,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/export_sample_parquet.py",
-      "source_location": "L101",
+      "source_location": "L105",
       "weight": 1.0
     },
     {
@@ -33188,7 +33188,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/export_sample_parquet.py",
-      "source_location": "L68",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -40411,5 +40411,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "ae76ffaf2a97b6f11a536eb535c262bd764b4494"
+  "built_at_commit": "1f8b37a7732692b46b2a97f879f5c2d6de138037"
 }

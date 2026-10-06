@@ -6,21 +6,18 @@ cargado** — por ejemplo en otra sesión/máquina donde el ETL todavía no corr
 variantes: una muestra chica de un mes (`marts_AAAA-MM/`) y una ventana de años recientes
 (`marts_ultimos_5_anios/`).
 
-> **Desactualizada (2026-10-05).** Esta muestra se exportó el 2026-09-01: no incluye
-> Banca Pública ni SEPS (cooperativas y mutualistas), trae la columna `row_hash` que se
-> eliminó en `sql/34`, y `dim_banco` tiene 442 filas (hoy 444). Sigue siendo válida para
-> bancos privados (lo que usa `scripts/compute_indicadores_excel.py`). Para regenerarla:
-> `uv run scripts/export_sample_parquet.py --full --anios-recientes 5` (pesará bastante más
-> con la SEPS).
+> **Regenerada el 2026-10-06.** Incluye bancos privados, Banca Pública, cooperativas,
+> mutualistas y entidades de segundo piso (SEPS); `dim_banco` con 444 filas y sin la
+> columna `row_hash` (eliminada en `sql/34`).
 
 ## `marts_ultimos_5_anios/`
 
 Todo `marts.*` tal cual está en Postgres, limitado a los últimos 5 años calendario con
-datos (2022-2026 a esta fecha; 7.520.906 filas, ~300 MB — regenerado 2026-09-01 tras el
-cambio de grano de BCE a cantón, `sql/28_bce_canton_grain.sql`, que subió el conteo de
-`fact_captaciones_depositos`/`fact_colocaciones_cartera` ~1.6x; el histórico completo
-desde 2008 pesa más todavía, se descartó versionar eso para no inflar el repo sin
-necesidad real). Los 10 catálogos (`dim_banco`, `dim_canton`, `dim_provincia`,
+datos (2022-2026; 11.494.879 filas de hechos, ~161 MB — regenerado 2026-10-06 con la SEPS
+y la Banca Pública. Pesa menos que la versión anterior de 7,5 M filas/~287 MB porque ya
+no lleva `row_hash`, un hash por fila que el Parquet no puede comprimir; el histórico
+completo desde 2008 pesa más todavía, se descartó versionar eso para no inflar el repo
+sin necesidad real). Los 10 catálogos (`dim_banco`, `dim_canton`, `dim_provincia`,
 `dim_segmento_credito`, `dim_subsegmento_credito`, `dim_segmento_entidad`,
 `dim_categoria_deposito`, `dim_plazo`, `dim_cuenta_contable`, `dim_fecha`) van completos
 en un solo archivo cada uno — son chicos y los hechos filtrados igual necesitan el
@@ -29,7 +26,7 @@ tampoco, mismo motivo; `dim_canton` va con las 228 filas post-`sql/28`, incluido
 placeholder `NACIONAL`/`S-N`). Los 10 hechos se **particionan por año**
 (`{tabla}_{anio}.parquet`, vía `dim_fecha.anio`): sin particionar, el histórico completo
 de `fact_colocaciones_cartera` pesaría muy por encima del límite de 100 MB/archivo de
-GitHub sin Git LFS; particionado, el archivo más grande de esta ventana pesa ~37.5 MB
+GitHub sin Git LFS; particionado, el archivo más grande de esta ventana pesa ~12,5 MB
 (`fact_colocaciones_cartera_2023.parquet`). Para reconstruir una tabla completa en pandas:
 
 ```python

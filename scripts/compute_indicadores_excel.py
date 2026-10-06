@@ -7,9 +7,9 @@ del data mart, al corte más reciente disponible en data/samples/marts_ultimos_5
 el que se indique con --fecha-id).
 
 Uso:
-    python scripts/compute_indicadores_excel.py [--fecha-id 20260630]
+    uv run scripts/compute_indicadores_excel.py [--fecha-id 20260630]
 
-Requiere pandas + pyarrow (ver requirements.txt). Lee `data/samples/marts_ultimos_5_anios/`
+Requiere pandas + pyarrow (dependencias del proyecto, `uv sync`). Lee `data/samples/marts_ultimos_5_anios/`
 por defecto (2026-07-25: antes `marts_full/`, histórico completo -- reemplazado por la
 ventana de 5 años para no versionar ~394MB; el corte más reciente sigue estando ahí) --
 para correr contra Postgres real, reemplazar `rd_one`/`rd_years` por consultas a

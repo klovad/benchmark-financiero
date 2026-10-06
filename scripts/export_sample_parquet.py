@@ -30,6 +30,7 @@ Uso: uv run scripts/export_sample_parquet.py [--anio 2025] [--mes 3]
 
 import argparse
 import logging
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -38,6 +39,9 @@ import psycopg
 from benchmark_bancos.config import DB_CONFIG, PROJECT_ROOT
 
 log = logging.getLogger(__name__)
+
+# pd.read_sql con una conexión psycopg 3 funciona bien; pandas solo avisa que no la testea.
+warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy")
 
 CATALOGOS_COMPLETOS = [
     "dim_banco",
