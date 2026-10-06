@@ -352,22 +352,46 @@ llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
 
 ## Carga incremental (CDC) — no full refresh
 
-`staging.*` y los `fact_*`/`dim_banco` de `marts` tienen 3 columnas de control:
-`fecha_carga` (se pone una vez), `fecha_actualizacion` (solo se mueve si el dato
-realmente cambió) y `row_hash` (columna `GENERATED ALWAYS AS (...) STORED`, cubre solo
-las columnas mutables, no la llave natural). El patrón de carga es:
+Tres niveles, de grueso a fino (rediseñado 2026-10-05, `sql/33`/`sql/34`):
 
-```sql
-INSERT INTO staging.tabla (...) VALUES (...)
-ON CONFLICT (llave_natural)
-DO UPDATE SET col = EXCLUDED.col, fecha_actualizacion = now()
-WHERE staging.tabla.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
-```
+1. **Archivo**: `meta.source_files` registra cada archivo cargado con su sha256. Un
+   archivo con el mismo hash no se vuelve a parsear (`is_source_loaded()`).
+2. **Fila de staging/marts (CDC por columnas)**: `staging.*` y los `fact_*`/`dim_banco`
+   tienen `fecha_carga` (se pone una vez) y `fecha_actualizacion` (solo se mueve si el
+   dato realmente cambió). El upsert compara directamente las columnas mutables:
 
-Correr el pipeline dos veces seguidas sin datos nuevos no genera ningún `UPDATE` real —
-verificado explícitamente para cada fuente (`fecha_actualizacion` sin cambios en la
-segunda corrida). `raw.*` sigue siendo append-only, idempotente por `source_hash` a nivel
-de archivo (vía `raw.source_files`).
+   ```sql
+   INSERT INTO staging.tabla (...) SELECT ... FROM _tmp_tabla   -- COPY a tabla temporal
+   ON CONFLICT (llave_natural)
+   DO UPDATE SET col = EXCLUDED.col, fecha_actualizacion = now()
+   WHERE (staging.tabla.a, staging.tabla.b) IS DISTINCT FROM (EXCLUDED.a, EXCLUDED.b);
+   ```
+
+   Hasta `sql/34` existía una columna `row_hash` (`GENERATED ... md5(...)`) por tabla y el
+   guard comparaba hashes. Se eliminó: era el md5 de 1 a 6 columnas de la propia fila, la
+   comparación directa de esas mismas columnas es equivalente (también para NULL) y el
+   hash ocupaba ~1,3 GB. Las columnas comparadas son exactamente las que cubría cada md5
+   (`CDC_COLUMNS` en `load_postgres.py` y los guards de `_REFRESH_MARTS_SQL`). Verificado:
+   tras el cambio, un refresh completo deja todas las tablas de `marts` idénticas
+   (huella de contenido por tabla).
+3. **Refresh de marts incremental**: `refresh_marts()` ya no relee staging completo.
+   Lee la marca de agua de `meta.refresh_watermark` y recalcula solo el alcance
+   `(fecha, banco_codigo)` de las filas de staging con `fecha_actualizacion` posterior
+   (índice en cada `staging.*.fecha_actualizacion`). Se recalcula el entity-mes completo
+   porque `fact_saldo_cartera` agrega 3 filas de staging (los estados de morosidad) en
+   una. El SQL es el mismo que el del refresh completo: el modo incremental solo cambia
+   `staging.X` por una tabla temporal `src_X` con ese alcance. Medido en la base viva:
+   un refresh sin cambios pasó de **196 s a 0,03 s**. Sin marca (base nueva) o con
+   `benchmark-bancos refresh --full` se hace el recorrido completo (~3 min). Supone un
+   solo escritor a la vez; ver el docstring de `refresh_marts()`.
+
+Correr el pipeline dos veces seguidas sin datos nuevos no genera ningún `UPDATE` real.
+
+**Sin capa `raw` en la base (2026-10-05, `sql/33`)**: hasta entonces cada fila parseada
+se guardaba además como JSONB en `raw.*` (12 GB, 55% de la base). Ningún proceso la leía,
+y no era el dato original: era la fila ya agregada/pivotada que también llega a staging.
+La fuente de verdad son los archivos en `data/raw/**` más su hash en
+`meta.source_files`. Reprocesar desde esos archivos reconstruye staging y marts.
 
 **Excepción deliberada**: `marts.dim_cuenta_contable`, `staging.banco_maestro` y
 `marts.dim_plazo` NO tienen `fecha_carga`/`fecha_actualizacion`/`row_hash` — no son
@@ -384,9 +408,9 @@ se agregó a las 3 tablas sin necesitar extender un `row_hash` que nunca existi�
 **¿Por qué no Data Vault?** Data Vault (Hub/Link/Satellite) resuelve integrar muchas
 fuentes de alta velocidad de cambio con auditoría regulatoria estricta, normalmente como
 capa de integración *debajo* de un modelo Kimball. Con 3 fuentes y cadencia
-mensual/semanal, sería sobre-ingeniería — la capa `raw.*` (JSONB + `source_hash`) ya da la
-parte valiosa de esa filosofía (nunca se pierde el dato original) sin el formalismo
-completo de Hub/Link/Satellite.
+mensual/semanal, sería sobre-ingeniería. Los archivos fuente conservados en disco más su
+`source_hash` en `meta.source_files` ya dan la parte valiosa de esa filosofía (nunca se
+pierde el dato original) sin el formalismo completo de Hub/Link/Satellite.
 
 ### Bug real encontrado y corregido: NULL en `UNIQUE`/`ON CONFLICT`
 

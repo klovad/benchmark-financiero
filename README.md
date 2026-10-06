@@ -16,8 +16,9 @@ monitoreo continuo. 4 fuentes integradas en un único esquema estrella conformad
 1. **ETL** (`src/benchmark_bancos/`): extractores por fuente (Playwright para los 2 portales de
    Superbancos que renderizan vía plugin OneDrive/SharePoint; descarga directa para BCE,
    que sí es HTML/CSV estático) → parsers Python/pandas → carga idempotente a Postgres en
-   3 capas (`raw` → `staging` → `marts`, esquema estrella), con carga incremental por hash
-   (CDC) en vez de full refresh.
+   2 capas (`staging` → `marts`, esquema estrella) más un registro de ingesta (`meta`).
+   Carga incremental en tres niveles: archivo (sha256), fila (CDC por columnas) y refresh
+   de marts (marca de agua: solo recalcula lo que cambió).
 2. **Base de datos** (`sql/`): scripts para crear rol, base, esquemas y las migraciones
    incrementales de cada fuente, tanto en un Postgres local como vía `docker-compose.yml`.
 3. **Power BI** (`powerbi/`): proyecto `.pbip` (formato texto, versionable en git) con el
@@ -33,7 +34,7 @@ cada tabla. `docs/fuentes_datos.md` documenta la estructura real de cada fuente 
 la ficha metodológica) y `docs/metricas_financieras.md` el catálogo de indicadores del
 Boletín. `docs/gobernanza_datos.md` amarra todo lo anterior bajo un marco de gobernanza
 (responsable, clasificación, catálogo de metadatos por capa, reglas de calidad, huecos
-conocidos) y `docs/linaje_datos.md` traza cada campo `archivo fuente → raw → staging →
+conocidos) y `docs/linaje_datos.md` traza cada campo `archivo fuente → staging →
 marts` con la transformación exacta aplicada. `docs/mantenimiento_catalogos.md` es el
 runbook operativo para cuando falla un test/carga de matching de identidad (banco,
 segmento, categoría, plazo, cuenta contable): qué excepción esperar, en qué archivo
@@ -90,28 +91,31 @@ uv run benchmark-bancos seps --years 2021 2022 2023 2024 2025
 ## Estructura
 
 ```
+pyproject.toml        dependencias (uv), script `benchmark-bancos`, config de ruff/black/pytest
+uv.lock               versiones exactas (reproducible en local y CI)
 src/benchmark_bancos/
+  cli.py              línea de comandos (`uv run benchmark-bancos <etapa>`)
+  pipeline.py         orquestación por fuente: load_years, load_bce, load_boletin, load_seps...
+  config/             settings.py (entorno/.env: rutas, DB, años), sources.py (URLs, ids de
+                      descarga), domain.py (catálogos de vocabulario)
   extract/            scrape_superbancos.py, scrape_boletin.py (Playwright);
-                       download_bce.py, download_tasas_historicas.py (descarga directa)
-  transform/           parsers por fuente + *_matching.py (identidad de banco/categoría/
-                       plazo, resuelta en Python antes de staging -- ver architecture.md)
-  load/                load_postgres.py: raw -> staging -> marts, upserts con CDC
-  seeds/                banco_maestro.csv / banco_crosswalk.csv / canton_provincia.csv
-                       (catálogos sembrados)
-sql/                  DDL: 00 (roles/DB) + 01-03 (raw/staging/marts) + migraciones
-                       incrementales 04+ (dim_banco/dim_fecha rework, catálogos
-                       conformados, BCE, Boletín -- ver sql/*.sql); todo el directorio
-                       se monta en el contenedor y se aplica en orden automáticamente
-docker-compose.yml    Postgres 17 reproducible: bootstrap completo del schema (todo
-                       sql/*.sql) + credenciales desde .env, sin pasos manuales
-powerbi/              proyecto .pbip (modelo semántico + reporte) -- cubre CAPCOL v1
-docs/                 arquitectura, diccionario de datos, catálogo de fuentes, métricas
-tests/                pruebas de los parsers, módulos de resolución de identidad y
-                       regresiones de CDC/idempotencia contra Postgres real (ver
-                       "Tests y CI" abajo)
-data/raw/             archivos descargados (no versionado; se regenera con el ETL)
-data/samples/          muestra de marts.* en Parquet (versionada) para probar sin Postgres
-                       cargado -- ver data/samples/README.md
+                      download_bce.py, download_tasas_historicas.py, download_seps.py (directa)
+  transform/          parsers por fuente + *_matching.py (identidad de banco/categoría/
+                      plazo/cantón, resuelta en Python antes de staging -- ver architecture.md)
+  load/               load_postgres.py: COPY a staging con CDC por columnas + refresh
+                      incremental de marts
+  seeds/              banco_maestro.csv / banco_crosswalk.csv / canton_provincia.csv
+sql/                  DDL: 00 (roles/DB) + 01-03 (esquemas) + migraciones incrementales; todo
+                      el directorio se aplica en orden (docker-compose y CI)
+docker-compose.yml    Postgres 17 reproducible: bootstrap completo del schema + credenciales
+                      desde .env, sin pasos manuales
+powerbi/              proyecto .pbip (modelo semántico + reporte)
+docs/                 arquitectura, diccionario de datos, fuentes, linaje, gobernanza, métricas
+tests/                parsers, resolución de identidad y regresiones de CDC/refresh contra
+                      Postgres real (ver "Tests y CI")
+scripts/              utilidades fuera del pipeline (p.ej. motor de referencia de indicadores)
+data/raw/             archivos descargados: fuente de verdad (no versionado)
+data/samples/         muestra de marts.* en Parquet (versionada) para probar sin Postgres
 ```
 
 ## Tests y CI

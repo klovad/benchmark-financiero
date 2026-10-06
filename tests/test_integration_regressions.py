@@ -354,7 +354,7 @@ def test_upsert_staging_cartera_round_trip_cdc_no_op(db_conn):
 
 @pytest.mark.integration
 def test_source_file_hash_gate(db_conn):
-    """CDC invariante #1 (gate por hash de archivo, raw.source_files -- ver
+    """CDC invariante #1 (gate por hash de archivo, meta.source_files -- ver
     is_source_loaded()/register_source_file() en src/benchmark_bancos/load/load_postgres.py): un
     archivo con el mismo (source_file, source_hash) ya registrado se considera
     cargado; el mismo nombre de archivo con un hash distinto (contenido cambió) se
@@ -723,3 +723,37 @@ def test_upsert_staging_boletin_balance_temp_table_real_update(db_conn):
         assert after_saldo == pytest.approx(250000.0)
     finally:
         _cleanup_boletin_balance(db_conn, banco_codigo)
+
+
+@pytest.mark.integration
+def test_refresh_incremental_propaga_fila_nueva_y_avanza_marca(db_conn):
+    """Regresión de sql/34 + refresh_marts() incremental: una fila nueva en staging
+    llega a marts SIN refresh completo, y la marca de agua avanza. Usa
+    tasas_referenciales (no requiere banco ni cantón) con una fecha sintética 2099."""
+    from benchmark_bancos.load.load_postgres import refresh_marts
+
+    fecha = date(2099, 5, 31)
+    with db_conn.cursor() as cur:
+        # Asegura que exista marca previa para que la corrida sea incremental.
+        cur.execute(
+            "INSERT INTO meta.refresh_watermark (proceso, hasta) VALUES ('marts', now() - interval '1 minute') "
+            "ON CONFLICT (proceso) DO NOTHING"
+        )
+        cur.execute("SELECT hasta FROM meta.refresh_watermark WHERE proceso='marts'")
+        marca_antes = cur.fetchone()[0]
+        cur.execute(
+            """
+            INSERT INTO staging.tasas_referenciales
+                (fecha, seccion, dimension_valor, plazo_dias_desde, plazo_dias_hasta, metrica, valor, source_file)
+            VALUES (%s, 'sistema', NULL, NULL, NULL, 'tasa_legal', 9.99, 'test_integration')
+            """,
+            (fecha,),
+        )
+    refresh_marts(db_conn)
+    with db_conn.cursor() as cur:
+        cur.execute(
+            "SELECT tasa_legal FROM marts.fact_tasas_referenciales_sistema WHERE fecha_id = 20990531"
+        )
+        assert float(cur.fetchone()[0]) == 9.99
+        cur.execute("SELECT hasta FROM meta.refresh_watermark WHERE proceso='marts'")
+        assert cur.fetchone()[0] >= marca_antes

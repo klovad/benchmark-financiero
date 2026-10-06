@@ -99,7 +99,8 @@ def parse_cartera_file(
     source_path: Path, extract_dir: Path, tipo_entidad: str = "BANCO PRIVADO"
 ) -> pd.DataFrame:
     """tipo_entidad lo decide el caller según el sub-portal CAPCOL de origen
-    (benchmark_bancos.config.CAPCOL_PORTALES) -- el archivo no lo trae y no se infiere del dato."""
+    (benchmark_bancos.config.CAPCOL_PORTALES) -- el archivo no lo trae y no se infiere del dato.
+    """
     if tipo_entidad not in TIPOS_ENTIDAD_CAPCOL:
         raise ValueError(
             f"tipo_entidad inválido para CAPCOL: {tipo_entidad!r} "

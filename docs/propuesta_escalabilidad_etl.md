@@ -1,3 +1,12 @@
+> **Actualización 2026-10-05.** Ya aplicado: `pyproject.toml` completo con `[project]`,
+> dependencias con cota superior, lockfile (`uv.lock`) y grupo `dev` con las mismas
+> versiones de ruff/black que CI (secciones 3.1/4.4); `requirements.txt` eliminado; layout
+> `src/benchmark_bancos/` con CLI `benchmark-bancos`; CI con `uv sync --locked`. Además,
+> fuera del alcance original de esta propuesta: eliminación de la capa `raw` JSONB,
+> CDC por columnas sin `row_hash` y refresh incremental de marts (ver
+> `docs/architecture.md`, "Carga incremental"). Las rutas de este documento se
+> actualizaron a la estructura nueva; el resto del texto se conserva como registro.
+
 > **Estado: propuesta, no aplicada.** Generada por una pasada del agente
 > `data-engineer` (2026-08-22), a petición explícita: "prepara primero la
 > propuesta de estructura y lógica en markdown, sin código, después la

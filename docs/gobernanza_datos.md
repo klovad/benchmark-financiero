@@ -38,26 +38,24 @@ valor. Esas tres preguntas las cubren `data_dictionary.md`, este documento, y
   anonimización ni cifrado en reposo más allá de las credenciales de la base (`.env`,
   no versionado).
 - **Retención**: sin política de purga — las 4 fuentes son series históricas y el valor
-  del proyecto depende de mantener el histórico completo. `raw.*` es append-only por
-  diseño (nunca se borra), `staging.*`/`marts.*` se actualizan in-place vía CDC (ver
-  `docs/architecture.md`) pero tampoco se purgan filas.
+  del proyecto depende de mantener el histórico completo. Los archivos fuente en
+  `data/raw/**` se conservan (son la fuente de verdad para reprocesar), y
+  `staging.*`/`marts.*` se actualizan in-place vía CDC (ver `docs/architecture.md`) sin
+  purgar filas.
 
 ## Catálogo de metadatos
 
-### Capa `raw` — aterrizaje sin tipar, append-only
+### Capa de aterrizaje: archivos + `meta` (2026-10-05, `sql/33`)
 
-Ver la advertencia de "`raw.*` no es un espejo bit-a-bit" en `docs/linaje_datos.md` antes
-de asumir que estas tablas son el archivo fuente sin tocar.
+Hasta 2026-10-05 existía un schema `raw` con la salida de cada parser en JSONB (12 GB,
+55% de la base, ninguna lectura). Se eliminó: no era el dato original y duplicaba staging.
+El aterrizaje queda así:
 
-| Tabla | Fuente | Forma | Patrón de carga | Idempotencia |
-|---|---|---|---|---|
-| `raw.cartera` | CAPCOL cartera | `(source_file, source_hash, sheet_name, row_number, anio, mes, data JSONB)` | `executemany` INSERT, un archivo = un año/segmento | `raw.source_files` (`source_file`+`source_hash`) — un archivo con el mismo hash no se reprocesa |
-| `raw.depositos` | CAPCOL depósitos | igual forma que `raw.cartera` | igual | igual |
-| `raw.bce_tasas_pasivas` | BCE tsp | `(source_file, source_hash, anio, mes, data JSONB)` | `COPY` (bulk, cientos de miles de filas) | mismo mecanismo, pero **un solo archivo acumulativo** (2008-actualidad) — se reprocesa completo solo si el ZIP que publica el BCE cambia de hash |
-| `raw.bce_tasas_activas` | BCE tsa | igual forma | `COPY` | igual (archivo acumulativo propio) |
-| `raw.tasas_referenciales` | BCE `TasasHistorico.htm` | igual forma | `executemany` (volumen pequeño, ~40 filas/mes) | un archivo HTML por mes, mismo mecanismo que CAPCOL |
-| `raw.boletin_balance` / `raw.boletin_pyg` | Boletín BALANCE / PYG | igual forma | `COPY` | un archivo por mes, mismo mecanismo |
-| `raw.source_files` | — (tabla de control) | `(source_file PK, source_hash, report_type, loaded_at)` | — | Es el mecanismo de idempotencia mismo, no una tabla de datos |
+| Objeto | Qué guarda | Rol |
+|---|---|---|
+| `data/raw/**` (disco, no versionado) | Los archivos tal como se descargaron (ZIP/HTML) | Fuente de verdad. Reprocesarlos reconstruye staging y marts |
+| `meta.source_files` | `(source_file PK, source_hash, report_type, loaded_at)` | Registro de ingesta e idempotencia: un archivo con el mismo sha256 no se reprocesa |
+| `meta.refresh_watermark` | `(proceso PK, hasta)` | Marca de agua del refresh incremental de marts (`sql/34`) |
 
 ### Capa `staging` — tipada, catálogos conformados ya resueltos, CDC
 

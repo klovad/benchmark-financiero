@@ -1,22 +1,24 @@
 """
-Carga idempotente a Postgres: raw (JSONB tal cual) -> staging (tipado) -> marts (estrella).
+Carga idempotente a Postgres: archivo parseado -> staging (tipado) -> marts (estrella).
 
-Idempotencia:
-- raw.source_files evita reprocesar un archivo cuyo hash ya fue cargado.
-- staging.* tiene UNIQUE en la llave natural -> INSERT ... ON CONFLICT DO UPDATE, con un
-  guard `WHERE row_hash IS DISTINCT FROM EXCLUDED.row_hash` para que una fila sin cambios
-  reales no dispare un UPDATE (row_hash es una columna GENERATED que cubre solo las
-  columnas mutables, no la llave natural -- ver sql/05_dim_banco_rework.sql).
-- marts.* se reconstruye desde staging con la misma técnica, así que correr el
-  pipeline varias veces (o solo para un año) siempre converge al mismo resultado.
+Idempotencia, en tres niveles (ver docs/architecture.md, "Carga incremental"):
+- Archivo: meta.source_files evita reprocesar un archivo cuyo sha256 ya fue cargado.
+- Fila: staging.* tiene UNIQUE en la llave natural -> COPY a tabla temporal + INSERT ...
+  ON CONFLICT DO UPDATE con guard `(t.a, t.b) IS DISTINCT FROM (EXCLUDED.a, EXCLUDED.b)`
+  sobre las columnas mutables (CDC_COLUMNS), para que una fila sin cambios reales no
+  dispare un UPDATE ni mueva fecha_actualizacion.
+- Refresh: refresh_marts() recalcula solo el alcance (fecha, banco_codigo) de las filas
+  de staging cambiadas desde la última marca de agua (meta.refresh_watermark), con el
+  mismo guard de CDC hacia marts. Correr el pipeline varias veces converge al mismo
+  resultado.
 - La identidad de banco (banco_codigo) se resuelve en src/benchmark_bancos/transform/banco_matching.py
   ANTES de llegar a staging -- marts.dim_banco no es más que un catálogo poblado desde
   staging.banco_maestro (sembrado desde src/benchmark_bancos/seeds/banco_maestro.csv), sin tabla de alias.
 """
 
 import csv
-import json
 import logging
+import re
 
 import pandas as pd
 import psycopg
@@ -35,7 +37,7 @@ def get_connection() -> psycopg.Connection:
 def is_source_loaded(conn, source_file: str, source_hash: str) -> bool:
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT 1 FROM raw.source_files WHERE source_file = %s AND source_hash = %s",
+            "SELECT 1 FROM meta.source_files WHERE source_file = %s AND source_hash = %s",
             (source_file, source_hash),
         )
         return cur.fetchone() is not None
@@ -47,7 +49,7 @@ def register_source_file(
     with conn.cursor() as cur:
         cur.execute(
             """
-            INSERT INTO raw.source_files (source_file, source_hash, report_type)
+            INSERT INTO meta.source_files (source_file, source_hash, report_type)
             VALUES (%s, %s, %s)
             ON CONFLICT (source_file) DO UPDATE SET source_hash = EXCLUDED.source_hash, loaded_at = now()
             """,
@@ -59,28 +61,6 @@ def _clean(value):
     """pandas usa NaN para valores faltantes incluso en columnas de texto; json.dumps
     serializa NaN como el token literal `NaN`, que no es JSON válido para Postgres."""
     return None if pd.isna(value) else value
-
-
-def load_raw(conn, table: str, df: pd.DataFrame, anio: int) -> None:
-    payload_cols = [c for c in df.columns if c not in ("source_file", "source_hash")]
-    # COPY en vez de executemany: SEPS colocaciones produce cientos de miles de filas
-    # por año (CAPCOL, decenas de miles) -- mismo mecanismo que load_raw_bce/boletin.
-    rows = (
-        (
-            r["source_file"],
-            r["source_hash"],
-            anio,
-            r["fecha"].month if pd.notna(r["fecha"]) else None,
-            json.dumps({c: _clean(r[c]) for c in payload_cols}, default=str),
-        )
-        for r in df.to_dict("records")
-    )
-    n = _copy_rows(
-        conn,
-        f"COPY raw.{table} (source_file, source_hash, anio, mes, data) FROM STDIN",
-        rows,
-    )
-    log.info("raw.%s: %d filas insertadas", table, n)
 
 
 def upsert_banco_maestro_ruc(conn, entidades: list[tuple[str, str, str, str]]) -> None:
@@ -190,7 +170,7 @@ def upsert_staging_cartera(conn, df: pd.DataFrame) -> None:
             DO UPDATE SET saldo = EXCLUDED.saldo, region = EXCLUDED.region,
                           provincia = EXCLUDED.provincia, source_file = EXCLUDED.source_file,
                           banco_codigo = EXCLUDED.banco_codigo, fecha_actualizacion = now()
-            WHERE staging.cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash
+            WHERE (staging.cartera.saldo, staging.cartera.region, staging.cartera.provincia, staging.cartera.source_file) IS DISTINCT FROM (EXCLUDED.saldo, EXCLUDED.region, EXCLUDED.provincia, EXCLUDED.source_file)
             """
         )
         cur.execute("DROP TABLE _tmp_cartera")
@@ -254,11 +234,52 @@ def upsert_staging_depositos(conn, df: pd.DataFrame) -> None:
                           plazo_dias_desde = EXCLUDED.plazo_dias_desde,
                           plazo_dias_hasta = EXCLUDED.plazo_dias_hasta,
                           fecha_actualizacion = now()
-            WHERE staging.depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash
+            WHERE (staging.depositos.saldo, staging.depositos.region, staging.depositos.provincia, staging.depositos.numero_clientes, staging.depositos.numero_cuentas, staging.depositos.source_file) IS DISTINCT FROM (EXCLUDED.saldo, EXCLUDED.region, EXCLUDED.provincia, EXCLUDED.numero_clientes, EXCLUDED.numero_cuentas, EXCLUDED.source_file)
             """
         )
         cur.execute("DROP TABLE _tmp_depositos")
     log.info("staging.depositos: %d filas upsert", len(rows))
+
+
+# CDC por columnas (sql/34 eliminó las columnas GENERATED row_hash): un upsert solo
+# reescribe la fila si cambió alguna de estas columnas. Son exactamente las que cubría el
+# md5 de cada row_hash, así que el comportamiento es idéntico, sin guardar el hash.
+CDC_COLUMNS = {
+    "bce_tasas_activas": [
+        "monto_total",
+        "numero_operaciones",
+        "tasa_activa_efectiva",
+        "tasa_nominal",
+        "tipo_segmento",
+    ],
+    "bce_tasas_pasivas": [
+        "monto_total",
+        "numero_operaciones",
+        "tasa_pasiva_efectiva",
+        "tasa_nominal",
+        "tipo_segmento",
+    ],
+    "boletin_balance": ["saldo_usd"],
+    "boletin_pyg": ["valor_usd"],
+    "cartera": ["saldo", "region", "provincia", "source_file"],
+    "depositos": [
+        "saldo",
+        "region",
+        "provincia",
+        "numero_clientes",
+        "numero_cuentas",
+        "source_file",
+    ],
+    "tasas_referenciales": ["valor"],
+}
+
+
+def _cdc_guard(tabla: str, clave: str) -> str:
+    """`(t.a, t.b) IS DISTINCT FROM (EXCLUDED.a, EXCLUDED.b)` para el ON CONFLICT."""
+    cols = CDC_COLUMNS[clave]
+    actual = ", ".join(f"{tabla}.{c}" for c in cols)
+    nuevo = ", ".join(f"EXCLUDED.{c}" for c in cols)
+    return f"({actual}) IS DISTINCT FROM ({nuevo})"
 
 
 def _copy_rows(conn, copy_sql: str, rows) -> int:
@@ -273,25 +294,6 @@ def _copy_rows(conn, copy_sql: str, rows) -> int:
     return n
 
 
-def load_raw_bce(conn, table: str, df: pd.DataFrame, payload_cols: list[str]) -> None:
-    rows = (
-        (
-            r.source_file,
-            r.source_hash,
-            r.fecha.year,
-            r.fecha.month,
-            json.dumps({c: _clean(getattr(r, c)) for c in payload_cols}, default=str),
-        )
-        for r in df.itertuples(index=False)
-    )
-    n = _copy_rows(
-        conn,
-        f"COPY raw.{table} (source_file, source_hash, anio, mes, data) FROM STDIN",
-        rows,
-    )
-    log.info("raw.%s: %d filas insertadas", table, n)
-
-
 _BCE_INT_COLS = {"plazo_dias_desde", "plazo_dias_hasta", "numero_operaciones"}
 
 
@@ -299,7 +301,7 @@ def _upsert_bce_via_temp(
     conn, df: pd.DataFrame, table: str, cols: list[str], key_cols: list[str]
 ) -> None:
     """COPY a una tabla temporal (misma sesión, se descarta sola) y de ahí INSERT ...
-    ON CONFLICT DO UPDATE con guard de row_hash -- COPY no soporta ON CONFLICT
+    ON CONFLICT DO UPDATE con guard de CDC por columnas -- COPY no soporta ON CONFLICT
     directamente, así que no se puede COPY directo a staging.*."""
     df = df.copy()
     for c in _BCE_INT_COLS & set(cols):
@@ -339,7 +341,7 @@ def _upsert_bce_via_temp(
             SELECT {cols_sql} FROM _tmp_{table}
             ON CONFLICT ({key_expr})
             DO UPDATE SET {set_clause}
-            WHERE staging.{table}.row_hash IS DISTINCT FROM EXCLUDED.row_hash
+            WHERE {_cdc_guard(f'staging.{table}', table)}
             """
         )
     log.info("staging.%s: %d filas upsert", table, len(df))
@@ -379,30 +381,6 @@ _BCE_TASAS_ACTIVAS_COLS = [
 ]
 
 
-def load_raw_tasas_referenciales(conn, df: pd.DataFrame, source_hash: str) -> None:
-    """Volumen pequeño (~40 filas/mes x ~222 meses -- miles, no millones), executemany
-    alcanza sin necesidad de COPY como en BCE tsp/tsa. A diferencia de tsp/tsa (un solo
-    archivo acumulativo), acá cada mes es un archivo separado -- source_hash se calcula
-    por archivo en el llamador (igual que CAPCOL)."""
-    payload_cols = [c for c in df.columns if c != "source_file"]
-    rows = [
-        (
-            r.source_file,
-            source_hash,
-            r.fecha.year,
-            r.fecha.month,
-            json.dumps({c: _clean(getattr(r, c)) for c in payload_cols}, default=str),
-        )
-        for r in df.itertuples(index=False)
-    ]
-    with conn.cursor() as cur:
-        cur.executemany(
-            "INSERT INTO raw.tasas_referenciales (source_file, source_hash, anio, mes, data) VALUES (%s, %s, %s, %s, %s)",
-            rows,
-        )
-    log.info("raw.tasas_referenciales: %d filas insertadas", len(rows))
-
-
 def upsert_staging_tasas_referenciales(conn, df: pd.DataFrame) -> None:
     rows = [
         tuple(
@@ -428,7 +406,7 @@ def upsert_staging_tasas_referenciales(conn, df: pd.DataFrame) -> None:
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (fecha, seccion, COALESCE(dimension_valor, ''), COALESCE(plazo_dias_desde, -1), COALESCE(plazo_dias_hasta, -1), metrica)
             DO UPDATE SET valor = EXCLUDED.valor, source_file = EXCLUDED.source_file, fecha_actualizacion = now()
-            WHERE staging.tasas_referenciales.row_hash IS DISTINCT FROM EXCLUDED.row_hash
+            WHERE staging.tasas_referenciales.valor IS DISTINCT FROM EXCLUDED.valor
             """,
             rows,
         )
@@ -448,8 +426,8 @@ def truncate_staging_bce(conn) -> None:
     Seguro porque tsp/tsa son UN SOLO archivo acumulativo con el histórico semanal
     completo (2008-actualidad), no incremental por año como CAPCOL -- reprocesar ese
     archivo completo re-deriva el 100% del contenido real de estas 2 tablas desde cero,
-    sin pérdida de datos (raw.bce_tasas_pasivas/activas, con el histórico JSONB completo,
-    no se toca). NO usar para una carga normal -- el único llamador previsto es
+    sin pérdida de datos (la fuente de verdad es el zip en data/raw/bce/, que no se toca;
+    desde sql/33 ya no hay copia JSONB en raw.*). NO usar para una carga normal -- el único llamador previsto es
     src/benchmark_bancos/pipeline.py::reprocess_bce_staging(), un comando de backfill de un solo uso para
     esta migración de esquema."""
     with conn.cursor() as cur:
@@ -552,26 +530,6 @@ def insert_dim_cuenta_contable_seps(conn, cuentas_df: pd.DataFrame) -> None:
     )
 
 
-def load_raw_boletin(conn, table: str, df: pd.DataFrame, source_hash: str) -> None:
-    payload_cols = [c for c in df.columns if c not in ("source_file",)]
-    rows = (
-        (
-            r.source_file,
-            source_hash,
-            r.fecha.year,
-            r.fecha.month,
-            json.dumps({c: _clean(getattr(r, c)) for c in payload_cols}, default=str),
-        )
-        for r in df.itertuples(index=False)
-    )
-    n = _copy_rows(
-        conn,
-        f"COPY raw.{table} (source_file, source_hash, anio, mes, data) FROM STDIN",
-        rows,
-    )
-    log.info("raw.%s: %d filas insertadas", table, n)
-
-
 def _upsert_boletin_via_temp(
     conn, df: pd.DataFrame, table: str, cols: list[str], valor_col: str
 ) -> None:
@@ -594,7 +552,7 @@ def _upsert_boletin_via_temp(
             SELECT {cols_sql} FROM _tmp_{table}
             ON CONFLICT (fecha, banco_codigo, codigo)
             DO UPDATE SET {valor_col} = EXCLUDED.{valor_col}, source_file = EXCLUDED.source_file, fecha_actualizacion = now()
-            WHERE staging.{table}.row_hash IS DISTINCT FROM EXCLUDED.row_hash
+            WHERE {_cdc_guard(f'staging.{table}', table)}
             """
         )
     log.info("staging.%s: %d filas upsert", table, len(df))
@@ -668,8 +626,8 @@ ON CONFLICT (fecha_id) DO NOTHING;
 -- CDC no-op para esta migración: como segmento_entidad_id NO estaba en la lista de
 -- columnas del INSERT, Postgres computaba `EXCLUDED.segmento_entidad_id` como NULL (el
 -- DEFAULT de una columna omitida en el INSERT, no el valor real de la fila en conflicto)
--- -- eso hacía que `EXCLUDED.row_hash` (columna GENERATED, se recalcula para EXCLUDED
--- también) casi nunca coincidiera con `marts.dim_banco.row_hash` real para cualquier
+-- -- eso hacía que el guard de CDC (entonces sobre row_hash, desde sql/34 sobre las
+-- columnas mismas) casi nunca coincidiera con la fila real para cualquier
 -- banco con segmento_entidad_id ya poblado (prácticamente los 442), disparando un
 -- UPDATE real (`fecha_actualizacion = now()`) en CADA corrida de refresh_marts(), no
 -- solo cuando algo cambiaba de verdad. Preexistía desde sql/19_dim_segmento_entidad.sql
@@ -680,7 +638,8 @@ INSERT INTO marts.dim_banco (banco_codigo, banco, tipo_entidad, ruc, estado_vali
 SELECT bm.banco_codigo, bm.banco, bm.tipo_entidad, bm.ruc, bm.estado_validacion, existente.segmento_entidad_id
 FROM staging.banco_maestro bm
 LEFT JOIN marts.dim_banco existente ON existente.banco_codigo = bm.banco_codigo
-WHERE bm.banco_codigo IN (
+WHERE bm.banco_codigo IN (SELECT banco_codigo FROM marts.dim_banco)
+   OR bm.banco_codigo IN (
     SELECT DISTINCT banco_codigo FROM staging.cartera WHERE tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO')
     UNION
     SELECT DISTINCT banco_codigo FROM staging.depositos WHERE tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO')
@@ -696,7 +655,7 @@ WHERE bm.banco_codigo IN (
 ON CONFLICT (banco_codigo) DO UPDATE SET
     banco = EXCLUDED.banco, tipo_entidad = EXCLUDED.tipo_entidad, ruc = EXCLUDED.ruc,
     estado_validacion = EXCLUDED.estado_validacion, fecha_actualizacion = now()
-WHERE marts.dim_banco.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE (marts.dim_banco.banco, marts.dim_banco.tipo_entidad, marts.dim_banco.ruc, marts.dim_banco.segmento_entidad_id, marts.dim_banco.estado_validacion) IS DISTINCT FROM (EXCLUDED.banco, EXCLUDED.tipo_entidad, EXCLUDED.ruc, EXCLUDED.segmento_entidad_id, EXCLUDED.estado_validacion);
 
 -- translate() en vez de igualdad exacta: CAPCOL no es 100% consistente en su propia
 -- ortografía sin tilde (ver sql/20_dim_provincia.sql) -- normalize_provincia() en Python
@@ -792,7 +751,7 @@ DO UPDATE SET saldo_por_vencer = EXCLUDED.saldo_por_vencer,
               saldo_no_devenga_intereses = EXCLUDED.saldo_no_devenga_intereses,
               saldo_vencida = EXCLUDED.saldo_vencida,
               fecha_actualizacion = now()
-WHERE marts.fact_saldo_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE (marts.fact_saldo_cartera.saldo_por_vencer, marts.fact_saldo_cartera.saldo_no_devenga_intereses, marts.fact_saldo_cartera.saldo_vencida) IS DISTINCT FROM (EXCLUDED.saldo_por_vencer, EXCLUDED.saldo_no_devenga_intereses, EXCLUDED.saldo_vencida);
 
 INSERT INTO marts.fact_saldo_depositos (fecha_id, banco_id, canton_id, categoria_deposito_id, plazo_id, saldo, numero_clientes, numero_cuentas)
 SELECT
@@ -817,7 +776,7 @@ DO UPDATE SET saldo = EXCLUDED.saldo,
               numero_clientes = EXCLUDED.numero_clientes,
               numero_cuentas = EXCLUDED.numero_cuentas,
               fecha_actualizacion = now()
-WHERE marts.fact_saldo_depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE (marts.fact_saldo_depositos.saldo, marts.fact_saldo_depositos.numero_clientes, marts.fact_saldo_depositos.numero_cuentas) IS DISTINCT FROM (EXCLUDED.saldo, EXCLUDED.numero_clientes, EXCLUDED.numero_cuentas);
 
 -- canton_id (antes provincia_id, sql/28_bce_canton_grain.sql): mismo patrón de
 -- resolución de 2 pasos que ya usan fact_saldo_cartera/fact_saldo_depositos (CAPCOL) --
@@ -854,7 +813,7 @@ DO UPDATE SET monto_total = EXCLUDED.monto_total,
               tasa_nominal = EXCLUDED.tasa_nominal,
               segmento_entidad_id = EXCLUDED.segmento_entidad_id,
               fecha_actualizacion = now()
-WHERE marts.fact_captaciones_depositos.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE (marts.fact_captaciones_depositos.monto_total, marts.fact_captaciones_depositos.numero_operaciones, marts.fact_captaciones_depositos.tasa_pasiva_efectiva, marts.fact_captaciones_depositos.tasa_nominal, marts.fact_captaciones_depositos.segmento_entidad_id) IS DISTINCT FROM (EXCLUDED.monto_total, EXCLUDED.numero_operaciones, EXCLUDED.tasa_pasiva_efectiva, EXCLUDED.tasa_nominal, EXCLUDED.segmento_entidad_id);
 
 -- canton_id: mismo patrón de resolución de 2 pasos que fact_captaciones_depositos arriba
 -- -- ver ese comentario para el detalle completo.
@@ -886,24 +845,18 @@ DO UPDATE SET monto_total = EXCLUDED.monto_total,
               tasa_nominal = EXCLUDED.tasa_nominal,
               segmento_entidad_id = EXCLUDED.segmento_entidad_id,
               fecha_actualizacion = now()
-WHERE marts.fact_colocaciones_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE (marts.fact_colocaciones_cartera.monto_total, marts.fact_colocaciones_cartera.numero_operaciones, marts.fact_colocaciones_cartera.tasa_activa_efectiva, marts.fact_colocaciones_cartera.tasa_nominal, marts.fact_colocaciones_cartera.segmento_entidad_id) IS DISTINCT FROM (EXCLUDED.monto_total, EXCLUDED.numero_operaciones, EXCLUDED.tasa_activa_efectiva, EXCLUDED.tasa_nominal, EXCLUDED.segmento_entidad_id);
 
 -- dim_banco.segmento_entidad_id: conveniencia con la ÚLTIMA clasificación conocida (SCD
 -- tipo 1) para análisis puntuales contra la situación actual, sin tener que ir a buscar
 -- la fila más reciente en los hechos semanales. Se resuelve tomando la fecha más
 -- reciente entre AMBOS hechos BCE (un banco puede aparecer solo en tsp o solo en tsa).
 --
--- ADVERTENCIA de mantenimiento (bug real encontrado y corregido 2026-08-30 al agregar
--- estado_validacion, sql/26_dim_banco_estado_validacion.sql): el WHERE de abajo
--- RECALCULA a mano la misma expresión del row_hash GENERATED de marts.dim_banco (última
--- definición en sql/26) porque este UPDATE no pasa por INSERT...ON CONFLICT/EXCLUDED --
--- necesita decidir si vale la pena escribir ANTES de tocar la fila. Si esta fórmula
--- queda desincronizada de la definición real de row_hash (como pasó acá: se agregó
--- estado_validacion al GENERATED pero no aquí), la condición IS DISTINCT FROM queda
--- permanentemente en true para toda fila con segmento_entidad_id -- CDC roto en
--- silencio, cada refresh_marts() pisa fecha_actualizacion sin cambio real. Cualquier
--- migración futura que extienda marts.dim_banco.row_hash DEBE actualizar esta línea en
--- el mismo cambio, o este UPDATE deja de ser un no-op.
+-- Guard de CDC: solo escribe si segmento_entidad_id cambió de verdad. Hasta sql/34 este
+-- WHERE recalculaba a mano el md5 de marts.dim_banco.row_hash y se desincronizó una vez
+-- (2026-08-30, al agregar estado_validacion): CDC roto en silencio. Comparar la única
+-- columna que este UPDATE escribe elimina esa clase de error.
+-- Alcance: solo bancos con datos BCE en staging (src_* en el refresh incremental).
 UPDATE marts.dim_banco b
 SET segmento_entidad_id = latest.segmento_entidad_id, fecha_actualizacion = now()
 FROM (
@@ -913,10 +866,15 @@ FROM (
         UNION ALL
         SELECT banco_id, fecha_id, segmento_entidad_id FROM marts.fact_colocaciones_cartera WHERE segmento_entidad_id IS NOT NULL
     ) x
+    WHERE x.banco_id IN (
+        SELECT b2.banco_id FROM marts.dim_banco b2
+        WHERE b2.banco_codigo IN (SELECT banco_codigo FROM staging.bce_tasas_pasivas
+                                  UNION SELECT banco_codigo FROM staging.bce_tasas_activas)
+    )
     ORDER BY banco_id, fecha_id DESC
 ) latest
 WHERE b.banco_id = latest.banco_id
-  AND b.row_hash IS DISTINCT FROM md5(b.banco || '|' || b.tipo_entidad || '|' || COALESCE(b.ruc, '') || '|' || COALESCE(latest.segmento_entidad_id::text, '') || '|' || b.estado_validacion);
+  AND b.segmento_entidad_id IS DISTINCT FROM latest.segmento_entidad_id;
 
 -- TasasHistorico.htm: 4 tablas anchas, una por sección real (activa_maxima +
 -- activa_referencial comparten grano segmento -> misma tabla). staging.tasas_referenciales
@@ -935,7 +893,7 @@ ON CONFLICT (fecha_id, subsegmento_id)
 DO UPDATE SET tasa_activa_maxima = EXCLUDED.tasa_activa_maxima,
               tasa_activa_referencial = EXCLUDED.tasa_activa_referencial,
               fecha_actualizacion = now()
-WHERE marts.fact_tasas_referenciales_cartera.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE (marts.fact_tasas_referenciales_cartera.tasa_activa_maxima, marts.fact_tasas_referenciales_cartera.tasa_activa_referencial) IS DISTINCT FROM (EXCLUDED.tasa_activa_maxima, EXCLUDED.tasa_activa_referencial);
 
 INSERT INTO marts.fact_tasas_referenciales_depositos_instrumento (fecha_id, categoria_deposito_id, tasa_pasiva_promedio)
 SELECT
@@ -947,7 +905,7 @@ JOIN marts.dim_categoria_deposito cd ON cd.categoria = s.dimension_valor
 WHERE s.seccion = 'pasiva_instrumento'
 ON CONFLICT (fecha_id, categoria_deposito_id)
 DO UPDATE SET tasa_pasiva_promedio = EXCLUDED.tasa_pasiva_promedio, fecha_actualizacion = now()
-WHERE marts.fact_tasas_referenciales_depositos_instrumento.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE marts.fact_tasas_referenciales_depositos_instrumento.tasa_pasiva_promedio IS DISTINCT FROM EXCLUDED.tasa_pasiva_promedio;
 
 INSERT INTO marts.fact_tasas_referenciales_depositos_plazo (fecha_id, plazo_id, tasa_pasiva_referencial)
 SELECT
@@ -960,7 +918,7 @@ JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
 WHERE s.seccion = 'pasiva_plazo'
 ON CONFLICT (fecha_id, plazo_id)
 DO UPDATE SET tasa_pasiva_referencial = EXCLUDED.tasa_pasiva_referencial, fecha_actualizacion = now()
-WHERE marts.fact_tasas_referenciales_depositos_plazo.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE marts.fact_tasas_referenciales_depositos_plazo.tasa_pasiva_referencial IS DISTINCT FROM EXCLUDED.tasa_pasiva_referencial;
 
 INSERT INTO marts.fact_tasas_referenciales_sistema
     (fecha_id, tasa_pasiva_referencial_sistema, tasa_activa_referencial_sistema, tasa_legal, tasa_maxima_convencional)
@@ -979,7 +937,7 @@ DO UPDATE SET tasa_pasiva_referencial_sistema = EXCLUDED.tasa_pasiva_referencial
               tasa_legal = EXCLUDED.tasa_legal,
               tasa_maxima_convencional = EXCLUDED.tasa_maxima_convencional,
               fecha_actualizacion = now()
-WHERE marts.fact_tasas_referenciales_sistema.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE (marts.fact_tasas_referenciales_sistema.tasa_pasiva_referencial_sistema, marts.fact_tasas_referenciales_sistema.tasa_activa_referencial_sistema, marts.fact_tasas_referenciales_sistema.tasa_legal, marts.fact_tasas_referenciales_sistema.tasa_maxima_convencional) IS DISTINCT FROM (EXCLUDED.tasa_pasiva_referencial_sistema, EXCLUDED.tasa_activa_referencial_sistema, EXCLUDED.tasa_legal, EXCLUDED.tasa_maxima_convencional);
 
 -- Boletín BALANCE/PYG -- dim_cuenta_contable se puebla directo desde Python
 -- (upsert_dim_cuenta_contable, antes de refresh_marts) porque su llave (reporte, codigo)
@@ -996,7 +954,7 @@ JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
 JOIN marts.dim_cuenta_contable cc ON cc.reporte = 'BALANCE' AND cc.codigo = s.codigo
 ON CONFLICT (fecha_id, banco_id, cuenta_id)
 DO UPDATE SET saldo_usd = EXCLUDED.saldo_usd, fecha_actualizacion = now()
-WHERE marts.fact_balance.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE marts.fact_balance.saldo_usd IS DISTINCT FROM EXCLUDED.saldo_usd;
 
 INSERT INTO marts.fact_pyg (fecha_id, banco_id, cuenta_id, valor_usd)
 SELECT
@@ -1009,11 +967,11 @@ JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
 JOIN marts.dim_cuenta_contable cc ON cc.reporte = 'PYG' AND cc.codigo = s.codigo
 ON CONFLICT (fecha_id, banco_id, cuenta_id)
 DO UPDATE SET valor_usd = EXCLUDED.valor_usd, fecha_actualizacion = now()
-WHERE marts.fact_pyg.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
+WHERE marts.fact_pyg.valor_usd IS DISTINCT FROM EXCLUDED.valor_usd;
 """
 
 
-def _log_cantones_no_resueltos(conn) -> None:
+def _log_cantones_no_resueltos(conn, fuentes=lambda sql: sql) -> None:
     """El INSERT de marts.dim_canton en _REFRESH_MARTS_SQL usa un INNER JOIN contra
     dim_provincia (provincia_id es NOT NULL en dim_canton, así que no puede ser un LEFT
     JOIN con NULL) -- toda fila de staging.cartera/staging.depositos/staging.bce_tasas_*
@@ -1044,7 +1002,8 @@ def _log_cantones_no_resueltos(conn) -> None:
     de evaluar si hace falta algo más que un log."""
     with conn.cursor() as cur:
         cur.execute(
-            """
+            fuentes(
+                """
             SELECT c.provincia, count(*) AS filas, count(DISTINCT c.canton) AS cantones
             FROM (
                 SELECT canton, provincia FROM staging.cartera
@@ -1063,6 +1022,7 @@ def _log_cantones_no_resueltos(conn) -> None:
             GROUP BY c.provincia
             ORDER BY filas DESC
             """
+            )
         )
         rows = cur.fetchall()
     if rows:
@@ -1086,7 +1046,7 @@ def _log_cantones_no_resueltos(conn) -> None:
         )
 
 
-def _log_bancos_no_resueltos(conn) -> None:
+def _log_bancos_no_resueltos(conn, fuentes=lambda sql: sql) -> None:
     """Los INSERT de fact_saldo_cartera/fact_saldo_depositos hacen INNER JOIN contra
     marts.dim_banco, que solo contiene banco_codigo presentes en staging.banco_maestro.
     Banca Pública resuelve por crosswalk a filas BCE_<ruc> que solo existen si BCE ya
@@ -1095,7 +1055,8 @@ def _log_bancos_no_resueltos(conn) -> None:
     sin error. Mismo criterio log-only que _log_cantones_no_resueltos()."""
     with conn.cursor() as cur:
         cur.execute(
-            """
+            fuentes(
+                """
             SELECT s.tipo_entidad, s.banco_codigo, count(*) AS filas
             FROM (
                 SELECT tipo_entidad, banco_codigo FROM staging.cartera
@@ -1109,6 +1070,7 @@ def _log_bancos_no_resueltos(conn) -> None:
             GROUP BY s.tipo_entidad, s.banco_codigo
             ORDER BY filas DESC
             """
+            )
         )
         rows = cur.fetchall()
     if rows:
@@ -1126,10 +1088,95 @@ def _log_bancos_no_resueltos(conn) -> None:
         )
 
 
-def refresh_marts(conn) -> None:
-    load_banco_maestro_seed(conn)
-    _log_cantones_no_resueltos(conn)
-    _log_bancos_no_resueltos(conn)
+# Tablas de staging que alimentan marts. Las que tienen banco_codigo se recalculan por
+# (fecha, banco_codigo) completos: fact_saldo_cartera agrega 3 filas de staging (los 3
+# estados de cartera) en una, así que si cambió una hay que recalcular con las otras dos.
+# Recalcular filas que no cambiaron es inocuo (el guard de CDC no las reescribe).
+# tasas_referenciales no tiene banco_codigo: su alcance es la fecha.
+_FUENTES_REFRESH = {
+    "cartera": "fecha, banco_codigo",
+    "depositos": "fecha, banco_codigo",
+    "bce_tasas_pasivas": "fecha, banco_codigo",
+    "bce_tasas_activas": "fecha, banco_codigo",
+    "boletin_balance": "fecha, banco_codigo",
+    "boletin_pyg": "fecha, banco_codigo",
+    "tasas_referenciales": "fecha",
+}
+_RE_FUENTES = re.compile(r"\bstaging\.(" + "|".join(_FUENTES_REFRESH) + r")\b")
+
+
+def _leer_watermark(conn):
     with conn.cursor() as cur:
-        cur.execute(_REFRESH_MARTS_SQL)
+        cur.execute("SELECT hasta FROM meta.refresh_watermark WHERE proceso = 'marts'")
+        row = cur.fetchone()
+    return row[0] if row else None
+
+
+def _crear_fuentes_incrementales(conn, desde) -> dict[str, int]:
+    """Copia a tablas temporales src_<tabla> el alcance a recalcular: todas las filas de
+    staging de cada (fecha, banco_codigo) con al menos una fila cambiada después de
+    `desde`. Usa el índice sobre fecha_actualizacion (sql/34)."""
+    filas = {}
+    with conn.cursor() as cur:
+        for tabla, alcance in _FUENTES_REFRESH.items():
+            cur.execute(f"DROP TABLE IF EXISTS src_{tabla}")
+            cur.execute(
+                f"""
+                CREATE TEMP TABLE src_{tabla} ON COMMIT DROP AS
+                SELECT s.* FROM staging.{tabla} s
+                WHERE ({alcance}) IN (
+                    SELECT DISTINCT {alcance} FROM staging.{tabla}
+                    WHERE fecha_actualizacion > %s
+                )
+                """,
+                (desde,),
+            )
+            filas[tabla] = cur.rowcount
+            cur.execute(f"ANALYZE src_{tabla}")
+    return filas
+
+
+def refresh_marts(conn, full: bool = False) -> None:
+    """Actualiza marts.* desde staging.
+
+    Incremental por defecto: solo recalcula el alcance (fecha, banco_codigo) de las filas
+    de staging cambiadas desde la última corrida (marca de agua en
+    meta.refresh_watermark, sql/34). Antes cada corrida releía staging completo: ~196 s
+    aunque no hubiera nada nuevo (medido 2026-10-05). El SQL es el mismo en ambos modos;
+    el incremental solo cambia `staging.X` por la tabla temporal `src_X`.
+
+    Hace refresh completo si `full=True` o si todavía no hay marca de agua (base nueva).
+    Supone un solo escritor a la vez: una carga concurrente que empezó antes de esta
+    corrida y commitea después tendría fecha_actualizacion anterior a la nueva marca y no
+    se vería; para ese caso, `benchmark-bancos refresh --full`.
+    """
+    load_banco_maestro_seed(conn)
+    with conn.cursor() as cur:
+        cur.execute("SELECT now()")
+        inicio = cur.fetchone()[0]
+    desde = None if full else _leer_watermark(conn)
+
+    if desde is None:
+        fuentes = lambda sql: sql  # noqa: E731
+        log.info("refresh de marts: COMPLETO (full=%s, marca previa=%s)", full, desde)
+    else:
+        filas = _crear_fuentes_incrementales(conn, desde)
+        fuentes = lambda sql: _RE_FUENTES.sub(r"src_\1", sql)  # noqa: E731
+        log.info(
+            "refresh de marts: INCREMENTAL desde %s, filas en alcance: %s",
+            desde,
+            {k: v for k, v in filas.items() if v} or "ninguna",
+        )
+
+    _log_cantones_no_resueltos(conn, fuentes)
+    _log_bancos_no_resueltos(conn, fuentes)
+    with conn.cursor() as cur:
+        cur.execute(fuentes(_REFRESH_MARTS_SQL))
+        cur.execute(
+            """
+            INSERT INTO meta.refresh_watermark (proceso, hasta) VALUES ('marts', %s)
+            ON CONFLICT (proceso) DO UPDATE SET hasta = EXCLUDED.hasta
+            """,
+            (inicio,),
+        )
     log.info("marts.* actualizado desde staging")

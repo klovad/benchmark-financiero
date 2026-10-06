@@ -8,6 +8,7 @@ Uso (con uv):
     uv run benchmark-bancos boletin --years 2025 2026              # Boletín Superbancos
     uv run benchmark-bancos seps --years 2021 2022 2023 2024 2025  # SEPS
     uv run benchmark-bancos refresh                                # solo marts (incremental)
+    uv run benchmark-bancos refresh --full                         # solo marts (completo)
 
 Equivalente sin el script instalado: `python -m benchmark_bancos <stage> ...`.
 """
@@ -48,6 +49,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=list(CAPCOL_PORTALES),
         help="Sub-portales CAPCOL a extraer/cargar (default: todos)",
     )
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="refresh: recalcular marts desde todo staging en vez de solo lo cambiado",
+    )
     return parser
 
 
@@ -71,7 +77,7 @@ def main(argv: list[str] | None = None) -> None:
     if args.stage == "seps":
         pipeline.load_seps(args.years)
     if args.stage == "refresh":
-        pipeline.refresh()
+        pipeline.refresh(full=args.full)
 
 
 if __name__ == "__main__":

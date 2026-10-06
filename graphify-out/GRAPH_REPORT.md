@@ -1,16 +1,16 @@
 # Graph Report - benchmark-bancos  (2026-10-05)
 
 ## Corpus Check
-- 128 files · ~108,288 words
+- 130 files · ~109,811 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1502 nodes · 2085 edges · 149 communities (88 shown, 61 thin omitted)
+- 1527 nodes · 2074 edges · 170 communities (89 shown, 81 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 39 edges (avg confidence: 0.91)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `bb009abf`
+- Built from commit: `7d0f8d67`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -72,8 +72,8 @@
 - marts.fact_tasas_pasivas_instrumento
 - marts.fact_tasas_pasivas_plazo
 - marts.fact_tasas_referenciales_credito
-- marts.fact_tasas_referenciales_depositos_instrumento
-- marts.fact_tasas_referenciales_depositos_plazo
+- 34_cdc_por_columnas_refresh_incremental.sql
+- marts.fact_tasas_referenciales_sistema
 - staging.depositos
 - marts.dim_fecha
 - marts.dim_banco
@@ -145,18 +145,38 @@
 - marts.vw_cartera_bruta
 - benchmark-bancos
 - marts.dim_banco
+- marts.fact_tasas_referenciales_depositos_instrumento
+- marts.fact_tasas_referenciales_depositos_plazo
+- raw.source_files
+- marts.dim_banco
+- marts.fact_balance
+- marts.fact_captaciones_depositos
+- marts.fact_colocaciones_cartera
+- marts.fact_pyg
+- marts.fact_saldo_cartera
+- marts.fact_saldo_depositos
+- marts.fact_tasas_referenciales_cartera
+- marts.fact_tasas_referenciales_depositos_instrumento
+- marts.fact_tasas_referenciales_depositos_plazo
+- staging.bce_tasas_activas
+- staging.bce_tasas_pasivas
+- staging.cartera
+- staging.depositos
+- staging.boletin_balance
+- staging.boletin_pyg
+- staging.tasas_referenciales
 
 ## God Nodes (most connected - your core abstractions)
 1. `resolver_canton_bce()` - 27 edges
 2. `resolver_banco_codigo()` - 23 edges
-3. `load_seps()` - 21 edges
-4. `sha256_file()` - 21 edges
-5. `parse_depositos_file()` - 20 edges
+3. `sha256_file()` - 21 edges
+4. `parse_depositos_file()` - 20 edges
+5. `load_seps()` - 19 edges
 6. `parse_seps_colocaciones_file()` - 19 edges
 7. `parse_seps_eeff_file()` - 19 edges
-8. `load_bce()` - 17 edges
-9. `parse_seps_captaciones_file()` - 17 edges
-10. `load_boletin()` - 16 edges
+8. `parse_seps_captaciones_file()` - 17 edges
+9. `refresh_marts()` - 16 edges
+10. `load_bce()` - 16 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `test_resolver_entidad_seps_reusa_llave_bce_y_rellena_ruc_numerico()` --uses--> `RucInvalidoError`  [INFERRED]
@@ -165,19 +185,19 @@
   tests/test_categoria_deposito_matching.py → src/benchmark_bancos/transform/bce_plazo_matching.py
 - `test_resolve_canton_propaga_cantonnoresueltoerror()` --uses--> `CantonNoResueltoError`  [INFERRED]
   tests/test_parse_bce_tasas.py → src/benchmark_bancos/transform/canton_matching.py
+- `test_codigo_padre_sigue_la_jerarquia_del_catalogo_unico_de_cuentas()` --calls--> `_codigo_padre()`  [EXTRACTED]
+  tests/test_parse_boletin.py → src/benchmark_bancos/transform/parse_boletin.py
 - `_a_numero()` --references--> `Series`  [EXTRACTED]
   src/benchmark_bancos/transform/parse_seps.py → powerbi/benchmark-cartera-depositos.Report/definition/pages/page-tendencias/visuals/v01LineEstacionalidad/visual.json
-- `test_upsert_staging_cartera_round_trip_cdc_no_op()` --calls--> `upsert_staging_cartera()`  [EXTRACTED]
-  tests/test_integration_regressions.py → src/benchmark_bancos/load/load_postgres.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (149 total, 61 thin omitted)
+## Communities (170 total, 81 thin omitted)
 
 ### Community 0 - "pipeline.py"
-Cohesion: 0.07
-Nodes (75): Connection, main(), download_all(), download_bce_file(), Path, Descarga directa de los archivos semanales de tasas de interés del BCE…, clave: 'tsp' o 'tsa'. Descarga si no existe ya un archivo con ese nombre., _clean() (+67 more)
+Cohesion: 0.06
+Nodes (74): Connection, main(), download_all(), download_bce_file(), Path, Descarga directa de los archivos semanales de tasas de interés del BCE…, clave: 'tsp' o 'tsa'. Descarga si no existe ya un archivo con ese nombre., _cdc_guard() (+66 more)
 
 ### Community 1 - "benchmark_cartera_depositos"
 Cohesion: 0.10
@@ -253,7 +273,7 @@ Nodes (16): projections, name, position, height, tabOrder, width, x, y (+8 more)
 
 ### Community 19 - "18_glosario_cuentas_views.sql"
 Cohesion: 0.31
-Nodes (14): marts.fact_pyg, marts.vw_activo_promedio_ytd, marts.vw_cartera_bruta, marts.vw_cartera_bruta_segmento, marts.vw_cartera_improductiva, marts.vw_cartera_improductiva_segmento, marts.vw_depositos_corto_plazo, marts.vw_patrimonio_promedio_ytd (+6 more)
+Nodes (14): marts.vw_activo_promedio_ytd, marts.vw_cartera_bruta, marts.vw_cartera_bruta_segmento, marts.vw_cartera_improductiva, marts.vw_cartera_improductiva_segmento, marts.vw_depositos_corto_plazo, marts.vw_patrimonio_promedio_ytd, marts.vw_pyg_total_gastos (+6 more)
 
 ### Community 20 - "resolver_canton_bce"
 Cohesion: 0.09
@@ -268,8 +288,8 @@ Cohesion: 0.21
 Nodes (11): marts.fact_tasas_activas, marts.fact_tasas_pasivas, raw.bce_tasas_activas, raw.bce_tasas_pasivas, marts.dim_banco, marts.dim_categoria_deposito, marts.dim_fecha, marts.dim_plazo (+3 more)
 
 ### Community 23 - "test_integration_regressions.py"
-Cohesion: 0.10
-Nodes (34): integration, _bce_tasas_pasivas_row(), _boletin_balance_row(), _cleanup_bce_tasas_pasivas(), _cleanup_boletin_balance(), _dim_canton_insert_statement(), _fact_saldo_cartera_pivot_statement(), Tests de integración (@pytest.mark.integration): requieren Postgres real ya… (+26 more)
+Cohesion: 0.09
+Nodes (38): integration, _bce_tasas_pasivas_row(), _boletin_balance_row(), _cleanup_bce_tasas_pasivas(), _cleanup_boletin_balance(), _dim_canton_insert_statement(), _fact_saldo_cartera_pivot_statement(), Tests de integración (@pytest.mark.integration): requieren Postgres real ya… (+30 more)
 
 ### Community 24 - "12_schema_tasas_historicas.sql"
 Cohesion: 0.24
@@ -289,7 +309,7 @@ Nodes (26): 0. Línea base verificada (para que la propuesta no asuma de más), 
 
 ### Community 28 - "marts.vw_cartera_market_share"
 Cohesion: 0.33
-Nodes (8): marts.fact_saldo_depositos, marts.vw_cartera_hhi, marts.vw_cartera_market_share, marts.vw_depositos_hhi, marts.vw_depositos_market_share, marts.dim_banco, marts.dim_fecha, marts.fact_saldo_cartera
+Nodes (8): marts.vw_cartera_hhi, marts.vw_cartera_market_share, marts.vw_depositos_hhi, marts.vw_depositos_market_share, marts.dim_banco, marts.dim_fecha, marts.fact_saldo_cartera, marts.fact_saldo_depositos
 
 ### Community 29 - "pageOrder"
 Cohesion: 0.22
@@ -337,7 +357,7 @@ Nodes (3): marts.dim_categoria_deposito, marts.dim_plazo, marts.dim_segmento_cre
 
 ### Community 47 - "parse_seps.py"
 Cohesion: 0.08
-Nodes (47): Resuelve una entidad SEPS (cooperativa, mutualista o entidad de segundo piso) a…, resolver_entidad_seps(), _a_numero(), _chunks(), extraer_zip_seps(), _fecha_corte(), _geo(), _iter_base_rows() (+39 more)
+Nodes (48): Resuelve una entidad SEPS (cooperativa, mutualista o entidad de segundo piso) a…, resolver_entidad_seps(), _codigo_padre(), _a_numero(), _chunks(), extraer_zip_seps(), _fecha_corte(), _geo() (+40 more)
 
 ### Community 48 - "scrape_superbancos.py"
 Cohesion: 0.07
@@ -349,7 +369,7 @@ Nodes (20): find_base_sheets(), month_end_date(), normalize_banco(), normalize_p
 
 ### Community 50 - "parse_boletin.py"
 Cohesion: 0.16
-Nodes (17): _codigo_padre(), _find_header_row(), _normalize_col(), parse_boletin_file(), _parse_hoja(), _parse_met(), DataFrame, Path (+9 more)
+Nodes (16): _find_header_row(), _normalize_col(), parse_boletin_file(), _parse_hoja(), _parse_met(), DataFrame, Path, Parser del Boletín Financiero Mensual (Superbancos) -- hojas BALANCE y PYG.… (+8 more)
 
 ### Community 95 - "marts.vw_dim_canton_geografia"
 Cohesion: 0.50
@@ -452,24 +472,24 @@ Cohesion: 0.60
 Nodes (4): marts.vw_cartera_bruta, marts.vw_cartera_improductiva_segmento, marts.dim_cuenta_contable, marts.fact_balance
 
 ## Knowledge Gaps
-- **551 isolated node(s):** `$schema`, `name`, `displayName`, `displayOption`, `height` (+546 more)
+- **552 isolated node(s):** `$schema`, `name`, `displayName`, `displayOption`, `height` (+547 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **61 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **81 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `resolver_canton_bce()` connect `resolver_canton_bce` to `parse_cartera.py`, `parse_bce_tasas.py`, `parse_seps.py`?**
-  _High betweenness centrality (0.010) - this node is a cross-community bridge._
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **Why does `resolver_plazo_bce()` connect `PlazoNoResueltoError` to `parse_bce_tasas.py`?**
   _High betweenness centrality (0.008) - this node is a cross-community bridge._
-- **Why does `sha256_file()` connect `sha256_file` to `pipeline.py`, `parse_cartera_file`, `parse_bce_tasas.py`, `parse_seps.py`, `parse_cartera.py`?**
-  _High betweenness centrality (0.006) - this node is a cross-community bridge._
+- **Why does `resolver_banco_codigo()` connect `banco_matching.py` to `parse_cartera.py`, `parse_boletin.py`?**
+  _High betweenness centrality (0.005) - this node is a cross-community bridge._
 - **Are the 4 inferred relationships involving `load_seps()` (e.g. with `upsert_staging_cartera()` and `upsert_staging_depositos()`) actually correct?**
   _`load_seps()` has 4 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `$schema`, `name`, `displayName` to the rest of the system?**
-  _551 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _552 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `pipeline.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.06783511846802986 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06327006327006326 - nodes in this community are weakly interconnected._
 - **Should `benchmark_cartera_depositos` be split into smaller, more focused modules?**
   _Cohesion score 0.10121951219512196 - nodes in this community are weakly interconnected._

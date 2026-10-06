@@ -182,7 +182,7 @@
       "file_type": "code",
       "norm_label": "main()",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L54"
+      "source_location": "L60"
     },
     {
       "id": "src_benchmark_bancos_extract_download_bce_download_all",
@@ -209,6 +209,18 @@
       "source_location": "L20"
     },
     {
+      "id": "src_benchmark_bancos_load_load_postgres_cdc_guard",
+      "label": "_cdc_guard()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "_cdc_guard()",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L277"
+    },
+    {
       "id": "src_benchmark_bancos_load_load_postgres_clean",
       "label": "_clean()",
       "_callable": true,
@@ -218,7 +230,7 @@
       "file_type": "code",
       "norm_label": "_clean()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L58"
+      "source_location": "L60"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_copy_rows",
@@ -230,7 +242,19 @@
       "file_type": "code",
       "norm_label": "_copy_rows()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L264"
+      "source_location": "L285"
+    },
+    {
+      "id": "src_benchmark_bancos_load_load_postgres_crear_fuentes_incrementales",
+      "label": "_crear_fuentes_incrementales()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "_crear_fuentes_incrementales()",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1115"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_get_connection",
@@ -242,7 +266,7 @@
       "file_type": "code",
       "norm_label": "get_connection()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L31"
+      "source_location": "L33"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_insert_dim_cuenta_contable_seps",
@@ -254,7 +278,7 @@
       "file_type": "code",
       "norm_label": "insert_dim_cuenta_contable_seps()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L526"
+      "source_location": "L504"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_is_source_loaded",
@@ -266,7 +290,19 @@
       "file_type": "code",
       "norm_label": "is_source_loaded()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L35"
+      "source_location": "L37"
+    },
+    {
+      "id": "src_benchmark_bancos_load_load_postgres_leer_watermark",
+      "label": "_leer_watermark()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "_leer_watermark()",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1108"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_load_banco_maestro_seed",
@@ -278,55 +314,7 @@
       "file_type": "code",
       "norm_label": "load_banco_maestro_seed()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L120"
-    },
-    {
-      "id": "src_benchmark_bancos_load_load_postgres_load_raw",
-      "label": "load_raw()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "load_raw()",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L64"
-    },
-    {
-      "id": "src_benchmark_bancos_load_load_postgres_load_raw_bce",
-      "label": "load_raw_bce()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "load_raw_bce()",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L276"
-    },
-    {
-      "id": "src_benchmark_bancos_load_load_postgres_load_raw_boletin",
-      "label": "load_raw_boletin()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "load_raw_boletin()",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L555"
-    },
-    {
-      "id": "src_benchmark_bancos_load_load_postgres_load_raw_tasas_referenciales",
-      "label": "load_raw_tasas_referenciales()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "load_raw_tasas_referenciales()",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L382"
+      "source_location": "L100"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_log_bancos_no_resueltos",
@@ -338,7 +326,7 @@
       "file_type": "code",
       "norm_label": "_log_bancos_no_resueltos()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1089"
+      "source_location": "L1049"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_log_cantones_no_resueltos",
@@ -350,7 +338,7 @@
       "file_type": "code",
       "norm_label": "_log_cantones_no_resueltos()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1016"
+      "source_location": "L974"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_refresh_marts",
@@ -362,7 +350,7 @@
       "file_type": "code",
       "norm_label": "refresh_marts()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1129"
+      "source_location": "L1139"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_register_source_file",
@@ -374,7 +362,7 @@
       "file_type": "code",
       "norm_label": "register_source_file()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L44"
+      "source_location": "L46"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_truncate_staging_bce",
@@ -386,7 +374,7 @@
       "file_type": "code",
       "norm_label": "truncate_staging_bce()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L438"
+      "source_location": "L416"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_upsert_banco_maestro_ruc",
@@ -398,7 +386,7 @@
       "file_type": "code",
       "norm_label": "upsert_banco_maestro_ruc()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L86"
+      "source_location": "L66"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_upsert_bce_via_temp",
@@ -410,7 +398,7 @@
       "file_type": "code",
       "norm_label": "_upsert_bce_via_temp()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L298"
+      "source_location": "L300"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_upsert_boletin_via_temp",
@@ -422,7 +410,7 @@
       "file_type": "code",
       "norm_label": "_upsert_boletin_via_temp()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L575"
+      "source_location": "L533"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_upsert_dim_cuenta_contable",
@@ -434,7 +422,7 @@
       "file_type": "code",
       "norm_label": "upsert_dim_cuenta_contable()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L492"
+      "source_location": "L470"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_upsert_staging_bce_tasas_activas",
@@ -446,7 +434,7 @@
       "file_type": "code",
       "norm_label": "upsert_staging_bce_tasas_activas()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L477"
+      "source_location": "L455"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_upsert_staging_bce_tasas_pasivas",
@@ -458,7 +446,7 @@
       "file_type": "code",
       "norm_label": "upsert_staging_bce_tasas_pasivas()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L462"
+      "source_location": "L440"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_upsert_staging_boletin_balance",
@@ -470,7 +458,7 @@
       "file_type": "code",
       "norm_label": "upsert_staging_boletin_balance()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L621"
+      "source_location": "L579"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_upsert_staging_boletin_pyg",
@@ -482,7 +470,7 @@
       "file_type": "code",
       "norm_label": "upsert_staging_boletin_pyg()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L627"
+      "source_location": "L585"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_upsert_staging_cartera",
@@ -494,7 +482,7 @@
       "file_type": "code",
       "norm_label": "upsert_staging_cartera()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L152"
+      "source_location": "L132"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_upsert_staging_depositos",
@@ -506,7 +494,7 @@
       "file_type": "code",
       "norm_label": "upsert_staging_depositos()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L200"
+      "source_location": "L180"
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_upsert_staging_tasas_referenciales",
@@ -518,7 +506,7 @@
       "file_type": "code",
       "norm_label": "upsert_staging_tasas_referenciales()",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L406"
+      "source_location": "L384"
     },
     {
       "id": "src_benchmark_bancos_pipeline_load_bce",
@@ -530,7 +518,7 @@
       "file_type": "code",
       "norm_label": "load_bce()",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L196"
+      "source_location": "L184"
     },
     {
       "id": "src_benchmark_bancos_pipeline_load_boletin",
@@ -542,7 +530,7 @@
       "file_type": "code",
       "norm_label": "load_boletin()",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L406"
+      "source_location": "L385"
     },
     {
       "id": "src_benchmark_bancos_pipeline_load_seps",
@@ -554,7 +542,7 @@
       "file_type": "code",
       "norm_label": "load_seps()",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L123"
+      "source_location": "L116"
     },
     {
       "id": "src_benchmark_bancos_pipeline_load_tasas_historicas",
@@ -566,7 +554,7 @@
       "file_type": "code",
       "norm_label": "load_tasas_historicas()",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L321"
+      "source_location": "L301"
     },
     {
       "id": "src_benchmark_bancos_pipeline_load_years",
@@ -578,7 +566,7 @@
       "file_type": "code",
       "norm_label": "load_years()",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L69"
+      "source_location": "L63"
     },
     {
       "id": "src_benchmark_bancos_pipeline_parse_fecha_from_boletin_filename",
@@ -590,7 +578,7 @@
       "file_type": "code",
       "norm_label": "parse_fecha_from_boletin_filename()",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L391"
+      "source_location": "L370"
     },
     {
       "id": "src_benchmark_bancos_pipeline_parse_fecha_from_tasas_historicas_filename",
@@ -602,7 +590,7 @@
       "file_type": "code",
       "norm_label": "parse_fecha_from_tasas_historicas_filename()",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L307"
+      "source_location": "L287"
     },
     {
       "id": "src_benchmark_bancos_pipeline_refresh",
@@ -614,7 +602,7 @@
       "file_type": "code",
       "norm_label": "refresh()",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L461"
+      "source_location": "L436"
     },
     {
       "id": "src_benchmark_bancos_pipeline_reprocess_bce_staging",
@@ -626,19 +614,7 @@
       "file_type": "code",
       "norm_label": "reprocess_bce_staging()",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L252"
-    },
-    {
-      "id": "tests_test_integration_regressions_test_source_file_hash_gate",
-      "label": "test_source_file_hash_gate()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "test_source_file_hash_gate()",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L356"
+      "source_location": "L233"
     },
     {
       "id": "tests_test_pipeline_fecha_parsing_test_parse_fecha_boletin_no_matching_pattern_raises",
@@ -1649,6 +1625,30 @@
       "source_location": "L212"
     },
     {
+      "id": "tests_test_integration_regressions_test_refresh_incremental_propaga_fila_nueva_y_avanza_marca",
+      "label": "test_refresh_incremental_propaga_fila_nueva_y_avanza_marca()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_refresh_incremental_propaga_fila_nueva_y_avanza_marca()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L729"
+    },
+    {
+      "id": "tests_test_integration_regressions_test_source_file_hash_gate",
+      "label": "test_source_file_hash_gate()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "code",
+      "norm_label": "test_source_file_hash_gate()",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L356"
+    },
+    {
       "id": "tests_test_integration_regressions_test_staging_cantones_homonimos_no_colisionan_regression",
       "label": "test_staging_cantones_homonimos_no_colisionan_regression()",
       "_callable": true,
@@ -2189,6 +2189,18 @@
       "source_location": "L286"
     },
     {
+      "id": "src_benchmark_bancos_transform_parse_boletin_codigo_padre",
+      "label": "_codigo_padre()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "parse_seps.py",
+      "file_type": "code",
+      "norm_label": "_codigo_padre()",
+      "source_file": "src/benchmark_bancos/transform/parse_boletin.py",
+      "source_location": "L77"
+    },
+    {
       "id": "src_benchmark_bancos_transform_parse_seps_a_numero",
       "label": "_a_numero()",
       "_callable": true,
@@ -2546,7 +2558,7 @@
       "file_type": "code",
       "norm_label": "build_parser()",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L36"
+      "source_location": "L37"
     },
     {
       "id": "src_benchmark_bancos_extract_download_seps_download_seps",
@@ -3341,18 +3353,6 @@
       "source_location": "L18"
     },
     {
-      "id": "src_benchmark_bancos_transform_parse_boletin_codigo_padre",
-      "label": "_codigo_padre()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "parse_boletin.py",
-      "file_type": "code",
-      "norm_label": "_codigo_padre()",
-      "source_file": "src/benchmark_bancos/transform/parse_boletin.py",
-      "source_location": "L77"
-    },
-    {
       "id": "src_benchmark_bancos_transform_parse_boletin_find_header_row",
       "label": "_find_header_row()",
       "_callable": true,
@@ -3595,39 +3595,17 @@
     },
     {
       "id": "src_benchmark_bancos_load_load_postgres_rationale_1",
-      "label": "Carga idempotente a Postgres: raw (JSONB tal cual) -> staging (tipado) -> marts\u2026",
+      "label": "Carga idempotente a Postgres: archivo parseado -> staging (tipado) -> marts\u2026",
       "_origin": "ast",
       "community": 0,
       "community_name": "pipeline.py",
       "file_type": "rationale",
-      "norm_label": "carga idempotente a postgres: raw (jsonb tal cual) -> staging (tipado) -> marts...",
+      "norm_label": "carga idempotente a postgres: archivo parseado -> staging (tipado) -> marts...",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
       "source_location": "L1"
     },
     {
-      "id": "src_benchmark_bancos_load_load_postgres_rationale_1017",
-      "label": "El INSERT de marts.dim_canton en _REFRESH_MARTS_SQL usa un INNER JOIN contra\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "el insert de marts.dim_canton en _refresh_marts_sql usa un inner join contra...",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1017"
-    },
-    {
-      "id": "src_benchmark_bancos_load_load_postgres_rationale_1090",
-      "label": "Los INSERT de fact_saldo_cartera/fact_saldo_depositos hacen INNER JOIN contra\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "los insert de fact_saldo_cartera/fact_saldo_depositos hacen inner join contra...",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1090"
-    },
-    {
-      "id": "src_benchmark_bancos_load_load_postgres_rationale_121",
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_101",
       "label": "Siembra staging.banco_maestro desde\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3635,10 +3613,54 @@
       "file_type": "rationale",
       "norm_label": "siembra staging.banco_maestro desde...",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L121"
+      "source_location": "L101"
     },
     {
-      "id": "src_benchmark_bancos_load_load_postgres_rationale_265",
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_1050",
+      "label": "Los INSERT de fact_saldo_cartera/fact_saldo_depositos hacen INNER JOIN contra\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "los insert de fact_saldo_cartera/fact_saldo_depositos hacen inner join contra...",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1050"
+    },
+    {
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_1116",
+      "label": "Copia a tablas temporales src_<tabla> el alcance a recalcular: todas las filas\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "copia a tablas temporales src_<tabla> el alcance a recalcular: todas las filas...",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1116"
+    },
+    {
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_1140",
+      "label": "Actualiza marts.* desde staging. Incremental por defecto: solo recalcula el\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "actualiza marts.* desde staging. incremental por defecto: solo recalcula el...",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1140"
+    },
+    {
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_278",
+      "label": "`(t.a, t.b) IS DISTINCT FROM (EXCLUDED.a, EXCLUDED.b)` para el ON CONFLICT.",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "`(t.a, t.b) is distinct from (excluded.a, excluded.b)` para el on conflict.",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L278"
+    },
+    {
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_286",
       "label": "COPY es ~10-100x m\u00e1s r\u00e1pido que executemany para los vol\u00famenes de BCE (cientos\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3646,10 +3668,10 @@
       "file_type": "rationale",
       "norm_label": "copy es ~10-100x mas rapido que executemany para los volumenes de bce (cientos...",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L265"
+      "source_location": "L286"
     },
     {
-      "id": "src_benchmark_bancos_load_load_postgres_rationale_301",
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_303",
       "label": "COPY a una tabla temporal (misma sesi\u00f3n, se descarta sola) y de ah\u00ed INSERT ...\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3657,21 +3679,10 @@
       "file_type": "rationale",
       "norm_label": "copy a una tabla temporal (misma sesion, se descarta sola) y de ahi insert ......",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L301"
+      "source_location": "L303"
     },
     {
-      "id": "src_benchmark_bancos_load_load_postgres_rationale_383",
-      "label": "Volumen peque\u00f1o (~40 filas/mes x ~222 meses -- miles, no millones), executemany\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "volumen pequeno (~40 filas/mes x ~222 meses -- miles, no millones), executemany...",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L383"
-    },
-    {
-      "id": "src_benchmark_bancos_load_load_postgres_rationale_439",
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_417",
       "label": "Vac\u00eda staging.bce_tasas_pasivas/activas -- necesario \u00daNICAMENTE para el\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3679,10 +3690,10 @@
       "file_type": "rationale",
       "norm_label": "vacia staging.bce_tasas_pasivas/activas -- necesario unicamente para el...",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L439"
+      "source_location": "L417"
     },
     {
-      "id": "src_benchmark_bancos_load_load_postgres_rationale_493",
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_471",
       "label": "Plan de cuentas descubierto en cada archivo del Bolet\u00edn -- volumen peque\u00f1o\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3690,10 +3701,10 @@
       "file_type": "rationale",
       "norm_label": "plan de cuentas descubierto en cada archivo del boletin -- volumen pequeno...",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L493"
+      "source_location": "L471"
     },
     {
-      "id": "src_benchmark_bancos_load_load_postgres_rationale_527",
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_505",
       "label": "Plan de cuentas de la SEPS (mismo Cat\u00e1logo \u00danico que Superbancos: 1.063 de\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3701,10 +3712,10 @@
       "file_type": "rationale",
       "norm_label": "plan de cuentas de la seps (mismo catalogo unico que superbancos: 1.063 de...",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L527"
+      "source_location": "L505"
     },
     {
-      "id": "src_benchmark_bancos_load_load_postgres_rationale_59",
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_61",
       "label": "pandas usa NaN para valores faltantes incluso en columnas de texto; json.dumps\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3712,10 +3723,10 @@
       "file_type": "rationale",
       "norm_label": "pandas usa nan para valores faltantes incluso en columnas de texto; json.dumps...",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L59"
+      "source_location": "L61"
     },
     {
-      "id": "src_benchmark_bancos_load_load_postgres_rationale_87",
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_67",
       "label": "Registra el RUC de TODAS las entidades resueltas por BCE (bancos privados\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3723,7 +3734,18 @@
       "file_type": "rationale",
       "norm_label": "registra el ruc de todas las entidades resueltas por bce (bancos privados...",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L87"
+      "source_location": "L67"
+    },
+    {
+      "id": "src_benchmark_bancos_load_load_postgres_rationale_975",
+      "label": "El INSERT de marts.dim_canton en _REFRESH_MARTS_SQL usa un INNER JOIN contra\u2026",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "el insert de marts.dim_canton en _refresh_marts_sql usa un inner join contra...",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L975"
     },
     {
       "id": "src_benchmark_bancos_pipeline_rationale_1",
@@ -3737,7 +3759,7 @@
       "source_location": "L1"
     },
     {
-      "id": "src_benchmark_bancos_pipeline_rationale_126",
+      "id": "src_benchmark_bancos_pipeline_rationale_119",
       "label": "SEPS (cooperativas S1-S3 + mutualistas): descarga directa + 3 reportes por a\u00f1o\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3745,10 +3767,10 @@
       "file_type": "rationale",
       "norm_label": "seps (cooperativas s1-s3 + mutualistas): descarga directa + 3 reportes por ano...",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L126"
+      "source_location": "L119"
     },
     {
-      "id": "src_benchmark_bancos_pipeline_rationale_197",
+      "id": "src_benchmark_bancos_pipeline_rationale_185",
       "label": "BCE tsp/tsa: descarga directa (sin Playwright), un solo archivo cada uno con\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3756,10 +3778,10 @@
       "file_type": "rationale",
       "norm_label": "bce tsp/tsa: descarga directa (sin playwright), un solo archivo cada uno con...",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L197"
+      "source_location": "L185"
     },
     {
-      "id": "src_benchmark_bancos_pipeline_rationale_253",
+      "id": "src_benchmark_bancos_pipeline_rationale_234",
       "label": "Backfill de sql/28_bce_canton_grain.sql (cambio de grano provincia -> cant\u00f3n,\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3767,10 +3789,10 @@
       "file_type": "rationale",
       "norm_label": "backfill de sql/28_bce_canton_grain.sql (cambio de grano provincia -> canton,...",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L253"
+      "source_location": "L234"
     },
     {
-      "id": "src_benchmark_bancos_pipeline_rationale_308",
+      "id": "src_benchmark_bancos_pipeline_rationale_288",
       "label": "Extrae la fecha (fin de mes) de un nombre de archivo TasasVigenteMMAAAA.htm.\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3778,10 +3800,10 @@
       "file_type": "rationale",
       "norm_label": "extrae la fecha (fin de mes) de un nombre de archivo tasasvigentemmaaaa.htm....",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L308"
+      "source_location": "L288"
     },
     {
-      "id": "src_benchmark_bancos_pipeline_rationale_322",
+      "id": "src_benchmark_bancos_pipeline_rationale_302",
       "label": "TasasHistorico.htm: a diferencia de tsp/tsa (un solo archivo acumulativo), ac\u00e1\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3789,10 +3811,10 @@
       "file_type": "rationale",
       "norm_label": "tasashistorico.htm: a diferencia de tsp/tsa (un solo archivo acumulativo), aca...",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L322"
+      "source_location": "L302"
     },
     {
-      "id": "src_benchmark_bancos_pipeline_rationale_392",
+      "id": "src_benchmark_bancos_pipeline_rationale_371",
       "label": "Extrae la fecha (fin de mes) de un nombre de archivo 'Bolet\u00edn Bancos <MES_ES>\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3800,10 +3822,10 @@
       "file_type": "rationale",
       "norm_label": "extrae la fecha (fin de mes) de un nombre de archivo 'boletin bancos <mes_es>...",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L392"
+      "source_location": "L371"
     },
     {
-      "id": "src_benchmark_bancos_pipeline_rationale_407",
+      "id": "src_benchmark_bancos_pipeline_rationale_386",
       "label": "Bolet\u00edn Financiero Mensual: un archivo .zip por mes (nombre con mes en\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3811,10 +3833,10 @@
       "file_type": "rationale",
       "norm_label": "boletin financiero mensual: un archivo .zip por mes (nombre con mes en...",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L407"
+      "source_location": "L386"
     },
     {
-      "id": "src_benchmark_bancos_pipeline_rationale_462",
+      "id": "src_benchmark_bancos_pipeline_rationale_437",
       "label": "Recalcula solo marts.* desde staging, sin leer archivos (p.ej. tras curar un\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3822,10 +3844,10 @@
       "file_type": "rationale",
       "norm_label": "recalcula solo marts.* desde staging, sin leer archivos (p.ej. tras curar un...",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L462"
+      "source_location": "L437"
     },
     {
-      "id": "src_benchmark_bancos_pipeline_rationale_74",
+      "id": "src_benchmark_bancos_pipeline_rationale_68",
       "label": "tipo_entidad de cada fila lo fija el sub-portal CAPCOL de donde vino el archivo\u2026",
       "_origin": "ast",
       "community": 0,
@@ -3833,18 +3855,7 @@
       "file_type": "rationale",
       "norm_label": "tipo_entidad de cada fila lo fija el sub-portal capcol de donde vino el archivo...",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L74"
-    },
-    {
-      "id": "tests_test_integration_regressions_rationale_357",
-      "label": "CDC invariante #1 (gate por hash de archivo, raw.source_files -- ver\u2026",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "cdc invariante #1 (gate por hash de archivo, raw.source_files -- ver...",
-      "source_file": "tests/test_integration_regressions.py",
-      "source_location": "L357"
+      "source_location": "L68"
     },
     {
       "id": "tests_test_pipeline_fecha_parsing_rationale_1",
@@ -8139,7 +8150,7 @@
       "node_kind": "heading",
       "norm_label": "1. capcol \u2014 cartera",
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L48"
+      "source_location": "L54"
     },
     {
       "id": "docs_linaje_datos_2_capcol_dep\u00f3sitos",
@@ -8151,7 +8162,7 @@
       "node_kind": "heading",
       "norm_label": "2. capcol \u2014 depositos",
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L84"
+      "source_location": "L90"
     },
     {
       "id": "docs_linaje_datos_3_bce_tsp_tasas_pasivas_semanal",
@@ -8163,7 +8174,7 @@
       "node_kind": "heading",
       "norm_label": "3. bce \u2014 tsp (tasas pasivas, semanal)",
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L107"
+      "source_location": "L113"
     },
     {
       "id": "docs_linaje_datos_4_bce_tsa_tasas_activas_semanal",
@@ -8175,7 +8186,7 @@
       "node_kind": "heading",
       "norm_label": "4. bce \u2014 tsa (tasas activas, semanal)",
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L167"
+      "source_location": "L173"
     },
     {
       "id": "docs_linaje_datos_5_bce_tasashistorico_htm_techos_y_referenciales_mensual_nivel_sistema",
@@ -8187,7 +8198,7 @@
       "node_kind": "heading",
       "norm_label": "5. bce \u2014 `tasashistorico.htm` (techos y referenciales, mensual, nivel sistema)",
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L195"
+      "source_location": "L201"
     },
     {
       "id": "docs_linaje_datos_6_bolet\u00edn_financiero_mensual_balance_pyg",
@@ -8199,7 +8210,7 @@
       "node_kind": "heading",
       "norm_label": "6. boletin financiero mensual \u2014 balance / pyg",
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L217"
+      "source_location": "L223"
     },
     {
       "id": "docs_linaje_datos_7_seps_captaciones_colocaciones_saldos_y_estados_financieros_2026_09_30",
@@ -8211,7 +8222,7 @@
       "node_kind": "heading",
       "norm_label": "7. seps \u2014 captaciones, colocaciones (saldos) y estados financieros (2026-09-30)",
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L245"
+      "source_location": "L251"
     },
     {
       "id": "docs_linaje_datos_linaje_de_datos",
@@ -8235,7 +8246,7 @@
       "node_kind": "heading",
       "norm_label": "patrones de transformacion transversales",
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L275"
+      "source_location": "L281"
     },
     {
       "id": "docs_linaje_datos_principio_raw_no_es_un_espejo_bit_a_bit_del_archivo_origen",
@@ -8247,7 +8258,7 @@
       "node_kind": "heading",
       "norm_label": "principio: `raw.*` no es un espejo bit-a-bit del archivo origen",
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L11"
+      "source_location": "L17"
     },
     {
       "id": "powerbi_prototipo_diseno_bi_report_definition_pages_page_prototipo_diseno_page",
@@ -8348,7 +8359,7 @@
       "node_kind": "heading",
       "norm_label": "alcance de los datos",
       "source_file": "README.md",
-      "source_location": "L165"
+      "source_location": "L169"
     },
     {
       "id": "readme_benchmark_de_cartera_dep\u00f3sitos_y_tasas_bancos_privados_del_ecuador",
@@ -8372,7 +8383,7 @@
       "node_kind": "heading",
       "norm_label": "estado del proyecto",
       "source_file": "README.md",
-      "source_location": "L201"
+      "source_location": "L205"
     },
     {
       "id": "readme_estructura",
@@ -8384,7 +8395,7 @@
       "node_kind": "heading",
       "norm_label": "estructura",
       "source_file": "README.md",
-      "source_location": "L90"
+      "source_location": "L91"
     },
     {
       "id": "readme_quickstart",
@@ -8396,7 +8407,7 @@
       "node_kind": "heading",
       "norm_label": "quickstart",
       "source_file": "README.md",
-      "source_location": "L42"
+      "source_location": "L43"
     },
     {
       "id": "readme_qu\u00e9_incluye",
@@ -8420,7 +8431,7 @@
       "node_kind": "heading",
       "norm_label": "tests y ci",
       "source_file": "README.md",
-      "source_location": "L117"
+      "source_location": "L121"
     },
     {
       "id": "data_samples_readme",
@@ -10541,6 +10552,17 @@
       "source_location": "L1"
     },
     {
+      "id": "sql_15_rename_fact_tables_sql_marts_fact_tasas_referenciales_depositos_instrumento",
+      "label": "marts.fact_tasas_referenciales_depositos_instrumento",
+      "_origin": "ast",
+      "community": 149,
+      "community_name": "marts.fact_tasas_referenciales_depositos_instrumento",
+      "file_type": "code",
+      "norm_label": "marts.fact_tasas_referenciales_depositos_instrumento",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "powerbi_benchmark_cartera_depositos_report_definition_pages_page_overview_visuals_v01kpisaldocartera_visual",
       "label": "v01KpiSaldoCartera/visual.json",
       "_origin": "ast",
@@ -10750,6 +10772,116 @@
       "source_location": "L13"
     },
     {
+      "id": "sql_15_rename_fact_tables_sql_marts_fact_tasas_referenciales_depositos_plazo",
+      "label": "marts.fact_tasas_referenciales_depositos_plazo",
+      "_origin": "ast",
+      "community": 150,
+      "community_name": "marts.fact_tasas_referenciales_depositos_plazo",
+      "file_type": "code",
+      "norm_label": "marts.fact_tasas_referenciales_depositos_plazo",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_33_drop_raw_jsonb_meta_source_files",
+      "label": "33_drop_raw_jsonb_meta_source_files.sql",
+      "_origin": "ast",
+      "community": 151,
+      "community_name": "33_drop_raw_jsonb_meta_source_files.sql",
+      "file_type": "code",
+      "norm_label": "33_drop_raw_jsonb_meta_source_files.sql",
+      "source_file": "sql/33_drop_raw_jsonb_meta_source_files.sql",
+      "source_location": null
+    },
+    {
+      "id": "sql_33_drop_raw_jsonb_meta_source_files_sql_raw_source_files",
+      "label": "raw.source_files",
+      "_origin": "ast",
+      "community": 152,
+      "community_name": "raw.source_files",
+      "file_type": "code",
+      "norm_label": "raw.source_files",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_marts_dim_banco",
+      "label": "marts.dim_banco",
+      "_origin": "ast",
+      "community": 153,
+      "community_name": "marts.dim_banco",
+      "file_type": "code",
+      "norm_label": "marts.dim_banco",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_marts_fact_balance",
+      "label": "marts.fact_balance",
+      "_origin": "ast",
+      "community": 154,
+      "community_name": "marts.fact_balance",
+      "file_type": "code",
+      "norm_label": "marts.fact_balance",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_marts_fact_captaciones_depositos",
+      "label": "marts.fact_captaciones_depositos",
+      "_origin": "ast",
+      "community": 155,
+      "community_name": "marts.fact_captaciones_depositos",
+      "file_type": "code",
+      "norm_label": "marts.fact_captaciones_depositos",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_marts_fact_colocaciones_cartera",
+      "label": "marts.fact_colocaciones_cartera",
+      "_origin": "ast",
+      "community": 156,
+      "community_name": "marts.fact_colocaciones_cartera",
+      "file_type": "code",
+      "norm_label": "marts.fact_colocaciones_cartera",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_marts_fact_pyg",
+      "label": "marts.fact_pyg",
+      "_origin": "ast",
+      "community": 157,
+      "community_name": "marts.fact_pyg",
+      "file_type": "code",
+      "norm_label": "marts.fact_pyg",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_marts_fact_saldo_cartera",
+      "label": "marts.fact_saldo_cartera",
+      "_origin": "ast",
+      "community": 158,
+      "community_name": "marts.fact_saldo_cartera",
+      "file_type": "code",
+      "norm_label": "marts.fact_saldo_cartera",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_marts_fact_saldo_depositos",
+      "label": "marts.fact_saldo_depositos",
+      "_origin": "ast",
+      "community": 159,
+      "community_name": "marts.fact_saldo_depositos",
+      "file_type": "code",
+      "norm_label": "marts.fact_saldo_depositos",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "powerbi_benchmark_cartera_depositos_report_definition_pages_page_overview_visuals_v02kpisaldodepositos_visual",
       "label": "v02KpiSaldoDepositos/visual.json",
       "_origin": "ast",
@@ -10935,6 +11067,116 @@
       "norm_label": "visualtype",
       "source_file": "powerbi/benchmark-cartera-depositos.Report/definition/pages/page-overview/visuals/v02KpiSaldoDepositos/visual.json",
       "source_location": "L13"
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_marts_fact_tasas_referenciales_cartera",
+      "label": "marts.fact_tasas_referenciales_cartera",
+      "_origin": "ast",
+      "community": 160,
+      "community_name": "marts.fact_tasas_referenciales_cartera",
+      "file_type": "code",
+      "norm_label": "marts.fact_tasas_referenciales_cartera",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_marts_fact_tasas_referenciales_depositos_instrumento",
+      "label": "marts.fact_tasas_referenciales_depositos_instrumento",
+      "_origin": "ast",
+      "community": 161,
+      "community_name": "marts.fact_tasas_referenciales_depositos_instrumento",
+      "file_type": "code",
+      "norm_label": "marts.fact_tasas_referenciales_depositos_instrumento",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_marts_fact_tasas_referenciales_depositos_plazo",
+      "label": "marts.fact_tasas_referenciales_depositos_plazo",
+      "_origin": "ast",
+      "community": 162,
+      "community_name": "marts.fact_tasas_referenciales_depositos_plazo",
+      "file_type": "code",
+      "norm_label": "marts.fact_tasas_referenciales_depositos_plazo",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_staging_bce_tasas_activas",
+      "label": "staging.bce_tasas_activas",
+      "_origin": "ast",
+      "community": 163,
+      "community_name": "staging.bce_tasas_activas",
+      "file_type": "code",
+      "norm_label": "staging.bce_tasas_activas",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_staging_bce_tasas_pasivas",
+      "label": "staging.bce_tasas_pasivas",
+      "_origin": "ast",
+      "community": 164,
+      "community_name": "staging.bce_tasas_pasivas",
+      "file_type": "code",
+      "norm_label": "staging.bce_tasas_pasivas",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_staging_cartera",
+      "label": "staging.cartera",
+      "_origin": "ast",
+      "community": 165,
+      "community_name": "staging.cartera",
+      "file_type": "code",
+      "norm_label": "staging.cartera",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_sql_staging_depositos",
+      "label": "staging.depositos",
+      "_origin": "ast",
+      "community": 166,
+      "community_name": "staging.depositos",
+      "file_type": "code",
+      "norm_label": "staging.depositos",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "staging_boletin_balance",
+      "label": "staging.boletin_balance",
+      "_origin": "ast",
+      "community": 167,
+      "community_name": "staging.boletin_balance",
+      "file_type": "code",
+      "norm_label": "staging.boletin_balance",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "staging_boletin_pyg",
+      "label": "staging.boletin_pyg",
+      "_origin": "ast",
+      "community": 168,
+      "community_name": "staging.boletin_pyg",
+      "file_type": "code",
+      "norm_label": "staging.boletin_pyg",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "staging_tasas_referenciales",
+      "label": "staging.tasas_referenciales",
+      "_origin": "ast",
+      "community": 169,
+      "community_name": "staging.tasas_referenciales",
+      "file_type": "code",
+      "norm_label": "staging.tasas_referenciales",
+      "source_file": "",
+      "source_location": ""
     },
     {
       "id": "powerbi_benchmark_cartera_depositos_report_definition_pages_page_overview_visuals_v03kpimorosidad_visual",
@@ -11311,17 +11553,6 @@
       "source_location": "L13"
     },
     {
-      "id": "marts_fact_pyg",
-      "label": "marts.fact_pyg",
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "18_glosario_cuentas_views.sql",
-      "file_type": "code",
-      "norm_label": "marts.fact_pyg",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
       "id": "sql_18_glosario_cuentas_views",
       "label": "18_glosario_cuentas_views.sql",
       "_origin": "ast",
@@ -11472,6 +11703,17 @@
       "community_name": "18_glosario_cuentas_views.sql",
       "file_type": "code",
       "norm_label": "marts.fact_balance",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_18_glosario_cuentas_views_sql_marts_fact_pyg",
+      "label": "marts.fact_pyg",
+      "_origin": "ast",
+      "community": 19,
+      "community_name": "18_glosario_cuentas_views.sql",
+      "file_type": "code",
+      "norm_label": "marts.fact_pyg",
       "source_file": "",
       "source_location": ""
     },
@@ -12004,6 +12246,17 @@
       "source_location": "L290"
     },
     {
+      "id": "tests_test_integration_regressions_rationale_357",
+      "label": "CDC invariante #1 (gate por hash de archivo, meta.source_files -- ver\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "cdc invariante #1 (gate por hash de archivo, meta.source_files -- ver...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L357"
+    },
+    {
       "id": "tests_test_integration_regressions_rationale_424",
       "label": "Cobertura end-to-end del two-tier de canton_matching.py (nivel 2, ver\u2026",
       "_origin": "ast",
@@ -12090,6 +12343,17 @@
       "norm_label": "un cambio real de saldo_usd a traves de _upsert_boletin_via_temp() si dispara...",
       "source_file": "tests/test_integration_regressions.py",
       "source_location": "L688"
+    },
+    {
+      "id": "tests_test_integration_regressions_rationale_730",
+      "label": "Regresi\u00f3n de sql/34 + refresh_marts() incremental: una fila nueva en staging\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "test_integration_regressions.py",
+      "file_type": "rationale",
+      "norm_label": "regresion de sql/34 + refresh_marts() incremental: una fila nueva en staging...",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L730"
     },
     {
       "id": "tests_test_integration_regressions_rationale_95",
@@ -12388,7 +12652,7 @@
       "node_kind": "heading",
       "norm_label": "0. linea base verificada (para que la propuesta no asuma de mas)",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L23"
+      "source_location": "L32"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_1_1_src_benchmark_bancos_sources_yml_vs_tuplas_hardcodeadas_veredicto_no_todav\u00eda_y_no_como_se_pedir\u00eda_por_defecto",
@@ -12400,7 +12664,7 @@
       "node_kind": "heading",
       "norm_label": "1.1 `src/benchmark_bancos/sources.yml` vs. tuplas hardcodeadas \u2014 veredicto: **no todavia, y no como se pediria por defecto**",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L44"
+      "source_location": "L53"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_1_2_retry_backoff_en_extractores",
@@ -12412,7 +12676,7 @@
       "node_kind": "heading",
       "norm_label": "1.2 retry/backoff en extractores",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L70"
+      "source_location": "L79"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_1_3_logging_estructurado_con_correlaci\u00f3n_por_corrida",
@@ -12424,7 +12688,7 @@
       "node_kind": "heading",
       "norm_label": "1.3 logging estructurado con correlacion por corrida",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L77"
+      "source_location": "L86"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_1_4_exit_codes_no_triviales",
@@ -12436,7 +12700,7 @@
       "node_kind": "heading",
       "norm_label": "1.4 exit codes no triviales",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L83"
+      "source_location": "L92"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_1_5_orquestaci\u00f3n_proporcional_a_la_cadencia_real_por_qu\u00e9_no_airflow",
@@ -12448,7 +12712,7 @@
       "node_kind": "heading",
       "norm_label": "1.5 orquestacion proporcional a la cadencia real \u2014 por que no airflow",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L87"
+      "source_location": "L96"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_1_escalabilidad_del_pipeline",
@@ -12460,7 +12724,7 @@
       "node_kind": "heading",
       "norm_label": "1. escalabilidad del pipeline",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L42"
+      "source_location": "L51"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_2_1_invariantes_de_cdc_idempotencia_que_nunca_deben_regresar",
@@ -12472,7 +12736,7 @@
       "node_kind": "heading",
       "norm_label": "2.1 invariantes de cdc/idempotencia que nunca deben regresar",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L104"
+      "source_location": "L113"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_2_2_los_2_tests_de_regresi\u00f3n_ya_routeados_dise\u00f1o_concreto",
@@ -12484,7 +12748,7 @@
       "node_kind": "heading",
       "norm_label": "2.2 los 2 tests de regresion ya routeados \u2014 diseno concreto",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L115"
+      "source_location": "L124"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_2_3_cobertura_para_la_capa_de_orquestaci\u00f3n_sin_test_item_routeado",
@@ -12496,7 +12760,7 @@
       "node_kind": "heading",
       "norm_label": "2.3 cobertura para la capa de orquestacion sin test (item routeado)",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L122"
+      "source_location": "L131"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_2_4_forma_del_workflow_de_ci_jobs_no_yaml",
@@ -12508,7 +12772,7 @@
       "node_kind": "heading",
       "norm_label": "2.4 forma del workflow de ci (jobs, no yaml)",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L130"
+      "source_location": "L139"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_2_reglas_de_qa",
@@ -12520,7 +12784,7 @@
       "node_kind": "heading",
       "norm_label": "2. reglas de qa",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L102"
+      "source_location": "L111"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_3_1_inventario_actual_vs_propuesto",
@@ -12532,7 +12796,7 @@
       "node_kind": "heading",
       "norm_label": "3.1 inventario actual vs. propuesto",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L147"
+      "source_location": "L156"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_3_2_contenerizaci\u00f3n_del_runner_etl_item_routeado_sin_dise\u00f1ar_ac\u00e1",
@@ -12544,7 +12808,7 @@
       "node_kind": "heading",
       "norm_label": "3.2 contenerizacion del runner etl (item routeado, sin disenar aca)",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L159"
+      "source_location": "L168"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_3_alineaci\u00f3n_de_yaml_config_con_mejores_pr\u00e1cticas",
@@ -12556,7 +12820,7 @@
       "node_kind": "heading",
       "norm_label": "3. alineacion de yaml/config con mejores practicas",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L145"
+      "source_location": "L154"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_4_1_alcance",
@@ -12568,7 +12832,7 @@
       "node_kind": "heading",
       "norm_label": "4.1 alcance",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L167"
+      "source_location": "L176"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_4_2_qu\u00e9_tan_estricto",
@@ -12580,7 +12844,7 @@
       "node_kind": "heading",
       "norm_label": "4.2 que tan estricto",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L171"
+      "source_location": "L180"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_4_3_qu\u00e9_generar\u00eda_ruido_en_la_primera_pasada_medido_no_estimado",
@@ -12592,7 +12856,7 @@
       "node_kind": "heading",
       "norm_label": "4.3 que generaria ruido en la primera pasada (medido, no estimado)",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L180"
+      "source_location": "L189"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_4_4_d\u00f3nde_vive_la_config",
@@ -12604,7 +12868,7 @@
       "node_kind": "heading",
       "norm_label": "4.4 donde vive la config",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L195"
+      "source_location": "L204"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_4_5_pre_commit_hook_vs_solo_ci_check",
@@ -12616,7 +12880,7 @@
       "node_kind": "heading",
       "norm_label": "4.5 pre-commit hook vs. solo ci check",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L199"
+      "source_location": "L208"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_4_introducci\u00f3n_de_black_ruff",
@@ -12628,7 +12892,7 @@
       "node_kind": "heading",
       "norm_label": "4. introduccion de `black` + `ruff`",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L165"
+      "source_location": "L174"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_5_priorizaci\u00f3n",
@@ -12640,7 +12904,7 @@
       "node_kind": "heading",
       "norm_label": "5. priorizacion",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L208"
+      "source_location": "L217"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_defer_sin_trigger_real_hoy_o_depende_de_una_decisi\u00f3n_del_usuario_que_no_est\u00e1_tomada",
@@ -12652,7 +12916,7 @@
       "node_kind": "heading",
       "norm_label": "defer (sin trigger real hoy, o depende de una decision del usuario que no esta tomada)",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L231"
+      "source_location": "L240"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_do_now_bajo_costo_alto_valor_sin_ambig\u00fcedad_de_dise\u00f1o",
@@ -12664,7 +12928,7 @@
       "node_kind": "heading",
       "norm_label": "do now (bajo costo, alto valor, sin ambiguedad de diseno)",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L212"
+      "source_location": "L221"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_do_soon_requiere_algo_de_dise\u00f1o_tiempo_pero_sin_decisiones_abiertas_pendientes",
@@ -12676,7 +12940,7 @@
       "node_kind": "heading",
       "norm_label": "do soon (requiere algo de diseno/tiempo, pero sin decisiones abiertas pendientes)",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L221"
+      "source_location": "L230"
     },
     {
       "id": "docs_propuesta_escalabilidad_etl_propuesta_escalabilidad_de_etl_reglas_de_qa_alineaci\u00f3n_de_config_y_black_ruff",
@@ -12688,18 +12952,7 @@
       "node_kind": "heading",
       "norm_label": "propuesta: escalabilidad de etl, reglas de qa, alineacion de config y `black`+`ruff`",
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L17"
-    },
-    {
-      "id": "marts_fact_saldo_depositos",
-      "label": "marts.fact_saldo_depositos",
-      "_origin": "ast",
-      "community": 28,
-      "community_name": "marts.vw_cartera_market_share",
-      "file_type": "code",
-      "norm_label": "marts.fact_saldo_depositos",
-      "source_file": "",
-      "source_location": ""
+      "source_location": "L26"
     },
     {
       "id": "sql_15_rename_fact_tables",
@@ -12786,6 +13039,17 @@
       "community_name": "marts.vw_cartera_market_share",
       "file_type": "code",
       "norm_label": "marts.fact_saldo_cartera",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "sql_15_rename_fact_tables_sql_marts_fact_saldo_depositos",
+      "label": "marts.fact_saldo_depositos",
+      "_origin": "ast",
+      "community": 28,
+      "community_name": "marts.vw_cartera_market_share",
+      "file_type": "code",
+      "norm_label": "marts.fact_saldo_depositos",
       "source_file": "",
       "source_location": ""
     },
@@ -15221,24 +15485,35 @@
       "source_location": ""
     },
     {
-      "id": "marts_fact_tasas_referenciales_depositos_instrumento",
-      "label": "marts.fact_tasas_referenciales_depositos_instrumento",
+      "id": "sql_34_cdc_por_columnas_refresh_incremental",
+      "label": "34_cdc_por_columnas_refresh_incremental.sql",
       "_origin": "ast",
       "community": 57,
-      "community_name": "marts.fact_tasas_referenciales_depositos_instrumento",
+      "community_name": "34_cdc_por_columnas_refresh_incremental.sql",
       "file_type": "code",
-      "norm_label": "marts.fact_tasas_referenciales_depositos_instrumento",
-      "source_file": "",
-      "source_location": ""
+      "norm_label": "34_cdc_por_columnas_refresh_incremental.sql",
+      "source_file": "sql/34_cdc_por_columnas_refresh_incremental.sql",
+      "source_location": null
     },
     {
-      "id": "marts_fact_tasas_referenciales_depositos_plazo",
-      "label": "marts.fact_tasas_referenciales_depositos_plazo",
+      "id": "sql_34_cdc_por_columnas_refresh_incremental_meta_refresh_watermark",
+      "label": "meta.refresh_watermark",
+      "_origin": "ast",
+      "community": 57,
+      "community_name": "34_cdc_por_columnas_refresh_incremental.sql",
+      "file_type": "code",
+      "norm_label": "meta.refresh_watermark",
+      "source_file": "sql/34_cdc_por_columnas_refresh_incremental.sql",
+      "source_location": "L46"
+    },
+    {
+      "id": "marts_fact_tasas_referenciales_sistema",
+      "label": "marts.fact_tasas_referenciales_sistema",
       "_origin": "ast",
       "community": 58,
-      "community_name": "marts.fact_tasas_referenciales_depositos_plazo",
+      "community_name": "marts.fact_tasas_referenciales_sistema",
       "file_type": "code",
-      "norm_label": "marts.fact_tasas_referenciales_depositos_plazo",
+      "norm_label": "marts.fact_tasas_referenciales_sistema",
       "source_file": "",
       "source_location": ""
     },
@@ -16673,7 +16948,7 @@
       "node_kind": "heading",
       "norm_label": "bug real encontrado y corregido: null en `unique`/`on conflict`",
       "source_file": "docs/architecture.md",
-      "source_location": "L391"
+      "source_location": "L415"
     },
     {
       "id": "docs_architecture_carga_incremental_cdc_no_full_refresh",
@@ -16709,7 +16984,7 @@
       "node_kind": "heading",
       "norm_label": "estructura real de los archivos fuente (verificado, no solo la ficha metodologica)",
       "source_file": "docs/architecture.md",
-      "source_location": "L413"
+      "source_location": "L437"
     },
     {
       "id": "docs_architecture_evaluaci\u00f3n_de_escalabilidad",
@@ -16721,7 +16996,7 @@
       "node_kind": "heading",
       "norm_label": "evaluacion de escalabilidad",
       "source_file": "docs/architecture.md",
-      "source_location": "L438"
+      "source_location": "L462"
     },
     {
       "id": "docs_architecture_flujo_de_datos",
@@ -16757,7 +17032,7 @@
       "node_kind": "heading",
       "norm_label": "por que playwright y no requests/httpx",
       "source_file": "docs/architecture.md",
-      "source_location": "L403"
+      "source_location": "L427"
     },
     {
       "id": "docs_architecture_portabilidad_de_motor_inventario_de_construcciones_espec\u00edficas_de_postgres",
@@ -16769,7 +17044,7 @@
       "node_kind": "heading",
       "norm_label": "portabilidad de motor \u2014 inventario de construcciones especificas de postgres",
       "source_file": "docs/architecture.md",
-      "source_location": "L478"
+      "source_location": "L502"
     },
     {
       "id": "docs_architecture_power_bi_c\u00f3mo_se_construy\u00f3_y_qu\u00e9_qued\u00f3_armado",
@@ -16781,7 +17056,7 @@
       "node_kind": "heading",
       "norm_label": "power bi: como se construyo y que quedo armado",
       "source_file": "docs/architecture.md",
-      "source_location": "L610"
+      "source_location": "L634"
     },
     {
       "id": "docs_gobernanza_datos",
@@ -16805,7 +17080,7 @@
       "node_kind": "heading",
       "norm_label": "banca publica (capcol) integrada al diseno, seps disenada \u2014 ninguna de las dos completamente cargada (2026-09-01)",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L371"
+      "source_location": "L369"
     },
     {
       "id": "docs_gobernanza_datos_banca_p\u00fablica_cargada_2026_10_01",
@@ -16817,7 +17092,7 @@
       "node_kind": "heading",
       "norm_label": "banca publica cargada (2026-10-01)",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L422"
+      "source_location": "L420"
     },
     {
       "id": "docs_gobernanza_datos_cambio_de_grano_de_bce_a_cant\u00f3n_2026_09_01_sql_28_bce_canton_grain_sql",
@@ -16829,7 +17104,19 @@
       "node_kind": "heading",
       "norm_label": "cambio de grano de bce a canton (2026-09-01, `sql/28_bce_canton_grain.sql`)",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L243"
+      "source_location": "L241"
+    },
+    {
+      "id": "docs_gobernanza_datos_capa_de_aterrizaje_archivos_meta_2026_10_05_sql_33",
+      "label": "Capa de aterrizaje: archivos + `meta` (2026-10-05, `sql/33`)",
+      "_origin": "ast",
+      "community": 99,
+      "community_name": "Gobernanza de datos",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "capa de aterrizaje: archivos + `meta` (2026-10-05, `sql/33`)",
+      "source_file": "docs/gobernanza_datos.md",
+      "source_location": "L48"
     },
     {
       "id": "docs_gobernanza_datos_capa_marts_esquema_estrella_conformado",
@@ -16841,19 +17128,7 @@
       "node_kind": "heading",
       "norm_label": "capa `marts` \u2014 esquema estrella conformado",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L121"
-    },
-    {
-      "id": "docs_gobernanza_datos_capa_raw_aterrizaje_sin_tipar_append_only",
-      "label": "Capa `raw` \u2014 aterrizaje sin tipar, append-only",
-      "_origin": "ast",
-      "community": 99,
-      "community_name": "Gobernanza de datos",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "capa `raw` \u2014 aterrizaje sin tipar, append-only",
-      "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L47"
+      "source_location": "L119"
     },
     {
       "id": "docs_gobernanza_datos_capa_staging_tipada_cat\u00e1logos_conformados_ya_resueltos_cdc",
@@ -16865,7 +17140,7 @@
       "node_kind": "heading",
       "norm_label": "capa `staging` \u2014 tipada, catalogos conformados ya resueltos, cdc",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L62"
+      "source_location": "L60"
     },
     {
       "id": "docs_gobernanza_datos_cat\u00e1logo_de_metadatos",
@@ -16877,7 +17152,7 @@
       "node_kind": "heading",
       "norm_label": "catalogo de metadatos",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L45"
+      "source_location": "L46"
     },
     {
       "id": "docs_gobernanza_datos_gesti\u00f3n_de_cambios_de_esquema",
@@ -16889,7 +17164,7 @@
       "node_kind": "heading",
       "norm_label": "gestion de cambios de esquema",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L657"
+      "source_location": "L655"
     },
     {
       "id": "docs_gobernanza_datos_gobernanza_de_datos",
@@ -16913,7 +17188,7 @@
       "node_kind": "heading",
       "norm_label": "huecos de gobernanza conocidos",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L597"
+      "source_location": "L595"
     },
     {
       "id": "docs_gobernanza_datos_identidad_para_el_universo_completo_del_sistema_financiero_bce_2026_07_19",
@@ -16925,7 +17200,7 @@
       "node_kind": "heading",
       "norm_label": "identidad para el universo completo del sistema financiero (bce, 2026-07-19)",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L74"
+      "source_location": "L72"
     },
     {
       "id": "docs_gobernanza_datos_los_3_pilares_de_la_documentaci\u00f3n_y_d\u00f3nde_encaja_el_diagrama_er",
@@ -16949,7 +17224,7 @@
       "node_kind": "heading",
       "norm_label": "normalizacion de la segmentacion de credito (2026-07-19)",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L186"
+      "source_location": "L184"
     },
     {
       "id": "docs_gobernanza_datos_reglas_de_calidad_de_datos",
@@ -16961,7 +17236,7 @@
       "node_kind": "heading",
       "norm_label": "reglas de calidad de datos",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L465"
+      "source_location": "L463"
     },
     {
       "id": "docs_gobernanza_datos_renombrado_de_tablas_de_hechos_2026_07_19",
@@ -16973,7 +17248,7 @@
       "node_kind": "heading",
       "norm_label": "renombrado de tablas de hechos (2026-07-19)",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L150"
+      "source_location": "L148"
     },
     {
       "id": "docs_gobernanza_datos_responsabilidad_y_clasificaci\u00f3n",
@@ -16997,7 +17272,7 @@
       "node_kind": "heading",
       "norm_label": "\u2705 resuelto 2026-10-02 \u2014 hueco encontrado 2026-09-30: `sql/18` nunca se aplico a la base viva",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L645"
+      "source_location": "L643"
     },
     {
       "id": "docs_gobernanza_datos_sem\u00e1ntica_distinta_de_fact_saldo_cartera_para_mutualistas_2026_10_01",
@@ -17009,7 +17284,7 @@
       "node_kind": "heading",
       "norm_label": "semantica distinta de `fact_saldo_cartera` para mutualistas (2026-10-01)",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L629"
+      "source_location": "L627"
     },
     {
       "id": "docs_gobernanza_datos_seps_implementada_y_cargada_2026_09_30",
@@ -17021,7 +17296,7 @@
       "node_kind": "heading",
       "norm_label": "seps implementada y cargada (2026-09-30)",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L433"
+      "source_location": "L431"
     },
     {
       "id": "postgresql_localhost_benchmark_cartera_depositos",
@@ -17117,7 +17392,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L55",
+      "source_location": "L61",
       "weight": 1.0
     },
     {
@@ -17129,7 +17404,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L56",
+      "source_location": "L62",
       "weight": 1.0
     },
     {
@@ -17141,7 +17416,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L60",
+      "source_location": "L66",
       "weight": 1.0
     },
     {
@@ -17153,7 +17428,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L62",
+      "source_location": "L68",
       "weight": 1.0
     },
     {
@@ -17165,7 +17440,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L64",
+      "source_location": "L70",
       "weight": 1.0
     },
     {
@@ -17177,7 +17452,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L66",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -17189,7 +17464,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L68",
+      "source_location": "L74",
       "weight": 1.0
     },
     {
@@ -17201,7 +17476,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L70",
+      "source_location": "L76",
       "weight": 1.0
     },
     {
@@ -17213,7 +17488,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L72",
+      "source_location": "L78",
       "weight": 1.0
     },
     {
@@ -17225,7 +17500,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L74",
+      "source_location": "L80",
       "weight": 1.0
     },
     {
@@ -17441,91 +17716,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L535",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_load_raw",
-      "target": "src_benchmark_bancos_load_load_postgres_clean",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L74",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_load_raw",
-      "target": "src_benchmark_bancos_load_load_postgres_copy_rows",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L78",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_load_raw_bce",
-      "target": "src_benchmark_bancos_load_load_postgres_clean",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L283",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_load_raw_bce",
-      "target": "src_benchmark_bancos_load_load_postgres_copy_rows",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L287",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_load_raw_boletin",
-      "target": "src_benchmark_bancos_load_load_postgres_clean",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L563",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_load_raw_boletin",
-      "target": "src_benchmark_bancos_load_load_postgres_copy_rows",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L567",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_load_raw_tasas_referenciales",
-      "target": "src_benchmark_bancos_load_load_postgres_clean",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L394",
+      "source_location": "L513",
       "weight": 1.0
     },
     {
@@ -17537,7 +17728,31 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1130",
+      "source_location": "L1153",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres_refresh_marts",
+      "target": "src_benchmark_bancos_load_load_postgres_leer_watermark",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1157",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres_refresh_marts",
+      "target": "src_benchmark_bancos_load_load_postgres_crear_fuentes_incrementales",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1163",
       "weight": 1.0
     },
     {
@@ -17549,7 +17764,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1131",
+      "source_location": "L1171",
       "weight": 1.0
     },
     {
@@ -17561,7 +17776,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1132",
+      "source_location": "L1172",
       "weight": 1.0
     },
     {
@@ -17573,7 +17788,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L317",
+      "source_location": "L319",
       "weight": 1.0
     },
     {
@@ -17585,7 +17800,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L320",
+      "source_location": "L322",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres_upsert_bce_via_temp",
+      "target": "src_benchmark_bancos_load_load_postgres_cdc_guard",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L344",
       "weight": 1.0
     },
     {
@@ -17597,7 +17824,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L585",
+      "source_location": "L543",
       "weight": 1.0
     },
     {
@@ -17609,7 +17836,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L588",
+      "source_location": "L546",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres_upsert_boletin_via_temp",
+      "target": "src_benchmark_bancos_load_load_postgres_cdc_guard",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L555",
       "weight": 1.0
     },
     {
@@ -17621,7 +17860,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L498",
+      "source_location": "L476",
       "weight": 1.0
     },
     {
@@ -17633,7 +17872,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L487",
+      "source_location": "L465",
       "weight": 1.0
     },
     {
@@ -17645,7 +17884,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L472",
+      "source_location": "L450",
       "weight": 1.0
     },
     {
@@ -17657,7 +17896,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L622",
+      "source_location": "L580",
       "weight": 1.0
     },
     {
@@ -17669,7 +17908,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L628",
+      "source_location": "L586",
       "weight": 1.0
     },
     {
@@ -17681,7 +17920,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L155",
+      "source_location": "L135",
       "weight": 1.0
     },
     {
@@ -17693,7 +17932,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L176",
+      "source_location": "L156",
       "weight": 1.0
     },
     {
@@ -17705,7 +17944,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L212",
+      "source_location": "L192",
       "weight": 1.0
     },
     {
@@ -17717,7 +17956,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L242",
+      "source_location": "L222",
       "weight": 1.0
     },
     {
@@ -17729,7 +17968,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L409",
+      "source_location": "L387",
       "weight": 1.0
     },
     {
@@ -17753,7 +17992,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L207",
+      "source_location": "L195",
       "weight": 1.0
     },
     {
@@ -17765,7 +18004,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L208",
+      "source_location": "L196",
       "weight": 1.0
     },
     {
@@ -17777,7 +18016,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L228",
+      "source_location": "L213",
       "weight": 1.0
     },
     {
@@ -17789,7 +18028,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L229",
+      "source_location": "L214",
       "weight": 1.0
     },
     {
@@ -17801,19 +18040,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L233",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_pipeline_load_bce",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw_bce",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L236",
+      "source_location": "L218",
       "weight": 1.0
     },
     {
@@ -17825,7 +18052,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L239",
+      "source_location": "L220",
       "weight": 1.0
     },
     {
@@ -17837,7 +18064,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L241",
+      "source_location": "L222",
       "weight": 1.0
     },
     {
@@ -17849,7 +18076,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L243",
+      "source_location": "L224",
       "weight": 1.0
     },
     {
@@ -17861,7 +18088,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L409",
+      "source_location": "L388",
       "weight": 1.0
     },
     {
@@ -17873,7 +18100,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L410",
+      "source_location": "L389",
       "weight": 1.0
     },
     {
@@ -17885,7 +18112,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L419",
+      "source_location": "L398",
       "weight": 1.0
     },
     {
@@ -17897,7 +18124,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L424",
+      "source_location": "L403",
       "weight": 1.0
     },
     {
@@ -17909,7 +18136,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L425",
+      "source_location": "L404",
       "weight": 1.0
     },
     {
@@ -17921,7 +18148,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L430",
+      "source_location": "L409",
       "weight": 1.0
     },
     {
@@ -17933,19 +18160,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L441",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_pipeline_load_boletin",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw_boletin",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L442",
+      "source_location": "L420",
       "weight": 1.0
     },
     {
@@ -17957,7 +18172,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L446",
+      "source_location": "L421",
       "weight": 1.0
     },
     {
@@ -17969,7 +18184,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L447",
+      "source_location": "L422",
       "weight": 1.0
     },
     {
@@ -17981,7 +18196,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L448",
+      "source_location": "L423",
       "weight": 1.0
     },
     {
@@ -17993,7 +18208,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L452",
+      "source_location": "L427",
       "weight": 1.0
     },
     {
@@ -18005,7 +18220,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L135",
+      "source_location": "L128",
       "weight": 1.0
     },
     {
@@ -18017,7 +18232,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L136",
+      "source_location": "L129",
       "weight": 1.0
     },
     {
@@ -18029,7 +18244,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L147",
+      "source_location": "L140",
       "weight": 1.0
     },
     {
@@ -18041,7 +18256,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L148",
+      "source_location": "L141",
       "weight": 1.0
     },
     {
@@ -18053,7 +18268,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L153",
+      "source_location": "L146",
       "weight": 1.0
     },
     {
@@ -18065,7 +18280,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L154",
+      "source_location": "L147",
       "weight": 1.0
     },
     {
@@ -18077,19 +18292,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L155",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_pipeline_load_seps",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw_boletin",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L158",
+      "source_location": "L148",
       "weight": 1.0
     },
     {
@@ -18101,7 +18304,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L162",
+      "source_location": "L151",
       "weight": 1.0
     },
     {
@@ -18113,7 +18316,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L163",
+      "source_location": "L152",
       "weight": 1.0
     },
     {
@@ -18125,19 +18328,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L164",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_pipeline_load_seps",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L183",
+      "source_location": "L153",
       "weight": 1.0
     },
     {
@@ -18149,7 +18340,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L187",
+      "source_location": "L175",
       "weight": 1.0
     },
     {
@@ -18161,7 +18352,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L325",
+      "source_location": "L305",
       "weight": 1.0
     },
     {
@@ -18173,7 +18364,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L326",
+      "source_location": "L306",
       "weight": 1.0
     },
     {
@@ -18185,7 +18376,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L330",
+      "source_location": "L310",
       "weight": 1.0
     },
     {
@@ -18197,7 +18388,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L341",
+      "source_location": "L321",
       "weight": 1.0
     },
     {
@@ -18209,7 +18400,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L342",
+      "source_location": "L322",
       "weight": 1.0
     },
     {
@@ -18221,19 +18412,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L347",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_pipeline_load_tasas_historicas",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw_tasas_referenciales",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L359",
+      "source_location": "L327",
       "weight": 1.0
     },
     {
@@ -18245,7 +18424,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L360",
+      "source_location": "L339",
       "weight": 1.0
     },
     {
@@ -18257,7 +18436,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L361",
+      "source_location": "L340",
       "weight": 1.0
     },
     {
@@ -18269,7 +18448,43 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L363",
+      "source_location": "L342",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_pipeline_load_years",
+      "target": "src_benchmark_bancos_load_load_postgres_register_source_file",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/benchmark_bancos/pipeline.py",
+      "source_location": "L105",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_pipeline_load_years",
+      "target": "src_benchmark_bancos_load_load_postgres_refresh_marts",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/benchmark_bancos/pipeline.py",
+      "source_location": "L107",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_pipeline_load_years",
+      "target": "src_benchmark_bancos_load_load_postgres_get_connection",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/benchmark_bancos/pipeline.py",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -18281,7 +18496,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L103",
+      "source_location": "L97",
       "weight": 1.0
     },
     {
@@ -18293,55 +18508,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L104",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_pipeline_load_years",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L110",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_pipeline_load_years",
-      "target": "src_benchmark_bancos_load_load_postgres_register_source_file",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L112",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_pipeline_load_years",
-      "target": "src_benchmark_bancos_load_load_postgres_refresh_marts",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L114",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_pipeline_load_years",
-      "target": "src_benchmark_bancos_load_load_postgres_get_connection",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L78",
+      "source_location": "L98",
       "weight": 1.0
     },
     {
@@ -18353,7 +18520,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L464",
+      "source_location": "L440",
       "weight": 1.0
     },
     {
@@ -18365,7 +18532,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L466",
+      "source_location": "L442",
       "weight": 1.0
     },
     {
@@ -18377,7 +18544,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L278",
+      "source_location": "L258",
       "weight": 1.0
     },
     {
@@ -18389,7 +18556,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L279",
+      "source_location": "L259",
       "weight": 1.0
     },
     {
@@ -18401,7 +18568,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L281",
+      "source_location": "L261",
       "weight": 1.0
     },
     {
@@ -18413,7 +18580,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L292",
+      "source_location": "L272",
       "weight": 1.0
     },
     {
@@ -18425,7 +18592,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L295",
+      "source_location": "L275",
       "weight": 1.0
     },
     {
@@ -19253,7 +19420,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_cartera.py",
-      "source_location": "L108",
+      "source_location": "L109",
       "weight": 1.0
     },
     {
@@ -19265,7 +19432,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_cartera.py",
-      "source_location": "L110",
+      "source_location": "L111",
       "weight": 1.0
     },
     {
@@ -19277,7 +19444,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_cartera.py",
-      "source_location": "L117",
+      "source_location": "L118",
       "weight": 1.0
     },
     {
@@ -19289,7 +19456,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_cartera.py",
-      "source_location": "L118",
+      "source_location": "L119",
       "weight": 1.0
     },
     {
@@ -19301,7 +19468,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_cartera.py",
-      "source_location": "L119",
+      "source_location": "L120",
       "weight": 1.0
     },
     {
@@ -19402,6 +19569,18 @@
     },
     {
       "source": "src_benchmark_bancos_transform_parse_depositos_parse_depositos_file",
+      "target": "src_benchmark_bancos_transform_common_region_for_provincia",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/benchmark_bancos/transform/parse_depositos.py",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_transform_parse_depositos_parse_depositos_file",
       "target": "src_benchmark_bancos_transform_common_sha256_file",
       "relation": "calls",
       "_origin": "ast",
@@ -19409,7 +19588,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_depositos.py",
-      "source_location": "L56",
+      "source_location": "L57",
       "weight": 1.0
     },
     {
@@ -19421,7 +19600,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_depositos.py",
-      "source_location": "L58",
+      "source_location": "L59",
       "weight": 1.0
     },
     {
@@ -19433,7 +19612,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_depositos.py",
-      "source_location": "L64",
+      "source_location": "L65",
       "weight": 1.0
     },
     {
@@ -19445,7 +19624,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_depositos.py",
-      "source_location": "L66",
+      "source_location": "L67",
       "weight": 1.0
     },
     {
@@ -19457,7 +19636,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_depositos.py",
-      "source_location": "L80",
+      "source_location": "L81",
       "weight": 1.0
     },
     {
@@ -19469,7 +19648,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_depositos.py",
-      "source_location": "L83",
+      "source_location": "L84",
       "weight": 1.0
     },
     {
@@ -19481,7 +19660,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_depositos.py",
-      "source_location": "L84",
+      "source_location": "L85",
       "weight": 1.0
     },
     {
@@ -19493,7 +19672,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_depositos.py",
-      "source_location": "L86",
+      "source_location": "L87",
       "weight": 1.0
     },
     {
@@ -19505,7 +19684,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_depositos.py",
-      "source_location": "L90",
+      "source_location": "L91",
       "weight": 1.0
     },
     {
@@ -19517,19 +19696,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/benchmark_bancos/transform/parse_depositos.py",
-      "source_location": "L93",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_transform_parse_depositos_parse_depositos_file",
-      "target": "src_benchmark_bancos_transform_common_region_for_provincia",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/benchmark_bancos/transform/parse_depositos.py",
-      "source_location": "L99",
+      "source_location": "L94",
       "weight": 1.0
     },
     {
@@ -20985,6 +21152,18 @@
       "weight": 1.0
     },
     {
+      "source": "tests_test_integration_regressions_test_refresh_incremental_propaga_fila_nueva_y_avanza_marca",
+      "target": "src_benchmark_bancos_load_load_postgres_refresh_marts",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L752",
+      "weight": 1.0
+    },
+    {
       "source": "tests_test_integration_regressions_test_source_file_hash_gate",
       "target": "src_benchmark_bancos_load_load_postgres_is_source_loaded",
       "relation": "calls",
@@ -21957,6 +22136,18 @@
       "weight": 1.0
     },
     {
+      "source": "tests_test_integration_regressions_test_refresh_incremental_propaga_fila_nueva_y_avanza_marca",
+      "target": "integration",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "decorator",
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L728",
+      "weight": 1.0
+    },
+    {
       "source": "tests_test_integration_regressions_test_source_file_hash_gate",
       "target": "integration",
       "relation": "references",
@@ -22349,7 +22540,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0
     },
     {
@@ -22361,7 +22552,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L21",
+      "source_location": "L22",
       "weight": 1.0
     },
     {
@@ -22511,54 +22702,6 @@
     {
       "source": "src_benchmark_bancos_pipeline",
       "target": "src_benchmark_bancos_load_load_postgres_is_source_loaded",
-      "relation": "imports",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L25",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_pipeline",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw",
-      "relation": "imports",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L25",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_pipeline",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw_bce",
-      "relation": "imports",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L25",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_pipeline",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw_boletin",
-      "relation": "imports",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L25",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_pipeline",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw_tasas_referenciales",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -22721,7 +22864,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L46",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -22733,7 +22876,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L47",
+      "source_location": "L43",
       "weight": 1.0
     },
     {
@@ -22745,7 +22888,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L47",
+      "source_location": "L43",
       "weight": 1.0
     },
     {
@@ -22757,7 +22900,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L53",
+      "source_location": "L47",
       "weight": 1.0
     },
     {
@@ -22769,7 +22912,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L54",
+      "source_location": "L48",
       "weight": 1.0
     },
     {
@@ -22781,7 +22924,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L55",
+      "source_location": "L49",
       "weight": 1.0
     },
     {
@@ -22793,7 +22936,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L56",
+      "source_location": "L50",
       "weight": 1.0
     },
     {
@@ -22805,7 +22948,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L57",
+      "source_location": "L51",
       "weight": 1.0
     },
     {
@@ -22817,7 +22960,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L57",
+      "source_location": "L51",
       "weight": 1.0
     },
     {
@@ -22829,7 +22972,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L57",
+      "source_location": "L51",
       "weight": 1.0
     },
     {
@@ -22841,7 +22984,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L62",
+      "source_location": "L56",
       "weight": 1.0
     },
     {
@@ -23297,7 +23440,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0
     },
     {
@@ -23309,7 +23452,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0
     },
     {
@@ -23321,7 +23464,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0
     },
     {
@@ -23333,7 +23476,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L21",
+      "source_location": "L22",
       "weight": 1.0
     },
     {
@@ -23513,7 +23656,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L24",
+      "source_location": "L26",
       "weight": 1.0
     },
     {
@@ -23609,7 +23752,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L46",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -23621,7 +23764,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L53",
+      "source_location": "L47",
       "weight": 1.0
     },
     {
@@ -23633,7 +23776,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L54",
+      "source_location": "L48",
       "weight": 1.0
     },
     {
@@ -23645,7 +23788,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L55",
+      "source_location": "L49",
       "weight": 1.0
     },
     {
@@ -23657,7 +23800,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L56",
+      "source_location": "L50",
       "weight": 1.0
     },
     {
@@ -23669,7 +23812,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L57",
+      "source_location": "L51",
       "weight": 1.0
     },
     {
@@ -23681,7 +23824,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L62",
+      "source_location": "L56",
       "weight": 1.0
     },
     {
@@ -24257,55 +24400,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L526",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_load_raw",
-      "target": "src_benchmark_bancos_load_load_postgres_py_dataframe",
-      "relation": "references",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "parameter_type",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L64",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_load_raw_bce",
-      "target": "src_benchmark_bancos_load_load_postgres_py_dataframe",
-      "relation": "references",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "parameter_type",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L276",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_load_raw_boletin",
-      "target": "src_benchmark_bancos_load_load_postgres_py_dataframe",
-      "relation": "references",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "parameter_type",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L555",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_load_raw_tasas_referenciales",
-      "target": "src_benchmark_bancos_load_load_postgres_py_dataframe",
-      "relation": "references",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "parameter_type",
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L382",
+      "source_location": "L504",
       "weight": 1.0
     },
     {
@@ -24317,7 +24412,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L298",
+      "source_location": "L300",
       "weight": 1.0
     },
     {
@@ -24329,7 +24424,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L575",
+      "source_location": "L533",
       "weight": 1.0
     },
     {
@@ -24341,7 +24436,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L492",
+      "source_location": "L470",
       "weight": 1.0
     },
     {
@@ -24353,7 +24448,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L477",
+      "source_location": "L455",
       "weight": 1.0
     },
     {
@@ -24365,7 +24460,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L462",
+      "source_location": "L440",
       "weight": 1.0
     },
     {
@@ -24377,7 +24472,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L621",
+      "source_location": "L579",
       "weight": 1.0
     },
     {
@@ -24389,7 +24484,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L627",
+      "source_location": "L585",
       "weight": 1.0
     },
     {
@@ -24401,7 +24496,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L152",
+      "source_location": "L132",
       "weight": 1.0
     },
     {
@@ -24413,7 +24508,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L200",
+      "source_location": "L180",
       "weight": 1.0
     },
     {
@@ -24425,7 +24520,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L406",
+      "source_location": "L384",
       "weight": 1.0
     },
     {
@@ -24449,7 +24544,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L196",
+      "source_location": "L184",
       "weight": 1.0
     },
     {
@@ -24461,7 +24556,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L406",
+      "source_location": "L385",
       "weight": 1.0
     },
     {
@@ -24473,7 +24568,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L123",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -24485,7 +24580,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L69",
+      "source_location": "L63",
       "weight": 1.0
     },
     {
@@ -24497,7 +24592,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L252",
+      "source_location": "L233",
       "weight": 1.0
     },
     {
@@ -24725,7 +24820,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L36",
+      "source_location": "L37",
       "weight": 1.0
     },
     {
@@ -24737,7 +24832,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L31",
+      "source_location": "L33",
       "weight": 1.0
     },
     {
@@ -24749,7 +24844,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L391",
+      "source_location": "L370",
       "weight": 1.0
     },
     {
@@ -24761,7 +24856,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L307",
+      "source_location": "L287",
       "weight": 1.0
     },
     {
@@ -24929,7 +25024,7 @@
       "confidence_score": 1.0,
       "context": "submodule_import",
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0
     },
     {
@@ -25039,7 +25134,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L403",
+      "source_location": "L427",
       "weight": 1.0
     },
     {
@@ -25050,7 +25145,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L413",
+      "source_location": "L437",
       "weight": 1.0
     },
     {
@@ -25061,7 +25156,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L438",
+      "source_location": "L462",
       "weight": 1.0
     },
     {
@@ -25072,7 +25167,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L478",
+      "source_location": "L502",
       "weight": 1.0
     },
     {
@@ -25094,7 +25189,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L610",
+      "source_location": "L634",
       "weight": 1.0
     },
     {
@@ -25105,7 +25200,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture.md",
-      "source_location": "L391",
+      "source_location": "L415",
       "weight": 1.0
     },
     {
@@ -25721,18 +25816,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L121",
+      "source_location": "L119",
       "weight": 1.0
     },
     {
       "source": "docs_gobernanza_datos_cat\u00e1logo_de_metadatos",
-      "target": "docs_gobernanza_datos_capa_raw_aterrizaje_sin_tipar_append_only",
+      "target": "docs_gobernanza_datos_capa_de_aterrizaje_archivos_meta_2026_10_05_sql_33",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L47",
+      "source_location": "L48",
       "weight": 1.0
     },
     {
@@ -25743,7 +25838,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L62",
+      "source_location": "L60",
       "weight": 1.0
     },
     {
@@ -25754,7 +25849,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L74",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -25765,7 +25860,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L150",
+      "source_location": "L148",
       "weight": 1.0
     },
     {
@@ -25776,7 +25871,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L186",
+      "source_location": "L184",
       "weight": 1.0
     },
     {
@@ -25787,7 +25882,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L243",
+      "source_location": "L241",
       "weight": 1.0
     },
     {
@@ -25809,7 +25904,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L371",
+      "source_location": "L369",
       "weight": 1.0
     },
     {
@@ -25820,7 +25915,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L422",
+      "source_location": "L420",
       "weight": 1.0
     },
     {
@@ -25831,7 +25926,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L433",
+      "source_location": "L431",
       "weight": 1.0
     },
     {
@@ -25842,7 +25937,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L45",
+      "source_location": "L46",
       "weight": 1.0
     },
     {
@@ -25853,7 +25948,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L465",
+      "source_location": "L463",
       "weight": 1.0
     },
     {
@@ -25864,7 +25959,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L597",
+      "source_location": "L595",
       "weight": 1.0
     },
     {
@@ -25875,7 +25970,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L657",
+      "source_location": "L655",
       "weight": 1.0
     },
     {
@@ -25897,7 +25992,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L629",
+      "source_location": "L627",
       "weight": 1.0
     },
     {
@@ -25908,7 +26003,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L645",
+      "source_location": "L643",
       "weight": 1.0
     },
     {
@@ -25996,7 +26091,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L107",
+      "source_location": "L113",
       "weight": 1.0
     },
     {
@@ -26007,7 +26102,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L11",
+      "source_location": "L17",
       "weight": 1.0
     },
     {
@@ -26018,7 +26113,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L167",
+      "source_location": "L173",
       "weight": 1.0
     },
     {
@@ -26029,7 +26124,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L195",
+      "source_location": "L201",
       "weight": 1.0
     },
     {
@@ -26040,7 +26135,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L217",
+      "source_location": "L223",
       "weight": 1.0
     },
     {
@@ -26051,7 +26146,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L245",
+      "source_location": "L251",
       "weight": 1.0
     },
     {
@@ -26062,7 +26157,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L275",
+      "source_location": "L281",
       "weight": 1.0
     },
     {
@@ -26073,7 +26168,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L48",
+      "source_location": "L54",
       "weight": 1.0
     },
     {
@@ -26084,7 +26179,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/linaje_datos.md",
-      "source_location": "L84",
+      "source_location": "L90",
       "weight": 1.0
     },
     {
@@ -26469,7 +26564,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L17",
+      "source_location": "L26",
       "weight": 1.0
     },
     {
@@ -26480,7 +26575,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L44",
+      "source_location": "L53",
       "weight": 1.0
     },
     {
@@ -26491,7 +26586,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L70",
+      "source_location": "L79",
       "weight": 1.0
     },
     {
@@ -26502,7 +26597,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L77",
+      "source_location": "L86",
       "weight": 1.0
     },
     {
@@ -26513,7 +26608,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L83",
+      "source_location": "L92",
       "weight": 1.0
     },
     {
@@ -26524,7 +26619,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L87",
+      "source_location": "L96",
       "weight": 1.0
     },
     {
@@ -26535,7 +26630,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L104",
+      "source_location": "L113",
       "weight": 1.0
     },
     {
@@ -26546,7 +26641,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L115",
+      "source_location": "L124",
       "weight": 1.0
     },
     {
@@ -26557,7 +26652,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L122",
+      "source_location": "L131",
       "weight": 1.0
     },
     {
@@ -26568,7 +26663,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L130",
+      "source_location": "L139",
       "weight": 1.0
     },
     {
@@ -26579,7 +26674,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L147",
+      "source_location": "L156",
       "weight": 1.0
     },
     {
@@ -26590,7 +26685,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L159",
+      "source_location": "L168",
       "weight": 1.0
     },
     {
@@ -26601,7 +26696,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L167",
+      "source_location": "L176",
       "weight": 1.0
     },
     {
@@ -26612,7 +26707,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L171",
+      "source_location": "L180",
       "weight": 1.0
     },
     {
@@ -26623,7 +26718,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L180",
+      "source_location": "L189",
       "weight": 1.0
     },
     {
@@ -26634,7 +26729,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L195",
+      "source_location": "L204",
       "weight": 1.0
     },
     {
@@ -26645,7 +26740,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L199",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
@@ -26656,7 +26751,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L212",
+      "source_location": "L221",
       "weight": 1.0
     },
     {
@@ -26667,7 +26762,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L221",
+      "source_location": "L230",
       "weight": 1.0
     },
     {
@@ -26678,7 +26773,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L231",
+      "source_location": "L240",
       "weight": 1.0
     },
     {
@@ -26689,7 +26784,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L102",
+      "source_location": "L111",
       "weight": 1.0
     },
     {
@@ -26700,7 +26795,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L145",
+      "source_location": "L154",
       "weight": 1.0
     },
     {
@@ -26711,7 +26806,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L165",
+      "source_location": "L174",
       "weight": 1.0
     },
     {
@@ -26722,7 +26817,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L208",
+      "source_location": "L217",
       "weight": 1.0
     },
     {
@@ -26733,7 +26828,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L23",
+      "source_location": "L32",
       "weight": 1.0
     },
     {
@@ -26744,7 +26839,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/propuesta_escalabilidad_etl.md",
-      "source_location": "L42",
+      "source_location": "L51",
       "weight": 1.0
     },
     {
@@ -33157,7 +33252,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L117",
+      "source_location": "L121",
       "weight": 1.0
     },
     {
@@ -33179,7 +33274,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L165",
+      "source_location": "L169",
       "weight": 1.0
     },
     {
@@ -33190,7 +33285,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L201",
+      "source_location": "L205",
       "weight": 1.0
     },
     {
@@ -33201,7 +33296,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L42",
+      "source_location": "L43",
       "weight": 1.0
     },
     {
@@ -33212,7 +33307,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L90",
+      "source_location": "L91",
       "weight": 1.0
     },
     {
@@ -33986,6 +34081,17 @@
       "weight": 1.0
     },
     {
+      "source": "sql_34_cdc_por_columnas_refresh_incremental",
+      "target": "sql_34_cdc_por_columnas_refresh_incremental_meta_refresh_watermark",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sql/34_cdc_por_columnas_refresh_incremental.sql",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
       "source": "src_benchmark_bancos_cli",
       "target": "src_benchmark_bancos_cli_build_parser",
       "relation": "contains",
@@ -33993,7 +34099,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L36",
+      "source_location": "L37",
       "weight": 1.0
     },
     {
@@ -34004,7 +34110,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/cli.py",
-      "source_location": "L54",
+      "source_location": "L60",
       "weight": 1.0
     },
     {
@@ -34251,13 +34357,13 @@
     },
     {
       "source": "src_benchmark_bancos_load_load_postgres",
-      "target": "src_benchmark_bancos_load_load_postgres_log_cantones_no_resueltos",
+      "target": "src_benchmark_bancos_load_load_postgres_load_banco_maestro_seed",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1016",
+      "source_location": "L100",
       "weight": 1.0
     },
     {
@@ -34268,7 +34374,29 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1089",
+      "source_location": "L1049",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres",
+      "target": "src_benchmark_bancos_load_load_postgres_leer_watermark",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1108",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres",
+      "target": "src_benchmark_bancos_load_load_postgres_crear_fuentes_incrementales",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1115",
       "weight": 1.0
     },
     {
@@ -34279,18 +34407,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1129",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres",
-      "target": "src_benchmark_bancos_load_load_postgres_load_banco_maestro_seed",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L120",
+      "source_location": "L1139",
       "weight": 1.0
     },
     {
@@ -34301,7 +34418,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L152",
+      "source_location": "L132",
       "weight": 1.0
     },
     {
@@ -34312,7 +34429,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L200",
+      "source_location": "L180",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres",
+      "target": "src_benchmark_bancos_load_load_postgres_cdc_guard",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L277",
       "weight": 1.0
     },
     {
@@ -34323,18 +34451,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L264",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw_bce",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L276",
+      "source_location": "L285",
       "weight": 1.0
     },
     {
@@ -34345,7 +34462,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L298",
+      "source_location": "L300",
       "weight": 1.0
     },
     {
@@ -34356,7 +34473,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L31",
+      "source_location": "L33",
       "weight": 1.0
     },
     {
@@ -34367,18 +34484,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L35",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw_tasas_referenciales",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L382",
+      "source_location": "L37",
       "weight": 1.0
     },
     {
@@ -34389,7 +34495,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L406",
+      "source_location": "L384",
       "weight": 1.0
     },
     {
@@ -34400,18 +34506,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L438",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres",
-      "target": "src_benchmark_bancos_load_load_postgres_register_source_file",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L44",
+      "source_location": "L416",
       "weight": 1.0
     },
     {
@@ -34422,7 +34517,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L462",
+      "source_location": "L440",
       "weight": 1.0
     },
     {
@@ -34433,7 +34528,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L477",
+      "source_location": "L455",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres",
+      "target": "src_benchmark_bancos_load_load_postgres_register_source_file",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L46",
       "weight": 1.0
     },
     {
@@ -34444,7 +34550,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L492",
+      "source_location": "L470",
       "weight": 1.0
     },
     {
@@ -34455,18 +34561,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L526",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw_boletin",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L555",
+      "source_location": "L504",
       "weight": 1.0
     },
     {
@@ -34477,18 +34572,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L575",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres",
-      "target": "src_benchmark_bancos_load_load_postgres_clean",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L58",
+      "source_location": "L533",
       "weight": 1.0
     },
     {
@@ -34499,7 +34583,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L621",
+      "source_location": "L579",
       "weight": 1.0
     },
     {
@@ -34510,18 +34594,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L627",
+      "source_location": "L585",
       "weight": 1.0
     },
     {
       "source": "src_benchmark_bancos_load_load_postgres",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw",
+      "target": "src_benchmark_bancos_load_load_postgres_clean",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L64",
+      "source_location": "L60",
       "weight": 1.0
     },
     {
@@ -34532,7 +34616,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L86",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres",
+      "target": "src_benchmark_bancos_load_load_postgres_log_cantones_no_resueltos",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L974",
       "weight": 1.0
     },
     {
@@ -34565,7 +34660,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L123",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -34576,7 +34671,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L196",
+      "source_location": "L184",
       "weight": 1.0
     },
     {
@@ -34587,7 +34682,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L252",
+      "source_location": "L233",
       "weight": 1.0
     },
     {
@@ -34598,7 +34693,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L307",
+      "source_location": "L287",
       "weight": 1.0
     },
     {
@@ -34609,7 +34704,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L321",
+      "source_location": "L301",
       "weight": 1.0
     },
     {
@@ -34620,7 +34715,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L391",
+      "source_location": "L370",
       "weight": 1.0
     },
     {
@@ -34631,7 +34726,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L406",
+      "source_location": "L385",
       "weight": 1.0
     },
     {
@@ -34642,7 +34737,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L461",
+      "source_location": "L436",
       "weight": 1.0
     },
     {
@@ -34653,7 +34748,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L69",
+      "source_location": "L63",
       "weight": 1.0
     },
     {
@@ -36418,6 +36513,17 @@
     },
     {
       "source": "tests_test_integration_regressions",
+      "target": "tests_test_integration_regressions_test_refresh_incremental_propaga_fila_nueva_y_avanza_marca",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L729",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_integration_regressions",
       "target": "tests_test_integration_regressions_test_staging_cartera_canton_null_safe_unique_regression",
       "relation": "contains",
       "_origin": "ast",
@@ -37363,124 +37469,146 @@
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_load_load_postgres_rationale_1017",
-      "target": "src_benchmark_bancos_load_load_postgres_log_cantones_no_resueltos",
-      "relation": "rationale_for",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1017",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_rationale_1090",
-      "target": "src_benchmark_bancos_load_load_postgres_log_bancos_no_resueltos",
-      "relation": "rationale_for",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L1090",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_rationale_121",
+      "source": "src_benchmark_bancos_load_load_postgres_rationale_101",
       "target": "src_benchmark_bancos_load_load_postgres_load_banco_maestro_seed",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L121",
+      "source_location": "L101",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_load_load_postgres_rationale_265",
+      "source": "src_benchmark_bancos_load_load_postgres_rationale_1050",
+      "target": "src_benchmark_bancos_load_load_postgres_log_bancos_no_resueltos",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1050",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres_rationale_1116",
+      "target": "src_benchmark_bancos_load_load_postgres_crear_fuentes_incrementales",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1116",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres_rationale_1140",
+      "target": "src_benchmark_bancos_load_load_postgres_refresh_marts",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L1140",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres_rationale_278",
+      "target": "src_benchmark_bancos_load_load_postgres_cdc_guard",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L278",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres_rationale_286",
       "target": "src_benchmark_bancos_load_load_postgres_copy_rows",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L265",
+      "source_location": "L286",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_load_load_postgres_rationale_301",
+      "source": "src_benchmark_bancos_load_load_postgres_rationale_303",
       "target": "src_benchmark_bancos_load_load_postgres_upsert_bce_via_temp",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L301",
+      "source_location": "L303",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_load_load_postgres_rationale_383",
-      "target": "src_benchmark_bancos_load_load_postgres_load_raw_tasas_referenciales",
-      "relation": "rationale_for",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L383",
-      "weight": 1.0
-    },
-    {
-      "source": "src_benchmark_bancos_load_load_postgres_rationale_439",
+      "source": "src_benchmark_bancos_load_load_postgres_rationale_417",
       "target": "src_benchmark_bancos_load_load_postgres_truncate_staging_bce",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L439",
+      "source_location": "L417",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_load_load_postgres_rationale_493",
+      "source": "src_benchmark_bancos_load_load_postgres_rationale_471",
       "target": "src_benchmark_bancos_load_load_postgres_upsert_dim_cuenta_contable",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L493",
+      "source_location": "L471",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_load_load_postgres_rationale_527",
+      "source": "src_benchmark_bancos_load_load_postgres_rationale_505",
       "target": "src_benchmark_bancos_load_load_postgres_insert_dim_cuenta_contable_seps",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L527",
+      "source_location": "L505",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_load_load_postgres_rationale_59",
+      "source": "src_benchmark_bancos_load_load_postgres_rationale_61",
       "target": "src_benchmark_bancos_load_load_postgres_clean",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L59",
+      "source_location": "L61",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_load_load_postgres_rationale_87",
+      "source": "src_benchmark_bancos_load_load_postgres_rationale_67",
       "target": "src_benchmark_bancos_load_load_postgres_upsert_banco_maestro_ruc",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/load/load_postgres.py",
-      "source_location": "L87",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "src_benchmark_bancos_load_load_postgres_rationale_975",
+      "target": "src_benchmark_bancos_load_load_postgres_log_cantones_no_resueltos",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/benchmark_bancos/load/load_postgres.py",
+      "source_location": "L975",
       "weight": 1.0
     },
     {
@@ -37517,102 +37645,102 @@
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_pipeline_rationale_126",
+      "source": "src_benchmark_bancos_pipeline_rationale_119",
       "target": "src_benchmark_bancos_pipeline_load_seps",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L126",
+      "source_location": "L119",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_pipeline_rationale_197",
+      "source": "src_benchmark_bancos_pipeline_rationale_185",
       "target": "src_benchmark_bancos_pipeline_load_bce",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L197",
+      "source_location": "L185",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_pipeline_rationale_253",
+      "source": "src_benchmark_bancos_pipeline_rationale_234",
       "target": "src_benchmark_bancos_pipeline_reprocess_bce_staging",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L253",
+      "source_location": "L234",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_pipeline_rationale_308",
+      "source": "src_benchmark_bancos_pipeline_rationale_288",
       "target": "src_benchmark_bancos_pipeline_parse_fecha_from_tasas_historicas_filename",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L308",
+      "source_location": "L288",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_pipeline_rationale_322",
+      "source": "src_benchmark_bancos_pipeline_rationale_302",
       "target": "src_benchmark_bancos_pipeline_load_tasas_historicas",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L322",
+      "source_location": "L302",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_pipeline_rationale_392",
+      "source": "src_benchmark_bancos_pipeline_rationale_371",
       "target": "src_benchmark_bancos_pipeline_parse_fecha_from_boletin_filename",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L392",
+      "source_location": "L371",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_pipeline_rationale_407",
+      "source": "src_benchmark_bancos_pipeline_rationale_386",
       "target": "src_benchmark_bancos_pipeline_load_boletin",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L407",
+      "source_location": "L386",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_pipeline_rationale_462",
+      "source": "src_benchmark_bancos_pipeline_rationale_437",
       "target": "src_benchmark_bancos_pipeline_refresh",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L462",
+      "source_location": "L437",
       "weight": 1.0
     },
     {
-      "source": "src_benchmark_bancos_pipeline_rationale_74",
+      "source": "src_benchmark_bancos_pipeline_rationale_68",
       "target": "src_benchmark_bancos_pipeline_load_years",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L74",
+      "source_location": "L68",
       "weight": 1.0
     },
     {
@@ -38617,6 +38745,17 @@
       "weight": 1.0
     },
     {
+      "source": "tests_test_integration_regressions_rationale_730",
+      "target": "tests_test_integration_regressions_test_refresh_incremental_propaga_fila_nueva_y_avanza_marca",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_integration_regressions.py",
+      "source_location": "L730",
+      "weight": 1.0
+    },
+    {
       "source": "tests_test_integration_regressions_rationale_95",
       "target": "tests_test_integration_regressions_test_staging_cartera_canton_null_safe_unique_regression",
       "relation": "rationale_for",
@@ -38981,7 +39120,7 @@
     },
     {
       "source": "sql_15_rename_fact_tables_marts_vw_depositos_market_share",
-      "target": "marts_fact_saldo_depositos",
+      "target": "sql_15_rename_fact_tables_sql_marts_fact_saldo_depositos",
       "relation": "reads_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -39190,7 +39329,7 @@
     },
     {
       "source": "sql_18_glosario_cuentas_views_marts_vw_pyg_total_gastos",
-      "target": "marts_fact_pyg",
+      "target": "sql_18_glosario_cuentas_views_sql_marts_fact_pyg",
       "relation": "reads_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -39212,7 +39351,7 @@
     },
     {
       "source": "sql_18_glosario_cuentas_views_marts_vw_utilidad_acumulada",
-      "target": "marts_fact_pyg",
+      "target": "sql_18_glosario_cuentas_views_sql_marts_fact_pyg",
       "relation": "reads_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -40221,7 +40360,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L214",
+      "source_location": "L202",
       "weight": 1.0
     },
     {
@@ -40233,7 +40372,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L215",
+      "source_location": "L203",
       "weight": 1.0
     },
     {
@@ -40245,7 +40384,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L221",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
@@ -40257,7 +40396,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L222",
+      "source_location": "L209",
       "weight": 1.0
     },
     {
@@ -40269,7 +40408,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L170",
+      "source_location": "L159",
       "weight": 1.0
     },
     {
@@ -40281,7 +40420,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L172",
+      "source_location": "L161",
       "weight": 1.0
     },
     {
@@ -40293,7 +40432,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L175",
+      "source_location": "L164",
       "weight": 1.0
     },
     {
@@ -40305,7 +40444,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L177",
+      "source_location": "L166",
       "weight": 1.0
     },
     {
@@ -40317,7 +40456,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L85",
+      "source_location": "L79",
       "weight": 1.0
     },
     {
@@ -40329,7 +40468,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L85",
+      "source_location": "L79",
       "weight": 1.0
     },
     {
@@ -40341,7 +40480,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L89",
+      "source_location": "L83",
       "weight": 1.0
     },
     {
@@ -40353,7 +40492,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L90",
+      "source_location": "L84",
       "weight": 1.0
     },
     {
@@ -40365,7 +40504,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L284",
+      "source_location": "L264",
       "weight": 1.0
     },
     {
@@ -40377,7 +40516,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L284",
+      "source_location": "L264",
       "weight": 1.0
     },
     {
@@ -40389,7 +40528,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L285",
+      "source_location": "L265",
       "weight": 1.0
     },
     {
@@ -40401,7 +40540,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/benchmark_bancos/pipeline.py",
-      "source_location": "L285",
+      "source_location": "L265",
       "weight": 1.0
     },
     {
@@ -40648,5 +40787,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "bb009abfa753e68bc5d014749a55d976294989ff"
+  "built_at_commit": "7d0f8d67e425a62bf89adbec9bb21149ab425a35"
 }

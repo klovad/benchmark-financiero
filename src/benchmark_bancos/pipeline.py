@@ -26,10 +26,6 @@ from benchmark_bancos.load.load_postgres import (
     get_connection,
     insert_dim_cuenta_contable_seps,
     is_source_loaded,
-    load_raw,
-    load_raw_bce,
-    load_raw_boletin,
-    load_raw_tasas_referenciales,
     refresh_marts,
     register_source_file,
     truncate_staging_bce,
@@ -45,8 +41,6 @@ from benchmark_bancos.load.load_postgres import (
 )
 from benchmark_bancos.transform.common import sha256_file
 from benchmark_bancos.transform.parse_bce_tasas import (
-    RAW_TSA_COLS,
-    RAW_TSP_COLS,
     parse_tsa_file,
     parse_tsp_file,
 )
@@ -74,7 +68,7 @@ def load_years(
     """tipo_entidad de cada fila lo fija el sub-portal CAPCOL de donde vino el archivo
     (benchmark_bancos.config.CAPCOL_PORTALES), no el parser. source_file se prefija con el subdir del
     portal (ej. 'banca_publica/Cartera Consumo DICIEMBRE 2025.zip') porque
-    raw.source_files es UNIQUE por nombre y ambos portales usan nombres parecidos."""
+    meta.source_files es UNIQUE por nombre y ambos portales usan nombres parecidos."""
     conn = get_connection()
     try:
         for portal in portales:
@@ -107,7 +101,6 @@ def load_years(
                         log.info("Procesando %s (%s)", source_key, cfg["tipo_entidad"])
                         df = parse_fn(zip_path, EXTRACT_DIR, cfg["tipo_entidad"])
                         df["source_file"] = source_key
-                        load_raw(conn, table, df, year)
                         upsert_fn(conn, df)
                         register_source_file(conn, source_key, source_hash, report_type)
                         conn.commit()
@@ -129,7 +122,7 @@ def load_seps(
     Orden por año: EEFF primero, porque trae la razón social completa. Así, una entidad
     nueva (no vista antes por BCE) se registra en staging.banco_maestro con ese nombre y
     no con la abreviatura de los reportes. Después van captaciones y colocaciones. Cada
-    archivo se commitea por separado y se registra en raw.source_files con clave
+    archivo se commitea por separado y se registra en meta.source_files con clave
     'seps/{año}/{archivo}', así que una re-corrida salta lo ya cargado."""
     if descargar:
         download_seps(years, base_dir)
@@ -155,10 +148,6 @@ def load_seps(
                         insert_dim_cuenta_contable_seps(conn, r["cuentas"])
                         for df in (r["balance"], r["pyg"]):
                             df["source_file"] = source_key
-                        load_raw_boletin(
-                            conn, "boletin_balance", r["balance"], source_hash
-                        )
-                        load_raw_boletin(conn, "boletin_pyg", r["pyg"], source_hash)
                         upsert_staging_boletin_balance(conn, r["balance"])
                         upsert_staging_boletin_pyg(conn, r["pyg"])
                         register_source_file(
@@ -180,7 +169,6 @@ def load_seps(
                         df, entidades = parse_fn(zip_path, EXTRACT_DIR)
                         df["source_file"] = source_key
                         upsert_banco_maestro_ruc(conn, entidades)
-                        load_raw(conn, table, df, year)
                         upsert_fn(conn, df)
                         register_source_file(conn, source_key, source_hash, table)
                     conn.commit()
@@ -207,23 +195,20 @@ def load_bce(base_dir: Path = BCE_DIR) -> None:
     files = download_bce_all(base_dir)
     conn = get_connection()
     try:
-        for clave, report_type, parse_fn, upsert_fn, raw_cols in (
+        for clave, report_type, parse_fn, upsert_fn in (
             (
                 "tsp",
                 "bce_tasas_pasivas",
                 parse_tsp_file,
                 upsert_staging_bce_tasas_pasivas,
-                RAW_TSP_COLS,
             ),
             (
                 "tsa",
                 "bce_tasas_activas",
                 parse_tsa_file,
                 upsert_staging_bce_tasas_activas,
-                RAW_TSA_COLS,
             ),
         ):
-            table = report_type
             zip_path = files[clave]
             source_hash = sha256_file(zip_path)
             if is_source_loaded(conn, zip_path.name, source_hash):
@@ -231,10 +216,6 @@ def load_bce(base_dir: Path = BCE_DIR) -> None:
                 continue
             log.info("Procesando %s (sin filtrar tipo_entidad)", zip_path.name)
             df_raw = read_raw_bce(zip_path)
-            df_raw["source_file"] = zip_path.name
-            df_raw["source_hash"] = source_hash
-            load_raw_bce(conn, table, df_raw, raw_cols)
-
             df_staging, entidades = parse_fn(zip_path, df_raw=df_raw)
             upsert_banco_maestro_ruc(conn, entidades)
             upsert_fn(conn, df_staging)
@@ -253,14 +234,13 @@ def reprocess_bce_staging(base_dir: Path = BCE_DIR) -> None:
     """Backfill de sql/28_bce_canton_grain.sql (cambio de grano provincia -> cantón,
     2026-09-01, ver src/benchmark_bancos/transform/parse_bce_tasas.py y canton_matching.py): re-deriva
     staging.bce_tasas_pasivas/activas -- y, vía refresh_marts(), fact_captaciones_depositos/
-    fact_colocaciones_cartera -- SIN re-descargar ni re-insertar en raw.*. Seguro porque:
-    (a) tsp/tsa son un solo zip acumulativo con el histórico completo ya en disco (no hay
-    'año' que iterar como en CAPCOL); (b) raw.bce_tasas_pasivas/activas.data (JSONB) ya
-    tenía `canton` en el payload desde siempre -- RAW_TSP_COLS/RAW_TSA_COLS no cambiaron
-    con esta migración, solo el parser dejó de descartar esa columna en _weighted_agg().
+    fact_colocaciones_cartera -- SIN re-descargar. Seguro porque tsp/tsa son un solo zip
+    acumulativo con el histórico completo ya en disco (no hay 'año' que iterar como en
+    CAPCOL) y el archivo siempre trajo `canton`: solo el parser dejó de descartar esa
+    columna en _weighted_agg().
 
     A diferencia de load_bce(), este NO respeta is_source_loaded(): el hash del archivo
-    tsp/tsa no cambió (es el mismo de siempre, ya registrado en raw.source_files), así
+    tsp/tsa no cambió (es el mismo de siempre, ya registrado en meta.source_files), así
     que ese gate diría "ya cargado" para siempre y load_bce() normal nunca dispararía el
     reproceso -- correcto para una carga semanal normal, pero exactamente lo que hay que
     saltarse para un backfill de un cambio de esquema. Por eso es una función aparte, no
@@ -292,7 +272,7 @@ def reprocess_bce_staging(base_dir: Path = BCE_DIR) -> None:
             upsert_banco_maestro_ruc(conn, entidades)
             upsert_fn(conn, df_staging)
             conn.commit()
-        refresh_marts(conn)
+        refresh_marts(conn, full=True)
         conn.commit()
     except Exception:
         conn.rollback()
@@ -356,7 +336,6 @@ def load_tasas_historicas() -> None:
                     e,
                 )
                 continue
-            load_raw_tasas_referenciales(conn, df, source_hash)
             upsert_staging_tasas_referenciales(conn, df)
             register_source_file(conn, path.name, source_hash, "tasas_referenciales")
             conn.commit()
@@ -439,10 +418,6 @@ def load_boletin(years: list[int], base_dir: Path = RAW_DIR) -> None:
                     )
                     continue
                 upsert_dim_cuenta_contable(conn, result["cuentas"])
-                load_raw_boletin(
-                    conn, "boletin_balance", result["balance"], source_hash
-                )
-                load_raw_boletin(conn, "boletin_pyg", result["pyg"], source_hash)
                 upsert_staging_boletin_balance(conn, result["balance"])
                 upsert_staging_boletin_pyg(conn, result["pyg"])
                 register_source_file(
@@ -458,12 +433,13 @@ def load_boletin(years: list[int], base_dir: Path = RAW_DIR) -> None:
         conn.close()
 
 
-def refresh() -> None:
+def refresh(full: bool = False) -> None:
     """Recalcula solo marts.* desde staging, sin leer archivos (p.ej. tras curar un seed
-    o aplicar una migración que cambia la lógica de refresh)."""
+    o aplicar una migración que cambia la lógica de refresh). Incremental por defecto;
+    `full=True` recalcula todo staging."""
     conn = get_connection()
     try:
-        refresh_marts(conn)
+        refresh_marts(conn, full=full)
         conn.commit()
     except Exception:
         conn.rollback()

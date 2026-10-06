@@ -8,6 +8,12 @@ Grounded directamente en el código (parsers de `src/benchmark_bancos/transform/
 al momento de escribirse — no en la ficha metodológica de la fuente, que en varios casos
 está desactualizada (ver `docs/fuentes_datos.md`).
 
+> **2026-10-05 (`sql/33`)**: la capa `raw.*` (JSONB) se eliminó de la base. Las columnas
+> "raw" de las tablas de abajo describen la salida del parser, que hoy va directo a
+> `staging.*`. La trazabilidad al origen es el archivo en `data/raw/**` más su sha256 en
+> `meta.source_files`. La sección siguiente se conserva como registro de por qué raw no
+> aportaba un espejo del origen.
+
 ## Principio: `raw.*` no es un espejo bit-a-bit del archivo origen
 
 Antes de leer las tablas de abajo, una aclaración importante para no asumir más de lo que
