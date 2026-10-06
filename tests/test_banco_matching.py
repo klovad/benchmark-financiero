@@ -71,6 +71,19 @@ def test_capcol_banca_publica_resuelve_al_mismo_codigo_bce_por_ruc():
     )
 
 
+def test_crosswalk_solo_apunta_a_identidad_curada():
+    # 2026-10-05: los 3 bancos públicos de CAPCOL pasan al camino curado
+    # (banco_maestro.csv), con nombre visible y estado CONFIRMADO deterministas. Antes el
+    # crosswalk apuntaba a filas BCE_<ruc> que solo existían si BCE había corrido primero,
+    # y el BdE se veía con su razón social histórica "BANCO DEL ESTADO".
+    from etl.transform.banco_matching import _crosswalk, maestro
+
+    fuera = {c for c in _crosswalk().values() if c not in maestro()}
+    assert fuera == set()
+    assert maestro()["BCE_1760002950001"]["banco"] == "BANCO DE DESARROLLO DEL ECUADOR"
+    assert maestro()["BCE_1760002950001"]["tipo_entidad"] == "BANCO PUBLICO"
+
+
 def test_resolver_entidad_bce_privados_usa_crosswalk_curado():
     codigo, banco, tipo, ruc = resolver_entidad_bce(
         "BANCO PICHINCHA C.A.", "1790010937001", "BANCOS PRIVADOS"

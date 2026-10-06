@@ -19,7 +19,7 @@ conformados"): `dim_banco` (camino curado + camino auto-registrado), `dim_segmen
 
 | Catálogo | Excepción(es) | Archivo:línea | Comportamiento |
 |---|---|---|---|
-| `dim_banco` — curado (33) | `BancoNoResueltoError` | `etl/transform/banco_matching.py:37` (raise en :121-124) | Fail-fast absoluto |
+| `dim_banco` — curado (33 privados + 3 públicos) | `BancoNoResueltoError` | `etl/transform/banco_matching.py:37` (raise en :121-124) | Fail-fast absoluto |
 | `dim_banco` — auto-registrado (409) | `EntidadBceNoMapeadaError` (tipo_entidad), `RucInvalidoError` (RUC) | `banco_matching.py:139`, `banco_matching.py:144` (raise en :253-256 y :270-276) | Fail-fast sobre tipo/RUC; identidad en sí **no se cura**, se auto-ingresa `AUTO_INGRESADO` |
 | `dim_segmento_credito`/`dim_subsegmento_credito` | `SegmentoNoResueltoError` (BCE tsa), `ValueError` (CAPCOL, sin clase propia) | `etl/transform/parse_bce_tasas.py:156` (raise :329-331); `etl/transform/parse_cartera.py:48` | Fail-fast absoluto, sin two-tier |
 | `dim_categoria_deposito` | `CategoriaNoResueltaError` (CAPCOL), `ValueError` (BCE tsp, sin clase propia) | `etl/transform/categoria_deposito_matching.py:53` (raise :88-91); `parse_bce_tasas.py:291` | Fail-fast absoluto, sin two-tier |
@@ -55,7 +55,14 @@ la carga hasta que un humano lo resuelva en el código, nunca queda "pendiente" 
 
 ---
 
-## 1. `dim_banco` — camino curado (33 bancos privados)
+## 1. `dim_banco` — camino curado (33 bancos privados + 3 públicos)
+
+> **2026-10-05**: BanEcuador, CFN y BdE (Banca Pública CAPCOL) se agregaron a
+> `etl/seeds/banco_maestro.csv` con su llave `BCE_<ruc>` ya existente. Ganan nombre visible
+> determinista (el BdE dejó de verse como "BANCO DEL ESTADO") y `CONFIRMADO`. **Regla nueva,
+> con test** (`test_crosswalk_solo_apunta_a_identidad_curada`): todo `banco_codigo` al que
+> apunte `banco_crosswalk.csv` debe existir en `banco_maestro.csv`. Si se agrega un
+> crosswalk hacia una entidad `BCE_<ruc>`, agregarla también al maestro.
 
 **Error**: `BancoNoResueltoError` — `etl/transform/banco_matching.py:37-38`, lanzado desde
 `resolver_banco_codigo()` (líneas 121-124):

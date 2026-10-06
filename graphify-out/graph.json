@@ -4744,7 +4744,7 @@
       "node_kind": "heading",
       "norm_label": "decisiones de modelado relevantes",
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L220"
+      "source_location": "L234"
     },
     {
       "id": "docs_data_dictionary_diccionario_de_datos",
@@ -11150,6 +11150,17 @@
       "source_location": "L13"
     },
     {
+      "id": "marts_dim_cuenta_contable",
+      "label": "marts.dim_cuenta_contable",
+      "_origin": "ast",
+      "community": 19,
+      "community_name": "18_glosario_cuentas_views.sql",
+      "file_type": "code",
+      "norm_label": "marts.dim_cuenta_contable",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "marts_fact_balance",
       "label": "marts.fact_balance",
       "_origin": "ast",
@@ -11313,6 +11324,39 @@
       "norm_label": "marts.dim_fecha",
       "source_file": "",
       "source_location": ""
+    },
+    {
+      "id": "sql_32_vistas_glosario_seps_banca_publica",
+      "label": "32_vistas_glosario_seps_banca_publica.sql",
+      "_origin": "ast",
+      "community": 19,
+      "community_name": "18_glosario_cuentas_views.sql",
+      "file_type": "code",
+      "norm_label": "32_vistas_glosario_seps_banca_publica.sql",
+      "source_file": "sql/32_vistas_glosario_seps_banca_publica.sql",
+      "source_location": null
+    },
+    {
+      "id": "sql_32_vistas_glosario_seps_banca_publica_marts_vw_cartera_bruta",
+      "label": "marts.vw_cartera_bruta",
+      "_origin": "ast",
+      "community": 19,
+      "community_name": "18_glosario_cuentas_views.sql",
+      "file_type": "code",
+      "norm_label": "marts.vw_cartera_bruta",
+      "source_file": "sql/32_vistas_glosario_seps_banca_publica.sql",
+      "source_location": "L30"
+    },
+    {
+      "id": "sql_32_vistas_glosario_seps_banca_publica_marts_vw_cartera_improductiva_segmento",
+      "label": "marts.vw_cartera_improductiva_segmento",
+      "_origin": "ast",
+      "community": 19,
+      "community_name": "18_glosario_cuentas_views.sql",
+      "file_type": "code",
+      "norm_label": "marts.vw_cartera_improductiva_segmento",
+      "source_file": "sql/32_vistas_glosario_seps_banca_publica.sql",
+      "source_location": "L41"
     },
     {
       "id": "etl_transform_common",
@@ -16651,7 +16695,7 @@
       "node_kind": "heading",
       "norm_label": "gestion de cambios de esquema",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L652"
+      "source_location": "L655"
     },
     {
       "id": "docs_gobernanza_datos_gobernanza_de_datos",
@@ -16664,18 +16708,6 @@
       "norm_label": "gobernanza de datos",
       "source_file": "docs/gobernanza_datos.md",
       "source_location": "L1"
-    },
-    {
-      "id": "docs_gobernanza_datos_hueco_encontrado_2026_09_30_sql_18_nunca_se_aplic\u00f3_a_la_base_viva",
-      "label": "Hueco encontrado 2026-09-30: `sql/18` nunca se aplic\u00f3 a la base viva",
-      "_origin": "ast",
-      "community": 99,
-      "community_name": "Gobernanza de datos",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "hueco encontrado 2026-09-30: `sql/18` nunca se aplico a la base viva",
-      "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L643"
     },
     {
       "id": "docs_gobernanza_datos_huecos_de_gobernanza_conocidos",
@@ -16760,6 +16792,18 @@
       "norm_label": "responsabilidad y clasificacion",
       "source_file": "docs/gobernanza_datos.md",
       "source_location": "L28"
+    },
+    {
+      "id": "docs_gobernanza_datos_resuelto_2026_10_02_hueco_encontrado_2026_09_30_sql_18_nunca_se_aplic\u00f3_a_la_base_viva",
+      "label": "\u2705 Resuelto 2026-10-02 \u2014 Hueco encontrado 2026-09-30: `sql/18` nunca se aplic\u00f3 a la base viva",
+      "_origin": "ast",
+      "community": 99,
+      "community_name": "Gobernanza de datos",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "\u2705 resuelto 2026-10-02 \u2014 hueco encontrado 2026-09-30: `sql/18` nunca se aplico a la base viva",
+      "source_file": "docs/gobernanza_datos.md",
+      "source_location": "L643"
     },
     {
       "id": "docs_gobernanza_datos_sem\u00e1ntica_distinta_de_fact_saldo_cartera_para_mutualistas_2026_10_01",
@@ -24683,7 +24727,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/data_dictionary.md",
-      "source_location": "L220",
+      "source_location": "L234",
       "weight": 1.0
     },
     {
@@ -25409,7 +25453,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L652",
+      "source_location": "L655",
       "weight": 1.0
     },
     {
@@ -25436,7 +25480,7 @@
     },
     {
       "source": "docs_gobernanza_datos_huecos_de_gobernanza_conocidos",
-      "target": "docs_gobernanza_datos_hueco_encontrado_2026_09_30_sql_18_nunca_se_aplic\u00f3_a_la_base_viva",
+      "target": "docs_gobernanza_datos_resuelto_2026_10_02_hueco_encontrado_2026_09_30_sql_18_nunca_se_aplic\u00f3_a_la_base_viva",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -35082,6 +35126,28 @@
       "weight": 1.0
     },
     {
+      "source": "sql_32_vistas_glosario_seps_banca_publica",
+      "target": "sql_32_vistas_glosario_seps_banca_publica_marts_vw_cartera_bruta",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sql/32_vistas_glosario_seps_banca_publica.sql",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "sql_32_vistas_glosario_seps_banca_publica",
+      "target": "sql_32_vistas_glosario_seps_banca_publica_marts_vw_cartera_improductiva_segmento",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sql/32_vistas_glosario_seps_banca_publica.sql",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
       "source": "tests_conftest",
       "target": "tests_conftest_db_conn",
       "relation": "contains",
@@ -38745,6 +38811,50 @@
       "weight": 1.0
     },
     {
+      "source": "sql_32_vistas_glosario_seps_banca_publica_marts_vw_cartera_bruta",
+      "target": "marts_fact_balance",
+      "relation": "reads_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sql/32_vistas_glosario_seps_banca_publica.sql",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "sql_32_vistas_glosario_seps_banca_publica_marts_vw_cartera_bruta",
+      "target": "marts_dim_cuenta_contable",
+      "relation": "reads_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sql/32_vistas_glosario_seps_banca_publica.sql",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "sql_32_vistas_glosario_seps_banca_publica_marts_vw_cartera_improductiva_segmento",
+      "target": "marts_fact_balance",
+      "relation": "reads_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sql/32_vistas_glosario_seps_banca_publica.sql",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "sql_32_vistas_glosario_seps_banca_publica_marts_vw_cartera_improductiva_segmento",
+      "target": "marts_dim_cuenta_contable",
+      "relation": "reads_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sql/32_vistas_glosario_seps_banca_publica.sql",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
       "source": "docs_gobernanza_datos",
       "target": "docs_architecture",
       "relation": "references",
@@ -39974,5 +40084,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "c311ba47d750103ccee721308f86c62b3f881d63"
+  "built_at_commit": "0556b79ce99efc6ff4d6c38617143e2e8e0c32d4"
 }

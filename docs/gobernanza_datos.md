@@ -423,10 +423,12 @@ diseño aprobado, no implementada). Resumen de gobernanza:
 
 CAPCOL `capcol-instituciones-publicas/` 2021-2025, 3 entidades, `tipo_entidad='BANCO
 PUBLICO'`. Se cerró el riesgo de orden de carga de 2026-09-01: las 3 filas `BCE_<ruc>` ya
-existían y `_log_bancos_no_resueltos()` reportó 0. Pendiente de curación: el nombre
-visible del BdE en `dim_banco` es "BANCO DEL ESTADO" (razón social histórica en BCE).
-Para curarlo hay que llevar la entidad al camino curado (`banco_maestro.csv`), no basta
-con renombrarla en la base. Ver `docs/fuentes_datos.md` §1.1.
+existían y `_log_bancos_no_resueltos()` reportó 0. **Curado 2026-10-05**: las 3 entidades
+pasan a `etl/seeds/banco_maestro.csv` (`CONFIRMADO`, 36 curadas en total). El BdE pasa a
+llamarse "BANCO DE DESARROLLO DEL ECUADOR", su razón social vigente en BCE desde 2021-11;
+antes se veía como "BANCO DEL ESTADO". Con esto el riesgo de orden de carga desaparece del
+todo: las 3 filas existen aunque BCE no haya corrido nunca. Al aplicarlo cambiaron
+exactamente esas 3 filas de `dim_banco`, y ninguna tabla de hechos.
 
 ## SEPS implementada y cargada (2026-09-30)
 

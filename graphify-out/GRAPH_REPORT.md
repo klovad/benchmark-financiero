@@ -1,16 +1,16 @@
-# Graph Report - benchmark-bancos  (2026-10-02)
+# Graph Report - benchmark-bancos  (2026-10-05)
 
 ## Corpus Check
-- 122 files · ~106,870 words
+- 123 files · ~107,619 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1481 nodes · 2047 edges · 144 communities (83 shown, 61 thin omitted)
+- 1485 nodes · 2053 edges · 144 communities (83 shown, 61 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 36 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c311ba47`
+- Built from commit: `0556b79c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -246,8 +246,8 @@ Cohesion: 0.12
 Nodes (16): projections, name, position, height, tabOrder, width, x, y (+8 more)
 
 ### Community 19 - "18_glosario_cuentas_views.sql"
-Cohesion: 0.31
-Nodes (14): marts.fact_balance, marts.fact_pyg, marts.vw_activo_promedio_ytd, marts.vw_cartera_bruta, marts.vw_cartera_bruta_segmento, marts.vw_cartera_improductiva, marts.vw_cartera_improductiva_segmento, marts.vw_depositos_corto_plazo (+6 more)
+Cohesion: 0.23
+Nodes (17): marts.dim_cuenta_contable, marts.fact_balance, marts.fact_pyg, marts.vw_activo_promedio_ytd, marts.vw_cartera_bruta, marts.vw_cartera_bruta_segmento, marts.vw_cartera_improductiva, marts.vw_cartera_improductiva_segmento (+9 more)
 
 ### Community 20 - "resolver_canton_bce"
 Cohesion: 0.09
@@ -422,24 +422,24 @@ Cohesion: 0.06
 Nodes (57): Chequeo de dos niveles para TODOS los valores crudos de `plazo` observados en…, Devuelve (dias_desde, dias_hasta); dias_hasta es None si el bucket es abierto…, resolver_plazo_bce(), validar_universo_plazos_bce(), _add_common_columns(), parse_tsa_file(), parse_tsp_file(), DataFrame (+49 more)
 
 ## Knowledge Gaps
-- **550 isolated node(s):** `Qué incluye`, `Quickstart`, `Estructura`, `Tests y CI`, `Alcance de los datos` (+545 more)
+- **550 isolated node(s):** `marts.dim_fecha (grano día)`, `marts.dim_banco`, `marts.dim_provincia (2026-07-25, `sql/20_dim_provincia.sql`)`, `marts.dim_canton`, `marts.dim_segmento_entidad (2026-07-25, `sql/19_dim_segmento_entidad.sql`)` (+545 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **61 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `resolver_plazo_bce()` connect `parse_bce_tasas.py` to `test_parse_tasas_historicas.py`?**
-  _High betweenness centrality (0.009) - this node is a cross-community bridge._
 - **Why does `resolver_canton_bce()` connect `resolver_canton_bce` to `parse_seps.py`, `parse_depositos_file`, `parse_bce_tasas.py`?**
   _High betweenness centrality (0.008) - this node is a cross-community bridge._
-- **Why does `parse_seps_captaciones_file()` connect `parse_seps.py` to `test_parse_tasas_historicas.py`, `pipeline.py`?**
-  _High betweenness centrality (0.007) - this node is a cross-community bridge._
+- **Why does `parse_depositos_file()` connect `parse_depositos_file` to `test_banco_matching.py`, `test_parse_tasas_historicas.py`, `pipeline.py`?**
+  _High betweenness centrality (0.008) - this node is a cross-community bridge._
 - **Are the 4 inferred relationships involving `load_seps()` (e.g. with `upsert_staging_cartera()` and `upsert_staging_depositos()`) actually correct?**
   _`load_seps()` has 4 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 2 inferred relationships involving `parse_seps_eeff_file()` (e.g. with `_codigo_padre()` and `month_end_date()`) actually correct?**
   _`parse_seps_eeff_file()` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Qué incluye`, `Quickstart`, `Estructura` to the rest of the system?**
+- **What connects `marts.dim_fecha (grano día)`, `marts.dim_banco`, `marts.dim_provincia (2026-07-25, `sql/20_dim_provincia.sql`)` to the rest of the system?**
   _550 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `benchmark_cartera_depositos` be split into smaller, more focused modules?**
   _Cohesion score 0.10121951219512196 - nodes in this community are weakly interconnected._
+- **Should `parse_depositos_file` be split into smaller, more focused modules?**
+  _Cohesion score 0.06393442622950819 - nodes in this community are weakly interconnected._

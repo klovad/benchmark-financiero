@@ -29,9 +29,9 @@ investiga o integra una fuente nueva — es la referencia antes de rediseñar na
 > `AUTO_INGRESADO` (PABLO VI, Morona Santiago). Las filas de bancos privados y SEPS no
 > cambiaron (hash idéntico antes y después) y una segunda corrida no actualizó nada. El
 > Banco de Desarrollo del Ecuador (BdE) solo reporta cartera (Inversión Pública y
-> Productivo), no depósitos. En `dim_banco` aparece como **"BANCO DEL ESTADO"**, la razón
-> social con la que BCE lo auto-registró primero: es la misma entidad (mismo RUC), solo
-> que el nombre visible no está curado. Dic-2025: BdE 1.718 M de cartera, BanEcuador
+> Productivo), no depósitos. (Hasta 2026-10-05 aparecía en `dim_banco` como "BANCO DEL
+> ESTADO", su razón social histórica en BCE. Ahora es "BANCO DE DESARROLLO DEL ECUADOR",
+> curado en `banco_maestro.csv` junto con CFN y BanEcuador.) Dic-2025: BdE 1.718 M de cartera, BanEcuador
 > 1.361 M de cartera y 1.452 M de depósitos, CFN 1.290 M de cartera y 963 M de depósitos.
 > No hay contra qué conciliar: el Boletín cargado solo trae bancos privados.
 

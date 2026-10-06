@@ -97,7 +97,7 @@ def upsert_banco_maestro_ruc(conn, entidades: list[tuple[str, str, str, str]]) -
     estado_validacion no se toca en el ON CONFLICT (se preserva el valor existente) y no
     se lista en el INSERT -- una fila nueva hereda el DEFAULT 'AUTO_INGRESADO' de
     staging.banco_maestro (sql/26_dim_banco_estado_validacion.sql) sin necesitar cambio
-    de código acá; si esa fila resulta ser uno de los 33 curados y esta función la creó
+    de código acá; si esa fila resulta ser uno de los curados (33 privados + 3 públicos de CAPCOL) y esta función la creó
     antes que load_banco_maestro_seed() corriera (orden posible en una base nueva),
     load_banco_maestro_seed() la corrige a CONFIRMADO más adelante en el mismo
     refresh_marts()."""
@@ -124,7 +124,7 @@ def load_banco_maestro_seed(conn) -> None:
     de texto llegó primero durante la carga.
 
     estado_validacion = 'CONFIRMADO' siempre, en el INSERT y en el UPDATE del conflicto
-    (sql/26_dim_banco_estado_validacion.sql): estos ~33 banco_codigo son exactamente los
+    (sql/26_dim_banco_estado_validacion.sql): estos banco_codigo (33 privados + 3 públicos de CAPCOL, 2026-10-05) son exactamente los
     curados a mano en el CSV, así que cada corrida reafirma CONFIRMADO sin importar si la
     fila ya existía (curada de siempre) o si upsert_banco_maestro_ruc() la creó primero
     con el DEFAULT AUTO_INGRESADO (posible en una base nueva si load_bce() corre antes
@@ -658,7 +658,7 @@ ON CONFLICT (fecha_id) DO NOTHING;
 -- el nombre a mostrar y tipo_entidad vienen de staging.banco_maestro (sembrado desde
 -- etl/seeds/banco_maestro.csv), no de cualquier texto crudo que haya llegado primero.
 -- estado_validacion (sql/26_dim_banco_estado_validacion.sql) se copia de
--- staging.banco_maestro tal cual -- CONFIRMADO para los 33 curados (reafirmado en cada
+-- staging.banco_maestro tal cual -- CONFIRMADO para los 36 curados -- 33 privados + 3 públicos (reafirmado en cada
 -- corrida por load_banco_maestro_seed(), llamado justo antes que esta sentencia dentro
 -- de refresh_marts()), AUTO_INGRESADO para las ~409 entidades auto-registradas por RUC.
 --
