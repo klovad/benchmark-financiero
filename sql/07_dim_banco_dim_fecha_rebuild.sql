@@ -36,8 +36,8 @@ ALTER TABLE marts.dim_fecha
     ALTER COLUMN dia SET NOT NULL,
     ALTER COLUMN anio_mes SET NOT NULL;
 
--- Tabla de referencia (sembrada desde etl/seeds/banco_maestro.csv por
--- etl/load/load_postgres.py::load_banco_maestro_seed()) con el nombre canónico a
+-- Tabla de referencia (sembrada desde src/benchmark_bancos/seeds/banco_maestro.csv por
+-- src/benchmark_bancos/load/load_postgres.py::load_banco_maestro_seed()) con el nombre canónico a
 -- mostrar y tipo_entidad de cada banco_codigo -- deterministas, no derivados
 -- oportunísticamente de cualquier texto crudo que haya llegado primero durante la carga.
 CREATE TABLE IF NOT EXISTS staging.banco_maestro (

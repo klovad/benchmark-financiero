@@ -1,4 +1,4 @@
--- Rework de dim_banco: identidad canónica resuelta en ETL (etl/transform/banco_matching.py),
+-- Rework de dim_banco: identidad canónica resuelta en ETL (src/benchmark_bancos/transform/banco_matching.py),
 -- no una tabla de alias en el esquema estrella. Corrige el bug de continuidad de
 -- 'BP COMERCIAL DE MANABI'/'BP BANCO COMERCIAL DE MANABI' y
 -- 'BANCO AMIBANK S.A.'/'BANCO AMIBANK S.A., EN LIQUIDACION' (mismo banco partido en 2
@@ -18,7 +18,7 @@ ALTER TABLE staging.depositos
     ADD COLUMN IF NOT EXISTS fecha_carga TIMESTAMPTZ NOT NULL DEFAULT now(),
     ADD COLUMN IF NOT EXISTS fecha_actualizacion TIMESTAMPTZ NOT NULL DEFAULT now();
 
--- El backfill de banco_codigo (etl/transform/banco_matching.py, vía script Python) corre
+-- El backfill de banco_codigo (src/benchmark_bancos/transform/banco_matching.py, vía script Python) corre
 -- entre este bloque y el siguiente -- ver docs/architecture.md. Una vez poblado:
 
 -- row_hash cubre solo las columnas MUTABLES (las que el upsert actualiza en un

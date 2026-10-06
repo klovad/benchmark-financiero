@@ -1,8 +1,8 @@
 import pandas as pd
 import pytest
 
-from etl.transform.bce_plazo_matching import PlazoNoResueltoError
-from etl.transform.parse_tasas_historicas import (
+from benchmark_bancos.transform.bce_plazo_matching import PlazoNoResueltoError
+from benchmark_bancos.transform.parse_tasas_historicas import (
     _categoria_label,
     _emitir,
     _parse_filas,

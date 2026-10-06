@@ -3,7 +3,7 @@
 -- CAPCOL (fact_saldo_cartera/fact_saldo_depositos: dim_canton como FK directa,
 -- dim_provincia como outrigger vía dim_canton.provincia_id -- ver sql/20_dim_provincia.sql
 -- y "Kimball outrigger over forced grain" en CLAUDE.md). Antes:
--- etl/transform/parse_bce_tasas.py::_weighted_agg() colapsaba cantón dentro de provincia
+-- src/benchmark_bancos/transform/parse_bce_tasas.py::_weighted_agg() colapsaba cantón dentro de provincia
 -- ANTES de staging (comentario original en sql/11_schema_bce.sql líneas 6-9) -- el
 -- archivo fuente SÍ trae cantón, solo se perdía en el parser.
 --
@@ -28,7 +28,7 @@
 --   GENERAL ANTONIO ELIZALDE (Guayas)             = GENERAL ANTONIO ELIZALDE (BUCAY)
 --   PUEBLOVIEJO (Los Ríos)                        = PUEBLO VIEJO
 --   SAN FRANCISCO DE ORELLANA (Orellana)          = ORELLANA
--- Estos 5 alias viven en etl/transform/canton_matching.py::_ALIASES_BCE, resueltos en
+-- Estos 5 alias viven en src/benchmark_bancos/transform/canton_matching.py::_ALIASES_BCE, resueltos en
 -- Python antes de staging (principio de diseño #2) -- NO se agregan como filas nuevas acá.
 --
 -- 4+ pares son cantones reales con el MISMO nombre en DOS provincias distintas por
@@ -63,7 +63,7 @@
 -- provincia ya es conocida, igual que un rango de días nuevo lo es para dim_plazo. Se
 -- extiende el mismo tratamiento two-tier a este 6to catálogo: shape sano (provincia
 -- resuelve) pero par fuera del universo curado -> AUTO_INGRESADO, no aborta la carga.
--- Ver etl/transform/canton_matching.py::resolver_canton_bce() para el mecanismo Python
+-- Ver src/benchmark_bancos/transform/canton_matching.py::resolver_canton_bce() para el mecanismo Python
 -- correspondiente.
 ALTER TABLE marts.dim_canton
     ADD COLUMN estado_validacion TEXT NOT NULL DEFAULT 'AUTO_INGRESADO'
@@ -77,8 +77,8 @@ UPDATE marts.dim_canton SET estado_validacion = 'CONFIRMADO';
 -- 96 filas nuevas (95 pares net-new de BCE + el placeholder NACIONAL/S-N), todas
 -- CONFIRMADO -- son el resultado de una investigación deliberada contra raw.* completo,
 -- no un descubrimiento incidental de refresh_marts(). Universo idéntico al sembrado en
--- etl/seeds/canton_provincia.csv (228 pares = 132 preexistentes + estas 96), consultado
--- por etl/transform/canton_matching.py::resolver_canton_bce() para decidir cuándo NO
+-- src/benchmark_bancos/seeds/canton_provincia.csv (228 pares = 132 preexistentes + estas 96), consultado
+-- por src/benchmark_bancos/transform/canton_matching.py::resolver_canton_bce() para decidir cuándo NO
 -- lanzar (nivel 2 del two-tier).
 INSERT INTO marts.dim_canton (canton, provincia_id, estado_validacion) VALUES
     ('24 DE MAYO', (SELECT provincia_id FROM marts.dim_provincia WHERE provincia = 'MANABI'), 'CONFIRMADO'),

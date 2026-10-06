@@ -1,7 +1,7 @@
 > **Estado: propuesta, no aplicada.** Generada por una pasada del agente
 > `data-engineer` (2026-08-22), a petición explícita: "prepara primero la
 > propuesta de estructura y lógica en markdown, sin código, después la
-> analizamos" — este documento no modifica `etl/`, `sql/`, `docker-compose.yml`
+> analizamos" — este documento no modifica `src/benchmark_bancos/`, `sql/`, `docker-compose.yml`
 > ni ningún otro archivo del proyecto. Construye sobre los hallazgos ya
 > routeados por el review de arquitectura (`data-architect`, mismo día) sin
 > volver a levantarlos desde cero — ver ese review para el gap analysis
@@ -16,7 +16,7 @@
 
 # Propuesta: escalabilidad de ETL, reglas de QA, alineación de config y `black`+`ruff`
 
-**Alcance de este documento**: propuesta de estructura y lógica, sin código. Basado en lectura directa del repo (`etl/`, `sql/`, `docker-compose.yml`, `requirements.txt`, `docs/`) — cifras y rutas verificadas, no genéricas. Construye sobre los hallazgos ya routeados por el review de `data-architect` (mount de migraciones en Docker, contenedor del runner ETL, tests de regresión, cobertura de orquestación, guard de migraciones) sin volver a levantarlos desde cero.
+**Alcance de este documento**: propuesta de estructura y lógica, sin código. Basado en lectura directa del repo (`src/benchmark_bancos/`, `sql/`, `docker-compose.yml`, `requirements.txt`, `docs/`) — cifras y rutas verificadas, no genéricas. Construye sobre los hallazgos ya routeados por el review de `data-architect` (mount de migraciones en Docker, contenedor del runner ETL, tests de regresión, cobertura de orquestación, guard de migraciones) sin volver a levantarlos desde cero.
 
 ---
 
@@ -24,24 +24,24 @@
 
 | Área | Estado real hoy |
 |---|---|
-| Orquestación | `etl/pipeline.py`, 252 líneas, un solo `argparse` CLI (`extract\|load\|all\|bce\|tasas-historicas\|boletin`), 4 funciones de stage casi idénticas en forma (`load_years` L55-84, `load_bce` L87-128, `load_tasas_historicas` L134-170, `load_boletin` L180-229), secuencial, sin scheduler |
-| Reintentos | **Cero** en las llamadas de red directas (`urllib.request.urlopen` en `etl/extract/download_bce.py:30` y `etl/extract/download_tasas_historicas.py:47`); Playwright solo reintenta *localización de un elemento en el DOM* (`_open_year_folder`, 3 intentos, `etl/extract/scrape_superbancos.py:37-47` y `scrape_boletin.py:31-41`), no fallos de red/timeout de navegación |
+| Orquestación | `src/benchmark_bancos/pipeline.py`, 252 líneas, un solo `argparse` CLI (`extract\|load\|all\|bce\|tasas-historicas\|boletin`), 4 funciones de stage casi idénticas en forma (`load_years` L55-84, `load_bce` L87-128, `load_tasas_historicas` L134-170, `load_boletin` L180-229), secuencial, sin scheduler |
+| Reintentos | **Cero** en las llamadas de red directas (`urllib.request.urlopen` en `src/benchmark_bancos/extract/download_bce.py:30` y `src/benchmark_bancos/extract/download_tasas_historicas.py:47`); Playwright solo reintenta *localización de un elemento en el DOM* (`_open_year_folder`, 3 intentos, `src/benchmark_bancos/extract/scrape_superbancos.py:37-47` y `scrape_boletin.py:31-41`), no fallos de red/timeout de navegación |
 | Logging | `logging.basicConfig(...)` duplicado en **4 archivos** (`pipeline.py:49`, `scrape_superbancos.py:20`, `scrape_boletin.py:20`, y bajo `__main__` en `download_bce.py`/`download_tasas_historicas.py`) — mismo formato, hoy no rompe nada porque coinciden, pero es 4 fuentes de verdad para una sola cosa; sin `run_id`/correlación por corrida |
 | Manejo de fallos parciales | `load_tasas_historicas` (`pipeline.py:151-159`) y `load_boletin` (`pipeline.py:208-215`) capturan `ValueError/KeyError/IndexError` por archivo y **continúan** con `log.warning` — si *todos* los archivos de una corrida fallan al parsear, la corrida igual termina con exit code 0, `refresh_marts()` corre, no hay señal de fallo total |
-| Config declarativa | No existe. `etl/config.py` (66 líneas) mezcla config de infraestructura (`DB_CONFIG`, `BCE_URLS`) con mapeos de negocio (`FOLDER_NAMES`, `TIPO_CREDITO_KEYWORDS`, `PROVINCIA_REGION`) como dicts Python |
+| Config declarativa | No existe. `src/benchmark_bancos/config/` (66 líneas) mezcla config de infraestructura (`DB_CONFIG`, `BCE_URLS`) con mapeos de negocio (`FOLDER_NAMES`, `TIPO_CREDITO_KEYWORDS`, `PROVINCIA_REGION`) como dicts Python |
 | Dependencias | `requirements.txt`: 8 paquetes, todos con `>=` sin cota superior, sin `pyproject.toml`, sin lockfile |
 | Contenerización | Solo Postgres (`docker-compose.yml`, 1 servicio); runner Python/Playwright depende de venv local |
 | Lint/format | No existe `pyproject.toml`, `.flake8`, `setup.cfg`, `.pre-commit-config.yaml` ni CI (`.github/` no existe) |
 | Tests | 37 tests en `tests/*.py` (verificado con grep `^def test_`, no los 33 que cita `docs/gobernanza_datos.md` §7 — el doc quedó desactualizado tras agregar `test_parse_boletin.py`/`test_parse_tasas_historicas.py`), 0 ejecutados en CI porque no hay CI |
 | Cobertura de orquestación | Confirmado con `graphify god-nodes`: `load_bce()` (17 edges), `load_boletin()` (15), `load_years()` (13), `sha256_file()` (16) — **0 conexiones a archivos de test**, a diferencia de `resolver_banco_codigo()` (23 edges, cubierto por 11 tests en `tests/test_banco_matching.py`) |
-| `etl/load/load_postgres.py` | 704 líneas, mecánica COPY/upsert (`_copy_rows`, `_upsert_bce_via_temp`, `_upsert_boletin_via_temp`) — **cerrado** (2026-08-29): 6 tests de integración en `tests/test_integration_regressions.py` cubren `_upsert_bce_via_temp()` vía `upsert_staging_bce_tasas_pasivas()` y `_upsert_boletin_via_temp()` vía `upsert_staging_boletin_balance()` (conteo de filas, CDC no-op, UPDATE real, y verificación positiva contra `pg_tables` de la promesa `ON COMMIT DROP`) — ver detalle en sección 2.3 |
-| Python fuera de `etl/` | `scripts/compute_indicadores_excel.py` — también entraría al scope de lint |
+| `src/benchmark_bancos/load/load_postgres.py` | 704 líneas, mecánica COPY/upsert (`_copy_rows`, `_upsert_bce_via_temp`, `_upsert_boletin_via_temp`) — **cerrado** (2026-08-29): 6 tests de integración en `tests/test_integration_regressions.py` cubren `_upsert_bce_via_temp()` vía `upsert_staging_bce_tasas_pasivas()` y `_upsert_boletin_via_temp()` vía `upsert_staging_boletin_balance()` (conteo de filas, CDC no-op, UPDATE real, y verificación positiva contra `pg_tables` de la promesa `ON COMMIT DROP`) — ver detalle en sección 2.3 |
+| Python fuera de `src/benchmark_bancos/` | `scripts/compute_indicadores_excel.py` — también entraría al scope de lint |
 
 ---
 
 ## 1. Escalabilidad del pipeline
 
-### 1.1 `etl/sources.yml` vs. tuplas hardcodeadas — veredicto: **no todavía, y no como se pediría por defecto**
+### 1.1 `src/benchmark_bancos/sources.yml` vs. tuplas hardcodeadas — veredicto: **no todavía, y no como se pediría por defecto**
 
 La tentación es "las 4 fuentes son simétricas, muevan la config a YAML". Mirando el código real, **no son simétricas**:
 
@@ -63,7 +63,7 @@ Solo `load_years` tiene el shape "tabla de (report_type, tabla, parse_fn, upsert
 run_stage(files=iter_capcol_years(years, "cartera"), parse=parse_cartera_file, upsert=upsert_staging_cartera, report_type="cartera")
 ```
 
-Esto reduce el costo de agregar una 5ª fuente a "escribir un iterador de archivos + un parser + un upsert", sin forzar un esquema YAML sobre 3 fuentes que no lo necesitan. **Cuándo sí vale la pena `etl/sources.yml`**: el día que llegue una 5ª/6ª fuente con el mismo shape que `load_years` (ZIP anual + parser + upsert, sin lógica de fecha especial) — en ese momento, convertir la tupla de `load_years` en una lista YAML consumida por el runner ya factorizado es un cambio de 15 minutos, no una reingeniería.
+Esto reduce el costo de agregar una 5ª fuente a "escribir un iterador de archivos + un parser + un upsert", sin forzar un esquema YAML sobre 3 fuentes que no lo necesitan. **Cuándo sí vale la pena `src/benchmark_bancos/sources.yml`**: el día que llegue una 5ª/6ª fuente con el mismo shape que `load_years` (ZIP anual + parser + upsert, sin lógica de fecha especial) — en ese momento, convertir la tupla de `load_years` en una lista YAML consumida por el runner ya factorizado es un cambio de 15 minutos, no una reingeniería.
 
 **División de responsabilidad**: este refactor toca solo `pipeline.py` (mecánica de orquestación), no toca `sql/`, grano de tabla, ni nombres de negocio — es carril mío completo, sin necesidad de involucrar a `data-architect`.
 
@@ -71,7 +71,7 @@ Esto reduce el costo de agregar una 5ª fuente a "escribir un iterador de archiv
 
 Dos categorías de fallo distintas, dos tratamientos:
 
-- **Descargas directas** (`download_bce.py:30`, `download_tasas_historicas.py:47`, ambas sobre `urllib.request.urlopen`): un solo intento, sin backoff. Un timeout de red transitorio aborta toda la corrida de esa fuente. Propuesta: un decorador/helper de reintento pequeño y casero (3 intentos, backoff exponencial simple, ej. 2s/4s/8s) en un módulo compartido (`etl/extract/common.py` o similar) — **no** agregar `tenacity` como dependencia nueva para ~4 puntos de llamada; el hand-rolled es proporcional y mantiene la higiene de dependencias que pide este proyecto. Si el número de call sites o la complejidad de la política de retry crece, ahí sí se justifica `tenacity`.
+- **Descargas directas** (`download_bce.py:30`, `download_tasas_historicas.py:47`, ambas sobre `urllib.request.urlopen`): un solo intento, sin backoff. Un timeout de red transitorio aborta toda la corrida de esa fuente. Propuesta: un decorador/helper de reintento pequeño y casero (3 intentos, backoff exponencial simple, ej. 2s/4s/8s) en un módulo compartido (`src/benchmark_bancos/extract/common.py` o similar) — **no** agregar `tenacity` como dependencia nueva para ~4 puntos de llamada; el hand-rolled es proporcional y mantiene la higiene de dependencias que pide este proyecto. Si el número de call sites o la complejidad de la política de retry crece, ahí sí se justifica `tenacity`.
 - **Playwright** (`scrape_superbancos.py`, `scrape_boletin.py`): ya tiene reintento de *localización de UI* (`_open_year_folder`, 3 intentos). Falta envolver `page.goto(..., timeout=60_000)` (línea 99 / línea 79) y el ciclo completo de `scrape()` con el mismo helper de retry — hoy un timeout de navegación inicial mata toda la corrida sin reintento.
 
 ### 1.3 Logging estructurado con correlación por corrida
@@ -89,7 +89,7 @@ Hoy una excepción no capturada en `main()` ya produce exit code ≠ 0 por defau
 `docs/architecture.md` ("Evaluación de escalabilidad") ya cerró esta discusión: cadencia semanal (BCE) como máximo, mensual el resto, proyecto de un solo responsable (`docs/gobernanza_datos.md`: "Responsable: Kevin Flores... proyecto individual, sin equipo"). No hay nada nuevo que reabra esa decisión — ni fuente sub-diaria, ni conflicto de scheduling entre equipos, ni dependencias cruzadas entre pipelines que un DAG resolvería mejor que 4 comandos secuenciales.
 
 **Paso proporcional siguiente** ("correr a mano" → algo mínimamente operado):
-1. Un `Makefile` (o `justfile`, cross-platform con `just`) con targets `capcol`, `bce`, `tasas-historicas`, `boletin`, `all` que envuelven los comandos ya documentados en el README — cero lógica nueva, solo dejar de tener que recordar/copiar 4 líneas de `python -m etl.pipeline ...`.
+1. Un `Makefile` (o `justfile`, cross-platform con `just`) con targets `capcol`, `bce`, `tasas-historicas`, `boletin`, `all` que envuelven los comandos ya documentados en el README — cero lógica nueva, solo dejar de tener que recordar/copiar 4 líneas de `uv run benchmark-bancos ...`.
 2. Scheduler: **condicionado a dónde vive el Postgres real**. Hoy `POSTGRES_HOST` por defecto es `localhost` — un GitHub Actions programado (`schedule:` cron) corre en un runner efímero de GitHub y **no puede alcanzar un Postgres en `localhost` del autor**. Las opciones reales, en orden de qué tan poco cambia la infraestructura actual:
    - **Windows Task Scheduler** invocando el `Makefile`/CLI existente contra el Postgres local — cero infraestructura nueva, coherente con el quickstart Windows-first documentado.
    - **cron**, si el proyecto alguna vez se mueve a un host/VM Linux (o WSL) — mismo principio.
@@ -123,7 +123,7 @@ Ambos son de **tier integración** (necesitan Postgres real, ninguno es una func
 
 División en dos por costo/beneficio:
 
-- **Ganancia rápida, sin DB**: `sha256_file()` (`etl/transform/common.py:16`) es una función pura — hashear un archivo temporal, verificar determinismo y sensibilidad al contenido. Cero excusa para que esté sin test hoy; es el primer test a agregar.
+- **Ganancia rápida, sin DB**: `sha256_file()` (`src/benchmark_bancos/transform/common.py:16`) es una función pura — hashear un archivo temporal, verificar determinismo y sensibilidad al contenido. Cero excusa para que esté sin test hoy; es el primer test a agregar.
 - **Lógica de nombre de archivo → fecha, hoy inline y no testeable en aislamiento**: `_NOMBRE_ARCHIVO`/`_MESES_ES`/`_NOMBRE_BOLETIN` (`pipeline.py:131-177`) están enterradas dentro de los loops de `load_tasas_historicas`/`load_boletin`. Propuesta: factorizarlas como funciones nombradas (`parse_fecha_from_tasas_historicas_filename(name) -> date`, `parse_fecha_from_boletin_filename(name) -> date`) — mismo comportamiento, ahora testeable con casos puros (nombre válido, mes no reconocido, patrón que no matchea) sin tocar DB ni red.
 - **Lo que sí requiere Postgres real**: la secuencia `load_raw → upsert_fn → register_source_file → commit` de `load_years`/`load_bce`/`load_boletin` **sigue sin test** (pendiente); la mecánica COPY/temp-table de `load_postgres.py` (`_copy_rows`, `_upsert_bce_via_temp`, `_upsert_boletin_via_temp`) **ya está cerrada** (2026-08-29, `tests/test_integration_regressions.py`): conteo exacto de filas, CDC no-op, UPDATE real disparado por un cambio de valor real, y — sobre la promesa de `ON COMMIT DROP` — verificación positiva contra `pg_tables` (existe en `pg_temp_N` justo después de la llamada, sin commit; desaparece tras un `commit()` real). Detalle no anticipado acá: como `ON COMMIT DROP` solo dispara en un `COMMIT` real (nunca en el `ROLLBACK` que usa `db_conn` en el resto de la suite), estos tests SÍ necesitan un `commit()` real entre llamadas para poder ejercitar la ruta de tabla temporal más de una vez por sesión — a diferencia del resto de `test_integration_regressions.py`, se limpian ellos mismos con un `DELETE` + `commit()` en un `finally`, en vez de depender del rollback del fixture.
 
@@ -131,7 +131,7 @@ División en dos por costo/beneficio:
 
 | Job | Qué corre | Necesita DB | Necesita red |
 |---|---|---|---|
-| `lint` | `ruff check .` + `black --check .` sobre `etl/`, `scripts/`, `tests/` | No | No |
+| `lint` | `ruff check .` + `black --check .` sobre `src/benchmark_bancos/`, `scripts/`, `tests/` | No | No |
 | `test-unit` | `pytest -m "not integration"` — matching/normalización (22 de los 37 tests actuales), parsers con fixtures locales, `sha256_file` y parsing de nombre de archivo (nuevos) | No | No |
 | `test-integration` | levanta `postgres:17` (service container o el propio `docker-compose.yml` una vez arreglado el mount de migraciones), aplica `sql/00`...`sql/21` en orden, corre `pytest -m integration` (tests A/B de 2.2 + cobertura de 2.3) | Sí | No (fixtures locales, no scraping en vivo) |
 | *(slot, no diseñado acá)* `schema-guard` | el check de números de migración duplicados + `schema_migrations` ya routeado a este agente en otro hallazgo — encaja naturalmente como job separado o dentro de `lint` (la parte de colisión de números es solo filesystem, sin DB) | Depende del check | No |
@@ -148,11 +148,11 @@ División en dos por costo/beneficio:
 
 | Config | Hoy | Evaluación | Propuesta |
 |---|---|---|---|
-| `.env` / `.env.example` | 8 vars (`POSTGRES_*`, `SCRAPER_YEARS`, `SCRAPER_DOWNLOAD_DIR`), leídas vía `os.getenv` con defaults sensatos en `etl/config.py` | Ya alineado con buena práctica — env-driven, gitignored, sin secretos hardcodeados en código | Sin cambios |
+| `.env` / `.env.example` | 8 vars (`POSTGRES_*`, `SCRAPER_YEARS`, `SCRAPER_DOWNLOAD_DIR`), leídas vía `os.getenv` con defaults sensatos en `src/benchmark_bancos/config/` | Ya alineado con buena práctica — env-driven, gitignored, sin secretos hardcodeados en código | Sin cambios |
 | `docker-compose.yml` | `POSTGRES_PASSWORD: changeme` **hardcodeado inline**, no interpolado desde `.env` | Diverge silenciosamente de `.env.example` — hoy coinciden por casualidad, pero nada los mantiene sincronizados; cambiar la password en `.env` no cambia el contenedor | Interpolar `${POSTGRES_DB}`/`${POSTGRES_USER}`/`${POSTGRES_PASSWORD}` desde el `.env` raíz (Docker Compose lo autocarga) — una sola fuente de verdad para credenciales entre app y contenedor |
 | `docker-compose.yml` — mount de migraciones | Solo `sql/01_schema_raw.sql`...`sql/04_indexes_views.sql` (4 de 22 archivos `sql/00`-`sql/21`) | **Ya routeado por `data-architect`** — lo confirmo y agrego un detalle mecánico: los scripts de `docker-entrypoint-initdb.d` corren en orden **lexicográfico de nombre de archivo**, así que montar el directorio completo (`./sql:/docker-entrypoint-initdb.d:ro`) en vez de 22 líneas de volumen individuales resuelve el gap actual **y** evita que cada migración futura (`sql/22`, `sql/23`...) requiera otra edición de `docker-compose.yml` | Detalle para quien implemente el fix routeado; no lo aplico yo en esta entrega (es proposal-only) |
-| `etl/config.py` — `DB_CONFIG`, `BCE_URLS` | Dicts Python, ya efectivamente externalizados (env-driven / constantes de infraestructura) | Carril mío, ya en buen estado | Sin cambios; candidatos naturales si algún día se arma `etl/sources.yml` (sección 1.1) |
-| `etl/config.py` — `FOLDER_NAMES`, `TIPO_CREDITO_KEYWORDS`, `PROVINCIA_REGION` | Dicts Python que codifican mapeos de negocio (geografía de Ecuador, taxonomía de segmento de crédito) | **No recomiendo moverlos a YAML** aunque "mover a config" suene bien por default: son conocimiento de modelado (carril `data-architect`), y YAML no reduce el riesgo de un typo — de hecho lo aumenta, porque Python falla en el `import` con un `KeyError` inmediato y YAML fallaría silenciosamente más adelante dentro de un parser, en tiempo de ejecución | Dejar en Python; si se tocan, es hallazgo para `data-architect`, no mío |
+| `src/benchmark_bancos/config/` — `DB_CONFIG`, `BCE_URLS` | Dicts Python, ya efectivamente externalizados (env-driven / constantes de infraestructura) | Carril mío, ya en buen estado | Sin cambios; candidatos naturales si algún día se arma `src/benchmark_bancos/sources.yml` (sección 1.1) |
+| `src/benchmark_bancos/config/` — `FOLDER_NAMES`, `TIPO_CREDITO_KEYWORDS`, `PROVINCIA_REGION` | Dicts Python que codifican mapeos de negocio (geografía de Ecuador, taxonomía de segmento de crédito) | **No recomiendo moverlos a YAML** aunque "mover a config" suene bien por default: son conocimiento de modelado (carril `data-architect`), y YAML no reduce el riesgo de un typo — de hecho lo aumenta, porque Python falla en el `import` con un `KeyError` inmediato y YAML fallaría silenciosamente más adelante dentro de un parser, en tiempo de ejecución | Dejar en Python; si se tocan, es hallazgo para `data-architect`, no mío |
 | `requirements.txt` | 8 deps, solo `>=`, sin cota superior, sin lockfile | Riesgo real: un `pip install` hoy puede traer una versión mayor futura de `pandas`/`psycopg`/`playwright` que rompa compatibilidad sin aviso | Pinnear con especificador de release compatible las 3 que importan para reproducibilidad (persona lo pide explícito): `pandas>=2.2,<3`, `psycopg[binary]>=3.1,<4`, `playwright>=1.45,<2`. Dejar `pyarrow`/`openpyxl`/`python-dotenv`/`pyyaml`/`pytest` como están (menor superficie de rotura, o dev-only) |
 | `requirements.txt` → `pyproject.toml` | No existe `pyproject.toml` | `black`/`ruff` leen su config de `pyproject.toml` por convención — hace falta el archivo de todas formas | **Migración acotada, no completa**: crear `pyproject.toml` con **solo** `[tool.black]`/`[tool.ruff]` (no requiere tabla `[project]` para que las herramientas funcionen), dejando `requirements.txt` intacto por ahora. La migración completa de dependencias/empaquetado (`pip install -e .` reemplazando `pip install -r requirements.txt`) cambia el contrato de quickstart del README — la marco como decisión aparte a confirmar con el usuario antes de aplicar, no la asumo incluida |
 
@@ -166,7 +166,7 @@ Confirmo el hallazgo: solo Postgres está contenerizado; el lado Python/Playwrig
 
 ### 4.1 Alcance
 
-`etl/` (19 archivos, 19 `.py`), `scripts/compute_indicadores_excel.py`, `tests/` (7 archivos). `sql/`, `docs/`, `powerbi/` quedan fuera (no son Python). `data/` está gitignored, no aplica.
+`src/benchmark_bancos/` (19 archivos, 19 `.py`), `scripts/compute_indicadores_excel.py`, `tests/` (7 archivos). `sql/`, `docs/`, `powerbi/` quedan fuera (no son Python). `data/` está gitignored, no aplica.
 
 ### 4.2 Qué tan estricto
 
@@ -179,18 +179,18 @@ Confirmo el hallazgo: solo Postgres está contenerizado; el lado Python/Playwrig
 
 ### 4.3 Qué generaría ruido en la primera pasada (medido, no estimado)
 
-Escaneé longitud de línea en los 28 archivos `.py` de `etl/`+`tests/` (3.008 líneas totales):
+Escaneé longitud de línea en los 28 archivos `.py` de `src/benchmark_bancos/`+`tests/` (3.008 líneas totales):
 
 | Umbral | Líneas que lo exceden |
 |---|---|
 | >88 (default `black`) | 226 |
 | >100 | 73 |
 | >120 | 24 |
-| línea más larga | 161 caracteres (`etl/load/load_postgres.py:530`) |
+| línea más larga | 161 caracteres (`src/benchmark_bancos/load/load_postgres.py:530`) |
 
-Concentración: `etl/load/load_postgres.py` por sí solo aporta 5 de las 15 líneas más largas del repo (líneas 530, 603, 559, 297, 504, todas >140 caracteres) — son comentarios/docstrings narrativos explicando decisiones de diseño (el estilo documentado en `docs/architecture.md` de "explicar el porqué, no solo el qué"), no código denso. `etl/transform/parse_tasas_historicas.py` y `parse_cartera.py` también aparecen repetidamente.
+Concentración: `src/benchmark_bancos/load/load_postgres.py` por sí solo aporta 5 de las 15 líneas más largas del repo (líneas 530, 603, 559, 297, 504, todas >140 caracteres) — son comentarios/docstrings narrativos explicando decisiones de diseño (el estilo documentado en `docs/architecture.md` de "explicar el porqué, no solo el qué"), no código denso. `src/benchmark_bancos/transform/parse_tasas_historicas.py` y `parse_cartera.py` también aparecen repetidamente.
 
-**Lo que esto significa en la práctica**: `black` va a reformatear (mayormente re-envolver líneas largas, normalizar comillas y espaciado) en prácticamente todos los 19 archivos de `etl/` — es un cambio grande mecánico de una sola vez, no incremental. `ruff` con solo `E`/`F`/`I` debería generar muchas menos correcciones reales (el código ya no tiene imports muertos obvios a simple vista en lo leído), así que la mayor parte del "primer PR de lint" será formato, no bugs. Vale correr `black --diff`/`ruff check --diff` antes de aplicar para que el usuario vea el tamaño real del diff antes de aceptarlo.
+**Lo que esto significa en la práctica**: `black` va a reformatear (mayormente re-envolver líneas largas, normalizar comillas y espaciado) en prácticamente todos los 19 archivos de `src/benchmark_bancos/` — es un cambio grande mecánico de una sola vez, no incremental. `ruff` con solo `E`/`F`/`I` debería generar muchas menos correcciones reales (el código ya no tiene imports muertos obvios a simple vista en lo leído), así que la mayor parte del "primer PR de lint" será formato, no bugs. Vale correr `black --diff`/`ruff check --diff` antes de aplicar para que el usuario vea el tamaño real del diff antes de aceptarlo.
 
 ### 4.4 Dónde vive la config
 
@@ -211,7 +211,7 @@ Misma estructura que el review de arquitectura (do-now / do-soon / defer) para q
 
 ### Do now (bajo costo, alto valor, sin ambigüedad de diseño)
 
-1. `pyproject.toml` con `[tool.black]`/`[tool.ruff]` (fase 1: `E`/`F`/`I`) + pase único de formato sobre `etl/`, `scripts/`, `tests/` (sección 4).
+1. `pyproject.toml` con `[tool.black]`/`[tool.ruff]` (fase 1: `E`/`F`/`I`) + pase único de formato sobre `src/benchmark_bancos/`, `scripts/`, `tests/` (sección 4).
 2. Job `lint` en CI (`ruff check` + `black --check`) — no necesita DB ni red, es el job más barato de todos.
 3. Consolidar los 4 `logging.basicConfig()` duplicados en un punto único + agregar `run_id` (sección 1.3) — cambio contenido, sin tocar lógica de negocio.
 4. Test de `sha256_file()` (función pura, cero excusa) — primer ítem de la cobertura routeada (sección 2.3).
@@ -231,7 +231,7 @@ Misma estructura que el review de arquitectura (do-now / do-soon / defer) para q
 ### Defer (sin trigger real hoy, o depende de una decisión del usuario que no está tomada)
 
 1. Contenerización del runner ETL (`Dockerfile` para Python/Playwright) — cambia el contrato de quickstart, requiere confirmación explícita del usuario antes de diseñarlo (persona, regla 4).
-2. `etl/sources.yml` como config declarativa completa — sin un 5º/6º source con el shape de `load_years`, no hay problema real que resuelva todavía (sección 1.1).
+2. `src/benchmark_bancos/sources.yml` como config declarativa completa — sin un 5º/6º source con el shape de `load_years`, no hay problema real que resuelva todavía (sección 1.1).
 3. Reglas `ruff` de fase 2 (`B`, `UP`) y cualquier preset de docstrings/type-hints — esperar a que la fase 1 esté estable en el flujo normal de trabajo.
 4. `.pre-commit-config.yaml` — redundante con el CI check para un proyecto de un solo colaborador; agregar solo si la fricción de esperar al CI se vuelve un problema real.
 5. Scheduler vía GitHub Actions programado — bloqueado en un prerequisito de infraestructura (Postgres alcanzable por red desde GitHub) que no existe hoy; Windows Task Scheduler cubre la necesidad inmediata sin ese prerequisito.

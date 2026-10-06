@@ -6,7 +6,7 @@ from pathlib import Path
 
 import openpyxl
 
-from etl.config import PROVINCIA_REGION
+from benchmark_bancos.config import PROVINCIA_REGION
 
 
 def _strip_accents(text: str) -> str:

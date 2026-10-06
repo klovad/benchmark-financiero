@@ -4,7 +4,7 @@ services:
     container_name: bp_benchmark_postgres
     restart: unless-stopped
     # Interpolado desde el .env de la raiz (Docker Compose lo autocarga) -- misma
-    # fuente de verdad que etl/config.py, en vez de credenciales hardcodeadas que
+    # fuente de verdad que src/benchmark_bancos/config/, en vez de credenciales hardcodeadas que
     # podian divergir en silencio de .env/.env.example.
     environment:
       POSTGRES_DB: ${POSTGRES_DB}

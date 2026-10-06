@@ -22,7 +22,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from etl.transform.bce_plazo_matching import PlazoNoResueltoError, validar_rango_plazo
+from benchmark_bancos.transform.bce_plazo_matching import (
+    PlazoNoResueltoError,
+    validar_rango_plazo,
+)
 
 _NUM = re.compile(r"^-?\d+[.,]\d+$")
 
@@ -53,8 +56,8 @@ _PLAZO_SIN_TOPE = re.compile(r"^PLAZO\s+(\d+)\s+Y\s+M[AÁ]S$")
 
 # Universo verificado contra staging.tasas_referenciales seccion='pasiva_plazo'
 # (2026-08-22): esta fuente trae exactamente estos 6 buckets. Mismo criterio que
-# PLAZOS_TSP_VALIDOS/PLAZOS_TSA_VALIDOS (etl/transform/bce_plazo_matching.py) y
-# PLAZOS_VALIDOS (etl/transform/categoria_deposito_matching.py): ya NO es un gate duro
+# PLAZOS_TSP_VALIDOS/PLAZOS_TSA_VALIDOS (src/benchmark_bancos/transform/bce_plazo_matching.py) y
+# PLAZOS_VALIDOS (src/benchmark_bancos/transform/categoria_deposito_matching.py): ya NO es un gate duro
 # (ver sql/27_dim_plazo_estado_validacion.sql), sigue siendo el universo CONFIRMADO -- un
 # texto nuevo que matchee el *shape* de _PLAZO_RANGO/_PLAZO_SIN_TOPE y tenga un rango
 # sano (validar_rango_plazo()) se acepta igual, aunque no esté acá, y se auto-ingresa en

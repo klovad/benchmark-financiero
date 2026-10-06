@@ -13,15 +13,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.12"
+          enable-cache: true
 
-      - name: Instalar black + ruff
-        run: pip install "black==24.10.0" "ruff==0.7.4"
+      # Versiones de ruff/black fijadas en el grupo `dev` de pyproject.toml (uv.lock):
+      # local y CI usan exactamente las mismas.
+      - name: Instalar herramientas de desarrollo (uv.lock)
+        run: uv sync --locked --only-dev
 
       - name: ruff check
-        run: ruff check .
+        run: uv run --no-sync ruff check .
 
       - name: black --check
-        run: black --check .
+        run: uv run --no-sync black --check .

@@ -1,6 +1,6 @@
 import pytest
 
-from etl.transform.banco_matching import (
+from benchmark_bancos.transform.banco_matching import (
     BancoNoResueltoError,
     EntidadBceNoMapeadaError,
     RucInvalidoError,
@@ -76,7 +76,7 @@ def test_crosswalk_solo_apunta_a_identidad_curada():
     # (banco_maestro.csv), con nombre visible y estado CONFIRMADO deterministas. Antes el
     # crosswalk apuntaba a filas BCE_<ruc> que solo existían si BCE había corrido primero,
     # y el BdE se veía con su razón social histórica "BANCO DEL ESTADO".
-    from etl.transform.banco_matching import _crosswalk, maestro
+    from benchmark_bancos.transform.banco_matching import _crosswalk, maestro
 
     fuera = {c for c in _crosswalk().values() if c not in maestro()}
     assert fuera == set()

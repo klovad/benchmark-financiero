@@ -1,4 +1,4 @@
-from etl.transform.parse_boletin import (
+from benchmark_bancos.transform.parse_boletin import (
     _SECCION_POR_DIGITO,
     BOLETIN_AGGREGATE_COLUMNS,
     _codigo_padre,

@@ -17,7 +17,7 @@ tsp/tsa). `read_raw()` captura TODO tal cual, sin agregar ni resolver identidad 
 alimenta `raw.*`. `parse_tsp_file`/`parse_tsa_file` agregan y resuelven identidad para
 TODAS las entidades (no solo bancos privados): los bancos privados usan el crosswalk
 curado de siempre (necesitan alinearse con CAPCOL/Boletín); el resto (~420 entidades) se
-auto-registra por RUC -- ver `etl/transform/banco_matching.py::resolver_entidad_bce()`.
+auto-registra por RUC -- ver `src/benchmark_bancos/transform/banco_matching.py::resolver_entidad_bce()`.
 
 El grano de fact_captaciones_depositos/fact_colocaciones_cartera (nombres desde
 2026-07-19, antes fact_tasas_pasivas/fact_tasas_activas) es, desde 2026-09-01
@@ -27,7 +27,7 @@ como outrigger vía dim_canton.provincia_id). Antes de esa migración el grano e
 provincia (SIN cantón): el archivo trae cantón, pero se colapsaba dentro de provincia en
 este mismo `_weighted_agg()` porque `fact_captaciones_depositos`/`fact_colocaciones_cartera`
 solo tenían `provincia_id`. `canton`/`provincia` se resuelven contra
-`etl/transform/canton_matching.py::resolver_canton_bce()` (mismo catálogo compartido con
+`src/benchmark_bancos/transform/canton_matching.py::resolver_canton_bce()` (mismo catálogo compartido con
 CAPCOL, `marts.dim_canton`) ANTES de `_weighted_agg`, y ambos entran al `group_cols` --
 `_weighted_agg` se mantiene como red de seguridad real, no solo defensiva: el archivo
 fuente SÍ trae duplicados genuinos incluso al grano completo con cantón (verificado
@@ -57,16 +57,16 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from etl.transform.banco_matching import resolver_entidad_bce
-from etl.transform.bce_plazo_matching import (
+from benchmark_bancos.transform.banco_matching import resolver_entidad_bce
+from benchmark_bancos.transform.bce_plazo_matching import (
     PLAZOS_TSA_VALIDOS,
     PLAZOS_TSP_VALIDOS,
     resolver_plazo_bce,
     validar_universo_plazos_bce,
 )
-from etl.transform.canton_matching import resolver_canton_bce
-from etl.transform.categoria_deposito_matching import CATEGORIAS_VALIDAS
-from etl.transform.common import sha256_file
+from benchmark_bancos.transform.canton_matching import resolver_canton_bce
+from benchmark_bancos.transform.categoria_deposito_matching import CATEGORIAS_VALIDAS
+from benchmark_bancos.transform.common import sha256_file
 
 CHUNK_SIZE = 300_000
 

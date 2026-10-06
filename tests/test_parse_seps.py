@@ -7,12 +7,15 @@ import zipfile
 import openpyxl
 import pytest
 
-from etl.transform.banco_matching import RucInvalidoError, resolver_entidad_seps
-from etl.transform.categoria_deposito_matching import (
+from benchmark_bancos.transform.banco_matching import (
+    RucInvalidoError,
+    resolver_entidad_seps,
+)
+from benchmark_bancos.transform.categoria_deposito_matching import (
     CategoriaNoResueltaError,
     resolver_categoria_deposito_seps,
 )
-from etl.transform.parse_seps import (
+from benchmark_bancos.transform.parse_seps import (
     SubtipoCreditoSepsNoMapeadoError,
     parse_seps_captaciones_file,
     parse_seps_colocaciones_file,

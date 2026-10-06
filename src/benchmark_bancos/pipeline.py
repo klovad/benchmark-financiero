@@ -1,30 +1,28 @@
 """
-Orquestador end-to-end: extract (Playwright) -> transform (parsers) -> load (Postgres).
+Orquestación end-to-end por fuente: extract -> transform (parsers) -> load (Postgres).
 
-Uso:
-    python -m etl.pipeline extract --years 2021 2022 2023 2024 2025
-    python -m etl.pipeline load --years 2021 2022 2023 2024 2025
-    python -m etl.pipeline all --years 2021 2022 2023 2024 2025
-    python -m etl.pipeline bce
-    python -m etl.pipeline seps --years 2021 2022 2023 2024 2025
-    python -m etl.pipeline bce-reprocess-canton-grain  # backfill de un solo uso, ver
-                                                        # reprocess_bce_staging() más abajo
+Cada `load_*` es una unidad independiente e idempotente (salta archivos ya registrados por
+hash). La interfaz de línea de comandos vive en `benchmark_bancos.cli`.
 """
 
-import argparse
 import calendar
 import datetime
 import logging
 import re
 from pathlib import Path
 
-from etl.config import BCE_DIR, CAPCOL_PORTALES, DEFAULT_YEARS, RAW_DIR, SEPS_DIR
-from etl.extract.download_bce import download_all as download_bce_all
-from etl.extract.download_seps import download_seps
-from etl.extract.download_tasas_historicas import download_tasas_historicas
-from etl.extract.scrape_boletin import scrape as scrape_boletin
-from etl.extract.scrape_superbancos import scrape
-from etl.load.load_postgres import (
+from benchmark_bancos.config import (
+    BCE_DIR,
+    CAPCOL_PORTALES,
+    EXTRACT_DIR,
+    RAW_DIR,
+    SEPS_DIR,
+)
+from benchmark_bancos.extract.download_bce import download_all as download_bce_all
+from benchmark_bancos.extract.download_seps import download_seps
+from benchmark_bancos.extract.download_tasas_historicas import download_tasas_historicas
+from benchmark_bancos.extract.scrape_boletin import scrape as scrape_boletin
+from benchmark_bancos.load.load_postgres import (
     get_connection,
     insert_dim_cuenta_contable_seps,
     is_source_loaded,
@@ -45,29 +43,27 @@ from etl.load.load_postgres import (
     upsert_staging_depositos,
     upsert_staging_tasas_referenciales,
 )
-from etl.logging_utils import setup_logging
-from etl.transform.common import sha256_file
-from etl.transform.parse_bce_tasas import (
+from benchmark_bancos.transform.common import sha256_file
+from benchmark_bancos.transform.parse_bce_tasas import (
     RAW_TSA_COLS,
     RAW_TSP_COLS,
     parse_tsa_file,
     parse_tsp_file,
 )
-from etl.transform.parse_bce_tasas import read_raw as read_raw_bce
-from etl.transform.parse_boletin import parse_boletin_file
-from etl.transform.parse_cartera import parse_cartera_file
-from etl.transform.parse_depositos import parse_depositos_file
-from etl.transform.parse_seps import (
+from benchmark_bancos.transform.parse_bce_tasas import read_raw as read_raw_bce
+from benchmark_bancos.transform.parse_boletin import parse_boletin_file
+from benchmark_bancos.transform.parse_cartera import parse_cartera_file
+from benchmark_bancos.transform.parse_depositos import parse_depositos_file
+from benchmark_bancos.transform.parse_seps import (
     parse_seps_captaciones_file,
     parse_seps_colocaciones_file,
     parse_seps_eeff_file,
 )
-from etl.transform.parse_tasas_historicas import parse_tasas_historicas_file
+from benchmark_bancos.transform.parse_tasas_historicas import (
+    parse_tasas_historicas_file,
+)
 
-setup_logging()
 log = logging.getLogger(__name__)
-
-EXTRACT_DIR = RAW_DIR.parent / "_tmp_extract"
 
 
 def load_years(
@@ -76,7 +72,7 @@ def load_years(
     portales: tuple[str, ...] = tuple(CAPCOL_PORTALES),
 ) -> None:
     """tipo_entidad de cada fila lo fija el sub-portal CAPCOL de donde vino el archivo
-    (etl.config.CAPCOL_PORTALES), no el parser. source_file se prefija con el subdir del
+    (benchmark_bancos.config.CAPCOL_PORTALES), no el parser. source_file se prefija con el subdir del
     portal (ej. 'banca_publica/Cartera Consumo DICIEMBRE 2025.zip') porque
     raw.source_files es UNIQUE por nombre y ambos portales usan nombres parecidos."""
     conn = get_connection()
@@ -203,7 +199,7 @@ def load_bce(base_dir: Path = BCE_DIR) -> None:
     CAPCOL, se procesa el archivo completo de una vez.
 
     Sin filtro de tipo_entidad (corregido 2026-07-19, ver docstring de
-    etl/transform/parse_bce_tasas.py): raw.* captura las 6 categorías del sistema
+    src/benchmark_bancos/transform/parse_bce_tasas.py): raw.* captura las 6 categorías del sistema
     financiero tal cual (read_raw), staging.* resuelve identidad y agrega para TODAS
     (parse_tsp_file/parse_tsa_file) -- bancos privados vía crosswalk curado, el resto
     auto-registrado por RUC en staging.banco_maestro; el RUC se guarda para todas,
@@ -255,7 +251,7 @@ def load_bce(base_dir: Path = BCE_DIR) -> None:
 
 def reprocess_bce_staging(base_dir: Path = BCE_DIR) -> None:
     """Backfill de sql/28_bce_canton_grain.sql (cambio de grano provincia -> cantón,
-    2026-09-01, ver etl/transform/parse_bce_tasas.py y canton_matching.py): re-deriva
+    2026-09-01, ver src/benchmark_bancos/transform/parse_bce_tasas.py y canton_matching.py): re-deriva
     staging.bce_tasas_pasivas/activas -- y, vía refresh_marts(), fact_captaciones_depositos/
     fact_colocaciones_cartera -- SIN re-descargar ni re-insertar en raw.*. Seguro porque:
     (a) tsp/tsa son un solo zip acumulativo con el histórico completo ya en disco (no hay
@@ -462,50 +458,15 @@ def load_boletin(years: list[int], base_dir: Path = RAW_DIR) -> None:
         conn.close()
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Pipeline ETL benchmark cartera/depositos"
-    )
-    parser.add_argument(
-        "stage",
-        choices=[
-            "extract",
-            "load",
-            "all",
-            "bce",
-            "bce-reprocess-canton-grain",
-            "tasas-historicas",
-            "boletin",
-            "seps",
-        ],
-    )
-    parser.add_argument("--years", nargs="+", type=int, default=DEFAULT_YEARS)
-    parser.add_argument("--out", type=Path, default=RAW_DIR)
-    parser.add_argument(
-        "--portales",
-        nargs="+",
-        choices=list(CAPCOL_PORTALES),
-        default=list(CAPCOL_PORTALES),
-        help="Sub-portales CAPCOL a extraer/cargar (default: todos)",
-    )
-    args = parser.parse_args()
-
-    if args.stage in ("extract", "all"):
-        for portal in args.portales:
-            scrape(args.years, args.out, portal=portal)
-    if args.stage in ("load", "all"):
-        load_years(args.years, args.out, tuple(args.portales))
-    if args.stage == "bce":
-        load_bce()
-    if args.stage == "bce-reprocess-canton-grain":
-        reprocess_bce_staging()
-    if args.stage == "tasas-historicas":
-        load_tasas_historicas()
-    if args.stage == "boletin":
-        load_boletin(args.years, args.out)
-    if args.stage == "seps":
-        load_seps(args.years)
-
-
-if __name__ == "__main__":
-    main()
+def refresh() -> None:
+    """Recalcula solo marts.* desde staging, sin leer archivos (p.ej. tras curar un seed
+    o aplicar una migración que cambia la lógica de refresh)."""
+    conn = get_connection()
+    try:
+        refresh_marts(conn)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()

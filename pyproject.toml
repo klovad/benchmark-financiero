@@ -1,32 +1,64 @@
-# Config-only pyproject.toml: black/ruff leen su configuracion de aqui por convencion.
-# NO reemplaza requirements.txt (sin tabla [project]) -- ver docs/propuesta_escalabilidad_etl.md
-# seccion 3.1/4.4: migrar a [project.dependencies] cambia el contrato de quickstart del
-# README y queda como decision aparte a confirmar con el usuario, no incluida aqui.
+[project]
+name = "benchmark-bancos"
+version = "0.2.0"
+description = "ETL y data mart (Postgres, esquema estrella) para benchmark de cartera, depósitos y tasas del sistema financiero de Ecuador: Superbancos (CAPCOL, Boletín), BCE y SEPS."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=2.2,<3",
+    "pyarrow>=16.0",
+    "openpyxl>=3.1",
+    "psycopg[binary]>=3.1,<4",
+    "python-dotenv>=1.0",
+    "playwright>=1.45,<2",
+    # ZIPs de la SEPS con Deflate64 (zipfile de la stdlib no los abre)
+    "stream-unzip>=0.0.99",
+]
+
+[project.scripts]
+benchmark-bancos = "benchmark_bancos.cli:main"
+
+[dependency-groups]
+# Mismas versiones que CI (.github/workflows/lint.yml): un `black --check` local que pasa
+# tiene que pasar también en CI.
+dev = [
+    "pytest>=8.0",
+    "ruff==0.7.4",
+    "black==24.10.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/benchmark_bancos"]
+
+[tool.uv]
+default-groups = ["dev"]
 
 [tool.black]
 line-length = 88
 
 [tool.ruff]
 line-length = 88
+src = ["src", "tests"]
 
 [tool.ruff.lint]
-# Fase 1 (ver seccion 4.2 de la propuesta): E/F (pycodestyle + pyflakes core) + I (isort).
-# Fase 2 (B bugbear, UP pyupgrade) queda en defer hasta que la fase 1 sea rutina.
+# Fase 1 (ver docs/propuesta_escalabilidad_etl.md sección 4.2): E/F (pycodestyle +
+# pyflakes core) + I (isort). Fase 2 (B bugbear, UP pyupgrade) queda en defer.
 select = ["E", "F", "I"]
-# E501 (line-too-long) queda ignorada: black ya es el formateador de referencia para el
-# largo de linea del *codigo*, pero deliberadamente no reenvuelve comentarios ni
-# docstrings -- y este repo tiene docstrings narrativos largos en espanol documentando
-# decisiones de diseño (ver seccion 4.3 de la propuesta: "explicar el porque, no solo el
-# que", docs/architecture.md). Medido tras el pase de black: 103 lineas >88, casi todas
-# comentarios/docstrings/strings que black no puede acortar -- mantener E501 activa aqui
-# generaria ruido, no señal. Sigue la recomendacion oficial de ruff al combinarlo con
-# black (https://docs.astral.sh/ruff/faq/#is-ruff-compatible-with-black).
+# E501 ignorada: black es el formateador de referencia para el largo de línea del código,
+# pero no reenvuelve comentarios ni docstrings, y este repo tiene docstrings narrativos
+# largos que documentan decisiones de diseño. Recomendación oficial de ruff al combinarlo
+# con black (https://docs.astral.sh/ruff/faq/#is-ruff-compatible-with-black).
 ignore = ["E501"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["benchmark_bancos"]
+
 [tool.pytest.ini_options]
-# `integration` registrado explícitamente para que `pytest -m "not integration"` y
-# `pytest -m integration` corran sin warnings de marker desconocido -- ver
-# docs/propuesta_escalabilidad_etl.md sección 2.4 (jobs test-unit/test-integration).
+testpaths = ["tests"]
 markers = [
-    "integration: requiere Postgres real ya migrado (sql/00...sql/22, ver docker-compose.yml). Sin red.",
+    "integration: requiere Postgres real ya migrado (sql/*.sql, ver docker-compose.yml). Sin red.",
 ]

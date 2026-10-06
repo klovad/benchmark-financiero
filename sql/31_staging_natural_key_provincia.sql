@@ -1,7 +1,7 @@
 -- Bug: la llave natural de staging.cartera / staging.depositos (sql/23, sql/24) usa
 -- `canton` sin `provincia`. En Ecuador hay cantones homónimos en provincias distintas
 -- (BOLÍVAR: Carchi / Manabí; LA CONCORDIA, SANTO DOMINGO, LORETO, AGUARICO -- ver
--- etl/transform/canton_matching.py, que por eso siempre resuelve el PAR). Si una misma
+-- src/benchmark_bancos/transform/canton_matching.py, que por eso siempre resuelve el PAR). Si una misma
 -- entidad reporta los dos cantones homónimos en el mismo mes, las dos filas chocan en la
 -- llave: con el executemany anterior la segunda pisaba a la primera sin error (pérdida
 -- silenciosa de saldo); con COPY + INSERT ... SELECT falla con CardinalityViolation.

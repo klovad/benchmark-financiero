@@ -14,15 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.12"
+          enable-cache: true
 
-      - name: Instalar dependencias
-        run: pip install -r requirements.txt
+      - name: Instalar dependencias (uv.lock)
+        run: uv sync --locked
 
       - name: pytest (unit)
-        run: python -m pytest -m "not integration" -v
+        run: uv run pytest -m "not integration" -v
 
   test-integration:
     # postgres:17 como service container. GitHub Actions no soporta el mount de
@@ -62,12 +62,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.12"
+          enable-cache: true
 
-      - name: Instalar dependencias
-        run: pip install -r requirements.txt
+      - name: Instalar dependencias (uv.lock)
+        run: uv sync --locked
 
       - name: Instalar cliente psql
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
@@ -81,4 +81,4 @@ jobs:
           done
 
       - name: pytest (integration)
-        run: python -m pytest -m integration -v
+        run: uv run pytest -m integration -v

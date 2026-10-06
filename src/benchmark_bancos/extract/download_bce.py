@@ -9,8 +9,8 @@ import logging
 import urllib.request
 from pathlib import Path
 
-from etl.config import BCE_DIR, BCE_URLS
-from etl.logging_utils import setup_logging
+from benchmark_bancos.config import BCE_DIR, BCE_URLS
+from benchmark_bancos.logging_utils import setup_logging
 
 log = logging.getLogger(__name__)
 

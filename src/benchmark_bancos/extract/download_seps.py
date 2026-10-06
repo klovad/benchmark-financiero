@@ -16,8 +16,13 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-from etl.config import DEFAULT_YEARS, SEPS_DIR, SEPS_DOWNLOAD_IDS, SEPS_DOWNLOAD_URL
-from etl.logging_utils import setup_logging
+from benchmark_bancos.config import (
+    DEFAULT_YEARS,
+    SEPS_DIR,
+    SEPS_DOWNLOAD_IDS,
+    SEPS_DOWNLOAD_URL,
+)
+from benchmark_bancos.logging_utils import setup_logging
 
 log = logging.getLogger(__name__)
 
@@ -62,7 +67,7 @@ def download_seps(
     for year in years:
         if year not in SEPS_DOWNLOAD_IDS:
             log.warning(
-                "SEPS %s: sin download_id en etl.config.SEPS_DOWNLOAD_IDS, se omite",
+                "SEPS %s: sin download_id en benchmark_bancos.config.SEPS_DOWNLOAD_IDS, se omite",
                 year,
             )
             continue

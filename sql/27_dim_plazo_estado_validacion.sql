@@ -9,16 +9,16 @@
 -- rango invertido -- eso sí es siempre una anomalía real de parsing).
 --
 -- Cambio (aprobado por el usuario): dos niveles en los 4 puntos de validación de plazo
--- (etl/transform/bce_plazo_matching.py::validar_universo_plazos_bce/resolver_plazo_bce,
--- etl/transform/categoria_deposito_matching.py::resolver_categoria_deposito,
--- etl/transform/parse_tasas_historicas.py::_resolver_plazo):
+-- (src/benchmark_bancos/transform/bce_plazo_matching.py::validar_universo_plazos_bce/resolver_plazo_bce,
+-- src/benchmark_bancos/transform/categoria_deposito_matching.py::resolver_categoria_deposito,
+-- src/benchmark_bancos/transform/parse_tasas_historicas.py::_resolver_plazo):
 --   1) Shape (regex) inválido, o rango inválido una vez resuelto (dias_desde < 0, o
 --      dias_desde > dias_hasta cuando dias_hasta no es NULL) -> PlazoNoResueltoError,
 --      SIGUE abortando la carga. Sigue siendo una anomalía real de parsing.
 --   2) Shape válido y rango sano, pero el texto no está en el universo enumerado
 --      (PLAZOS_TSP_VALIDOS/PLAZOS_TSA_VALIDOS/PLAZOS_VALIDOS) -> ya NO lanza. Se deja
 --      pasar y llega a marts.dim_plazo vía el INSERT ... ON CONFLICT DO NOTHING de
---      siempre (etl/load/load_postgres.py, _REFRESH_MARTS_SQL) -- ahora marcado
+--      siempre (src/benchmark_bancos/load/load_postgres.py, _REFRESH_MARTS_SQL) -- ahora marcado
 --      AUTO_INGRESADO en vez de fallar duro. Queda visible para revisión posterior
 --      (¿es un tramo nuevo real, o se solapa con un bucket ya existente y conviene
 --      curarlo?) sin bloquear ninguna de las otras filas de esa carga.
@@ -50,7 +50,7 @@
 -- Se puebla vía INSERT ... SELECT ... ON CONFLICT (dias_desde, COALESCE(dias_hasta,-1))
 -- DO NOTHING (catálogo auto-descubierto, no upsert-con-CDC) -- mismo patrón sin-CDC que
 -- dim_cuenta_contable (sql/25), no el patrón con-CDC de dim_banco (sql/26). Los 4
--- INSERT INTO marts.dim_plazo de _REFRESH_MARTS_SQL (etl/load/load_postgres.py) NO
+-- INSERT INTO marts.dim_plazo de _REFRESH_MARTS_SQL (src/benchmark_bancos/load/load_postgres.py) NO
 -- listan estado_validacion en su lista de columnas, así que toda fila nueva hereda el
 -- DEFAULT 'AUTO_INGRESADO' automáticamente, sin requerir ningún cambio de código en
 -- load_postgres.py -- idéntico al caso de upsert_dim_cuenta_contable() en sql/25.

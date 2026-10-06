@@ -9,24 +9,23 @@ Idempotencia:
   columnas mutables, no la llave natural -- ver sql/05_dim_banco_rework.sql).
 - marts.* se reconstruye desde staging con la misma técnica, así que correr el
   pipeline varias veces (o solo para un año) siempre converge al mismo resultado.
-- La identidad de banco (banco_codigo) se resuelve en etl/transform/banco_matching.py
+- La identidad de banco (banco_codigo) se resuelve en src/benchmark_bancos/transform/banco_matching.py
   ANTES de llegar a staging -- marts.dim_banco no es más que un catálogo poblado desde
-  staging.banco_maestro (sembrado desde etl/seeds/banco_maestro.csv), sin tabla de alias.
+  staging.banco_maestro (sembrado desde src/benchmark_bancos/seeds/banco_maestro.csv), sin tabla de alias.
 """
 
 import csv
 import json
 import logging
-from pathlib import Path
 
 import pandas as pd
 import psycopg
 
-from etl.config import DB_CONFIG
+from benchmark_bancos.config import DB_CONFIG, SEEDS_DIR
 
 log = logging.getLogger(__name__)
 
-_SEEDS_DIR = Path(__file__).resolve().parent.parent / "seeds"
+_SEEDS_DIR = SEEDS_DIR
 
 
 def get_connection() -> psycopg.Connection:
@@ -88,7 +87,7 @@ def upsert_banco_maestro_ruc(conn, entidades: list[tuple[str, str, str, str]]) -
     """Registra el RUC de TODAS las entidades resueltas por BCE (bancos privados
     incluidos) y auto-registra las no-privadas (cooperativas, mutualistas, banca pública,
     sociedad financiera, tarjetas de crédito) -- ver
-    etl/transform/banco_matching.py::resolver_entidad_bce. `ON CONFLICT DO UPDATE SET
+    src/benchmark_bancos/transform/banco_matching.py::resolver_entidad_bce. `ON CONFLICT DO UPDATE SET
     ruc` únicamente: para bancos privados la fila ya existe (sembrada desde
     banco_maestro.csv) y no se toca `banco`/`tipo_entidad`, que siguen siendo dueños de
     ese valor -- load_banco_maestro_seed() los reafirma en cada refresh_marts(); para
@@ -119,7 +118,7 @@ def upsert_banco_maestro_ruc(conn, entidades: list[tuple[str, str, str, str]]) -
 
 
 def load_banco_maestro_seed(conn) -> None:
-    """Siembra staging.banco_maestro desde etl/seeds/banco_maestro.csv -- el nombre a
+    """Siembra staging.banco_maestro desde src/benchmark_bancos/seeds/banco_maestro.csv -- el nombre a
     mostrar y tipo_entidad de cada banco_codigo, determinista sin importar qué variante
     de texto llegó primero durante la carga.
 
@@ -451,7 +450,7 @@ def truncate_staging_bce(conn) -> None:
     archivo completo re-deriva el 100% del contenido real de estas 2 tablas desde cero,
     sin pérdida de datos (raw.bce_tasas_pasivas/activas, con el histórico JSONB completo,
     no se toca). NO usar para una carga normal -- el único llamador previsto es
-    etl/pipeline.py::reprocess_bce_staging(), un comando de backfill de un solo uso para
+    src/benchmark_bancos/pipeline.py::reprocess_bce_staging(), un comando de backfill de un solo uso para
     esta migración de esquema."""
     with conn.cursor() as cur:
         cur.execute("TRUNCATE staging.bce_tasas_pasivas, staging.bce_tasas_activas")
@@ -654,9 +653,9 @@ FROM (
 ) f
 ON CONFLICT (fecha_id) DO NOTHING;
 
--- dim_banco: identidad ya resuelta en staging.banco_codigo (etl/transform/banco_matching.py);
+-- dim_banco: identidad ya resuelta en staging.banco_codigo (src/benchmark_bancos/transform/banco_matching.py);
 -- el nombre a mostrar y tipo_entidad vienen de staging.banco_maestro (sembrado desde
--- etl/seeds/banco_maestro.csv), no de cualquier texto crudo que haya llegado primero.
+-- src/benchmark_bancos/seeds/banco_maestro.csv), no de cualquier texto crudo que haya llegado primero.
 -- estado_validacion (sql/26_dim_banco_estado_validacion.sql) se copia de
 -- staging.banco_maestro tal cual -- CONFIRMADO para los 36 curados -- 33 privados + 3 públicos (reafirmado en cada
 -- corrida por load_banco_maestro_seed(), llamado justo antes que esta sentencia dentro
@@ -714,8 +713,8 @@ WHERE marts.dim_banco.row_hash IS DISTINCT FROM EXCLUDED.row_hash;
 --
 -- staging.bce_tasas_pasivas/activas se suman a este mismo auto-ingreso desde
 -- sql/28_bce_canton_grain.sql (2026-09-01): un par (canton, provincia) de BCE fuera del
--- universo curado en etl/seeds/canton_provincia.csv nunca fue rechazado por
--- resolver_canton_bce() (two-tier, ver etl/transform/canton_matching.py) -- este INSERT es
+-- universo curado en src/benchmark_bancos/seeds/canton_provincia.csv nunca fue rechazado por
+-- resolver_canton_bce() (two-tier, ver src/benchmark_bancos/transform/canton_matching.py) -- este INSERT es
 -- el punto donde efectivamente se auto-ingresa a marts.dim_canton con
 -- estado_validacion='AUTO_INGRESADO' (DEFAULT de la columna, sql/28), igual que un bucket
 -- nuevo de dim_plazo. A diferencia de CAPCOL, BCE ya normaliza canton/provincia en Python
@@ -1025,7 +1024,7 @@ def _log_cantones_no_resueltos(conn) -> None:
 
     staging.bce_tasas_pasivas/activas se agregan a esta misma consulta desde
     sql/28_bce_canton_grain.sql (2026-09-01): en la práctica no deberían aportar NUNCA una
-    fila acá -- resolver_canton_bce() (etl/transform/canton_matching.py) ya hace fail-fast
+    fila acá -- resolver_canton_bce() (src/benchmark_bancos/transform/canton_matching.py) ya hace fail-fast
     en Python (CantonNoResueltoError) si la provincia cruda no resuelve, ANTES de que la
     fila llegue a staging -- pero esta función es la red de seguridad de nivel SQL, no
     Python: cubre el caso de que alguna vez se escriba a staging.bce_tasas_* por una ruta
@@ -1117,7 +1116,7 @@ def _log_bancos_no_resueltos(conn) -> None:
         log.warning(
             "marts.dim_banco: %d banco_codigo de staging.cartera/depositos sin fila en "
             "staging.banco_maestro -- el INNER JOIN de refresh_marts() DESCARTARÁ sus "
-            "filas (¿falta correr `python -m etl.pipeline bce` primero?): %s",
+            "filas (¿falta correr `uv run benchmark-bancos bce` primero?): %s",
             len(rows),
             detalle,
         )

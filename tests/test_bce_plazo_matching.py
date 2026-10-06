@@ -1,6 +1,6 @@
 import pytest
 
-from etl.transform.bce_plazo_matching import (
+from benchmark_bancos.transform.bce_plazo_matching import (
     PLAZOS_TSA_VALIDOS,
     PLAZOS_TSP_VALIDOS,
     PlazoNoResueltoError,
@@ -50,7 +50,7 @@ def test_universo_tsa_completo_no_lanza():
 
 def test_universo_tolera_minusculas_y_espacios_como_el_dato_real():
     # plazo_codigo real en staging trae la letra ordinal en minúscula ("a. ", "b. ", ...)
-    # con el resto en mayúscula -- ver etl/transform/parse_bce_tasas.py.
+    # con el resto en mayúscula -- ver src/benchmark_bancos/transform/parse_bce_tasas.py.
     validar_universo_plazos_bce(
         [" a. menos de 30 dias ", "b. 30 - 60 dias"], PLAZOS_TSP_VALIDOS, "tsp"
     )
@@ -61,7 +61,7 @@ def test_bucket_con_shape_valido_pero_fuera_del_universo_tsp_no_lanza():
     resolver_plazo_bce() (ej. un bucket "h." nuevo que tsp nunca ha reportado) YA NO
     aborta la carga -- se deja pasar y se auto-ingresa en marts.dim_plazo con
     estado_validacion='AUTO_INGRESADO' para revisión posterior (ver
-    etl/load/load_postgres.py, INSERT INTO marts.dim_plazo sin listar
+    src/benchmark_bancos/load/load_postgres.py, INSERT INTO marts.dim_plazo sin listar
     estado_validacion -> hereda el DEFAULT)."""
     validar_universo_plazos_bce(["h. MAS DE 1000 DIAS"], PLAZOS_TSP_VALIDOS, "tsp")
 

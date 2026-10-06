@@ -1,5 +1,5 @@
 -- Fuerza el reprocesamiento completo de BCE tsp/tsa con la nueva lógica sin filtro de
--- tipo_entidad (ver etl/transform/parse_bce_tasas.py -- versión anterior filtraba a
+-- tipo_entidad (ver src/benchmark_bancos/transform/parse_bce_tasas.py -- versión anterior filtraba a
 -- BANCOS PRIVADOS antes de que el dato llegara a raw.*, perdiendo ~85% de las filas:
 -- 456/466 entidades reales del sistema financiero completo, no solo los ~33 bancos
 -- privados). No cambia el schema (raw.bce_tasas_pasivas/activas ya tenían la forma

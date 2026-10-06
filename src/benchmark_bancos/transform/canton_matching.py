@@ -30,7 +30,7 @@ Dos niveles de validación (mismo patrón two-tier que `dim_plazo`, ver
    una anomalía real (BCE cambió de ortografía de forma que `normalize_provincia()` ya
    no la cubre, o agregó una provincia que no existe hoy).
 2. La `provincia` sí resuelve pero el par `(canton, provincia)` normalizado no está en
-   el universo sembrado (`etl/seeds/canton_provincia.csv`, el mismo universo de 228 pares
+   el universo sembrado (`src/benchmark_bancos/seeds/canton_provincia.csv`, el mismo universo de 228 pares
    que `sql/28_bce_canton_grain.sql` sembró en `marts.dim_canton` con
    `estado_validacion='CONFIRMADO'`) -> **NO lanza**. Se devuelve el par normalizado tal
    cual -- `marts.dim_canton` lo auto-ingresa con `estado_validacion='AUTO_INGRESADO'`
@@ -47,25 +47,24 @@ tenía oficina ahí) es autoexplicativo una vez que la provincia ya es conocida,
 un rango de días nuevo lo es para `dim_plazo` -- no requiere interpretación humana previa
 para saber qué significa.
 
-INTERFAZ ESPERADA por el parser (`etl/transform/parse_bce_tasas.py`, carril de
+INTERFAZ ESPERADA por el parser (`src/benchmark_bancos/transform/parse_bce_tasas.py`, carril de
 data-engineer, fuera del alcance de este módulo): llamar
 `resolver_canton_bce(canton_crudo, provincia_cruda)` fila por fila ANTES de escribir a
 `staging.bce_tasas_pasivas`/`staging.bce_tasas_activas` (mismo punto donde hoy se llama
 `resolver_plazo_bce()`/`resolver_entidad_bce()`). Si no lanza, escribir el par devuelto
 tal cual a las columnas `staging.bce_tasas_pasivas`/`activas`.canton` / `.provincia`
 (agregadas en `sql/28_bce_canton_grain.sql`) -- la resolución final a `canton_id` ocurre
-en el `JOIN` de `refresh_marts()` (`etl/load/load_postgres.py`) contra
+en el `JOIN` de `refresh_marts()` (`src/benchmark_bancos/load/load_postgres.py`) contra
 `marts.dim_canton (canton, provincia_id)`, exactamente igual que `banco_codigo`/
 `segmento_id` se resuelven ahí y no acá.
 """
 
 import csv
-from pathlib import Path
 
-from etl.config import PROVINCIA_REGION
-from etl.transform.common import normalize_provincia
+from benchmark_bancos.config import PROVINCIA_REGION, SEEDS_DIR
+from benchmark_bancos.transform.common import normalize_provincia
 
-_SEEDS_DIR = Path(__file__).resolve().parent.parent / "seeds"
+_SEEDS_DIR = SEEDS_DIR
 _CANTON_PROVINCIA_PATH = _SEEDS_DIR / "canton_provincia.csv"
 
 # Sembrados directo en marts.dim_provincia (sql/20_dim_provincia.sql) pero SIN región
@@ -175,7 +174,7 @@ def resolver_canton_bce(canton_crudo: str, provincia_cruda: str) -> tuple[str, s
             f"provincia '{provincia_cruda}' (normalizada '{provincia_norm}') no "
             f"resuelve contra marts.dim_provincia para canton='{canton_crudo}'. "
             f"Revisar si BCE cambió la ortografía o agregó una provincia nueva -- "
-            f"agregar a etl/config.py::PROVINCIA_REGION si es una provincia real nueva."
+            f"agregar a src/benchmark_bancos/config/::PROVINCIA_REGION si es una provincia real nueva."
         )
 
     canton_norm = normalize_canton(canton_crudo)
@@ -192,7 +191,7 @@ def resolver_canton_bce(canton_crudo: str, provincia_cruda: str) -> tuple[str, s
 
 def es_canton_conocido(canton_normalizado: str, provincia_normalizada: str) -> bool:
     """True si el par (ya normalizado, tal como lo devuelve `resolver_canton_bce()`) está
-    en el universo sembrado `CONFIRMADO` (`etl/seeds/canton_provincia.csv`, 228 pares).
+    en el universo sembrado `CONFIRMADO` (`src/benchmark_bancos/seeds/canton_provincia.csv`, 228 pares).
     No cambia el comportamiento de `resolver_canton_bce()` -- esa función nunca lanza por
     esto -- es un hook de observabilidad opcional para que el parser
     (`parse_bce_tasas.py`) loguee un WARNING con el detalle de pares nuevos antes de que

@@ -1,6 +1,6 @@
 -- dim_cuenta_contable no tenia forma de distinguir una cuenta ya vista/estable de un
 -- codigo nuevo que aparece por primera vez en un archivo del Boletin: upsert_dim_cuenta_
--- contable() (etl/load/load_postgres.py) descubre e inserta cuentas nuevas via
+-- contable() (src/benchmark_bancos/load/load_postgres.py) descubre e inserta cuentas nuevas via
 -- ON CONFLICT DO UPDATE sin ninguna curacion humana -- ver principio de gobernanza
 -- "identidad curada, nunca autogenerada" en docs/gobernanza_datos.md, que hasta ahora
 -- dim_cuenta_contable no cumplia de forma visible (no fallaba, pero tampoco marcaba que

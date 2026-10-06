@@ -9,14 +9,14 @@ indirección).
 
 Reglas determinísticas (tildes, mayúsculas, espacios, sufijos legales, prefijo BP/BANCO)
 resuelven variaciones triviales. Lo que la regla no resuelve se busca en
-etl/seeds/banco_crosswalk.csv (fuente, nombre_fuente, banco_codigo), sembrado a mano —
+src/benchmark_bancos/seeds/banco_crosswalk.csv (fuente, nombre_fuente, banco_codigo), sembrado a mano —
 ahí es donde se fusionan los renames reales de CAPCOL (ej. 'BP COMERCIAL DE MANABI' /
 'BP BANCO COMERCIAL DE MANABI' -> mismo banco_codigo) y se mapean los nombres legales
 completos de BCE. Un nombre que no resuelve ni por regla ni por crosswalk lanza
 BancoNoResueltoError -- la identidad de banco es curada, no se autogenera.
 
 El nombre a mostrar (columna `banco`) y `tipo_entidad` de cada banco_codigo viven en
-etl/seeds/banco_maestro.csv, para que sean deterministas sin importar qué variante de
+src/benchmark_bancos/seeds/banco_maestro.csv, para que sean deterministas sin importar qué variante de
 texto llegó primero durante la carga.
 """
 
@@ -25,7 +25,9 @@ import re
 import unicodedata
 from pathlib import Path
 
-_SEEDS_DIR = Path(__file__).resolve().parent.parent / "seeds"
+from benchmark_bancos.config import SEEDS_DIR
+
+_SEEDS_DIR = SEEDS_DIR
 _CROSSWALK_PATH = _SEEDS_DIR / "banco_crosswalk.csv"
 _MAESTRO_PATH = _SEEDS_DIR / "banco_maestro.csv"
 
@@ -120,7 +122,7 @@ def resolver_banco_codigo(nombre: str | None, fuente: str) -> str:
 
     raise BancoNoResueltoError(
         f"No se pudo resolver banco_codigo para '{nombre}' (fuente={fuente}, "
-        f"normalizado='{normalizado}'). Agregar una fila a etl/seeds/banco_crosswalk.csv."
+        f"normalizado='{normalizado}'). Agregar una fila a src/benchmark_bancos/seeds/banco_crosswalk.csv."
     )
 
 

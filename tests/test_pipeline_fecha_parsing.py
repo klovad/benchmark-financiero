@@ -6,7 +6,7 @@ import datetime
 
 import pytest
 
-from etl.pipeline import (
+from benchmark_bancos.pipeline import (
     parse_fecha_from_boletin_filename,
     parse_fecha_from_tasas_historicas_filename,
 )

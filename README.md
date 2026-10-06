@@ -13,7 +13,7 @@ monitoreo continuo. 4 fuentes integradas en un único esquema estrella conformad
 
 ## Qué incluye
 
-1. **ETL** (`etl/`): extractores por fuente (Playwright para los 2 portales de
+1. **ETL** (`src/benchmark_bancos/`): extractores por fuente (Playwright para los 2 portales de
    Superbancos que renderizan vía plugin OneDrive/SharePoint; descarga directa para BCE,
    que sí es HTML/CSV estático) → parsers Python/pandas → carga idempotente a Postgres en
    3 capas (`raw` → `staging` → `marts`, esquema estrella), con carga incremental por hash
@@ -42,12 +42,13 @@ arreglarlo y qué verificar después.
 ## Quickstart
 
 ```powershell
-# 1. Entorno Python
-python -m venv .venv
-.venv\Scripts\pip install -r requirements.txt
-.venv\Scripts\python -m playwright install chromium
+# 1. Entorno Python con uv (https://docs.astral.sh/uv/): crea .venv, instala Python 3.12
+#    si hace falta y las dependencias exactas de uv.lock (incluye el grupo dev: pytest,
+#    ruff, black). Sin uv: `pip install -e .` en un venv propio.
+uv sync
+uv run playwright install chromium
 
-# 2. Variables de entorno (leidas tanto por etl/config.py como por docker-compose.yml,
+# 2. Variables de entorno (leidas tanto por src/benchmark_bancos/config/ como por docker-compose.yml,
 #    que autocarga este .env de la raiz -- crearlo ANTES del paso 3)
 copy .env.example .env    # ajustar credenciales si no usaste las de ejemplo
 
@@ -70,18 +71,18 @@ docker compose up -d
 # ... 05 a la ultima, en orden (ver sql/*.sql) ...
 
 # 4. Pipeline CAPCOL (descarga + carga) para 2021-2025
-.venv\Scripts\python -m etl.pipeline all --years 2021 2022 2023 2024 2025
+uv run benchmark-bancos all --years 2021 2022 2023 2024 2025
 
 # 5. BCE (tasas semanales tsp/tsa + techos/referenciales TasasHistorico.htm)
-.venv\Scripts\python -m etl.pipeline bce
-.venv\Scripts\python -m etl.pipeline tasas-historicas
+uv run benchmark-bancos bce
+uv run benchmark-bancos tasas-historicas
 
 # 6. Boletín Financiero Mensual (balance/PyG)
-.venv\Scripts\python -m etl.pipeline boletin --years 2021 2022 2023 2024 2025 2026
+uv run benchmark-bancos boletin --years 2021 2022 2023 2024 2025 2026
 
 # 6b. SEPS (cooperativas S1-S3 + mutualistas: saldos de cartera/depósitos + EEFF).
 #     Correr despues de 5 (BCE) no es obligatorio: las entidades se auto-registran por RUC.
-.venv\Scripts\python -m etl.pipeline seps --years 2021 2022 2023 2024 2025
+uv run benchmark-bancos seps --years 2021 2022 2023 2024 2025
 
 # 7. Power BI: abrir powerbi/benchmark-cartera-depositos.pbip en Power BI Desktop
 ```
@@ -89,7 +90,7 @@ docker compose up -d
 ## Estructura
 
 ```
-etl/
+src/benchmark_bancos/
   extract/            scrape_superbancos.py, scrape_boletin.py (Playwright);
                        download_bce.py, download_tasas_historicas.py (descarga directa)
   transform/           parsers por fuente + *_matching.py (identidad de banco/categoría/
@@ -122,7 +123,7 @@ data/samples/          muestra de marts.* en Parquet (versionada) para probar si
   plazo/cantón (incluyendo `_weighted_agg()`/`_resolve_canton()` de
   `parse_bce_tasas.py` con `canton` en el grano, ver `sql/28_bce_canton_grain.sql`),
   `sha256_file()` y el parseo de fecha-desde-nombre-de-archivo
-  (`etl/pipeline.py::parse_fecha_from_*_filename`) -- puros, sin DB ni red.
+  (`src/benchmark_bancos/pipeline.py::parse_fecha_from_*_filename`) -- puros, sin DB ni red.
 - **Integration** (`@pytest.mark.integration`, fixture `db_conn` en
   `tests/conftest.py`): requieren Postgres real ya migrado hasta el último `sql/*.sql`
   (ver Quickstart). Cubren las regresiones de `sql/10`/`sql/23`/`sql/24` (unicidad
@@ -148,9 +149,9 @@ data/samples/          muestra de marts.* en Parquet (versionada) para probar si
   `ON COMMIT DROP` no deben llamar a ese helper).
 
 ```powershell
-.venv\Scripts\python -m pytest -m "not integration"   # unit -- sin Postgres
-.venv\Scripts\python -m pytest -m integration          # integration -- Postgres real arriba
-.venv\Scripts\python -m pytest                          # ambos
+uv run pytest -m "not integration"   # unit -- sin Postgres
+uv run pytest -m integration          # integration -- Postgres real arriba
+uv run pytest                          # ambos
 ```
 
 CI (`.github/workflows/`): `lint.yml` corre `ruff`+`black --check` (sin DB, sin red).
@@ -177,12 +178,12 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   por segmento de crédito (26 valores), pasivas por categoría de depósito, ambas por
   plazo y cantón (2026-09-01: grano cambiado de provincia a cantón,
   `sql/28_bce_canton_grain.sql` + reproceso del histórico completo, ver
-  `etl/transform/parse_bce_tasas.py`/`etl/transform/canton_matching.py`) —
+  `src/benchmark_bancos/transform/parse_bce_tasas.py`/`src/benchmark_bancos/transform/canton_matching.py`) —
   provincia/región siguen disponibles vía `dim_canton.provincia_id → dim_provincia`.
   `fact_captaciones_depositos`: 3.077.474 filas; `fact_colocaciones_cartera`: 7.756.581
   filas (0 `canton_id` NULL en ambas, verificado tras el reproceso —
-  `python -m etl.pipeline bce-reprocess-canton-grain`, backfill de un solo uso para esta
-  migración, no forma parte del flujo semanal normal de `python -m etl.pipeline bce`).
+  `uv run benchmark-bancos bce-reprocess-canton-grain`, backfill de un solo uso para esta
+  migración, no forma parte del flujo semanal normal de `uv run benchmark-bancos bce`).
 - **BCE `TasasHistorico.htm`** (techos y referenciales, nivel sistema): 2022-04 a
   2026-06 (páginas anteriores usan un layout HTML distinto, no soportado por el parser
   actual). Tasas activas máximas/referenciales por segmento, pasivas por instrumento y

@@ -2,7 +2,7 @@
 migrado hasta sql/22 (ver docker-compose.yml / tests/conftest.py::db_conn). Cubren
 los items routeados en docs/propuesta_escalabilidad_etl.md sección 2.2 (regresiones
 de sql/10 y sql/21) y una porción de la sección 2.3 (cobertura de orquestación de
-etl/load/load_postgres.py).
+src/benchmark_bancos/load/load_postgres.py).
 
 Ninguno hace commit -- db_conn siempre hace rollback al terminar, así que no dejan
 residuos ni en la base de desarrollo local ni en el contenedor postgres:17 efímero de
@@ -13,7 +13,7 @@ from datetime import date
 import pandas as pd
 import pytest
 
-from etl.load.load_postgres import (
+from benchmark_bancos.load.load_postgres import (
     _REFRESH_MARTS_SQL,
     is_source_loaded,
     register_source_file,
@@ -355,7 +355,7 @@ def test_upsert_staging_cartera_round_trip_cdc_no_op(db_conn):
 @pytest.mark.integration
 def test_source_file_hash_gate(db_conn):
     """CDC invariante #1 (gate por hash de archivo, raw.source_files -- ver
-    is_source_loaded()/register_source_file() en etl/load/load_postgres.py): un
+    is_source_loaded()/register_source_file() en src/benchmark_bancos/load/load_postgres.py): un
     archivo con el mismo (source_file, source_hash) ya registrado se considera
     cargado; el mismo nombre de archivo con un hash distinto (contenido cambió) se
     considera pendiente de (re)carga."""
@@ -373,7 +373,7 @@ def test_source_file_hash_gate(db_conn):
 
 # --- Cobertura de la mecánica COPY/temp-table (sección 2.3, item pendiente) ---------
 #
-# _upsert_bce_via_temp() / _upsert_boletin_via_temp() (etl/load/load_postgres.py) hacen
+# _upsert_bce_via_temp() / _upsert_boletin_via_temp() (src/benchmark_bancos/load/load_postgres.py) hacen
 # CREATE TEMP TABLE ... ON COMMIT DROP dentro de la MISMA conexión/transacción que el
 # INSERT ... ON CONFLICT final. ON COMMIT DROP solo dispara en un COMMIT real -- nunca en
 # un ROLLBACK (el ROLLBACK deshace la propia creación de la tabla igual, por las
@@ -569,7 +569,7 @@ def test_upsert_staging_bce_tasas_pasivas_temp_table_real_update(db_conn):
 
 @pytest.mark.integration
 def test_upsert_staging_bce_tasas_pasivas_temp_table_on_commit_drop(db_conn):
-    """Verifica la promesa de `ON COMMIT DROP` en _upsert_bce_via_temp() (etl/load/
+    """Verifica la promesa de `ON COMMIT DROP` en _upsert_bce_via_temp() (src/benchmark_bancos/load/
     load_postgres.py) contra el catálogo real, no solo por lectura del SQL:
     (a) inmediatamente después de que la función retorna -- todavía sin commit --
     _tmp_bce_tasas_pasivas SÍ existe, como tabla temporal de sesión (schema pg_temp_N);

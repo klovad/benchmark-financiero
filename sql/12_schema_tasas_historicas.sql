@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS staging.tasas_referenciales (
     dimension_valor   TEXT,     -- segmento_credito (activa_*) o categoria_deposito (pasiva_instrumento); NULL en pasiva_plazo/sistema
     plazo_dias_desde  INT,
     plazo_dias_hasta  INT,
-    metrica           TEXT NOT NULL,   -- nombre de la métrica (ver etl/transform/parse_tasas_historicas.py)
+    metrica           TEXT NOT NULL,   -- nombre de la métrica (ver src/benchmark_bancos/transform/parse_tasas_historicas.py)
     valor             NUMERIC(9,4) NOT NULL,
     source_file       TEXT NOT NULL,
     fecha_carga           TIMESTAMPTZ NOT NULL DEFAULT now(),

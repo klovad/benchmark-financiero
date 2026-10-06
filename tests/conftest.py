@@ -1,7 +1,7 @@
 import psycopg
 import pytest
 
-from etl.config import DB_CONFIG
+from benchmark_bancos.config import DB_CONFIG
 
 
 @pytest.fixture

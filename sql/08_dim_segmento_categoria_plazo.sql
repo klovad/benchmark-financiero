@@ -76,7 +76,7 @@ INSERT INTO marts.dim_categoria_deposito (categoria) VALUES
     ('OPERACIONES DE REPORTO')
 ON CONFLICT (categoria) DO NOTHING;
 
--- staging.depositos gana la categoría/plazo ya separados (etl/transform/
+-- staging.depositos gana la categoría/plazo ya separados (src/benchmark_bancos/transform/
 -- categoria_deposito_matching.py); tipo_deposito crudo se conserva (sigue siendo la
 -- llave natural de staging, no cambia).
 ALTER TABLE staging.depositos

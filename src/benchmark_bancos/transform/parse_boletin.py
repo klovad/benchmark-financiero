@@ -23,8 +23,8 @@ from pathlib import Path
 import openpyxl
 import pandas as pd
 
-from etl.transform.banco_matching import resolver_banco_codigo
-from etl.transform.common import extract_single_xlsx, normalize_text
+from benchmark_bancos.transform.banco_matching import resolver_banco_codigo
+from benchmark_bancos.transform.common import extract_single_xlsx, normalize_text
 
 
 def _strip_accents(text: str) -> str:

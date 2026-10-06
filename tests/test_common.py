@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from etl.transform.common import sha256_file
+from benchmark_bancos.transform.common import sha256_file
 
 
 def test_sha256_file_is_deterministic(tmp_path: Path):

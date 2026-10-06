@@ -1,7 +1,7 @@
 """
 Parsers de los reportes anuales de la SEPS (cooperativas S1-S3 + mutualistas).
 
-Tres archivos por año (ver docs/fuentes_datos.md sección 4.0 y etl/config.py
+Tres archivos por año (ver docs/fuentes_datos.md sección 4.0 y src/benchmark_bancos/config/
 SEPS_DOWNLOAD_IDS), cada uno conformando contra tablas ya existentes:
 
 - captaciones (ZIP de .xlsm/.xlsx, hoja `Base_captaciones`) -> staging.depositos
@@ -37,11 +37,13 @@ import openpyxl
 import pandas as pd
 from stream_unzip import stream_unzip
 
-from etl.config import SEPS_RUC_SEGUNDO_PISO
-from etl.transform.banco_matching import resolver_entidad_seps
-from etl.transform.canton_matching import resolver_canton_bce
-from etl.transform.categoria_deposito_matching import resolver_categoria_deposito_seps
-from etl.transform.common import region_for_provincia, sha256_file
+from benchmark_bancos.config import SEPS_RUC_SEGUNDO_PISO
+from benchmark_bancos.transform.banco_matching import resolver_entidad_seps
+from benchmark_bancos.transform.canton_matching import resolver_canton_bce
+from benchmark_bancos.transform.categoria_deposito_matching import (
+    resolver_categoria_deposito_seps,
+)
+from benchmark_bancos.transform.common import region_for_provincia, sha256_file
 
 log = logging.getLogger(__name__)
 
@@ -278,7 +280,7 @@ def parse_seps_colocaciones_file(
             if subtipo not in SUBTIPO_CREDITO_SEPS:
                 raise SubtipoCreditoSepsNoMapeadoError(
                     f"{xlsx.name}: SUBTIPO DE CREDITO no mapeado '{row['SUBTIPO DE CREDITO']}'. "
-                    f"Agregarlo a SUBTIPO_CREDITO_SEPS en etl/transform/parse_seps.py."
+                    f"Agregarlo a SUBTIPO_CREDITO_SEPS en src/benchmark_bancos/transform/parse_seps.py."
                 )
             tipo_credito = SUBTIPO_CREDITO_SEPS[subtipo]
             if tipo_credito is None:
@@ -430,7 +432,10 @@ def parse_seps_eeff_file(zip_path: Path, chunksize: int = 500_000) -> dict:
         columns={"saldo": "valor_usd"}
     )
 
-    from etl.transform.parse_boletin import _SECCION_POR_DIGITO, _codigo_padre
+    from benchmark_bancos.transform.parse_boletin import (
+        _SECCION_POR_DIGITO,
+        _codigo_padre,
+    )
 
     cuentas_df = pd.DataFrame(
         [

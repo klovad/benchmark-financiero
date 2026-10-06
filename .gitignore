@@ -40,3 +40,8 @@ Thumbs.db
 .vscode/
 .idea/
 .claude/
+
+# Build / herramientas
+dist/
+build/
+.ruff_cache/

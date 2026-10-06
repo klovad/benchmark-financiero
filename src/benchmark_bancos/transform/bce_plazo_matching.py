@@ -1,7 +1,7 @@
 """
 Resuelve el texto crudo de `plazo` del BCE (tsp/tsa) a un rango numérico de días,
 para poblar el mismo `marts.dim_plazo` compartido con CAPCOL (ver
-etl/transform/categoria_deposito_matching.py para el caso análogo de CAPCOL).
+src/benchmark_bancos/transform/categoria_deposito_matching.py para el caso análogo de CAPCOL).
 
 El BCE usa un prefijo de letra ordinal ("a. ", "b. ", ...) seguido del rango en DIAS
 (tsp: 7 buckets) o una mezcla de DIAS/AÑOS (tsa: 14 buckets, plazos más largos
@@ -64,7 +64,7 @@ def validar_rango_plazo(
 # Universos verificados contra staging.bce_tasas_pasivas/activas (2026-08-22): tsp trae
 # exactamente estos 7 buckets, tsa exactamente estos 14 (a-n, con los últimos 6 en años).
 # dim_plazo es un catálogo COMPARTIDO entre fuentes (ver comentario en
-# sql/... / etl/load/load_postgres.py). Estos sets ya NO son un gate duro (ver
+# sql/... / src/benchmark_bancos/load/load_postgres.py). Estos sets ya NO son un gate duro (ver
 # sql/27_dim_plazo_estado_validacion.sql): siguen siendo el universo CONFIRMADO -- todo
 # texto nuevo cuyo *shape* matchea resolver_plazo_bce() y cuyo rango es sano se acepta y
 # se auto-ingresa en marts.dim_plazo con estado_validacion='AUTO_INGRESADO' aunque no

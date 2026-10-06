@@ -14,9 +14,9 @@ from pathlib import Path
 import openpyxl
 import pandas as pd
 
-from etl.config import TIPO_CREDITO_KEYWORDS, TIPOS_ENTIDAD_CAPCOL
-from etl.transform.banco_matching import resolver_banco_codigo
-from etl.transform.common import (
+from benchmark_bancos.config import TIPO_CREDITO_KEYWORDS, TIPOS_ENTIDAD_CAPCOL
+from benchmark_bancos.transform.banco_matching import resolver_banco_codigo
+from benchmark_bancos.transform.common import (
     extract_single_xlsx,
     find_base_sheets,
     month_end_date,
@@ -99,7 +99,7 @@ def parse_cartera_file(
     source_path: Path, extract_dir: Path, tipo_entidad: str = "BANCO PRIVADO"
 ) -> pd.DataFrame:
     """tipo_entidad lo decide el caller según el sub-portal CAPCOL de origen
-    (etl.config.CAPCOL_PORTALES) -- el archivo no lo trae y no se infiere del dato."""
+    (benchmark_bancos.config.CAPCOL_PORTALES) -- el archivo no lo trae y no se infiere del dato."""
     if tipo_entidad not in TIPOS_ENTIDAD_CAPCOL:
         raise ValueError(
             f"tipo_entidad inválido para CAPCOL: {tipo_entidad!r} "

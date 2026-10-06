@@ -13,8 +13,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from etl.config import BCE_BASE_URL, BCE_DIR
-from etl.logging_utils import setup_logging
+from benchmark_bancos.config import BCE_BASE_URL, BCE_DIR
+from benchmark_bancos.logging_utils import setup_logging
 
 log = logging.getLogger(__name__)
 

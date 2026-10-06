@@ -21,9 +21,9 @@ mismas `raw.cartera`/`raw.depositos`/`staging.cartera`/`staging.depositos`/
 (extractor/parser/`_REFRESH_MARTS_SQL`, carril de `data-engineer`) en
 `docs/fuentes_datos.md` sección 1.1.
 
-**SEPS** (cooperativas S1-S3 + mutualistas, `python -m etl.pipeline seps`): descarga
-directa (`etl/extract/download_seps.py`, sin Playwright) de 3 ZIP por año, parseados por
-`etl/transform/parse_seps.py`. **No agrega tablas**: captaciones entra a
+**SEPS** (cooperativas S1-S3 + mutualistas, `uv run benchmark-bancos seps`): descarga
+directa (`src/benchmark_bancos/extract/download_seps.py`, sin Playwright) de 3 ZIP por año, parseados por
+`src/benchmark_bancos/transform/parse_seps.py`. **No agrega tablas**: captaciones entra a
 `staging.depositos` → `fact_saldo_depositos`, colocaciones (que son saldos) a
 `staging.cartera` → `fact_saldo_cartera`, y los estados financieros a
 `staging.boletin_balance/pyg` → `fact_balance`/`fact_pyg`. La identidad es el RUC del
@@ -298,15 +298,15 @@ La identidad de banco (`banco_codigo`) y los catálogos de segmento de crédito/
 depósito/plazo se resuelven **en Python, en la capa `transform`, antes de que el dato
 llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
 
-- `etl/transform/banco_matching.py`: `resolver_banco_codigo(nombre, fuente)`. Reglas
+- `src/benchmark_bancos/transform/banco_matching.py`: `resolver_banco_codigo(nombre, fuente)`. Reglas
   determinísticas (tildes, mayúsculas, prefijos `BP `/`BANCO`, sufijos legales) resuelven
   variaciones triviales; lo que la regla no cubre (nombre legal completo de BCE vs. código
   corto de CAPCOL/Boletín, o los 2 renames reales de CAPCOL) se resuelve contra
-  `etl/seeds/banco_crosswalk.csv`, sembrado a mano y versionado en git. Un nombre no
+  `src/benchmark_bancos/seeds/banco_crosswalk.csv`, sembrado a mano y versionado en git. Un nombre no
   resuelto **falla fuerte** (`BancoNoResueltoError`) — nunca se autogenera un banco nuevo
   silenciosamente. **2026-09-01** (Banca Pública, `capcol-instituciones-publicas/`, ver
   `docs/fuentes_datos.md` sección 1.1): primer uso del crosswalk donde `banco_codigo` no
-  apunta a un código curado de `etl/seeds/banco_maestro.csv` sino a un `BCE_<ruc>` que
+  apunta a un código curado de `src/benchmark_bancos/seeds/banco_maestro.csv` sino a un `BCE_<ruc>` que
   `resolver_entidad_bce()` ya auto-registró en `marts.dim_banco` — deliberado, para que
   los 3 bancos públicos que reporta este sub-portal (`BANECUADOR B. P.`, `BANCO DE
   DESARROLLO DEL ECUADOR B.P.`, `CORPORACION FINANCIERA NACIONAL B.P.`) resuelvan a la
@@ -317,7 +317,7 @@ llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
   descarta en silencio una fila cuyo `banco_codigo` todavía no exista en `marts.dim_banco`
   — ver el detalle completo del riesgo y la mitigación recomendada en
   `docs/mantenimiento_catalogos.md` sección 1 y `docs/fuentes_datos.md` sección 1.1.
-- `etl/transform/categoria_deposito_matching.py` y `bce_plazo_matching.py`: mismo patrón
+- `src/benchmark_bancos/transform/categoria_deposito_matching.py` y `bce_plazo_matching.py`: mismo patrón
   para separar categoría/plazo (CAPCOL mezclaba ambos conceptos en `tipo_deposito`) y para
   resolver los buckets de plazo con prefijo ordinal de BCE (`a. MENOS DE 30 DIAS`, etc.).
 - `dim_subsegmento_credito` (26 valores, universo completo de BCE) y `dim_categoria_deposito`
@@ -343,11 +343,11 @@ llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
   enumeraciones cerradas por definición normativa/regulatoria de arriba, es un catálogo
   geográfico real y finito (INEC) — un cantón nuevo en el dato es autoexplicativo una vez
   que la provincia ya es conocida, igual que un rango de días nuevo lo es para `dim_plazo`.
-  `etl/transform/canton_matching.py::resolver_canton_bce(canton, provincia)` resuelve
+  `src/benchmark_bancos/transform/canton_matching.py::resolver_canton_bce(canton, provincia)` resuelve
   SIEMPRE por el par completo (nunca cantón solo — existen cantones reales homónimos en 2
   provincias por reclasificación administrativa histórica, ej. `LA CONCORDIA`,
   `SANTO DOMINGO`): provincia no resoluble → `CantonNoResueltoError`, fail-fast; par
-  cantón+provincia fuera del universo sembrado (`etl/seeds/canton_provincia.csv`, 228
+  cantón+provincia fuera del universo sembrado (`src/benchmark_bancos/seeds/canton_provincia.csv`, 228
   pares) → no lanza, se auto-ingresa `AUTO_INGRESADO`.
 
 ## Carga incremental (CDC) — no full refresh
@@ -461,7 +461,7 @@ simple.
   detección de `tipo_credito` por nombre de hoja (no de archivo) y de `tipo_deposito` por
   columna (no por archivo) hace el parser más robusto a estos cambios superficiales.
 - **El riesgo de extracción es el acoplamiento al plugin del sitio** (selectores CSS,
-  comportamiento de navegación). Aislado en `etl/extract/scrape_superbancos.py`; si el
+  comportamiento de navegación). Aislado en `src/benchmark_bancos/extract/scrape_superbancos.py`; si el
   sitio cambia, solo ese módulo necesita ajustarse — transform/load no se ven afectados
   porque trabajan desde `data/raw/` ya descargado.
 - **Idempotencia end-to-end**: `raw.source_files` evita reprocesar un archivo sin
@@ -479,7 +479,7 @@ simple.
 
 Este proyecto usa Postgres, no un motor genérico "SQL estándar" — varias piezas del
 diseño se apoyan en features propias de Postgres. Inventario real (grep contra
-`sql/*.sql` y `etl/load/load_postgres.py`, no de memoria) de qué se usa, dónde, y su
+`sql/*.sql` y `src/benchmark_bancos/load/load_postgres.py`, no de memoria) de qué se usa, dónde, y su
 equivalente concreto si algún día hubiera que portar a SQL Server o a un lakehouse
 (Databricks/Delta, con nota de Snowflake donde aplica):
 
@@ -498,7 +498,7 @@ las tablas de `staging`/`marts`, `saldo_total` en `fact_saldo_cartera`)
   `sql/21_fact_saldo_cartera_pivot.sql:22-23`.
 - **Nota de mantenimiento real** (bug encontrado y corregido 2026-08-30, ver
   `docs/gobernanza_datos.md`): el `UPDATE` SCD1 de `marts.dim_banco.segmento_entidad_id`
-  en `etl/load/load_postgres.py` (bloque `dim_banco.segmento_entidad_id: conveniencia...`)
+  en `src/benchmark_bancos/load/load_postgres.py` (bloque `dim_banco.segmento_entidad_id: conveniencia...`)
   no puede usar `EXCLUDED` (no es un `INSERT ... ON CONFLICT`), así que **recalcula a
   mano** la misma expresión del `row_hash` `GENERATED` en su cláusula `WHERE`. Esa
   fórmula duplicada quedó desincronizada una vez ya (se agregó `estado_validacion` al
@@ -520,7 +520,7 @@ las tablas de `staging`/`marts`, `saldo_total` en `fact_saldo_cartera`)
 
 **2. Patrón de upsert `ON CONFLICT (...) DO UPDATE ... WHERE row_hash IS DISTINCT FROM EXCLUDED.row_hash`**
 - Dónde: vive en Python, no en `sql/*.sql` (la identidad se resuelve antes de `staging`,
-  principio de diseño #2) — `etl/load/load_postgres.py` líneas 140-144
+  principio de diseño #2) — `src/benchmark_bancos/load/load_postgres.py` líneas 140-144
   (`staging.cartera`), 167-176 (`staging.depositos`), 244-246 (`_upsert_bce_via_temp`,
   genérico para las 4 tablas BCE), 297-299 (`tasas_referenciales`), 364-366 (Boletín
   balance/PyG), 428-430 (`marts.dim_banco`), 497-502/522-527/549-556/578-585 (los 4
@@ -559,7 +559,7 @@ las tablas de `staging`/`marts`, `saldo_total` en `fact_saldo_cartera`)
   un parser necesita reprocesarse.
 
 **4. Carga masiva vía `COPY ... FROM STDIN`**
-- Dónde: `etl/load/load_postgres.py`, función `_copy_rows()` líneas 183-192 (usa
+- Dónde: `src/benchmark_bancos/load/load_postgres.py`, función `_copy_rows()` líneas 183-192 (usa
   `cur.copy(copy_sql)` de psycopg3), invocada en líneas 208 (`COPY raw.{table} (...)
   FROM STDIN`), 231 (`COPY _tmp_{table} (...) FROM STDIN`), 346 y 357. El patrón "COPY a
   tabla temporal + `INSERT ... ON CONFLICT`" (líneas 217-226:
@@ -577,7 +577,7 @@ las tablas de `staging`/`marts`, `saldo_total` en `fact_saldo_cartera`)
   a `raw.source_files` acá). **Snowflake** tiene el mismo comando,
   `COPY INTO <tabla> FROM @stage`.
 - *Por qué Postgres acá*: ~10-100x más rápido que `executemany` a los volúmenes de BCE
-  semanal (comentario `etl/load/load_postgres.py` líneas 184-185: "cientos de miles de
+  semanal (comentario `src/benchmark_bancos/load/load_postgres.py` líneas 184-185: "cientos de miles de
   filas por archivo, todo el histórico semanal 2008-2026 en un solo CSV").
 
 **5. Esquemas `raw` / `staging` / `marts` dentro de una sola base**

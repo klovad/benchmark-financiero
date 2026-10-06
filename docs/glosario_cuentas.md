@@ -115,7 +115,7 @@ corregido y verificado). Vista: `marts.vw_depositos_corto_plazo`.
 suma agregada de `fact_saldo_depositos.saldo` (CAPCOL) por banco × fecha no reconcilia
 exactamente contra `codigo='21'` de BALANCE — CAPCOL queda sistemáticamente **por
 debajo**. `marts.dim_categoria_deposito` (12 valores curados, ver
-`etl/transform/categoria_deposito_matching.py::CATEGORIAS_VALIDAS`) no tiene equivalente
+`src/benchmark_bancos/transform/categoria_deposito_matching.py::CATEGORIAS_VALIDAS`) no tiene equivalente
 para 5 sub-cuentas nivel-6 de `21` que sí existen en el Catálogo Único: `210120`
 (EJECUCIÓN PRESUPUESTARIA), `210125` (DEPÓSITOS DE OTRAS INSTITUCIONES PARA ENCAJE),
 `210130` (CHEQUES CERTIFICADOS), `210131` (CHEQUES DE EMERGENCIA) y `210140` (OTROS

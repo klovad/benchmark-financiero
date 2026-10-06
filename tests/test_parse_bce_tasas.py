@@ -1,4 +1,4 @@
-"""Cobertura de las funciones puras de etl/transform/parse_bce_tasas.py relacionadas con
+"""Cobertura de las funciones puras de src/benchmark_bancos/transform/parse_bce_tasas.py relacionadas con
 el cambio de grano de cantón (sql/28_bce_canton_grain.sql, 2026-09-01) -- sin archivo ni
 DB, mismo criterio que el resto de tests/test_*_matching.py.
 
@@ -12,8 +12,8 @@ _weighted_agg/_resolve_canton en aislamiento."""
 import pandas as pd
 import pytest
 
-from etl.transform.canton_matching import CantonNoResueltoError
-from etl.transform.parse_bce_tasas import _resolve_canton, _weighted_agg
+from benchmark_bancos.transform.canton_matching import CantonNoResueltoError
+from benchmark_bancos.transform.parse_bce_tasas import _resolve_canton, _weighted_agg
 
 
 def _row(canton: str, provincia: str, monto_total: float, **overrides) -> dict:
@@ -142,7 +142,7 @@ def test_resolve_canton_propaga_cantonnoresueltoerror():
 
 
 def test_resolve_canton_no_lanza_para_canton_fuera_del_universo_sembrado():
-    """Nivel 2 del two-tier: un cantón fuera de etl/seeds/canton_provincia.csv pero con
+    """Nivel 2 del two-tier: un cantón fuera de src/benchmark_bancos/seeds/canton_provincia.csv pero con
     provincia válida se acepta tal cual (se auto-ingresará en marts.dim_canton más
     adelante, en el JOIN de refresh_marts() -- ver
     tests/test_integration_regressions.py::test_bce_canton_auto_ingresado_end_to_end).

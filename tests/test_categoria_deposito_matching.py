@@ -1,7 +1,7 @@
 import pytest
 
-from etl.transform.bce_plazo_matching import PlazoNoResueltoError
-from etl.transform.categoria_deposito_matching import (
+from benchmark_bancos.transform.bce_plazo_matching import PlazoNoResueltoError
+from benchmark_bancos.transform.categoria_deposito_matching import (
     CategoriaNoResueltaError,
     resolver_categoria_deposito,
 )

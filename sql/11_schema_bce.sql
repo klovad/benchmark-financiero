@@ -5,7 +5,7 @@
 --
 -- Grano de fact_tasas_pasivas/activas: (fecha, banco, categoria/segmento, plazo,
 -- provincia) -- SIN cantón. El archivo fuente trae cantón como grano más fino dentro de
--- cada provincia; se reagrega en el parser (etl/transform/parse_bce_tasas.py): montos y
+-- cada provincia; se reagrega en el parser (src/benchmark_bancos/transform/parse_bce_tasas.py): montos y
 -- operaciones se suman, las tasas se promedian ponderadas por monto (no promedio simple).
 
 ALTER TABLE raw.source_files DROP CONSTRAINT IF EXISTS source_files_report_type_check;

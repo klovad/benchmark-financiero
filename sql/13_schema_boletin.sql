@@ -8,7 +8,7 @@
 -- (convención del Catálogo Único de Cuentas: 1 activo, 2 pasivo, 3 patrimonio, 4 gastos,
 -- 5 ingresos). grupo_met es nullable y es una conveniencia (la hoja MET no particiona
 -- limpio: un mismo código puede aparecer en más de un grupo funcional -- se guarda el
--- primer grupo encontrado, ver etl/transform/parse_boletin.py).
+-- primer grupo encontrado, ver src/benchmark_bancos/transform/parse_boletin.py).
 
 CREATE TABLE IF NOT EXISTS marts.dim_cuenta_contable (
     cuenta_id     SERIAL PRIMARY KEY,

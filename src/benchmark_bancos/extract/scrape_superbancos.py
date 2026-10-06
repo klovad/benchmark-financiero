@@ -6,10 +6,10 @@ El listado de archivos por año no es HTML estático: el portal usa el plugin
 de carpetas vía AJAX. Por eso se automatiza con Playwright en vez de requests/httpx.
 
 Estructura del portal: Año {YYYY} > {CARTERA|COLOCACIONES} / {DEPOSITOS|CAPTACIONES} > archivos .zip
-(los nombres de carpeta cambiaron en 2024; ver etl.config.FOLDER_NAMES).
+(los nombres de carpeta cambiaron en 2024; ver benchmark_bancos.config.FOLDER_NAMES).
 
 Mismo código para los sub-portales de bancos privados y Banca Pública
-(etl.config.CAPCOL_PORTALES): solo cambian la URL y el subdirectorio de destino.
+(benchmark_bancos.config.CAPCOL_PORTALES): solo cambian la URL y el subdirectorio de destino.
 """
 
 import argparse
@@ -19,10 +19,14 @@ from pathlib import Path
 from playwright.sync_api import TimeoutError as PwTimeoutError
 from playwright.sync_api import sync_playwright
 
-from etl.config import CAPCOL_PORTALES, DEFAULT_YEARS, FOLDER_NAMES, RAW_DIR
-from etl.logging_utils import setup_logging
+from benchmark_bancos.config import (
+    CAPCOL_PORTALES,
+    DEFAULT_YEARS,
+    FOLDER_NAMES,
+    RAW_DIR,
+)
+from benchmark_bancos.logging_utils import setup_logging
 
-setup_logging()
 log = logging.getLogger(__name__)
 
 
@@ -137,4 +141,5 @@ def main():
 
 
 if __name__ == "__main__":
+    setup_logging()
     main()

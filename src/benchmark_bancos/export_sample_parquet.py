@@ -23,9 +23,9 @@ Dos modos:
   los ~394MB del histórico completo (2008-2026) cuando alcanza con una ventana reciente
   para pruebas; el directorio de salida se nombra `marts_ultimos_{N}_anios` en ese caso.
 
-Uso: python -m etl.export_sample_parquet [--anio 2025] [--mes 3]
-     python -m etl.export_sample_parquet --full
-     python -m etl.export_sample_parquet --full --anios-recientes 5
+Uso: python -m benchmark_bancos.export_sample_parquet [--anio 2025] [--mes 3]
+     python -m benchmark_bancos.export_sample_parquet --full
+     python -m benchmark_bancos.export_sample_parquet --full --anios-recientes 5
 """
 
 import argparse
@@ -35,7 +35,7 @@ from pathlib import Path
 import pandas as pd
 import psycopg
 
-from etl.config import DB_CONFIG, PROJECT_ROOT
+from benchmark_bancos.config import DB_CONFIG, PROJECT_ROOT
 
 log = logging.getLogger(__name__)
 

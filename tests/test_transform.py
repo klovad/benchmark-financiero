@@ -2,8 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from etl.transform.parse_cartera import parse_cartera_file, tipo_credito_from_sheet_name
-from etl.transform.parse_depositos import parse_depositos_file
+from benchmark_bancos.transform.parse_cartera import (
+    parse_cartera_file,
+    tipo_credito_from_sheet_name,
+)
+from benchmark_bancos.transform.parse_depositos import parse_depositos_file
 
 RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
 EXTRACT_DIR = Path(__file__).resolve().parent.parent / "data" / "_tmp_extract"

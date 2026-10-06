@@ -6,16 +6,16 @@
 -- un bug real: marts.dim_canton tenía DOS regiones distintas para MORONA SANTIAGO
 -- (depositos confiaba en la columna REGION del archivo fuente = "AMAZONICA"; cartera la
 -- derivaba de PROVINCIA_REGION = "ORIENTE", el mapeo canónico -- ver
--- etl/transform/parse_depositos.py, ya corregido para no usar la columna del archivo).
+-- src/benchmark_bancos/transform/parse_depositos.py, ya corregido para no usar la columna del archivo).
 -- dim_provincia es ahora la ÚNICA fuente de region -- el bug queda estructuralmente
--- imposible de repetir. Sembrada desde etl/config.py::PROVINCIA_REGION (24 provincias)
+-- imposible de repetir. Sembrada desde src/benchmark_bancos/config/::PROVINCIA_REGION (24 provincias)
 -- + 2 valores especiales sin provincia real: 'ZONA NO DELIMITADA' (CAPCOL) y 'S/N' (BCE,
 -- filas a nivel nacional sin desagregar).
 --
 -- Ortografía canónica: la de CAPCOL (histórico más largo, ya en dim_canton) -- sin tilde
 -- excepto en la Ñ (BOLIVAR, GALAPAGOS, LOS RIOS... pero CAÑAR). BCE trae las mismas
 -- provincias CON tilde (BOLÍVAR, GALÁPAGOS); se homologa en el parser con
--- etl/transform/common.py::normalize_provincia() (quita solo el acento agudo tras
+-- src/benchmark_bancos/transform/common.py::normalize_provincia() (quita solo el acento agudo tras
 -- descomponer NFKD, conserva la Ñ -- ver docstring de la función).
 
 CREATE TABLE IF NOT EXISTS marts.dim_provincia (

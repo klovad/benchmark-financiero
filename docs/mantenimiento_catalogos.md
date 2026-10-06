@@ -19,32 +19,32 @@ conformados"): `dim_banco` (camino curado + camino auto-registrado), `dim_segmen
 
 | Catálogo | Excepción(es) | Archivo:línea | Comportamiento |
 |---|---|---|---|
-| `dim_banco` — curado (33 privados + 3 públicos) | `BancoNoResueltoError` | `etl/transform/banco_matching.py:37` (raise en :121-124) | Fail-fast absoluto |
+| `dim_banco` — curado (33 privados + 3 públicos) | `BancoNoResueltoError` | `src/benchmark_bancos/transform/banco_matching.py:37` (raise en :121-124) | Fail-fast absoluto |
 | `dim_banco` — auto-registrado (409) | `EntidadBceNoMapeadaError` (tipo_entidad), `RucInvalidoError` (RUC) | `banco_matching.py:139`, `banco_matching.py:144` (raise en :253-256 y :270-276) | Fail-fast sobre tipo/RUC; identidad en sí **no se cura**, se auto-ingresa `AUTO_INGRESADO` |
-| `dim_segmento_credito`/`dim_subsegmento_credito` | `SegmentoNoResueltoError` (BCE tsa), `ValueError` (CAPCOL, sin clase propia) | `etl/transform/parse_bce_tasas.py:156` (raise :329-331); `etl/transform/parse_cartera.py:48` | Fail-fast absoluto, sin two-tier |
-| `dim_categoria_deposito` | `CategoriaNoResueltaError` (CAPCOL), `ValueError` (BCE tsp, sin clase propia) | `etl/transform/categoria_deposito_matching.py:53` (raise :88-91); `parse_bce_tasas.py:291` | Fail-fast absoluto, sin two-tier |
+| `dim_segmento_credito`/`dim_subsegmento_credito` | `SegmentoNoResueltoError` (BCE tsa), `ValueError` (CAPCOL, sin clase propia) | `src/benchmark_bancos/transform/parse_bce_tasas.py:156` (raise :329-331); `src/benchmark_bancos/transform/parse_cartera.py:48` | Fail-fast absoluto, sin two-tier |
+| `dim_categoria_deposito` | `CategoriaNoResueltaError` (CAPCOL), `ValueError` (BCE tsp, sin clase propia) | `src/benchmark_bancos/transform/categoria_deposito_matching.py:53` (raise :88-91); `parse_bce_tasas.py:291` | Fail-fast absoluto, sin two-tier |
 | `dim_segmento_entidad` | `TipoSegmentoNoResueltoError` | `parse_bce_tasas.py:160` (raise :296-299 tsp, :336-339 tsa) | Fail-fast absoluto, sin two-tier |
-| `dim_plazo` | `PlazoNoResueltoError` (shape/rango inválido) | `etl/transform/bce_plazo_matching.py:27` (4 puntos de raise, ver sección) | **Two-tier**: shape+rango sano fuera del universo curado → `AUTO_INGRESADO`, no lanza |
-| `dim_cuenta_contable` | Ninguna — `ValueError` genérico solo ante bug de parsing (`_find_header_row`) | `etl/transform/parse_boletin.py:104-106` | Sin gate — todo código nuevo se auto-ingresa `AUTO_INGRESADO` por diseño |
-| `dim_canton` (BCE tsp/tsa) | `CantonNoResueltoError` (provincia no resoluble, o canton/provincia vacíos) | `etl/transform/canton_matching.py:81` (raise en `resolver_canton_bce()`) | **Two-tier**: provincia válida pero par (canton, provincia) fuera del universo curado → `AUTO_INGRESADO`, no lanza. Integración en `parse_bce_tasas.py` pendiente (carril de `data-engineer`, ver `docs/gobernanza_datos.md`) |
+| `dim_plazo` | `PlazoNoResueltoError` (shape/rango inválido) | `src/benchmark_bancos/transform/bce_plazo_matching.py:27` (4 puntos de raise, ver sección) | **Two-tier**: shape+rango sano fuera del universo curado → `AUTO_INGRESADO`, no lanza |
+| `dim_cuenta_contable` | Ninguna — `ValueError` genérico solo ante bug de parsing (`_find_header_row`) | `src/benchmark_bancos/transform/parse_boletin.py:104-106` | Sin gate — todo código nuevo se auto-ingresa `AUTO_INGRESADO` por diseño |
+| `dim_canton` (BCE tsp/tsa) | `CantonNoResueltoError` (provincia no resoluble, o canton/provincia vacíos) | `src/benchmark_bancos/transform/canton_matching.py:81` (raise en `resolver_canton_bce()`) | **Two-tier**: provincia válida pero par (canton, provincia) fuera del universo curado → `AUTO_INGRESADO`, no lanza. Integración en `parse_bce_tasas.py` pendiente (carril de `data-engineer`, ver `docs/gobernanza_datos.md`) |
 
 **SEPS (2026-09-30)** agrega estos puntos de entrada a catálogos que ya existían:
 
 | Catálogo | Excepción | Dónde | Comportamiento |
 |---|---|---|---|
-| `dim_banco` (SEPS) | `RucInvalidoError` | `banco_matching.py::resolver_entidad_seps` | Fail-fast sobre el RUC. La entidad nueva se auto-registra (`AUTO_INGRESADO`) con `tipo_entidad` según el sufijo del archivo o `SEPS_RUC_SEGUNDO_PISO` (`etl/config.py`) |
-| `dim_segmento_credito` (SEPS) | `SubtipoCreditoSepsNoMapeadoError` | `etl/transform/parse_seps.py::SUBTIPO_CREDITO_SEPS` | Fail-fast absoluto. Agregar el valor al dict (valor `None` = excluir, como `OPERACIONES CONTINGENTES`) |
+| `dim_banco` (SEPS) | `RucInvalidoError` | `banco_matching.py::resolver_entidad_seps` | Fail-fast sobre el RUC. La entidad nueva se auto-registra (`AUTO_INGRESADO`) con `tipo_entidad` según el sufijo del archivo o `SEPS_RUC_SEGUNDO_PISO` (`src/benchmark_bancos/config/`) |
+| `dim_segmento_credito` (SEPS) | `SubtipoCreditoSepsNoMapeadoError` | `src/benchmark_bancos/transform/parse_seps.py::SUBTIPO_CREDITO_SEPS` | Fail-fast absoluto. Agregar el valor al dict (valor `None` = excluir, como `OPERACIONES CONTINGENTES`) |
 | `dim_categoria_deposito` (SEPS) | `CategoriaNoResueltaError` | `categoria_deposito_matching.py::resolver_categoria_deposito_seps` | Fail-fast absoluto; compara sin tildes contra `CATEGORIAS_VALIDAS` |
 | `dim_canton` (SEPS) | `CantonNoResueltoError` | reutiliza `resolver_canton_bce()` | Two-tier, igual que BCE |
 | `dim_cuenta_contable` (SEPS) | — | `load_postgres.py::insert_dim_cuenta_contable_seps` | Sin gate; `ON CONFLICT DO NOTHING` (no pisa descripciones de Superbancos) |
-| Extractor SEPS | `ValueError` ("no redirigió a un .zip") | `etl/extract/download_seps.py` | El `download_id` del portal cambió o el año no se publicó: actualizar `etl/config.py::SEPS_DOWNLOAD_IDS` copiando el link del portal |
+| Extractor SEPS | `ValueError` ("no redirigió a un .zip") | `src/benchmark_bancos/extract/download_seps.py` | El `download_id` del portal cambió o el año no se publicó: actualizar `src/benchmark_bancos/config/::SEPS_DOWNLOAD_IDS` copiando el link del portal |
 
 **Año nuevo de SEPS**: agregar la fila del año a `SEPS_DOWNLOAD_IDS` (3 ids: Depósitos >
 Reportes; Cartera de crédito > Reportes, **segunda** fila, la del ZIP `YYYY-COL.zip`;
 Situación Financiera > Bases de Datos, primera fila) y correr
-`python -m etl.pipeline seps --years YYYY`. Si el parser falla por un formato nuevo (hoja
+`uv run benchmark-bancos seps --years YYYY`. Si el parser falla por un formato nuevo (hoja
 partida, separador, encabezado), ver la lista de variaciones ya absorbidas en el docstring
-de `etl/transform/parse_seps.py`.
+de `src/benchmark_bancos/transform/parse_seps.py`.
 
 `estado_validacion` (`CONFIRMADO`/`AUTO_INGRESADO`/`RECHAZADO`) solo existe en 4 tablas:
 `dim_banco` (`sql/26`), `dim_plazo` (`sql/27`), `dim_cuenta_contable` (`sql/25`),
@@ -58,22 +58,22 @@ la carga hasta que un humano lo resuelva en el código, nunca queda "pendiente" 
 ## 1. `dim_banco` — camino curado (33 bancos privados + 3 públicos)
 
 > **2026-10-05**: BanEcuador, CFN y BdE (Banca Pública CAPCOL) se agregaron a
-> `etl/seeds/banco_maestro.csv` con su llave `BCE_<ruc>` ya existente. Ganan nombre visible
+> `src/benchmark_bancos/seeds/banco_maestro.csv` con su llave `BCE_<ruc>` ya existente. Ganan nombre visible
 > determinista (el BdE dejó de verse como "BANCO DEL ESTADO") y `CONFIRMADO`. **Regla nueva,
 > con test** (`test_crosswalk_solo_apunta_a_identidad_curada`): todo `banco_codigo` al que
 > apunte `banco_crosswalk.csv` debe existir en `banco_maestro.csv`. Si se agrega un
 > crosswalk hacia una entidad `BCE_<ruc>`, agregarla también al maestro.
 
-**Error**: `BancoNoResueltoError` — `etl/transform/banco_matching.py:37-38`, lanzado desde
+**Error**: `BancoNoResueltoError` — `src/benchmark_bancos/transform/banco_matching.py:37-38`, lanzado desde
 `resolver_banco_codigo()` (líneas 121-124):
 ```
 No se pudo resolver banco_codigo para '<nombre crudo>' (fuente=<CAPCOL|BCE|BOLETIN>,
-normalizado='<...>'). Agregar una fila a etl/seeds/banco_crosswalk.csv.
+normalizado='<...>'). Agregar una fila a src/benchmark_bancos/seeds/banco_crosswalk.csv.
 ```
-Se ve al correr `python -m etl.pipeline load --years ...` (CAPCOL), `python -m etl.pipeline
+Se ve al correr `uv run benchmark-bancos load --years ...` (CAPCOL), `uv run benchmark-bancos
 bce` (camino BANCOS PRIVADOS de `resolver_entidad_bce()`, que llama a
 `resolver_banco_codigo()` internamente — `banco_matching.py:260`) o
-`python -m etl.pipeline boletin --years ...` — la carga aborta con traceback, no hay fila
+`uv run benchmark-bancos boletin --years ...` — la carga aborta con traceback, no hay fila
 parcial. En CI no aparece nunca de forma orgánica: `test-unit` no descarga archivos reales
 (sin red, ver `.github/workflows/test.yml`), así que solo se dispara en una corrida local
 contra datos reales nuevos.
@@ -82,11 +82,11 @@ contra datos reales nuevos.
 - **Variante de nombre de un banco YA curado** (rename de la fuente, puntuación distinta
   de "S.A."/sufijo legal no cubierto por la regla determinística `_por_regla()` de
   `banco_matching.py:82-94`, o nombre legal completo de BCE que no matchea el código corto
-  de CAPCOL): agregar una fila a `etl/seeds/banco_crosswalk.csv` (columnas exactas
+  de CAPCOL): agregar una fila a `src/benchmark_bancos/seeds/banco_crosswalk.csv` (columnas exactas
   `fuente,nombre_fuente,banco_codigo` — `fuente` es literal `CAPCOL`/`BCE`/`BOLETIN`,
   `nombre_fuente` el texto crudo tal cual aparece en la fuente [no importa mayúsculas,
   `_normalizar()` lo homologa], `banco_codigo` debe ser un código YA existente en
-  `etl/seeds/banco_maestro.csv` — **o, desde 2026-09-01 (Banca Pública, ver
+  `src/benchmark_bancos/seeds/banco_maestro.csv` — **o, desde 2026-09-01 (Banca Pública, ver
   `docs/fuentes_datos.md` sección 1.1), un `banco_codigo` `BCE_<ruc>` ya auto-registrado en
   `marts.dim_banco` por `resolver_entidad_bce()`**, cuando el objetivo es que un nombre de
   CAPCOL/BOLETIN apunte a la MISMA identidad que BCE ya generó para esa entidad en vez de
@@ -95,7 +95,7 @@ contra datos reales nuevos.
   crosswalk no existe todavía en `marts.dim_banco` cuando el `INSERT` de `fact_saldo_cartera`/
   `fact_saldo_depositos` corre, el `INNER JOIN` de esa sentencia en `_REFRESH_MARTS_SQL`
   descarta la fila silenciosamente (mismo riesgo ya conocido para `dim_canton`, ver
-  `etl/load/load_postgres.py::_log_cantones_no_resueltos`) — para el caso `BCE_<ruc>` esto
+  `src/benchmark_bancos/load/load_postgres.py::_log_cantones_no_resueltos`) — para el caso `BCE_<ruc>` esto
   significa que BCE tsp/tsa debe haberse cargado (al menos una vez, para poblar
   `staging.banco_maestro` vía `upsert_banco_maestro_ruc()`) ANTES de que la carga de CAPCOL
   para esa entidad llegue a `refresh_marts()`; verificar `SELECT banco_codigo FROM
@@ -103,7 +103,7 @@ contra datos reales nuevos.
   el crosswalk nuevo va a producir hechos, no solo que `resolver_banco_codigo()` no lanzó
   error).
 - **Banco genuinamente nuevo** (licencia bancaria nueva, nunca visto en ninguna fuente):
-  primero agregar una fila a `etl/seeds/banco_maestro.csv` (columnas
+  primero agregar una fila a `src/benchmark_bancos/seeds/banco_maestro.csv` (columnas
   `banco_codigo,banco,tipo_entidad` — `banco_codigo` nuevo código canónico, `banco` nombre
   a mostrar, `tipo_entidad` uno de los 7 valores del `CHECK` de `sql/29_dim_banco_tipo_segundo_piso.sql`:
   `BANCO PRIVADO`, `BANCO PUBLICO`, `COOPERATIVA`, `MUTUALISTA`, `SOCIEDAD FINANCIERA`,
@@ -112,8 +112,8 @@ contra datos reales nuevos.
 - **Es en realidad un bug de parsing, no un banco nuevo**: si el nombre en el mensaje de
   error se ve como ruido (vacío, media palabra, contiene texto de encabezado de columna,
   caracteres de control) en vez de un nombre de entidad legal plausible — **no** agregarlo
-  al crosswalk. El bug está en el scraper/parser (`etl/extract/scrape_superbancos.py`,
-  `etl/transform/parse_cartera.py`/`parse_depositos.py`/`parse_boletin.py` según la
+  al crosswalk. El bug está en el scraper/parser (`src/benchmark_bancos/extract/scrape_superbancos.py`,
+  `src/benchmark_bancos/transform/parse_cartera.py`/`parse_depositos.py`/`parse_boletin.py` según la
   fuente), arreglar ahí.
 
 **Después de arreglarlo**:
@@ -124,7 +124,7 @@ contra datos reales nuevos.
   banco es nuevo, o nota en "Huecos de gobernanza conocidos" si es otro caso de colisión de
   RUC como Jaramillo Arteaga/Promerica). `docs/data_dictionary.md` normalmente no cambia
   salvo que se agregue un `tipo_entidad` nuevo.
-- Re-ejecutar: `python -m pytest tests/test_banco_matching.py -v` (unit, sin DB), luego el
+- Re-ejecutar: `uv run pytest tests/test_banco_matching.py -v` (unit, sin DB), luego el
   comando de pipeline que había fallado, luego verificar `staging.<tabla>` == `marts.<tabla>`
   en la(s) tabla(s) afectada(s) (`SELECT COUNT(*) FROM staging.cartera` vs.
   `SELECT COUNT(*) FROM marts.fact_saldo_cartera`, por ejemplo).
@@ -140,7 +140,7 @@ contra datos reales nuevos.
   `validar_ruc_estructura(ruc)` (líneas 178-220) devuelve `False`. Mensaje incluye el RUC,
   la razón social y qué chequeo falló en general (no cuál de los 4 específicamente).
 
-Ambos se ven al correr `python -m etl.pipeline bce` (dentro de `_resolve_identidad()` en
+Ambos se ven al correr `uv run benchmark-bancos bce` (dentro de `_resolve_identidad()` en
 `parse_bce_tasas.py:231-261`, camino NO-`BANCOS PRIVADOS` de `resolver_entidad_bce()`).
 
 **Dónde arreglarlo**:
@@ -171,7 +171,7 @@ Ambos se ven al correr `python -m etl.pipeline bce` (dentro de `_resolve_identid
 `docs/gobernanza_datos.md` (conteos de entidades cambian), `docs/data_dictionary.md`
 (enumeración de `tipo_entidad` si el `CHECK` cambió), `docs/architecture.md` (diagrama ER si
 hubo migración de esquema). Re-ejecutar: `pytest tests/test_banco_matching.py -v`, luego
-`python -m etl.pipeline bce`, luego verificar conteos.
+`uv run benchmark-bancos bce`, luego verificar conteos.
 
 **Nota**: una vez que una entidad *resuelve* (RUC válido, tipo mapeado), la fila nueva en
 `dim_banco` **sí se auto-ingresa** con `estado_validacion='AUTO_INGRESADO'` sin curación de
@@ -188,10 +188,10 @@ revisar primero):
   `f"segmento_credito desconocido en tsa: {desconocidos}"`.
 - **CAPCOL cartera**: `ValueError` **sin clase propia** — `parse_cartera.py:43-48`,
   función `tipo_credito_from_sheet_name()`, cuando ningún keyword de `TIPO_CREDITO_KEYWORDS`
-  (`etl/config.py:50-57`, 6 entradas) matchea el nombre de la hoja `BASE ...`. Mensaje:
+  (`src/benchmark_bancos/config/:50-57`, 6 entradas) matchea el nombre de la hoja `BASE ...`. Mensaje:
   `f"No se pudo determinar tipo_credito para la hoja '{sheet_name}'"`.
 
-Se ven al correr `python -m etl.pipeline bce` (tsa) o `python -m etl.pipeline load
+Se ven al correr `uv run benchmark-bancos bce` (tsa) o `uv run benchmark-bancos load
 --years ...` (CAPCOL). **Sin two-tier**: ningún nivel de este catálogo se auto-ingresa, ver
 justificación sintaxis-vs-semántica-regulatoria en `sql/27_dim_plazo_estado_validacion.sql:26-45`.
 
@@ -206,7 +206,7 @@ justificación sintaxis-vs-semántica-regulatoria en `sql/27_dim_plazo_estado_va
   `_REFRESH_MARTS_SQL`, solo `JOIN` de lectura) — agregar solo al set de Python sin la
   migración deja el valor validando en Python pero sin fila en `marts` a la que unirse.
 - Keyword de hoja nuevo en CAPCOL que corresponde a un `tipo_credito` YA existente:
-  agregar el keyword a `TIPO_CREDITO_KEYWORDS` (`etl/config.py:50-57`).
+  agregar el keyword a `TIPO_CREDITO_KEYWORDS` (`src/benchmark_bancos/config/:50-57`).
 - Si el texto se ve como ruido (encoding roto, hoja equivocada, truncamiento): bug de
   parsing, arreglar `find_base_sheets()`/`_parse_sheet()`/el regex, no el set.
 
@@ -238,7 +238,7 @@ texto matchea "DEPÓSITOS A PLAZO"): ese sub-camino **sí es two-tier** — ver 
 (`dim_plazo`) — pero la categoría en sí (`CATEGORIAS_VALIDAS`) siempre es fail-fast
 absoluto, nunca se auto-ingresa un nombre de categoría nuevo.
 
-Se ven al correr `python -m etl.pipeline load --years ...` (CAPCOL) o `python -m etl.pipeline
+Se ven al correr `uv run benchmark-bancos load --years ...` (CAPCOL) o `uv run benchmark-bancos
 bce` (tsp).
 
 **Dónde arreglarlo**: misma triage que segmento_credito — variante de wording de una
@@ -262,7 +262,7 @@ conteos.
 
 **Error**: `TipoSegmentoNoResueltoError` — `parse_bce_tasas.py:160-161`, lanzado en
 :296-299 (tsp) / :336-339 (tsa) cuando `tipo_segmento` no está en `TIPOS_SEGMENTO_VALIDOS`
-(14 valores, `parse_bce_tasas.py:103-118`). Se ve al correr `python -m etl.pipeline bce`.
+(14 valores, `parse_bce_tasas.py:103-118`). Se ve al correr `uv run benchmark-bancos bce`.
 Sin two-tier, fail-fast absoluto.
 
 **Dónde arreglarlo**: un tier regulatorio genuinamente nuevo (ej. SEPS agrega un
@@ -287,7 +287,7 @@ no matchearon.
 **Después de arreglarlo**: no hay archivo de test dedicado a `TIPOS_SEGMENTO_VALIDOS` hoy
 (mismo hueco de cobertura que la sección 3) — considerar crear uno si se toca esta
 constante. Docs: `docs/data_dictionary.md` (conteo 14 → nuevo), `docs/gobernanza_datos.md`.
-Re-ejecutar: `pytest -m "not integration" -v`, `python -m etl.pipeline bce`, verificar
+Re-ejecutar: `pytest -m "not integration" -v`, `uv run benchmark-bancos bce`, verificar
 conteos.
 
 ## 6. `dim_plazo` (two-tier, 4 puntos de entrada)
@@ -342,18 +342,18 @@ comando de pipeline, luego conteo.
 
 **No hay `*NoResueltoError`** — cualquier `(reporte, codigo)` descubierto en una hoja
 BALANCE/PYG del Boletín se acepta y se hace upsert vía `upsert_dim_cuenta_contable()`
-(`etl/load/load_postgres.py:455-465`, `ON CONFLICT (reporte, codigo) DO UPDATE`), llegando
+(`src/benchmark_bancos/load/load_postgres.py:455-465`, `ON CONFLICT (reporte, codigo) DO UPDATE`), llegando
 con `estado_validacion='AUTO_INGRESADO'` (DEFAULT, `sql/25`) porque el `INSERT` no lista
 esa columna. Esto es diseño deliberado, no un hueco: el Catálogo Único de Cuentas crece y
 cambia legítimamente con cada archivo del Boletín.
 
 El único fallo real posible acá es un **bug de parsing**, no de identidad de catálogo:
-`_find_header_row()` (`etl/transform/parse_boletin.py:85-106`) lanza `ValueError` genérico
+`_find_header_row()` (`src/benchmark_bancos/transform/parse_boletin.py:85-106`) lanza `ValueError` genérico
 (`"No se encontró la fila de encabezado (columnas 'CÓDIGO'+'CUENTA')"`) si una hoja
 BALANCE/PYG/MET no tiene el layout esperado — significa que Superbancos cambió la
 plantilla Excel, no que un código de cuenta sea desconocido.
 
-Se ve al correr `python -m etl.pipeline boletin --years ...`.
+Se ve al correr `uv run benchmark-bancos boletin --years ...`.
 
 **Dónde arreglarlo**: si dispara el error de encabezado, siempre es drift de plantilla —
 inspeccionar el `.xlsx` real (`data/raw/{anio}/boletin/`) y ajustar
@@ -367,22 +367,22 @@ auto-ingresa en vez de fallar.
 (el catálogo está pensado para crecer); si hubo un fix de parser por cambio real de
 plantilla, actualizar `docs/linaje_datos.md` (sección Boletín) y `docs/fuentes_datos.md` si
 la estructura real del archivo cambió. Re-ejecutar: `pytest tests/test_parse_boletin.py -v`,
-`python -m etl.pipeline boletin --years <años afectados>`, verificar
+`uv run benchmark-bancos boletin --years <años afectados>`, verificar
 `staging.boletin_balance`/`boletin_pyg` == `marts.fact_balance`/`fact_pyg` en filas.
 
 ## 8. `dim_canton` (two-tier, BCE tsp/tsa — 2026-09-01, `sql/28_bce_canton_grain.sql`)
 
-**Error**: `CantonNoResueltoError` — `etl/transform/canton_matching.py:81-97`, lanzado
+**Error**: `CantonNoResueltoError` — `src/benchmark_bancos/transform/canton_matching.py:81-97`, lanzado
 desde `resolver_canton_bce(canton, provincia)` en 2 casos: `canton`/`provincia` vacíos, o
 `provincia` (tras `normalize_provincia()`) no está entre las 24 provincias reales del
 Ecuador + `ZONA NO DELIMITADA` + `S/N` (`_PROVINCIAS_VALIDAS`, `canton_matching.py:66-68`).
-Se verá al correr `python -m etl.pipeline bce` una vez que `data-engineer` integre la
-llamada en `etl/transform/parse_bce_tasas.py` (a la fecha de esta entrada, esa integración
+Se verá al correr `uv run benchmark-bancos bce` una vez que `data-engineer` integre la
+llamada en `src/benchmark_bancos/transform/parse_bce_tasas.py` (a la fecha de esta entrada, esa integración
 sigue pendiente — ver "Cambio de grano de BCE a cantón" en `docs/gobernanza_datos.md`).
 
 **Camino sin error (two-tier, igual mecanismo que `dim_plazo`)**: provincia válida pero el
 par `(canton, provincia)` normalizado no está en el universo sembrado
-(`etl/seeds/canton_provincia.csv`, 228 pares, mismo universo que `sql/28` sembró en
+(`src/benchmark_bancos/seeds/canton_provincia.csv`, 228 pares, mismo universo que `sql/28` sembró en
 `marts.dim_canton` con `estado_validacion='CONFIRMADO'`) → **no lanza nada**. La fila
 llega a `marts.dim_canton` con `estado_validacion='AUTO_INGRESADO'` (DEFAULT) la próxima
 vez que `refresh_marts()` corra su `INSERT ... ON CONFLICT (canton, provincia_id) DO
@@ -393,10 +393,10 @@ consultando `marts.dim_canton` (sección de abajo).
 - `provincia` no resuelve: revisar si BCE cambió la ortografía de una provincia existente
   (poco probable, `normalize_provincia()` ya cubre tilde vs. sin tilde) o si agregó una
   provincia genuinamente nueva — si es real, agregarla a
-  `etl/config.py::PROVINCIA_REGION` **y** una migración `sql/NN_....sql` que la siembre en
+  `src/benchmark_bancos/config/::PROVINCIA_REGION` **y** una migración `sql/NN_....sql` que la siembre en
   `marts.dim_provincia`.
 - `canton`/`provincia` vacíos: casi siempre bug de parsing (columna mal leída, fila de
-  encabezado colada) — revisar `etl/transform/parse_bce_tasas.py`, no relajar la validación
+  encabezado colada) — revisar `src/benchmark_bancos/transform/parse_bce_tasas.py`, no relajar la validación
   para aceptar vacíos.
 
 **Qué hacer (caso `AUTO_INGRESADO`)**: revisión, no reparación — igual que `dim_plazo`, ver
@@ -515,7 +515,7 @@ WHERE canton_id = 250;
 ```
 Antes de confirmar, verificar en `marts.vw_dim_canton_geografia` que no sea un alias de
 escritura de un cantón ya existente con otra forma de texto (ver
-`etl/transform/canton_matching.py::_ALIASES_BCE` para el precedente de 5 casos así) — si
+`src/benchmark_bancos/transform/canton_matching.py::_ALIASES_BCE` para el precedente de 5 casos así) — si
 lo es, el fix correcto es agregarlo a `_ALIASES_BCE` y dejar la fila `AUTO_INGRESADO`
 huérfana sin usar (o `RECHAZADO` si se prefiere dejar constancia explícita), no confirmarla
 como cantón real independiente.

@@ -13,7 +13,7 @@ igual que banco_matching.py hace con la identidad de banco.
 import re
 import unicodedata
 
-from etl.transform.bce_plazo_matching import validar_rango_plazo
+from benchmark_bancos.transform.bce_plazo_matching import validar_rango_plazo
 
 CATEGORIAS_VALIDAS = {
     "DEPÓSITOS DE AHORRO",

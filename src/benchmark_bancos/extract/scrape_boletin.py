@@ -3,7 +3,7 @@ Descarga los ZIP del Boletín Financiero Mensual (Balance y PyG) de bancos priva
 portal Superbancos.
 
 Mismo plugin OneDrive/SharePoint ("Share-one-Drive") que CAPCOL (ver
-etl/extract/scrape_superbancos.py) -- requiere Playwright, no es HTML estático. A
+src/benchmark_bancos/extract/scrape_superbancos.py) -- requiere Playwright, no es HTML estático. A
 diferencia de CAPCOL, la estructura es más plana: Año {YYYY} > archivos .zip
 directamente (sin subcarpeta de tipo de reporte), nombrados
 "{N}. BOLETIN BANCOS {MES} {YYYY}.zip".
@@ -16,10 +16,9 @@ from pathlib import Path
 from playwright.sync_api import TimeoutError as PwTimeoutError
 from playwright.sync_api import sync_playwright
 
-from etl.config import BOLETIN_URL, DEFAULT_YEARS, RAW_DIR
-from etl.logging_utils import setup_logging
+from benchmark_bancos.config import BOLETIN_URL, DEFAULT_YEARS, RAW_DIR
+from benchmark_bancos.logging_utils import setup_logging
 
-setup_logging()
 log = logging.getLogger(__name__)
 
 
@@ -107,4 +106,5 @@ def main():
 
 
 if __name__ == "__main__":
+    setup_logging()
     main()
