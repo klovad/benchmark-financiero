@@ -545,28 +545,16 @@
       "source_location": "L8"
     },
     {
-      "id": "etl_transform_categoria_deposito_matching_resolver_categoria_deposito_seps",
-      "label": "resolver_categoria_deposito_seps()",
+      "id": "etl_transform_banco_matching_resolver_entidad_seps",
+      "label": "resolver_entidad_seps()",
       "_callable": true,
       "_origin": "ast",
       "community": 137,
       "community_name": "parse_seps.py",
       "file_type": "code",
-      "norm_label": "resolver_categoria_deposito_seps()",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L108"
-    },
-    {
-      "id": "etl_transform_categoria_deposito_matching_sin_tildes",
-      "label": "_sin_tildes()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 137,
-      "community_name": "parse_seps.py",
-      "file_type": "code",
-      "norm_label": "_sin_tildes()",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L99"
+      "norm_label": "resolver_entidad_seps()",
+      "source_file": "etl/transform/banco_matching.py",
+      "source_location": "L284"
     },
     {
       "id": "etl_transform_parse_seps_a_numero",
@@ -809,18 +797,6 @@
       "source_location": "L187"
     },
     {
-      "id": "tests_test_parse_seps_test_categoria_deposito_seps_sin_tildes_a_canonica",
-      "label": "test_categoria_deposito_seps_sin_tildes_a_canonica()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 137,
-      "community_name": "parse_seps.py",
-      "file_type": "code",
-      "norm_label": "test_categoria_deposito_seps_sin_tildes_a_canonica()",
-      "source_file": "tests/test_parse_seps.py",
-      "source_location": "L99"
-    },
-    {
       "id": "tests_test_parse_seps_test_colocaciones_semestres_serial_excel_y_hoja_auxiliar",
       "label": "test_colocaciones_semestres_serial_excel_y_hoja_auxiliar()",
       "_callable": true,
@@ -879,6 +855,18 @@
       "norm_label": "test_eeff_saldo_no_numerico_falla_fuerte()",
       "source_file": "tests/test_parse_seps.py",
       "source_location": "L259"
+    },
+    {
+      "id": "tests_test_parse_seps_test_resolver_entidad_seps_reusa_llave_bce_y_rellena_ruc_numerico",
+      "label": "test_resolver_entidad_seps_reusa_llave_bce_y_rellena_ruc_numerico()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 137,
+      "community_name": "parse_seps.py",
+      "file_type": "code",
+      "norm_label": "test_resolver_entidad_seps_reusa_llave_bce_y_rellena_ruc_numerico()",
+      "source_file": "tests/test_parse_seps.py",
+      "source_location": "L84"
     },
     {
       "id": "tests_test_parse_seps_test_tipo_entidad_desde_archivo_variantes_reales",
@@ -1277,414 +1265,6 @@
       "source_location": "L101"
     },
     {
-      "id": "etl_load_load_postgres_get_connection",
-      "label": "get_connection()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "get_connection()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L32"
-    },
-    {
-      "id": "etl_load_load_postgres_is_source_loaded",
-      "label": "is_source_loaded()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "is_source_loaded()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L36"
-    },
-    {
-      "id": "etl_load_load_postgres_refresh_marts",
-      "label": "refresh_marts()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "refresh_marts()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L1130"
-    },
-    {
-      "id": "etl_load_load_postgres_register_source_file",
-      "label": "register_source_file()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "register_source_file()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L45"
-    },
-    {
-      "id": "etl_load_load_postgres_truncate_staging_bce",
-      "label": "truncate_staging_bce()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "truncate_staging_bce()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L439"
-    },
-    {
-      "id": "etl_load_load_postgres_upsert_banco_maestro_ruc",
-      "label": "upsert_banco_maestro_ruc()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "upsert_banco_maestro_ruc()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L87"
-    },
-    {
-      "id": "etl_pipeline_load_bce",
-      "label": "load_bce()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "load_bce()",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L200"
-    },
-    {
-      "id": "etl_pipeline_load_boletin",
-      "label": "load_boletin()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "load_boletin()",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L410"
-    },
-    {
-      "id": "etl_pipeline_load_seps",
-      "label": "load_seps()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "load_seps()",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L127"
-    },
-    {
-      "id": "etl_pipeline_load_tasas_historicas",
-      "label": "load_tasas_historicas()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "load_tasas_historicas()",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L325"
-    },
-    {
-      "id": "etl_pipeline_load_years",
-      "label": "load_years()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "load_years()",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L73"
-    },
-    {
-      "id": "etl_pipeline_main",
-      "label": "main()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "main()",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L465"
-    },
-    {
-      "id": "etl_pipeline_reprocess_bce_staging",
-      "label": "reprocess_bce_staging()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "reprocess_bce_staging()",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L256"
-    },
-    {
-      "id": "etl_load_load_postgres_clean",
-      "label": "_clean()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "_clean()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L59"
-    },
-    {
-      "id": "etl_load_load_postgres_copy_rows",
-      "label": "_copy_rows()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "_copy_rows()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L265"
-    },
-    {
-      "id": "etl_load_load_postgres_insert_dim_cuenta_contable_seps",
-      "label": "insert_dim_cuenta_contable_seps()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "insert_dim_cuenta_contable_seps()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L527"
-    },
-    {
-      "id": "etl_load_load_postgres_load_raw",
-      "label": "load_raw()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "load_raw()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L65"
-    },
-    {
-      "id": "etl_load_load_postgres_load_raw_bce",
-      "label": "load_raw_bce()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "load_raw_bce()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L277"
-    },
-    {
-      "id": "etl_load_load_postgres_load_raw_boletin",
-      "label": "load_raw_boletin()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "load_raw_boletin()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L556"
-    },
-    {
-      "id": "etl_load_load_postgres_load_raw_tasas_referenciales",
-      "label": "load_raw_tasas_referenciales()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "load_raw_tasas_referenciales()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L383"
-    },
-    {
-      "id": "etl_load_load_postgres_upsert_bce_via_temp",
-      "label": "_upsert_bce_via_temp()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "_upsert_bce_via_temp()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L299"
-    },
-    {
-      "id": "etl_load_load_postgres_upsert_boletin_via_temp",
-      "label": "_upsert_boletin_via_temp()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "_upsert_boletin_via_temp()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L576"
-    },
-    {
-      "id": "etl_load_load_postgres_upsert_dim_cuenta_contable",
-      "label": "upsert_dim_cuenta_contable()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "upsert_dim_cuenta_contable()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L493"
-    },
-    {
-      "id": "etl_load_load_postgres_upsert_staging_bce_tasas_activas",
-      "label": "upsert_staging_bce_tasas_activas()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "upsert_staging_bce_tasas_activas()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L478"
-    },
-    {
-      "id": "etl_load_load_postgres_upsert_staging_boletin_pyg",
-      "label": "upsert_staging_boletin_pyg()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "upsert_staging_boletin_pyg()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L628"
-    },
-    {
-      "id": "etl_load_load_postgres_upsert_staging_cartera",
-      "label": "upsert_staging_cartera()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "upsert_staging_cartera()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L153"
-    },
-    {
-      "id": "etl_load_load_postgres_upsert_staging_depositos",
-      "label": "upsert_staging_depositos()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "upsert_staging_depositos()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L201"
-    },
-    {
-      "id": "etl_load_load_postgres_upsert_staging_tasas_referenciales",
-      "label": "upsert_staging_tasas_referenciales()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "upsert_staging_tasas_referenciales()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L407"
-    },
-    {
-      "id": "etl_transform_common_sha256_file",
-      "label": "sha256_file()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 146,
-      "community_name": "sha256_file",
-      "file_type": "code",
-      "norm_label": "sha256_file()",
-      "source_file": "etl/transform/common.py",
-      "source_location": "L18"
-    },
-    {
-      "id": "tests_test_common_test_sha256_file_is_content_sensitive",
-      "label": "test_sha256_file_is_content_sensitive()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 146,
-      "community_name": "sha256_file",
-      "file_type": "code",
-      "norm_label": "test_sha256_file_is_content_sensitive()",
-      "source_file": "tests/test_common.py",
-      "source_location": "L13"
-    },
-    {
-      "id": "tests_test_common_test_sha256_file_is_deterministic",
-      "label": "test_sha256_file_is_deterministic()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 146,
-      "community_name": "sha256_file",
-      "file_type": "code",
-      "norm_label": "test_sha256_file_is_deterministic()",
-      "source_file": "tests/test_common.py",
-      "source_location": "L6"
-    },
-    {
-      "id": "etl_load_load_postgres_load_banco_maestro_seed",
-      "label": "load_banco_maestro_seed()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 147,
-      "community_name": "load_banco_maestro_seed",
-      "file_type": "code",
-      "norm_label": "load_banco_maestro_seed()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L121"
-    },
-    {
-      "id": "etl_load_load_postgres_log_bancos_no_resueltos",
-      "label": "_log_bancos_no_resueltos()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 148,
-      "community_name": "_log_bancos_no_resueltos",
-      "file_type": "code",
-      "norm_label": "_log_bancos_no_resueltos()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L1090"
-    },
-    {
-      "id": "etl_load_load_postgres_log_cantones_no_resueltos",
-      "label": "_log_cantones_no_resueltos()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 149,
-      "community_name": "_log_cantones_no_resueltos",
-      "file_type": "code",
-      "norm_label": "_log_cantones_no_resueltos()",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L1017"
-    },
-    {
       "id": "etl_transform_common_extract_single_xlsx",
       "label": "extract_single_xlsx()",
       "_callable": true,
@@ -1731,6 +1311,18 @@
       "norm_label": "normalize_banco()",
       "source_file": "etl/transform/common.py",
       "source_location": "L59"
+    },
+    {
+      "id": "etl_transform_common_normalize_provincia",
+      "label": "normalize_provincia()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "parse_depositos_file",
+      "file_type": "code",
+      "norm_label": "normalize_provincia()",
+      "source_file": "etl/transform/common.py",
+      "source_location": "L63"
     },
     {
       "id": "etl_transform_common_normalize_text",
@@ -2117,18 +1709,6 @@
       "source_location": "L109"
     },
     {
-      "id": "etl_transform_common_normalize_provincia",
-      "label": "normalize_provincia()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "resolver_canton_bce",
-      "file_type": "code",
-      "norm_label": "normalize_provincia()",
-      "source_file": "etl/transform/common.py",
-      "source_location": "L63"
-    },
-    {
       "id": "tests_test_canton_matching_test_acentos_se_normalizan_igual_que_normalize_provincia",
       "label": "test_acentos_se_normalizan_igual_que_normalize_provincia()",
       "_callable": true,
@@ -2357,12 +1937,252 @@
       "source_location": "L90"
     },
     {
+      "id": "etl_load_load_postgres_clean",
+      "label": "_clean()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "_clean()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L59"
+    },
+    {
+      "id": "etl_load_load_postgres_copy_rows",
+      "label": "_copy_rows()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "_copy_rows()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L265"
+    },
+    {
+      "id": "etl_load_load_postgres_get_connection",
+      "label": "get_connection()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "get_connection()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L32"
+    },
+    {
+      "id": "etl_load_load_postgres_insert_dim_cuenta_contable_seps",
+      "label": "insert_dim_cuenta_contable_seps()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "insert_dim_cuenta_contable_seps()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L527"
+    },
+    {
+      "id": "etl_load_load_postgres_is_source_loaded",
+      "label": "is_source_loaded()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "is_source_loaded()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L36"
+    },
+    {
+      "id": "etl_load_load_postgres_load_banco_maestro_seed",
+      "label": "load_banco_maestro_seed()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "load_banco_maestro_seed()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L121"
+    },
+    {
+      "id": "etl_load_load_postgres_load_raw",
+      "label": "load_raw()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "load_raw()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L65"
+    },
+    {
+      "id": "etl_load_load_postgres_load_raw_bce",
+      "label": "load_raw_bce()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "load_raw_bce()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L277"
+    },
+    {
+      "id": "etl_load_load_postgres_load_raw_boletin",
+      "label": "load_raw_boletin()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "load_raw_boletin()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L556"
+    },
+    {
+      "id": "etl_load_load_postgres_load_raw_tasas_referenciales",
+      "label": "load_raw_tasas_referenciales()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "load_raw_tasas_referenciales()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L383"
+    },
+    {
+      "id": "etl_load_load_postgres_log_bancos_no_resueltos",
+      "label": "_log_bancos_no_resueltos()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "_log_bancos_no_resueltos()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L1090"
+    },
+    {
+      "id": "etl_load_load_postgres_log_cantones_no_resueltos",
+      "label": "_log_cantones_no_resueltos()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "_log_cantones_no_resueltos()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L1017"
+    },
+    {
+      "id": "etl_load_load_postgres_refresh_marts",
+      "label": "refresh_marts()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "refresh_marts()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L1130"
+    },
+    {
+      "id": "etl_load_load_postgres_register_source_file",
+      "label": "register_source_file()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "register_source_file()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L45"
+    },
+    {
+      "id": "etl_load_load_postgres_truncate_staging_bce",
+      "label": "truncate_staging_bce()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "truncate_staging_bce()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L439"
+    },
+    {
+      "id": "etl_load_load_postgres_upsert_banco_maestro_ruc",
+      "label": "upsert_banco_maestro_ruc()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "upsert_banco_maestro_ruc()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L87"
+    },
+    {
+      "id": "etl_load_load_postgres_upsert_bce_via_temp",
+      "label": "_upsert_bce_via_temp()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "_upsert_bce_via_temp()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L299"
+    },
+    {
+      "id": "etl_load_load_postgres_upsert_boletin_via_temp",
+      "label": "_upsert_boletin_via_temp()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "_upsert_boletin_via_temp()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L576"
+    },
+    {
+      "id": "etl_load_load_postgres_upsert_dim_cuenta_contable",
+      "label": "upsert_dim_cuenta_contable()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "upsert_dim_cuenta_contable()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L493"
+    },
+    {
+      "id": "etl_load_load_postgres_upsert_staging_bce_tasas_activas",
+      "label": "upsert_staging_bce_tasas_activas()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "upsert_staging_bce_tasas_activas()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L478"
+    },
+    {
       "id": "etl_load_load_postgres_upsert_staging_bce_tasas_pasivas",
       "label": "upsert_staging_bce_tasas_pasivas()",
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "upsert_staging_bce_tasas_pasivas()",
       "source_file": "etl/load/load_postgres.py",
@@ -2374,11 +2194,179 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "upsert_staging_boletin_balance()",
       "source_file": "etl/load/load_postgres.py",
       "source_location": "L622"
+    },
+    {
+      "id": "etl_load_load_postgres_upsert_staging_boletin_pyg",
+      "label": "upsert_staging_boletin_pyg()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "upsert_staging_boletin_pyg()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L628"
+    },
+    {
+      "id": "etl_load_load_postgres_upsert_staging_cartera",
+      "label": "upsert_staging_cartera()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "upsert_staging_cartera()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L153"
+    },
+    {
+      "id": "etl_load_load_postgres_upsert_staging_depositos",
+      "label": "upsert_staging_depositos()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "upsert_staging_depositos()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L201"
+    },
+    {
+      "id": "etl_load_load_postgres_upsert_staging_tasas_referenciales",
+      "label": "upsert_staging_tasas_referenciales()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "upsert_staging_tasas_referenciales()",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L407"
+    },
+    {
+      "id": "etl_pipeline_load_bce",
+      "label": "load_bce()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "load_bce()",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L200"
+    },
+    {
+      "id": "etl_pipeline_load_boletin",
+      "label": "load_boletin()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "load_boletin()",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L410"
+    },
+    {
+      "id": "etl_pipeline_load_seps",
+      "label": "load_seps()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "load_seps()",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L127"
+    },
+    {
+      "id": "etl_pipeline_load_tasas_historicas",
+      "label": "load_tasas_historicas()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "load_tasas_historicas()",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L325"
+    },
+    {
+      "id": "etl_pipeline_load_years",
+      "label": "load_years()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "load_years()",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L73"
+    },
+    {
+      "id": "etl_pipeline_main",
+      "label": "main()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "main()",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L465"
+    },
+    {
+      "id": "etl_pipeline_reprocess_bce_staging",
+      "label": "reprocess_bce_staging()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "reprocess_bce_staging()",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L256"
+    },
+    {
+      "id": "etl_transform_common_sha256_file",
+      "label": "sha256_file()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "sha256_file()",
+      "source_file": "etl/transform/common.py",
+      "source_location": "L18"
+    },
+    {
+      "id": "tests_test_common_test_sha256_file_is_content_sensitive",
+      "label": "test_sha256_file_is_content_sensitive()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "test_sha256_file_is_content_sensitive()",
+      "source_file": "tests/test_common.py",
+      "source_location": "L13"
+    },
+    {
+      "id": "tests_test_common_test_sha256_file_is_deterministic",
+      "label": "test_sha256_file_is_deterministic()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "test_sha256_file_is_deterministic()",
+      "source_file": "tests/test_common.py",
+      "source_location": "L6"
     },
     {
       "id": "tests_test_integration_regressions_bce_tasas_pasivas_row",
@@ -2386,7 +2374,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "_bce_tasas_pasivas_row()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2398,7 +2386,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "_boletin_balance_row()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2410,7 +2398,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "_cleanup_bce_tasas_pasivas()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2422,7 +2410,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "_cleanup_boletin_balance()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2434,7 +2422,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "_dim_canton_insert_statement()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2446,7 +2434,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "_fact_saldo_cartera_pivot_statement()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2458,7 +2446,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_bce_canton_auto_ingresado_end_to_end()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2470,7 +2458,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_dim_plazo_null_safe_unique_regression()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2482,7 +2470,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_fact_saldo_cartera_pivot_invariant()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2494,7 +2482,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_source_file_hash_gate()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2506,7 +2494,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_staging_cantones_homonimos_no_colisionan_regression()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2518,7 +2506,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_staging_cartera_canton_null_safe_unique_regression()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2530,7 +2518,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_staging_depositos_canton_null_safe_unique_regression()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2542,7 +2530,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_upsert_staging_bce_tasas_pasivas_temp_table_on_commit_drop()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2554,7 +2542,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_upsert_staging_bce_tasas_pasivas_temp_table_real_update()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2566,7 +2554,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_upsert_staging_bce_tasas_pasivas_temp_table_row_count_and_cdc_no_op()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2578,7 +2566,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_upsert_staging_boletin_balance_temp_table_real_update()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2590,7 +2578,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_upsert_staging_boletin_balance_temp_table_row_count_and_cdc_no_op()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2602,7 +2590,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_upsert_staging_cartera_round_trip_cdc_no_op()",
       "source_file": "tests/test_integration_regressions.py",
@@ -2775,18 +2763,6 @@
       "norm_label": "resolver_entidad_bce()",
       "source_file": "etl/transform/banco_matching.py",
       "source_location": "L225"
-    },
-    {
-      "id": "etl_transform_banco_matching_resolver_entidad_seps",
-      "label": "resolver_entidad_seps()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "test_banco_matching.py",
-      "file_type": "code",
-      "norm_label": "resolver_entidad_seps()",
-      "source_file": "etl/transform/banco_matching.py",
-      "source_location": "L284"
     },
     {
       "id": "etl_transform_banco_matching_ruc_digito_verificador_modulo11",
@@ -3029,18 +3005,6 @@
       "source_location": "L120"
     },
     {
-      "id": "tests_test_parse_seps_test_resolver_entidad_seps_reusa_llave_bce_y_rellena_ruc_numerico",
-      "label": "test_resolver_entidad_seps_reusa_llave_bce_y_rellena_ruc_numerico()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "test_banco_matching.py",
-      "file_type": "code",
-      "norm_label": "test_resolver_entidad_seps_reusa_llave_bce_y_rellena_ruc_numerico()",
-      "source_file": "tests/test_parse_seps.py",
-      "source_location": "L84"
-    },
-    {
       "id": "etl_transform_bce_plazo_matching_validar_rango_plazo",
       "label": "validar_rango_plazo()",
       "_callable": true,
@@ -3063,6 +3027,30 @@
       "norm_label": "resolver_categoria_deposito()",
       "source_file": "etl/transform/categoria_deposito_matching.py",
       "source_location": "L62"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching_resolver_categoria_deposito_seps",
+      "label": "resolver_categoria_deposito_seps()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "test_parse_tasas_historicas.py",
+      "file_type": "code",
+      "norm_label": "resolver_categoria_deposito_seps()",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L108"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching_sin_tildes",
+      "label": "_sin_tildes()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "test_parse_tasas_historicas.py",
+      "file_type": "code",
+      "norm_label": "_sin_tildes()",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L99"
     },
     {
       "id": "etl_transform_parse_tasas_historicas_categoria_label",
@@ -3279,6 +3267,18 @@
       "norm_label": "test_unresolved_value_raises()",
       "source_file": "tests/test_categoria_deposito_matching.py",
       "source_location": "L48"
+    },
+    {
+      "id": "tests_test_parse_seps_test_categoria_deposito_seps_sin_tildes_a_canonica",
+      "label": "test_categoria_deposito_seps_sin_tildes_a_canonica()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "test_parse_tasas_historicas.py",
+      "file_type": "code",
+      "norm_label": "test_categoria_deposito_seps_sin_tildes_a_canonica()",
+      "source_file": "tests/test_parse_seps.py",
+      "source_location": "L99"
     },
     {
       "id": "tests_test_parse_tasas_historicas_test_categoria_alias_armoniza_tarjetahabientes",
@@ -7464,14 +7464,14 @@
       "source_location": "L1"
     },
     {
-      "id": "docs_fuentes_datos_1_1_banca_p\u00fablica_capcol_instituciones_publicas_dise\u00f1o_confirmado_esquema_ya_soporta_la_carga_2026_09_01",
-      "label": "1.1 Banca P\u00fablica (`capcol-instituciones-publicas/`) \u2014 \u2705 dise\u00f1o confirmado, esquema ya soporta la carga (2026-09-01)",
+      "id": "docs_fuentes_datos_1_1_banca_p\u00fablica_capcol_instituciones_publicas_cargada_2021_2025_2026_10_01",
+      "label": "1.1 Banca P\u00fablica (`capcol-instituciones-publicas/`) \u2014 \u2705 cargada 2021-2025 (2026-10-01)",
       "_origin": "ast",
       "community": 111,
       "community_name": "4. SEPS \u2014 Cooperativas de Ahorro y Cr\u00e9dito + Mutualistas de Vivienda \u2014 \u2705 **implementada y cargada 2021-2025 (2026-09-30)**",
       "file_type": "document",
       "node_kind": "heading",
-      "norm_label": "1.1 banca publica (`capcol-instituciones-publicas/`) \u2014 \u2705 diseno confirmado, esquema ya soporta la carga (2026-09-01)",
+      "norm_label": "1.1 banca publica (`capcol-instituciones-publicas/`) \u2014 \u2705 cargada 2021-2025 (2026-10-01)",
       "source_file": "docs/fuentes_datos.md",
       "source_location": "L23"
     },
@@ -7497,7 +7497,7 @@
       "node_kind": "heading",
       "norm_label": "2.1 `tsp_desde_200801.zip` (tasas pasivas / captaciones)",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L221"
+      "source_location": "L234"
     },
     {
       "id": "docs_fuentes_datos_2_2_tsa_desde_200801_zip_tasas_activas_colocaciones_confirmado",
@@ -7509,7 +7509,7 @@
       "node_kind": "heading",
       "norm_label": "2.2 `tsa_desde_200801.zip` (tasas activas / colocaciones) \u2014 \u2705 confirmado",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L254"
+      "source_location": "L267"
     },
     {
       "id": "docs_fuentes_datos_2_3_tasas_m\u00e1ximas_y_referenciales_por_segmento_tasashistorico_htm_cargado_paso_4",
@@ -7521,7 +7521,7 @@
       "node_kind": "heading",
       "norm_label": "2.3 tasas maximas y referenciales por segmento (`tasashistorico.htm`) \u2014 \u2705 cargado (paso 4)",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L311"
+      "source_location": "L324"
     },
     {
       "id": "docs_fuentes_datos_2_4_mapeo_razon_social_ruc_bce_banco_capcol_marts_dim_banco_investigado",
@@ -7533,7 +7533,7 @@
       "node_kind": "heading",
       "norm_label": "2.4 mapeo `razon_social`/`ruc` (bce) \u2194 `banco` (capcol/`marts.dim_banco`) \u2014 investigado",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L360"
+      "source_location": "L373"
     },
     {
       "id": "docs_fuentes_datos_2_bce_tasas_de_inter\u00e9s_activas_y_pasivas_semanal_en_investigaci\u00f3n",
@@ -7545,7 +7545,7 @@
       "node_kind": "heading",
       "norm_label": "2. bce \u2014 tasas de interes activas y pasivas (semanal) \u2014 \ud83d\udd0e en investigacion",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L195"
+      "source_location": "L208"
     },
     {
       "id": "docs_fuentes_datos_3_1_hoja_balance_1399_filas_x_35_columnas",
@@ -7557,7 +7557,7 @@
       "node_kind": "heading",
       "norm_label": "3.1 hoja `balance` (1399 filas x 35 columnas)",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L428"
+      "source_location": "L441"
     },
     {
       "id": "docs_fuentes_datos_3_2_hoja_pyg_143_filas_x_36_columnas",
@@ -7569,7 +7569,7 @@
       "node_kind": "heading",
       "norm_label": "3.2 hoja `pyg` (143 filas x 36 columnas)",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L463"
+      "source_location": "L476"
     },
     {
       "id": "docs_fuentes_datos_3_3_hallazgo_de_alto_valor_hojas_rk_e_indicadores_no_pedidas_originalmente_pero_muy_relevantes",
@@ -7581,7 +7581,7 @@
       "node_kind": "heading",
       "norm_label": "3.3 hallazgo de alto valor: hojas `rk` e `indicadores` (no pedidas originalmente, pero muy relevantes)",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L470"
+      "source_location": "L483"
     },
     {
       "id": "docs_fuentes_datos_3_superbancos_bolet\u00edn_financiero_mensual_balance_y_pyg_estructura_confirmada",
@@ -7593,7 +7593,7 @@
       "node_kind": "heading",
       "norm_label": "3. superbancos \u2014 boletin financiero mensual (balance y pyg) \u2014 \u2705 estructura confirmada",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L410"
+      "source_location": "L423"
     },
     {
       "id": "docs_fuentes_datos_4_0_revisi\u00f3n_con_archivos_reales_2025_2026_09_29_reemplaza_4_1_4_4_donde_se_contradicen",
@@ -7605,7 +7605,7 @@
       "node_kind": "heading",
       "norm_label": "4.0 revision con archivos reales 2025 (2026-09-29) \u2014 **reemplaza 4.1-4.4 donde se contradicen**",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L512"
+      "source_location": "L525"
     },
     {
       "id": "docs_fuentes_datos_4_1_estructura_de_archivos",
@@ -7617,7 +7617,7 @@
       "node_kind": "heading",
       "norm_label": "4.1 estructura de archivos",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L743"
+      "source_location": "L756"
     },
     {
       "id": "docs_fuentes_datos_4_2_grano_y_conformidad_decisi\u00f3n_clave_2_fuentes_2_formas_de_negocio_distintas",
@@ -7629,7 +7629,7 @@
       "node_kind": "heading",
       "norm_label": "4.2 grano y conformidad \u2014 decision clave: 2 fuentes, 2 formas de negocio distintas",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L759"
+      "source_location": "L772"
     },
     {
       "id": "docs_fuentes_datos_4_3_identidad_de_entidad_ruc_nativo_en_el_archivo_mismo_patr\u00f3n_ruc_que_bce",
@@ -7641,7 +7641,7 @@
       "node_kind": "heading",
       "norm_label": "4.3 identidad de entidad \u2014 ruc nativo en el archivo, mismo patron ruc que bce",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L865"
+      "source_location": "L878"
     },
     {
       "id": "docs_fuentes_datos_4_4_nuevas_tablas_propuestas_ninguna_aplicada_dise\u00f1o_para_una_migraci\u00f3n_futura",
@@ -7653,7 +7653,7 @@
       "node_kind": "heading",
       "norm_label": "4.4 nuevas tablas propuestas (ninguna aplicada \u2014 diseno para una migracion futura)",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L915"
+      "source_location": "L928"
     },
     {
       "id": "docs_fuentes_datos_4_5_portabilidad_de_ingesta_seps_es_m\u00e1s_simple_que_capcol_no_m\u00e1s_compleja",
@@ -7665,7 +7665,7 @@
       "node_kind": "heading",
       "norm_label": "4.5 portabilidad de ingesta \u2014 seps es mas simple que capcol, no mas compleja",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L1012"
+      "source_location": "L1025"
     },
     {
       "id": "docs_fuentes_datos_4_6_fases_de_implementaci\u00f3n_qu\u00e9_queda_para_despu\u00e9s",
@@ -7677,7 +7677,7 @@
       "node_kind": "heading",
       "norm_label": "4.6 fases de implementacion \u2014 que queda para despues",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L1024"
+      "source_location": "L1037"
     },
     {
       "id": "docs_fuentes_datos_4_seps_cooperativas_de_ahorro_y_cr\u00e9dito_mutualistas_de_vivienda_implementada_y_cargada_2021_2025_2026_09_30",
@@ -7689,7 +7689,7 @@
       "node_kind": "heading",
       "norm_label": "4. seps \u2014 cooperativas de ahorro y credito + mutualistas de vivienda \u2014 \u2705 **implementada y cargada 2021-2025 (2026-09-30)**",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L510"
+      "source_location": "L523"
     },
     {
       "id": "docs_fuentes_datos_bug_encontrado_en_el_pipeline_ya_existente_no_relacionado_a_bce_pero_descubierto_durante_esta_comparaci\u00f3n",
@@ -7701,7 +7701,7 @@
       "node_kind": "heading",
       "norm_label": "\ud83d\udc1b bug encontrado en el pipeline ya existente (no relacionado a bce, pero descubierto durante esta comparacion)",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L381"
+      "source_location": "L394"
     },
     {
       "id": "docs_fuentes_datos_cat\u00e1logo_de_fuentes_de_datos",
@@ -7725,7 +7725,7 @@
       "node_kind": "heading",
       "norm_label": "preguntas abiertas antes de disenar el modelo bce",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L401"
+      "source_location": "L414"
     },
     {
       "id": "docs_fuentes_datos_pr\u00f3ximos_pasos_de_investigaci\u00f3n_en_orden",
@@ -7737,7 +7737,7 @@
       "node_kind": "heading",
       "norm_label": "proximos pasos de investigacion (en orden)",
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L1051"
+      "source_location": "L1064"
     },
     {
       "id": "docs_linaje_datos",
@@ -7994,7 +7994,7 @@
       "node_kind": "heading",
       "norm_label": "estado del proyecto",
       "source_file": "README.md",
-      "source_location": "L199"
+      "source_location": "L200"
     },
     {
       "id": "readme_estructura",
@@ -9654,15 +9654,15 @@
       "source_location": "L1"
     },
     {
-      "id": "etl_transform_categoria_deposito_matching_rationale_109",
-      "label": "SEPS escribe las categor\u00edas sin tilde ('DEPOSITOS A LA VISTA', 'DEPOSITOS DE\u2026",
+      "id": "etl_transform_banco_matching_rationale_287",
+      "label": "Resuelve una entidad SEPS (cooperativa, mutualista o entidad de segundo piso) a\u2026",
       "_origin": "ast",
       "community": 137,
       "community_name": "parse_seps.py",
       "file_type": "rationale",
-      "norm_label": "seps escribe las categorias sin tilde ('depositos a la vista', 'depositos de...",
-      "source_file": "etl/transform/categoria_deposito_matching.py",
-      "source_location": "L109"
+      "norm_label": "resuelve una entidad seps (cooperativa, mutualista o entidad de segundo piso) a...",
+      "source_file": "etl/transform/banco_matching.py",
+      "source_location": "L287"
     },
     {
       "id": "etl_transform_parse_seps_rationale_1",
@@ -10358,237 +10358,6 @@
       "source_location": null
     },
     {
-      "id": "connection",
-      "label": "Connection",
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "connection",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_pipeline",
-      "label": "pipeline.py",
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "pipeline.py",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_pipeline_py_path",
-      "label": "Path",
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "code",
-      "norm_label": "path",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_load_load_postgres_rationale_440",
-      "label": "Vac\u00eda staging.bce_tasas_pasivas/activas -- necesario \u00daNICAMENTE para el\u2026",
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "vacia staging.bce_tasas_pasivas/activas -- necesario unicamente para el...",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L440"
-    },
-    {
-      "id": "etl_load_load_postgres_rationale_88",
-      "label": "Registra el RUC de TODAS las entidades resueltas por BCE (bancos privados\u2026",
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "registra el ruc de todas las entidades resueltas por bce (bancos privados...",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L88"
-    },
-    {
-      "id": "etl_pipeline_rationale_1",
-      "label": "Orquestador end-to-end: extract (Playwright) -> transform (parsers) -> load\u2026",
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "orquestador end-to-end: extract (playwright) -> transform (parsers) -> load...",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_pipeline_rationale_130",
-      "label": "SEPS (cooperativas S1-S3 + mutualistas): descarga directa + 3 reportes por a\u00f1o\u2026",
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "seps (cooperativas s1-s3 + mutualistas): descarga directa + 3 reportes por ano...",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L130"
-    },
-    {
-      "id": "etl_pipeline_rationale_201",
-      "label": "BCE tsp/tsa: descarga directa (sin Playwright), un solo archivo cada uno con\u2026",
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "bce tsp/tsa: descarga directa (sin playwright), un solo archivo cada uno con...",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L201"
-    },
-    {
-      "id": "etl_pipeline_rationale_257",
-      "label": "Backfill de sql/28_bce_canton_grain.sql (cambio de grano provincia -> cant\u00f3n,\u2026",
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "backfill de sql/28_bce_canton_grain.sql (cambio de grano provincia -> canton,...",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L257"
-    },
-    {
-      "id": "etl_pipeline_rationale_326",
-      "label": "TasasHistorico.htm: a diferencia de tsp/tsa (un solo archivo acumulativo), ac\u00e1\u2026",
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "tasashistorico.htm: a diferencia de tsp/tsa (un solo archivo acumulativo), aca...",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L326"
-    },
-    {
-      "id": "etl_pipeline_rationale_411",
-      "label": "Bolet\u00edn Financiero Mensual: un archivo .zip por mes (nombre con mes en\u2026",
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "boletin financiero mensual: un archivo .zip por mes (nombre con mes en...",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L411"
-    },
-    {
-      "id": "etl_pipeline_rationale_78",
-      "label": "tipo_entidad de cada fila lo fija el sub-portal CAPCOL de donde vino el archivo\u2026",
-      "_origin": "ast",
-      "community": 142,
-      "community_name": "pipeline.py",
-      "file_type": "rationale",
-      "norm_label": "tipo_entidad de cada fila lo fija el sub-portal capcol de donde vino el archivo...",
-      "source_file": "etl/pipeline.py",
-      "source_location": "L78"
-    },
-    {
-      "id": "etl_load_load_postgres",
-      "label": "load_postgres.py",
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "load_postgres.py",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_load_load_postgres_py_dataframe",
-      "label": "DataFrame",
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "code",
-      "norm_label": "dataframe",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_load_load_postgres_rationale_1",
-      "label": "Carga idempotente a Postgres: raw (JSONB tal cual) -> staging (tipado) -> marts\u2026",
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "rationale",
-      "norm_label": "carga idempotente a postgres: raw (jsonb tal cual) -> staging (tipado) -> marts...",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "etl_load_load_postgres_rationale_266",
-      "label": "COPY es ~10-100x m\u00e1s r\u00e1pido que executemany para los vol\u00famenes de BCE (cientos\u2026",
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "rationale",
-      "norm_label": "copy es ~10-100x mas rapido que executemany para los volumenes de bce (cientos...",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L266"
-    },
-    {
-      "id": "etl_load_load_postgres_rationale_302",
-      "label": "COPY a una tabla temporal (misma sesi\u00f3n, se descarta sola) y de ah\u00ed INSERT ...\u2026",
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "rationale",
-      "norm_label": "copy a una tabla temporal (misma sesion, se descarta sola) y de ahi insert ......",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L302"
-    },
-    {
-      "id": "etl_load_load_postgres_rationale_384",
-      "label": "Volumen peque\u00f1o (~40 filas/mes x ~222 meses -- miles, no millones), executemany\u2026",
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "rationale",
-      "norm_label": "volumen pequeno (~40 filas/mes x ~222 meses -- miles, no millones), executemany...",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L384"
-    },
-    {
-      "id": "etl_load_load_postgres_rationale_494",
-      "label": "Plan de cuentas descubierto en cada archivo del Bolet\u00edn -- volumen peque\u00f1o\u2026",
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "rationale",
-      "norm_label": "plan de cuentas descubierto en cada archivo del boletin -- volumen pequeno...",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L494"
-    },
-    {
-      "id": "etl_load_load_postgres_rationale_528",
-      "label": "Plan de cuentas de la SEPS (mismo Cat\u00e1logo \u00danico que Superbancos: 1.063 de\u2026",
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "rationale",
-      "norm_label": "plan de cuentas de la seps (mismo catalogo unico que superbancos: 1.063 de...",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L528"
-    },
-    {
-      "id": "etl_load_load_postgres_rationale_60",
-      "label": "pandas usa NaN para valores faltantes incluso en columnas de texto; json.dumps\u2026",
-      "_origin": "ast",
-      "community": 143,
-      "community_name": "load_postgres.py",
-      "file_type": "rationale",
-      "norm_label": "pandas usa nan para valores faltantes incluso en columnas de texto; json.dumps...",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L60"
-    },
-    {
       "id": "marts_dim_banco",
       "label": "marts.dim_banco",
       "_origin": "ast",
@@ -10609,61 +10378,6 @@
       "norm_label": "29_dim_banco_tipo_segundo_piso.sql",
       "source_file": "sql/29_dim_banco_tipo_segundo_piso.sql",
       "source_location": null
-    },
-    {
-      "id": "tests_test_common",
-      "label": "test_common.py",
-      "_origin": "ast",
-      "community": 146,
-      "community_name": "sha256_file",
-      "file_type": "code",
-      "norm_label": "test_common.py",
-      "source_file": "tests/test_common.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "tests_test_common_py_path",
-      "label": "Path",
-      "_origin": "ast",
-      "community": 146,
-      "community_name": "sha256_file",
-      "file_type": "code",
-      "norm_label": "path",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "etl_load_load_postgres_rationale_122",
-      "label": "Siembra staging.banco_maestro desde etl/seeds/banco_maestro.csv -- el nombre a\u2026",
-      "_origin": "ast",
-      "community": 147,
-      "community_name": "load_banco_maestro_seed",
-      "file_type": "rationale",
-      "norm_label": "siembra staging.banco_maestro desde etl/seeds/banco_maestro.csv -- el nombre a...",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L122"
-    },
-    {
-      "id": "etl_load_load_postgres_rationale_1091",
-      "label": "Los INSERT de fact_saldo_cartera/fact_saldo_depositos hacen INNER JOIN contra\u2026",
-      "_origin": "ast",
-      "community": 148,
-      "community_name": "_log_bancos_no_resueltos",
-      "file_type": "rationale",
-      "norm_label": "los insert de fact_saldo_cartera/fact_saldo_depositos hacen inner join contra...",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L1091"
-    },
-    {
-      "id": "etl_load_load_postgres_rationale_1018",
-      "label": "El INSERT de marts.dim_canton en _REFRESH_MARTS_SQL usa un INNER JOIN contra\u2026",
-      "_origin": "ast",
-      "community": 149,
-      "community_name": "_log_cantones_no_resueltos",
-      "file_type": "rationale",
-      "norm_label": "el insert de marts.dim_canton en _refresh_marts_sql usa un inner join contra...",
-      "source_file": "etl/load/load_postgres.py",
-      "source_location": "L1018"
     },
     {
       "id": "powerbi_benchmark_cartera_depositos_report_definition_pages_page_overview_visuals_v01kpisaldocartera_visual",
@@ -11788,6 +11502,17 @@
       "source_location": "L44"
     },
     {
+      "id": "etl_transform_common_rationale_64",
+      "label": "CAPCOL escribe provincias sin tilde (BOLIVAR, GALAPAGOS, LOS RIOS...) pero S\u00cd\u2026",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "parse_depositos_file",
+      "file_type": "rationale",
+      "norm_label": "capcol escribe provincias sin tilde (bolivar, galapagos, los rios...) pero si...",
+      "source_file": "etl/transform/common.py",
+      "source_location": "L64"
+    },
+    {
       "id": "etl_transform_common_rationale_88",
       "label": "Las fechas del origen ya vienen como fin de mes (ej. 31/01/2024); se normaliza\u2026",
       "_origin": "ast",
@@ -11995,17 +11720,6 @@
       "norm_label": "mismo criterio de acentos que `normalize_provincia()` (quita solo el acento...",
       "source_file": "etl/transform/canton_matching.py",
       "source_location": "L97"
-    },
-    {
-      "id": "etl_transform_common_rationale_64",
-      "label": "CAPCOL escribe provincias sin tilde (BOLIVAR, GALAPAGOS, LOS RIOS...) pero S\u00cd\u2026",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "resolver_canton_bce",
-      "file_type": "rationale",
-      "norm_label": "capcol escribe provincias sin tilde (bolivar, galapagos, los rios...) pero si...",
-      "source_file": "etl/transform/common.py",
-      "source_location": "L64"
     },
     {
       "id": "tests_test_canton_matching_rationale_105",
@@ -12294,13 +12008,90 @@
       "source_location": "L38"
     },
     {
+      "id": "connection",
+      "label": "Connection",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "connection",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "etl_load_load_postgres",
+      "label": "load_postgres.py",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "load_postgres.py",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_load_load_postgres_py_dataframe",
+      "label": "DataFrame",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "dataframe",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "etl_pipeline",
+      "label": "pipeline.py",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "pipeline.py",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_pipeline_py_path",
+      "label": "Path",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "path",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "integration",
       "label": "integration",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "integration",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "tests_test_common",
+      "label": "test_common.py",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "test_common.py",
+      "source_file": "tests/test_common.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_test_common_py_path",
+      "label": "Path",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "code",
+      "norm_label": "path",
       "source_file": "",
       "source_location": ""
     },
@@ -12309,18 +12100,227 @@
       "label": "test_integration_regressions.py",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "code",
       "norm_label": "test_integration_regressions.py",
       "source_file": "tests/test_integration_regressions.py",
       "source_location": "L1"
     },
     {
+      "id": "etl_load_load_postgres_rationale_1",
+      "label": "Carga idempotente a Postgres: raw (JSONB tal cual) -> staging (tipado) -> marts\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "carga idempotente a postgres: raw (jsonb tal cual) -> staging (tipado) -> marts...",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_load_load_postgres_rationale_1018",
+      "label": "El INSERT de marts.dim_canton en _REFRESH_MARTS_SQL usa un INNER JOIN contra\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "el insert de marts.dim_canton en _refresh_marts_sql usa un inner join contra...",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L1018"
+    },
+    {
+      "id": "etl_load_load_postgres_rationale_1091",
+      "label": "Los INSERT de fact_saldo_cartera/fact_saldo_depositos hacen INNER JOIN contra\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "los insert de fact_saldo_cartera/fact_saldo_depositos hacen inner join contra...",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L1091"
+    },
+    {
+      "id": "etl_load_load_postgres_rationale_122",
+      "label": "Siembra staging.banco_maestro desde etl/seeds/banco_maestro.csv -- el nombre a\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "siembra staging.banco_maestro desde etl/seeds/banco_maestro.csv -- el nombre a...",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L122"
+    },
+    {
+      "id": "etl_load_load_postgres_rationale_266",
+      "label": "COPY es ~10-100x m\u00e1s r\u00e1pido que executemany para los vol\u00famenes de BCE (cientos\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "copy es ~10-100x mas rapido que executemany para los volumenes de bce (cientos...",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L266"
+    },
+    {
+      "id": "etl_load_load_postgres_rationale_302",
+      "label": "COPY a una tabla temporal (misma sesi\u00f3n, se descarta sola) y de ah\u00ed INSERT ...\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "copy a una tabla temporal (misma sesion, se descarta sola) y de ahi insert ......",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L302"
+    },
+    {
+      "id": "etl_load_load_postgres_rationale_384",
+      "label": "Volumen peque\u00f1o (~40 filas/mes x ~222 meses -- miles, no millones), executemany\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "volumen pequeno (~40 filas/mes x ~222 meses -- miles, no millones), executemany...",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L384"
+    },
+    {
+      "id": "etl_load_load_postgres_rationale_440",
+      "label": "Vac\u00eda staging.bce_tasas_pasivas/activas -- necesario \u00daNICAMENTE para el\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "vacia staging.bce_tasas_pasivas/activas -- necesario unicamente para el...",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L440"
+    },
+    {
+      "id": "etl_load_load_postgres_rationale_494",
+      "label": "Plan de cuentas descubierto en cada archivo del Bolet\u00edn -- volumen peque\u00f1o\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "plan de cuentas descubierto en cada archivo del boletin -- volumen pequeno...",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L494"
+    },
+    {
+      "id": "etl_load_load_postgres_rationale_528",
+      "label": "Plan de cuentas de la SEPS (mismo Cat\u00e1logo \u00danico que Superbancos: 1.063 de\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "plan de cuentas de la seps (mismo catalogo unico que superbancos: 1.063 de...",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L528"
+    },
+    {
+      "id": "etl_load_load_postgres_rationale_60",
+      "label": "pandas usa NaN para valores faltantes incluso en columnas de texto; json.dumps\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "pandas usa nan para valores faltantes incluso en columnas de texto; json.dumps...",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L60"
+    },
+    {
+      "id": "etl_load_load_postgres_rationale_88",
+      "label": "Registra el RUC de TODAS las entidades resueltas por BCE (bancos privados\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "registra el ruc de todas las entidades resueltas por bce (bancos privados...",
+      "source_file": "etl/load/load_postgres.py",
+      "source_location": "L88"
+    },
+    {
+      "id": "etl_pipeline_rationale_1",
+      "label": "Orquestador end-to-end: extract (Playwright) -> transform (parsers) -> load\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "orquestador end-to-end: extract (playwright) -> transform (parsers) -> load...",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "etl_pipeline_rationale_130",
+      "label": "SEPS (cooperativas S1-S3 + mutualistas): descarga directa + 3 reportes por a\u00f1o\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "seps (cooperativas s1-s3 + mutualistas): descarga directa + 3 reportes por ano...",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L130"
+    },
+    {
+      "id": "etl_pipeline_rationale_201",
+      "label": "BCE tsp/tsa: descarga directa (sin Playwright), un solo archivo cada uno con\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "bce tsp/tsa: descarga directa (sin playwright), un solo archivo cada uno con...",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L201"
+    },
+    {
+      "id": "etl_pipeline_rationale_257",
+      "label": "Backfill de sql/28_bce_canton_grain.sql (cambio de grano provincia -> cant\u00f3n,\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "backfill de sql/28_bce_canton_grain.sql (cambio de grano provincia -> canton,...",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L257"
+    },
+    {
+      "id": "etl_pipeline_rationale_326",
+      "label": "TasasHistorico.htm: a diferencia de tsp/tsa (un solo archivo acumulativo), ac\u00e1\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "tasashistorico.htm: a diferencia de tsp/tsa (un solo archivo acumulativo), aca...",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L326"
+    },
+    {
+      "id": "etl_pipeline_rationale_411",
+      "label": "Bolet\u00edn Financiero Mensual: un archivo .zip por mes (nombre con mes en\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "boletin financiero mensual: un archivo .zip por mes (nombre con mes en...",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L411"
+    },
+    {
+      "id": "etl_pipeline_rationale_78",
+      "label": "tipo_entidad de cada fila lo fija el sub-portal CAPCOL de donde vino el archivo\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "pipeline.py",
+      "file_type": "rationale",
+      "norm_label": "tipo_entidad de cada fila lo fija el sub-portal capcol de donde vino el archivo...",
+      "source_file": "etl/pipeline.py",
+      "source_location": "L78"
+    },
+    {
       "id": "tests_test_integration_regressions_rationale_1",
       "label": "Tests de integraci\u00f3n (@pytest.mark.integration): requieren Postgres real ya\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "tests de integracion (@pytest.mark.integration): requieren postgres real ya...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12331,7 +12331,7 @@
       "label": "Regresi\u00f3n de sql/24_fix_staging_depositos_canton_null_safe.sql: dos filas con\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "regresion de sql/24_fix_staging_depositos_canton_null_safe.sql: dos filas con...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12342,7 +12342,7 @@
       "label": "Regresi\u00f3n de sql/31_staging_natural_key_provincia.sql: BOL\u00cdVAR existe en Carchi\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "regresion de sql/31_staging_natural_key_provincia.sql: bolivar existe en carchi...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12353,7 +12353,7 @@
       "label": "Regresi\u00f3n de sql/21_fact_saldo_cartera_pivot.sql: 3 filas EAV-shape (por_vencer\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "regresion de sql/21_fact_saldo_cartera_pivot.sql: 3 filas eav-shape (por_vencer...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12364,7 +12364,7 @@
       "label": "Extrae, de la misma _REFRESH_MARTS_SQL que usa refresh_marts() en producci\u00f3n,\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "extrae, de la misma _refresh_marts_sql que usa refresh_marts() en produccion,...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12375,7 +12375,7 @@
       "label": "Cobertura de orquestaci\u00f3n (secci\u00f3n 2.3): round-trip real de\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "cobertura de orquestacion (seccion 2.3): round-trip real de...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12386,7 +12386,7 @@
       "label": "CDC invariante #1 (gate por hash de archivo, raw.source_files -- ver\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "cdc invariante #1 (gate por hash de archivo, raw.source_files -- ver...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12397,7 +12397,7 @@
       "label": "Cobertura end-to-end del two-tier de canton_matching.py (nivel 2, ver\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "cobertura end-to-end del two-tier de canton_matching.py (nivel 2, ver...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12408,7 +12408,7 @@
       "label": "Extrae, desde la misma constante _REFRESH_MARTS_SQL que usa refresh_marts() en\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "extrae, desde la misma constante _refresh_marts_sql que usa refresh_marts() en...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12419,7 +12419,7 @@
       "label": "Cobertura de orquestaci\u00f3n (secci\u00f3n 2.3): _upsert_bce_via_temp() v\u00eda\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "cobertura de orquestacion (seccion 2.3): _upsert_bce_via_temp() via...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12430,7 +12430,7 @@
       "label": "Cobertura de orquestaci\u00f3n (secci\u00f3n 2.3): un cambio real de valor\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "cobertura de orquestacion (seccion 2.3): un cambio real de valor...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12441,7 +12441,7 @@
       "label": "Verifica la promesa de `ON COMMIT DROP` en _upsert_bce_via_temp() (etl/load/\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "verifica la promesa de `on commit drop` en _upsert_bce_via_temp() (etl/load/...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12452,7 +12452,7 @@
       "label": "Mismo criterio que\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "mismo criterio que...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12463,7 +12463,7 @@
       "label": "Regresi\u00f3n de sql/10_fix_null_unique_constraints.sql: dos filas con la misma\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "regresion de sql/10_fix_null_unique_constraints.sql: dos filas con la misma...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12474,7 +12474,7 @@
       "label": "Un cambio real de saldo_usd a trav\u00e9s de _upsert_boletin_via_temp() S\u00cd dispara\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "un cambio real de saldo_usd a traves de _upsert_boletin_via_temp() si dispara...",
       "source_file": "tests/test_integration_regressions.py",
@@ -12485,7 +12485,7 @@
       "label": "Regresi\u00f3n de sql/23_fix_staging_cartera_canton_null_safe.sql: dos filas con la\u2026",
       "_origin": "ast",
       "community": 23,
-      "community_name": "test_integration_regressions.py",
+      "community_name": "pipeline.py",
       "file_type": "rationale",
       "norm_label": "regresion de sql/23_fix_staging_cartera_canton_null_safe.sql: dos filas con la...",
       "source_file": "tests/test_integration_regressions.py",
@@ -14345,17 +14345,6 @@
       "source_location": "L228"
     },
     {
-      "id": "etl_transform_banco_matching_rationale_287",
-      "label": "Resuelve una entidad SEPS (cooperativa, mutualista o entidad de segundo piso) a\u2026",
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "test_banco_matching.py",
-      "file_type": "rationale",
-      "norm_label": "resuelve una entidad seps (cooperativa, mutualista o entidad de segundo piso) a...",
-      "source_file": "etl/transform/banco_matching.py",
-      "source_location": "L287"
-    },
-    {
       "id": "etl_transform_banco_matching_rationale_38",
       "label": "El nombre de banco no resolvi\u00f3 ni por regla determin\u00edstica ni por el crosswalk.",
       "_origin": "ast",
@@ -14772,6 +14761,17 @@
       "norm_label": "resuelve el texto crudo de `tipo_deposito` (capcol) o `instrumento_captacion`...",
       "source_file": "etl/transform/categoria_deposito_matching.py",
       "source_location": "L1"
+    },
+    {
+      "id": "etl_transform_categoria_deposito_matching_rationale_109",
+      "label": "SEPS escribe las categor\u00edas sin tilde ('DEPOSITOS A LA VISTA', 'DEPOSITOS DE\u2026",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "test_parse_tasas_historicas.py",
+      "file_type": "rationale",
+      "norm_label": "seps escribe las categorias sin tilde ('depositos a la vista', 'depositos de...",
+      "source_file": "etl/transform/categoria_deposito_matching.py",
+      "source_location": "L109"
     },
     {
       "id": "etl_transform_categoria_deposito_matching_rationale_59",
@@ -16570,6 +16570,18 @@
       "source_location": "L371"
     },
     {
+      "id": "docs_gobernanza_datos_banca_p\u00fablica_cargada_2026_10_01",
+      "label": "Banca P\u00fablica cargada (2026-10-01)",
+      "_origin": "ast",
+      "community": 99,
+      "community_name": "Gobernanza de datos",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "banca publica cargada (2026-10-01)",
+      "source_file": "docs/gobernanza_datos.md",
+      "source_location": "L422"
+    },
+    {
       "id": "docs_gobernanza_datos_cambio_de_grano_de_bce_a_cant\u00f3n_2026_09_01_sql_28_bce_canton_grain_sql",
       "label": "Cambio de grano de BCE a cant\u00f3n (2026-09-01, `sql/28_bce_canton_grain.sql`)",
       "_origin": "ast",
@@ -16639,7 +16651,7 @@
       "node_kind": "heading",
       "norm_label": "gestion de cambios de esquema",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L643"
+      "source_location": "L652"
     },
     {
       "id": "docs_gobernanza_datos_gobernanza_de_datos",
@@ -16663,7 +16675,7 @@
       "node_kind": "heading",
       "norm_label": "hueco encontrado 2026-09-30: `sql/18` nunca se aplico a la base viva",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L634"
+      "source_location": "L643"
     },
     {
       "id": "docs_gobernanza_datos_huecos_de_gobernanza_conocidos",
@@ -16675,7 +16687,7 @@
       "node_kind": "heading",
       "norm_label": "huecos de gobernanza conocidos",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L586"
+      "source_location": "L595"
     },
     {
       "id": "docs_gobernanza_datos_identidad_para_el_universo_completo_del_sistema_financiero_bce_2026_07_19",
@@ -16723,7 +16735,7 @@
       "node_kind": "heading",
       "norm_label": "reglas de calidad de datos",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L454"
+      "source_location": "L463"
     },
     {
       "id": "docs_gobernanza_datos_renombrado_de_tablas_de_hechos_2026_07_19",
@@ -16759,7 +16771,7 @@
       "node_kind": "heading",
       "norm_label": "semantica distinta de `fact_saldo_cartera` para mutualistas (2026-10-01)",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L618"
+      "source_location": "L627"
     },
     {
       "id": "docs_gobernanza_datos_seps_implementada_y_cargada_2026_09_30",
@@ -16771,7 +16783,7 @@
       "node_kind": "heading",
       "norm_label": "seps implementada y cargada (2026-09-30)",
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L422"
+      "source_location": "L431"
     },
     {
       "id": "postgresql_localhost_benchmark_cartera_depositos",
@@ -24885,7 +24897,7 @@
     },
     {
       "source": "docs_fuentes_datos_1_capcol_cartera_y_dep\u00f3sitos_superbancos_integrada",
-      "target": "docs_fuentes_datos_1_1_banca_p\u00fablica_capcol_instituciones_publicas_dise\u00f1o_confirmado_esquema_ya_soporta_la_carga_2026_09_01",
+      "target": "docs_fuentes_datos_1_1_banca_p\u00fablica_capcol_instituciones_publicas_cargada_2021_2025_2026_10_01",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -24902,7 +24914,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L221",
+      "source_location": "L234",
       "weight": 1.0
     },
     {
@@ -24913,7 +24925,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L254",
+      "source_location": "L267",
       "weight": 1.0
     },
     {
@@ -24924,7 +24936,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L311",
+      "source_location": "L324",
       "weight": 1.0
     },
     {
@@ -24935,7 +24947,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L360",
+      "source_location": "L373",
       "weight": 1.0
     },
     {
@@ -24946,7 +24958,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L381",
+      "source_location": "L394",
       "weight": 1.0
     },
     {
@@ -24957,7 +24969,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L401",
+      "source_location": "L414",
       "weight": 1.0
     },
     {
@@ -24968,7 +24980,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L428",
+      "source_location": "L441",
       "weight": 1.0
     },
     {
@@ -24979,7 +24991,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L463",
+      "source_location": "L476",
       "weight": 1.0
     },
     {
@@ -24990,7 +25002,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L470",
+      "source_location": "L483",
       "weight": 1.0
     },
     {
@@ -25001,7 +25013,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L1012",
+      "source_location": "L1025",
       "weight": 1.0
     },
     {
@@ -25012,7 +25024,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L1024",
+      "source_location": "L1037",
       "weight": 1.0
     },
     {
@@ -25023,7 +25035,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L512",
+      "source_location": "L525",
       "weight": 1.0
     },
     {
@@ -25034,7 +25046,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L743",
+      "source_location": "L756",
       "weight": 1.0
     },
     {
@@ -25045,7 +25057,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L759",
+      "source_location": "L772",
       "weight": 1.0
     },
     {
@@ -25056,7 +25068,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L865",
+      "source_location": "L878",
       "weight": 1.0
     },
     {
@@ -25067,7 +25079,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L915",
+      "source_location": "L928",
       "weight": 1.0
     },
     {
@@ -25078,7 +25090,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L1051",
+      "source_location": "L1064",
       "weight": 1.0
     },
     {
@@ -25089,7 +25101,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L195",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
@@ -25100,7 +25112,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L410",
+      "source_location": "L423",
       "weight": 1.0
     },
     {
@@ -25111,7 +25123,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/fuentes_datos.md",
-      "source_location": "L510",
+      "source_location": "L523",
       "weight": 1.0
     },
     {
@@ -25336,13 +25348,24 @@
     },
     {
       "source": "docs_gobernanza_datos_gobernanza_de_datos",
-      "target": "docs_gobernanza_datos_seps_implementada_y_cargada_2026_09_30",
+      "target": "docs_gobernanza_datos_banca_p\u00fablica_cargada_2026_10_01",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
       "source_location": "L422",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_gobernanza_datos_gobernanza_de_datos",
+      "target": "docs_gobernanza_datos_seps_implementada_y_cargada_2026_09_30",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/gobernanza_datos.md",
+      "source_location": "L431",
       "weight": 1.0
     },
     {
@@ -25364,7 +25387,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L454",
+      "source_location": "L463",
       "weight": 1.0
     },
     {
@@ -25375,7 +25398,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L586",
+      "source_location": "L595",
       "weight": 1.0
     },
     {
@@ -25386,7 +25409,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L643",
+      "source_location": "L652",
       "weight": 1.0
     },
     {
@@ -25408,7 +25431,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L618",
+      "source_location": "L627",
       "weight": 1.0
     },
     {
@@ -25419,7 +25442,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/gobernanza_datos.md",
-      "source_location": "L634",
+      "source_location": "L643",
       "weight": 1.0
     },
     {
@@ -34285,7 +34308,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L199",
+      "source_location": "L200",
       "weight": 1.0
     },
     {
@@ -39951,5 +39974,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "8f144c47a90830c71dc30609a98f2e0974489208"
+  "built_at_commit": "c311ba47d750103ccee721308f86c62b3f881d63"
 }

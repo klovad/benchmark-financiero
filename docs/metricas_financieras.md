@@ -111,8 +111,8 @@ esos bancos/meses) — queda registrado como hueco de gobernanza para una pasada
 ver `docs/gobernanza_datos.md`.
 
 Consulta SQL usada (equivalente a `marts.vw_cartera_bruta`, expandida inline porque la
-vista de `sql/18_glosario_cuentas_views.sql` no está aplicada en la base viva a la fecha
-de esta verificación — ver nota en `docs/gobernanza_datos.md`):
+vista de `sql/18_glosario_cuentas_views.sql` no estaba aplicada en la base viva a la fecha
+de esta verificación; se aplicó el 2026-10-02 — ver nota en `docs/gobernanza_datos.md`):
 
 ```sql
 WITH capcol AS (

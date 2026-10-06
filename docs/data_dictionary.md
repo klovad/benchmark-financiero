@@ -191,7 +191,20 @@ Verificado contra Postgres vivo (2026-08-22): 7 `ruc` distintos, 15 filas (6 par
 
 ### Vistas de bloques de construcción — Balance/PyG (`sql/18_glosario_cuentas_views.sql`)
 
-9 vistas, grano banco × fecha, que implementan los "bloques con nombre propio" documentados
+**Estado (2026-10-02): aplicadas en la base viva**, junto con los ajustes de
+`sql/32_vistas_glosario_seps_banca_publica.sql`. Validación: las 12 métricas que componen
+(cartera bruta e improductiva, liquidez, morosidad de 5 segmentos, utilidad acumulada y
+anualizada, ROA, ROE) coinciden **sin diferencias** contra
+`scripts/compute_indicadores_excel.py` (verificado contra el Excel) para los 23 bancos
+privados al corte 2026-03-31. En SEPS: `vw_pyg_total_gastos` = cuenta `4` en 11.585 de
+11.585 entidad×mes, y los 7 segmentos cubren el 100% de la cartera bruta. `sql/32` agrega
+los segmentos VIVIENDA DE INTERÉS PÚBLICO e INVERSIÓN PÚBLICA y `COALESCE` en 1499; deja
+sin segmento, a propósito, las cuentas COVID-19 y COMERCIAL ORDINARIO/PRIORITARIO (en
+bancos explican que la suma de segmentos dé 96,9%-100% de la cartera bruta). Costo:
+`vw_activo_promedio_ytd`/`vw_patrimonio_promedio_ytd` tardan ~26 s en materializarse
+completas (subconsultas correlacionadas); filtrar por `fecha_id`/`banco_id` al consultarlas.
+
+10 vistas, grano banco × fecha, que implementan los "bloques con nombre propio" documentados
 conceptualmente en `docs/glosario_cuentas.md` (qué cuentas del Catálogo Único componen cada
 bloque y por qué) — cualquier catálogo de indicadores nuevo debería componer estas vistas en
 vez de recalcular la lógica de cuentas desde cero. Ver el glosario para el detalle de cada
@@ -209,8 +222,9 @@ fórmula; aquí solo el mapeo vista → bloque:
 | `marts.vw_utilidad_anualizada` | `utilidad_anualizada` (§4) |
 | `marts.vw_activo_promedio_ytd` / `marts.vw_patrimonio_promedio_ytd` | promedio YTD (§5) — ventana diciembre año anterior → fecha de corte |
 
-No filtran por `tipo_entidad` (no hace falta: `fact_balance`/`fact_pyg` ya vienen
-solo-privados por diseño del Boletín). Escritas siguiendo la misma lógica de
+No filtran por `tipo_entidad`, y **desde 2026-09-30 sí hace falta filtrar en el
+consumidor**: `fact_balance`/`fact_pyg` traen bancos privados (Boletín) y cooperativas y
+mutualistas (EEFF SEPS). Unir contra `dim_banco.tipo_entidad` para no mezclar sectores. Escritas siguiendo la misma lógica de
 [`scripts/compute_indicadores_excel.py`](../scripts/compute_indicadores_excel.py) (motor de
 referencia en pandas, corrido y verificado contra `data/samples/marts_ultimos_5_anios`
 -- antes `marts_full`, ver `data/samples/README.md`), pero **las

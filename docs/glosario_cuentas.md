@@ -208,9 +208,10 @@ JOIN (
 en vez de repetir la definición completa de `cartera_bruta` (14 − 1499, con sus reglas)
 cada vez que un documento nuevo necesita el mismo concepto.
 
-**Nota de alcance**: las vistas de `sql/18_glosario_cuentas_views.sql` no filtran por
-`tipo_entidad` — hoy `fact_balance`/`fact_pyg` solo traen bancos privados por diseño del
-Boletín de origen (ver `docs/data_dictionary.md`), así que no hace falta. Si esa fuente
-algún día trae otros tipos de entidad, unir contra `dim_banco.tipo_entidad` en el
-consumidor, no en estas vistas (mantenerlas como bloques puros, sin opinión de
-segmentación).
+**Nota de alcance**: las vistas de `sql/18_glosario_cuentas_views.sql` (aplicadas
+2026-10-02, con los ajustes de `sql/32`) no filtran por `tipo_entidad`. **Desde 2026-09-30
+`fact_balance`/`fact_pyg` traen también cooperativas y mutualistas** (EEFF SEPS, mismo
+Catálogo Único de Cuentas), así que el consumidor **debe** unir contra
+`dim_banco.tipo_entidad` para no mezclar sectores. Las vistas siguen siendo bloques puros,
+sin opinión de segmentación. Para mutualistas, la cartera de los reportes SEPS no es
+comparable con `vw_cartera_bruta` (ver `docs/fuentes_datos.md` §4.0).
