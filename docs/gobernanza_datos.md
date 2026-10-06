@@ -30,14 +30,15 @@ valor. Esas tres preguntas las cubren `data_dictionary.md`, este documento, y
 - **Responsable (steward)**: Kevin Flores — autor y responsable único del proyecto.
   Proyecto individual, sin equipo ni áreas separadas de negocio/TI; no hay flujo de
   aprobación formal para cambios de esquema, solo el propio código y sus tests.
-- **Clasificación de datos**: **Público**, en las 3 capas. Las 4 fuentes (CAPCOL,
-  BCE, Boletín Financiero) son estadísticas oficiales publicadas abiertamente por la
-  Superintendencia de Bancos y el Banco Central del Ecuador. No hay datos personales
+- **Clasificación de datos**: **Público**, en todas las capas. Las 5 fuentes (CAPCOL,
+  BCE semanal, BCE `TasasHistorico`, Boletín Financiero, SEPS) son estadísticas oficiales
+  publicadas abiertamente por la Superintendencia de Bancos, el Banco Central del Ecuador
+  y la Superintendencia de Economía Popular y Solidaria. No hay datos personales
   (PII) en ningún nivel de grano — el dato más fino es banco × cantón × producto ×
   fecha, nunca cliente individual. No aplican controles de confidencialidad,
   anonimización ni cifrado en reposo más allá de las credenciales de la base (`.env`,
   no versionado).
-- **Retención**: sin política de purga — las 4 fuentes son series históricas y el valor
+- **Retención**: sin política de purga — las 5 fuentes son series históricas y el valor
   del proyecto depende de mantener el histórico completo. Los archivos fuente en
   `data/raw/**` se conservan (son la fuente de verdad para reprocesar), y
   `staging.*`/`marts.*` se actualizan in-place vía CDC (ver `docs/architecture.md`) sin
@@ -61,13 +62,13 @@ El aterrizaje queda así:
 
 | Tabla | Llave natural (`ON CONFLICT`) | Resolución de identidad aplicada | CDC |
 |---|---|---|---|
-| `staging.cartera` | `(fecha, tipo_entidad, banco, COALESCE(canton,''), tipo_credito, estado_cartera)` | `banco_codigo` vía `banco_matching.py` | Sí |
-| `staging.depositos` | `(fecha, tipo_entidad, banco, COALESCE(canton,''), tipo_deposito)` | `banco_codigo` + `categoria_deposito`/`plazo_dias_*` vía `banco_matching.py` + `categoria_deposito_matching.py` | Sí |
+| `staging.cartera` | `(fecha, tipo_entidad, banco, COALESCE(provincia,''), COALESCE(canton,''), tipo_credito, estado_cartera)` (`provincia` agregada en `sql/31` por cantones homónimos) | `banco_codigo` vía `banco_matching.py` (CAPCOL) o `resolver_entidad_seps` (SEPS) | Sí, por columnas (`CDC_COLUMNS`) |
+| `staging.depositos` | `(fecha, tipo_entidad, banco, COALESCE(provincia,''), COALESCE(canton,''), tipo_deposito)` (`sql/31`) | `banco_codigo` + `categoria_deposito`/`plazo_dias_*` vía `banco_matching.py` + `categoria_deposito_matching.py` (SEPS: `resolver_categoria_deposito_seps`) | Sí, por columnas |
 | `staging.bce_tasas_pasivas` | `(fecha, banco_codigo, categoria_deposito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''), COALESCE(canton,''))` (`canton` agregado 2026-09-01, `sql/28_bce_canton_grain.sql`) | `banco_codigo` + `plazo_dias_*` vía `resolver_entidad_bce()` + `bce_plazo_matching.py` — **todas las entidades del sistema financiero, no solo bancos privados** (corregido 2026-07-19, ver abajo); `canton`/`provincia` vía `resolver_canton_bce()` (`src/benchmark_bancos/transform/canton_matching.py`), integración en el parser pendiente — ver "Cambio de grano de BCE a cantón" abajo | Sí |
 | `staging.bce_tasas_activas` | `(fecha, banco_codigo, segmento_credito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''), COALESCE(canton,''))` (`canton` agregado 2026-09-01) | igual + `segmento_credito` validado contra universo de 26 | Sí |
 | `staging.tasas_referenciales` | `(fecha, seccion, COALESCE(dimension_valor,''), COALESCE(plazo_dias_desde,-1), COALESCE(plazo_dias_hasta,-1), metrica)` | `dimension_valor` armonizado a los nombres ya sembrados en `dim_subsegmento_credito`/`dim_categoria_deposito` (alias explícitos, ver `linaje_datos.md`) | Sí |
-| `staging.boletin_balance` / `boletin_pyg` | `(fecha, banco_codigo, codigo)` | `banco_codigo` vía `banco_matching.py` (fuente `"BOLETIN"`) | Sí |
-| `staging.banco_maestro` | `banco_codigo` (PK) | Dos mecanismos: (1) sembrada desde `src/benchmark_bancos/seeds/banco_maestro.csv` para los ~33 bancos privados curados (`load_banco_maestro_seed`, banco/tipo_entidad); (2) **`ruc` poblado para TODAS las entidades y fila creada para las ~420 no-privadas** (`upsert_banco_maestro_ruc`, `ON CONFLICT DO UPDATE SET ruc`, 2026-07-23) — ver "Identidad para el universo completo del sistema financiero" abajo | No (se resiembra/complementa en cada corrida, `ON CONFLICT DO NOTHING`/`DO UPDATE` sin CDC propio) |
+| `staging.boletin_balance` / `boletin_pyg` | `(fecha, banco_codigo, codigo)` | `banco_codigo` vía `banco_matching.py` (Boletín) o `BCE_<ruc>` (EEFF SEPS) | Sí, por columnas |
+| `staging.banco_maestro` | `banco_codigo` (PK) | Dos mecanismos: (1) sembrada desde `src/benchmark_bancos/seeds/banco_maestro.csv` para las 36 entidades curadas (33 bancos privados + 3 públicos de CAPCOL, `load_banco_maestro_seed`, banco/tipo_entidad, `CONFIRMADO`); (2) `ruc` poblado para todas y fila creada para las no curadas (`upsert_banco_maestro_ruc`, llamado desde BCE y SEPS, `ON CONFLICT DO UPDATE SET ruc`) — ver "Identidad para el universo completo del sistema financiero" abajo | No (se resiembra/complementa en cada corrida, sin CDC propio) |
 
 ### Identidad para el universo completo del sistema financiero (BCE, 2026-07-19)
 
@@ -125,25 +126,25 @@ gobernanza (rol, cadencia, volumen conocido). Nombres de tabla actualizados 2026
 | Tabla | Rol | Cadencia de la fuente | Cobertura cargada | Volumen (última medición) |
 |---|---|---|---|---|
 | `dim_fecha` | Dimensión conformada, grano día | — | derivada del resto | 1.019 filas (medido 2026-07-25) |
-| `dim_banco` | Dimensión conformada — `estado_validacion` (2026-08-30, `sql/26`) distingue las 2 poblaciones directo en el dato | — | 2021–2026 | 442 (33 bancos privados curados = `estado_validacion='CONFIRMADO'` + 409 entidades BCE auto-registradas por RUC = `estado_validacion='AUTO_INGRESADO'` — cooperativas, bancos públicos, mutualistas, sociedad financiera, tarjetas de crédito; medido 2026-07-19, split confirmado de nuevo 2026-08-30) |
-| `dim_canton` | Dimensión conformada (2026-07-25: `provincia`/`region` texto → FK a `dim_provincia`; 2026-09-01: FK directa también de BCE tsp/tsa, antes solo de CAPCOL — ver "Cambio de grano de BCE a cantón" abajo) | — | derivada de CAPCOL + BCE | 228 filas (medido 2026-09-01 tras `sql/28_bce_canton_grain.sql`, todas `estado_validacion='CONFIRMADO'`; antes 132) |
+| `dim_banco` | Dimensión conformada — `estado_validacion` (2026-08-30, `sql/26`) distingue las 2 poblaciones directo en el dato | — | 2008–2026 | 444 (medido 2026-10-05): 36 `CONFIRMADO` (33 bancos privados + 3 públicos de CAPCOL) + 408 `AUTO_INGRESADO` por RUC (384 cooperativas, 5 mutualistas, 3 otros bancos públicos, 12 sociedades financieras, 2 tarjetas de crédito, 2 entidades de segundo piso) |
+| `dim_canton` | Dimensión conformada (2026-07-25: `provincia`/`region` texto → FK a `dim_provincia`; 2026-09-01: FK directa también de BCE tsp/tsa — ver "Cambio de grano de BCE a cantón" abajo) | — | derivada de CAPCOL + BCE + SEPS | 230 filas (medido 2026-10-05): 228 `CONFIRMADO` de `sql/28` + 2 `AUTO_INGRESADO` (ALFREDO BAQUERIZO MORENO, Guayas, de la SEPS; PABLO VI, Morona Santiago, de Banca Pública) |
 | `dim_provincia` | Dimensión conformada, outrigger de `dim_canton` y de los hechos BCE semanales (nueva 2026-07-25, `sql/20`) | — | sembrada una vez | 26 filas (24 provincias + `ZONA NO DELIMITADA` + `S/N`) |
 | `dim_segmento_credito` | Catálogo, segmento normativo de crédito (nivel grueso — 2026-07-19: nombre reasignado, ver "Normalización de la segmentación de crédito" abajo) | — | sembrado una vez (`sql/16`) | 7 filas |
 | `dim_subsegmento_credito` (antes `dim_segmento_credito`) | Catálogo (universo BCE, no filtrado por entidad; nivel fino) | — | sembrado una vez (`sql/08`) | 26 filas |
 | `dim_segmento_entidad` | Catálogo, clasificación normativa de tamaño/estructura de la entidad (nueva 2026-07-25, `sql/19`) | — | sembrado una vez | 14 filas |
-| `dim_categoria_deposito` | Catálogo | — | sembrado una vez (`sql/08`) | 11 filas |
+| `dim_categoria_deposito` | Catálogo | — | sembrado (`sql/08`, `sql/12`, `sql/30`) | 13 filas (11 de CAPCOL/BCE + `DEPÓSITOS MONETARIOS` + `DEPÓSITOS A LA VISTA` de la SEPS) |
 | `dim_plazo` | Catálogo, two-tier desde 2026-08-30 (`sql/27` — antes fail-fast absoluto desde 2026-08-27, antes de eso abierto/sin validar; `estado_validacion` distingue las 2 poblaciones directo en el dato, mismo mecanismo que `dim_cuenta_contable`/`sql/25`) — ver "Reglas de calidad" #1/#2 abajo | — | shape+rango inválidos siguen abortando la carga (`PlazoNoResueltoError`); un bucket con shape+rango válidos pero fuera de `PLAZOS_TSP_VALIDOS`/`PLAZOS_TSA_VALIDOS`/`PLAZOS_VALIDOS` (CAPCOL)/`PLAZOS_VALIDOS` (TasasHistorico) ya no aborta — se auto-ingresa como `AUTO_INGRESADO` | 21 filas, todas `CONFIRMADO` (medido 2026-08-30 contra `marts.dim_plazo` tras `sql/27` — mismas 21 de la medición 2026-08-27, menos que 7+14+5+6=32 porque varios buckets coinciden exactamente en `(dias_desde, dias_hasta)` entre CAPCOL/tsp/tsa/TasasHistorico y comparten fila por el `UNIQUE (dias_desde, COALESCE(dias_hasta,-1))`) |
-| `dim_cuenta_contable` | Catálogo (Catálogo Único de Cuentas) — `estado_validacion` (2026-08-30, `sql/25`) marca `CONFIRMADO` las cuentas preexistentes, `AUTO_INGRESADO` (default) las descubiertas de aquí en adelante sin curación | — | descubierto del Boletín | 1.736 cuentas (medido 2026-08-30 contra `marts.dim_cuenta_contable`, todas `CONFIRMADO` en el backfill retroactivo de `sql/25`) |
-| `fact_saldo_cartera` (antes `fact_cartera`) | Hecho, CAPCOL — 2026-07-25: `estado_cartera` pivotado a columnas (`saldo_por_vencer`/`saldo_no_devenga_intereses`/`saldo_vencida`/`saldo_total`), ver `sql/21` | Mensual | 2021-01 a 2026-06 | 123.322 filas (medido 2026-07-25, post-pivote — antes 369.966 con `estado_cartera` como fila) |
-| `fact_saldo_depositos` (antes `fact_depositos`) | Hecho, CAPCOL | Mensual | 2021-01 a 2026-06 | 251.247 filas (medido 2026-07-25) |
+| `dim_cuenta_contable` | Catálogo (Catálogo Único de Cuentas) — `estado_validacion` (2026-08-30, `sql/25`) marca `CONFIRMADO` las cuentas preexistentes, `AUTO_INGRESADO` (default) las descubiertas después sin curación | — | descubierto del Boletín y del EEFF SEPS | 1.902 cuentas (medido 2026-10-05): 1.736 `CONFIRMADO` + 166 `AUTO_INGRESADO` (códigos solo-SEPS) |
+| `fact_saldo_cartera` (antes `fact_cartera`) | Hecho, CAPCOL + SEPS — 2026-07-25: `estado_cartera` pivotado a columnas, ver `sql/21` | Mensual | bancos privados 2021-01 a 2026-06; Banca Pública y SEPS 2021-01 a 2025-12 | 951.131 filas (medido 2026-10-05): 123.322 bancos privados, 22.339 públicos, 780.315 cooperativas, 19.351 mutualistas, 5.804 segundo piso |
+| `fact_saldo_depositos` (antes `fact_depositos`) | Hecho, CAPCOL + SEPS | Mensual | igual que `fact_saldo_cartera` | 660.097 filas (medido 2026-10-05): 251.247 bancos privados, 74.082 públicos, 330.745 cooperativas, 3.927 mutualistas, 96 segundo piso |
 | `fact_captaciones_depositos` (antes `fact_tasas_pasivas`) | Hecho, BCE tsp — **sistema financiero completo**, no solo bancos privados; `segmento_entidad_id` agregado 2026-07-25 (`sql/19`); grano cambiado de provincia a cantón 2026-09-01 (`sql/28`, `canton_id` reemplaza `provincia_id`) | Semanal | 2008-01 a 2026-07 (histórico completo, grano cantón) | **3.077.474 filas** (reprocesado 2026-09-01 tras `sql/28`, 0 con `canton_id` NULL. Antes del cambio de grano: 1.956.386 filas a grano provincia, medido 2026-07-25) |
 | `fact_colocaciones_cartera` (antes `fact_tasas_activas`) | Hecho, BCE tsa — **sistema financiero completo**, no solo bancos privados; `segmento_entidad_id` agregado 2026-07-25 (`sql/19`); grano cambiado de provincia a cantón 2026-09-01 (`sql/28`, `canton_id` reemplaza `provincia_id`) | Semanal | 2008-01 a 2026-07 (histórico completo, grano cantón) | **7.756.581 filas** (reprocesado 2026-09-01, 0 con `canton_id` NULL. Antes del cambio de grano: 4.869.696 filas a grano provincia, medido 2026-07-25) |
 | `fact_tasas_referenciales_cartera` (antes `fact_tasas_referenciales_credito`) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-08 a 2026-06 | 611 filas (medido 2026-07-25) |
 | `fact_tasas_referenciales_depositos_instrumento` (antes `fact_tasas_pasivas_instrumento`) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-04 a 2026-06 | 255 filas (medido 2026-07-25) |
 | `fact_tasas_referenciales_depositos_plazo` (antes `fact_tasas_pasivas_plazo`) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-04 a 2026-06 | 306 filas (medido 2026-07-25) |
 | `fact_tasas_referenciales_sistema` (sin cambio de nombre) | Hecho, BCE `TasasHistorico`, nivel sistema | Mensual | 2022-04 a 2026-06 | 51 filas (medido 2026-07-25; ≤ 1 fila/mes por diseño, PK=`fecha_id`) |
-| `fact_balance` | Hecho, Boletín | Mensual | 2021-01 a 2026-06 | 2.180.784 filas (medido 2026-07-25) |
-| `fact_pyg` | Hecho, Boletín | Mensual | 2021-01 a 2026-06 | 192.489 filas (medido 2026-07-25) |
+| `fact_balance` | Hecho, Boletín (bancos privados) + EEFF SEPS (cooperativas y mutualistas; sin saldos en cero) | Mensual | Boletín 2021-01 a 2026-06; SEPS 2021-01 a 2025-12 | 4.880.588 filas (medido 2026-10-05): 2.180.784 bancos privados + 2.699.804 SEPS |
+| `fact_pyg` | Hecho, Boletín + EEFF SEPS | Mensual | igual que `fact_balance` | 1.091.487 filas (medido 2026-10-05): 192.489 bancos privados + 898.998 SEPS |
 
 ## Renombrado de tablas de hechos (2026-07-19)
 
@@ -366,7 +367,12 @@ nuevo de `staging.bce_tasas_pasivas`/`bce_tasas_activas` — confirmado con
 resolver `canton_id` en vez de `provincia_id`, y reprocesar el histórico completo
 2008-2026 desde los ZIP ya descargados en `data/raw/bce/`.
 
-## Banca Pública (CAPCOL) integrada al diseño, SEPS diseñada — ninguna de las dos completamente cargada (2026-09-01)
+## Banca Pública (CAPCOL) integrada al diseño, SEPS diseñada (2026-09-01)
+
+> **Superado**: ambas quedaron cargadas (SEPS 2026-09-30, Banca Pública 2026-10-01) y el
+> riesgo de orden de carga se cerró al curar los 3 bancos públicos. Ver las secciones
+> "Banca Pública cargada" y "SEPS implementada y cargada" más abajo. Esta sección se
+> conserva como registro del diseño original.
 
 Investigación con Playwright (mismo mecanismo que `capcol-bancos`, ver "Por qué Playwright"
 en `docs/architecture.md`) contra la instancia Postgres nativa viva
@@ -480,7 +486,7 @@ Todas verificadas en código, no solo documentadas:
    que `BancoNoResueltoError` centraliza la identidad de banco. Verificado contra
    `raw.*` completo (no solo `staging`, que puede estar en una ventana más chica): los
    universos válidos codificados coinciden exactamente con el histórico completo
-   ingerido en las 4 fuentes (tsp: 7, tsa: 14, CAPCOL: 5, TasasHistorico: 6) — ningún
+   ingerido en esa fecha en las 4 fuentes de entonces (tsp: 7, tsa: 14, CAPCOL: 5, TasasHistorico: 6) — ningún
    bucket real actual queda fuera.
    **Relajado a two-tier el 2026-08-30 (`sql/27_dim_plazo_estado_validacion.sql`,
    decisión explícita del usuario)**: el fail-fast absoluto de 2026-08-27 pasó a un
@@ -537,12 +543,16 @@ Todas verificadas en código, no solo documentadas:
    dos hizo falta backfill/dedupe, a diferencia de `dim_plazo`/`fact_depositos` en su
    momento. Corregidos en `sql/23_fix_staging_cartera_canton_null_safe.sql` (cartera) y
    `sql/24_fix_staging_depositos_canton_null_safe.sql` (depositos, mismo día).
-4. **CDC verificado, no solo implementado**: para cada una de las 4 fuentes se confirmó
+4. **CDC verificado, no solo implementado**: para cada una de las 5 fuentes se confirmó
    explícitamente que correr el pipeline dos veces seguidas sin datos nuevos no genera
    ningún `UPDATE` real (`fecha_actualizacion` sin cambios en la segunda corrida) — no es
-   una propiedad asumida del diseño, se verificó contra la base real.
-5. **Conteos `raw` = `staging` = `marts`**: verificado por fuente al cargar (ver
+   una propiedad asumida del diseño, se verificó contra la base real. Desde 2026-10-05 el
+   guard compara columnas (sin `row_hash`) y el refresh de marts es incremental; ambos se
+   verificaron con una huella de contenido de las 20 tablas de `marts` antes y después,
+   y con un cambio real en staging que se propagó exacto y se revirtió.
+5. **Conteos y saldos `staging` = `marts`**: verificado por fuente al cargar (ver
    `docs/architecture.md`, "Carga incremental"), no solo al momento de escribir el ETL.
+   (Hasta 2026-10-05 también se comparaba contra `raw`, capa que ya no existe.)
 6. **Fórmulas de negocio verificadas contra el valor oficial**: 3 de los 48 indicadores
    financieros del Boletín (`docs/metricas_financieras.md`) se recalcularon a mano desde
    `fact_balance`/`grupo_met` y coincidieron con el valor publicado por Superbancos a 6
@@ -553,7 +563,8 @@ Todas verificadas en código, no solo documentadas:
    matching/normalización/parsing que no requieren archivos externos
    (`test_banco_matching.py`, `test_categoria_deposito_matching.py`,
    `test_bce_plazo_matching.py`, `test_parse_boletin.py`, `test_parse_tasas_historicas.py`,
-   `test_common.py`, `test_pipeline_fecha_parsing.py`) + `test_integration_regressions.py`
+   `test_common.py`, `test_pipeline_fecha_parsing.py`, `test_parse_seps.py`) +
+   `test_integration_regressions.py`
    (usa `db_conn`, fixture en `tests/conftest.py` — requiere Postgres vivo, se salta si no
    hay conexión), incluyendo un test de regresión
    (`test_parse_filas_rastrea_seccion_sin_asumir_que_tabla_0_es_activa_maxima`) que fija
@@ -567,8 +578,10 @@ Todas verificadas en código, no solo documentadas:
    `validar_ruc_estructura()`/`resolver_entidad_bce()` agregados junto con la validación
    estructural de RUC, ver #8 abajo) con `grep -rc "^def test_" tests/*.py` (o
    `pytest --collect-only -q`); ese comando, no este número, es la fuente de verdad si
-   hace falta un valor vigente.
-8. **Validación estructural real de RUC para entidades BCE no-privadas** (2026-08-30,
+   hace falta un valor vigente. Última medición: **117 tests** (2026-10-05), con
+   `uv run pytest`; CI corre la parte unit y la de integración contra un `postgres:17`
+   con todas las migraciones aplicadas.
+8. **Validación estructural real de RUC para entidades no curadas (BCE y SEPS)** (2026-08-30,
    `src/benchmark_bancos/transform/banco_matching.py::validar_ruc_estructura`): antes, cualquier texto que
    BCE reportara como RUC se aceptaba tal cual como llave (`banco_codigo = "BCE_" + ruc`)
    sin verificar que tuviera la forma de un RUC real. Ahora se valida longitud (13
@@ -591,6 +604,11 @@ Todas verificadas en código, no solo documentadas:
    verificador incorrecto, `resolver_entidad_bce` con RUC inválido en el camino
    no-privado, y confirmación de que el camino BANCOS PRIVADOS no queda afectado por esta
    validación).
+9. **Saldos conciliados contra contabilidad (SEPS)**: cartera y depósitos de cada
+   cooperativa y mes se comparan contra sus estados financieros (`14 − 1499` y cuenta
+   `21`). Mediana 0,00% en 2021-2025; las desviaciones conocidas están explicadas en
+   `docs/fuentes_datos.md` §4.0 (mutualistas con cartera VIS/VIP administrada, emisoras de
+   tarjetas).
 
 ## Huecos de gobernanza conocidos
 
@@ -621,7 +639,7 @@ asumir que un campo "debería" tener datos:
 | **Bug de CDC real en `marts.dim_banco`: `fecha_actualizacion` se pisaba en cada `refresh_marts()` sin cambio real** — preexistía desde `sql/19_dim_segmento_entidad.sql` (2026-07-25), encontrado y corregido 2026-08-30 | El `INSERT INTO marts.dim_banco ... ON CONFLICT` no listaba `segmento_entidad_id` entre sus columnas — Postgres computa `EXCLUDED.segmento_entidad_id` como el valor por defecto de una columna omitida del `INSERT` (`NULL`), no como el valor real de la fila en conflicto. Como `row_hash` (columna `GENERATED`) incluye `segmento_entidad_id`, `EXCLUDED.row_hash` casi nunca coincidía con el `row_hash` real de un banco con `segmento_entidad_id` ya poblado (prácticamente los 442) — el guard `WHERE row_hash IS DISTINCT FROM EXCLUDED.row_hash` disparaba un `UPDATE` real en **cada** corrida, no solo cuando algo cambiaba de verdad. Quedó expuesto al verificar CDC no-op de punta a punta para esta migración (`estado_validacion`) en vez de asumirlo — la migración en sí no lo introdujo, pero tampoco se habría descubierto sin esa verificación explícita. Corregido con un `LEFT JOIN` a la propia `marts.dim_banco` en el `INSERT` para que `segmento_entidad_id` (y por lo tanto `EXCLUDED.row_hash`) refleje el valor real actual — esa columna sigue sin escribirse en el `SET` del `ON CONFLICT`, la sigue manteniendo el `UPDATE` SCD1 separado. Verificado: 0 filas con `fecha_actualizacion` cambiada en una corrida de `refresh_marts()` sin datos nuevos (antes del fix: 442/442 cambiaban en cada corrida). | `src/benchmark_bancos/load/load_postgres.py` (INSERT de `dim_banco` en `_REFRESH_MARTS_SQL`), `docs/data_dictionary.md`, `docs/architecture.md` |
 | **4 bancos con desviación de 2-6% entre CAPCOL cartera y BALANCE cartera bruta en ventanas de fecha acotadas** — encontrado 2026-08-30, no investigado a fondo | La reconciliación cruzada `SUM(fact_saldo_cartera.saldo_total)` (banco × fecha) vs. `vw_cartera_bruta` (`14 − 1499`, ver `docs/glosario_cuentas.md` §2 y `docs/metricas_financieras.md`) reconcilia con mediana ~0% y 96,92% de las 1.559 combinaciones banco × fecha dentro de ±2% — pero **AMIBANK** (2023-05-31 a 2023-12-31, 8 de 22 meses de overlap, −4,92% a −5,92%), **ATLANTIDA** (2025-06-30 a 2026-05-31, 12 de 13 meses — casi toda su ventana de overlap, −2,00% a −4,87%), **PACIFICO** (2022-09-30 a 2024-10-31, 26 de 66 meses, −2,01% a −3,45%) y **FINCA** (2022-11-30 a 2022-12-31, 2 de 24 meses, −2,47% a −2,77%) se salen de esa tolerancia en esas ventanas específicas, siempre con CAPCOL por debajo de BALANCE. No se investigó la causa raíz esta sesión (hipótesis sin verificar: reclasificación de cartera fuera de las categorías de cantón/segmento de CAPCOL, timing de corte entre fuentes, o un problema de carga puntual para esos bancos/meses) — queda marcado para una pasada futura. | `docs/metricas_financieras.md` (tabla completa de la reconciliación), `docs/glosario_cuentas.md` §2 |
 | **CAPCOL depósitos no cubre 5 sub-cuentas nivel-6 del plan de cuentas regulatorio bajo `21` (BALANCE) — hueco de alcance real, no un bug** | `SUM(fact_saldo_depositos.saldo)` (banco × fecha) queda sistemáticamente **por debajo** de `codigo='21'` de BALANCE (mediana de la diferencia % por banco × fecha: −0,7376%; CAPCOL por debajo en 1.509/1.556 = 96,98% de las combinaciones; gap agregado sobre la suma total del histórico: −1,12%, `−$35.014.233.134,70` sobre `$3.127.015.362.802,94`). Causa estructural verificada: `marts.dim_categoria_deposito` (12 valores curados, `src/benchmark_bancos/transform/categoria_deposito_matching.py::CATEGORIAS_VALIDAS`) no tiene equivalente para 5 sub-cuentas nivel-6 de `21` que sí existen en el Catálogo Único — `210120` EJECUCIÓN PRESUPUESTARIA, `210125` DEPÓSITOS DE OTRAS INSTITUCIONES PARA ENCAJE (ambas institucionales/nicho), `210130` CHEQUES CERTIFICADOS, `210131` CHEQUES DE EMERGENCIA y `210140` OTROS DEPÓSITOS. `SUM(saldo_usd)` de esas 5 cuentas sobre el mismo conjunto banco × fecha con overlap explica el **47,81%** del gap agregado total (`$16.740.024.139,94` de `$35.014.233.134,70`) — el 52,19% restante no se explica por cuentas estructuralmente ausentes del catálogo CAPCOL; es probablemente hueco de reporte intermitente banco-mes dentro de categorías que CAPCOL sí tiene, no investigado más a fondo esta sesión. **No es un bug a corregir**: es una limitación real y permanente de la taxonomía de producto de CAPCOL frente al plan de cuentas regulatorio completo — CAPCOL nunca reportó esas 5 sub-cuentas como categoría propia, no es un valor que dejó de resolver. | `src/benchmark_bancos/transform/categoria_deposito_matching.py`, `docs/data_dictionary.md` (`dim_categoria_deposito`/`fact_saldo_depositos`), `docs/glosario_cuentas.md` §3 |
-| ~~`fact_captaciones_depositos`/`fact_colocaciones_cartera` en 0 filas desde 2026-09-01 — cambio de esquema aplicado, reproceso de datos pendiente~~ — **resuelto 2026-09-01** | `sql/28_bce_canton_grain.sql` cambió el grano de provincia a cantón (`canton_id` reemplaza `provincia_id`) y truncó ambas tablas como estado de transición esperado. `data-engineer` integró `resolver_canton_bce()` en `parse_bce_tasas.py` (`_resolve_canton()`) y corrió `src/benchmark_bancos/pipeline.py::reprocess_bce_staging()` (nuevo stage CLI `bce-reprocess-canton-grain`) contra `raw.bce_tasas_pasivas`/`activas` completos (sin re-descargar nada). Resultado verificado en producción: `fact_captaciones_depositos` = 3.077.474 filas, `fact_colocaciones_cartera` = 7.756.581 filas, 0 filas con `canton_id` NULL en ninguna, `dim_canton` estable en 228 filas todas `CONFIRMADO` (0 pares nuevos `AUTO_INGRESADO`). Los 3 tests de integración que fallaban por el `ON CONFLICT` desactualizado de `_upsert_bce_via_temp()` quedaron corregidos, más un test nuevo de auto-ingreso end-to-end — 101 tests pasan. `staging.bce_tasas_pasivas`/`activas` requirió su propio `TRUNCATE` antes del reproceso (no anticipado en `sql/28`): la llave natural extendida con `canton` volvía key-distintas a las filas viejas (`canton IS NULL`) de las recién reprocesadas, lo que habría dejado filas huérfanas duplicando montos vía el `LEFT JOIN` a `dim_canton`. Seguro porque tsp/tsa es un archivo acumulativo único (re-derivación completa desde `raw.*`, sin pérdida). | `sql/28_bce_canton_grain.sql`, `src/benchmark_bancos/transform/parse_bce_tasas.py`, `src/benchmark_bancos/pipeline.py::reprocess_bce_staging`, "Cambio de grano de BCE a cantón" arriba, `docs/data_dictionary.md`, `docs/linaje_datos.md` |
+| ~~`fact_captaciones_depositos`/`fact_colocaciones_cartera` en 0 filas desde 2026-09-01 — cambio de esquema aplicado, reproceso de datos pendiente~~ — **resuelto 2026-09-01** | `sql/28_bce_canton_grain.sql` cambió el grano de provincia a cantón (`canton_id` reemplaza `provincia_id`) y truncó ambas tablas como estado de transición esperado. `data-engineer` integró `resolver_canton_bce()` en `parse_bce_tasas.py` (`_resolve_canton()`) y corrió `reprocess_bce_staging()` (backfill de un solo uso, eliminado del código el 2026-10-05) (nuevo stage CLI `bce-reprocess-canton-grain`) contra `raw.bce_tasas_pasivas`/`activas` completos (sin re-descargar nada). Resultado verificado en producción: `fact_captaciones_depositos` = 3.077.474 filas, `fact_colocaciones_cartera` = 7.756.581 filas, 0 filas con `canton_id` NULL en ninguna, `dim_canton` estable en 228 filas todas `CONFIRMADO` (0 pares nuevos `AUTO_INGRESADO`). Los 3 tests de integración que fallaban por el `ON CONFLICT` desactualizado de `_upsert_bce_via_temp()` quedaron corregidos, más un test nuevo de auto-ingreso end-to-end — 101 tests pasan. `staging.bce_tasas_pasivas`/`activas` requirió su propio `TRUNCATE` antes del reproceso (no anticipado en `sql/28`): la llave natural extendida con `canton` volvía key-distintas a las filas viejas (`canton IS NULL`) de las recién reprocesadas, lo que habría dejado filas huérfanas duplicando montos vía el `LEFT JOIN` a `dim_canton`. Seguro porque tsp/tsa es un archivo acumulativo único (re-derivación completa desde `raw.*`, sin pérdida). | `sql/28_bce_canton_grain.sql`, `src/benchmark_bancos/transform/parse_bce_tasas.py`, `src/benchmark_bancos/pipeline.py::reprocess_bce_staging`, "Cambio de grano de BCE a cantón" arriba, `docs/data_dictionary.md`, `docs/linaje_datos.md` |
 | ✅ **Resuelto 2026-10-02** (aplicado con `sql/32`, validado contra el motor de referencia). **`sql/18_glosario_cuentas_views.sql` (vistas `vw_cartera_bruta`/`vw_cartera_improductiva`/etc.) no está aplicado en la base de producción viva** — encontrado 2026-08-30 al intentar usar `marts.vw_cartera_bruta` para la reconciliación de arriba | `to_regclass`/`information_schema.views` confirma que ninguna de las vistas de `sql/18` existe en `marts` en la instancia nativa viva, pese a que migraciones **posteriores** (`sql/22`, `25`, `26`, `27`) sí están aplicadas (`dim_cuenta_contable.estado_validacion`, `dim_banco.estado_validacion`, `dim_plazo.estado_validacion`, `vw_banco_ruc_colisiones` existen y funcionan) — es decir, `sql/18` se saltó específicamente, no es que las migraciones se detuvieran en algún punto. Consistente con el propio comentario de cabecera de `sql/18` ("NO ejecutado todavía contra una instancia Postgres real (solo probado el equivalente en pandas)"), escrito cuando se creó el archivo — parece que nunca se corrió después tampoco. La reconciliación de esta sesión se hizo con la lógica de la vista expandida inline (ver consulta en `docs/metricas_financieras.md`) precisamente por esto. **No se aplicó la migración en esta sesión** (alcance explícito: solo documentación) — si alguien retoma el proyecto y `marts.vw_cartera_bruta` (u otra vista de `sql/18`) falla con "relation does not exist", esta es la causa; aplicar `sql/18_glosario_cuentas_views.sql` (es `CREATE OR REPLACE VIEW`, no destructivo) es la resolución directa. | `sql/18_glosario_cuentas_views.sql`, `docs/metricas_financieras.md` |
 
 ### Semántica distinta de `fact_saldo_cartera` para mutualistas (2026-10-01)

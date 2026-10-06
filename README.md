@@ -1,21 +1,24 @@
-# Benchmark de cartera, depósitos y tasas — bancos privados del Ecuador
+# Benchmark de cartera, depósitos y tasas — sistema financiero del Ecuador
 
 Proyecto de analítica end-to-end (ingeniería de datos + BI) sobre cartera, depósitos,
-tasas de interés y estados financieros de los bancos privados del Ecuador, con el fin de
-identificar oportunidades de mercado (banco / producto / cantón / tasa) y proponer un
-monitoreo continuo. 4 fuentes integradas en un único esquema estrella conformado:
+tasas de interés y estados financieros del sistema financiero del Ecuador (bancos
+privados y públicos, cooperativas de ahorro y crédito y mutualistas), con el fin de
+identificar oportunidades de mercado (entidad / producto / cantón / tasa) y proponer un
+monitoreo continuo. 5 fuentes integradas en un único esquema estrella conformado:
 
-- [Portal CAPCOL](https://www.superbancos.gob.ec/estadisticas/portalestudios/capcol-bancos/) (Superbancos) — cartera y depósitos, mensual.
-- [Tasas de interés del BCE](https://contenido.bce.fin.ec/documentos/Estadisticas/SectorMonFin/TasasInteres/) — tasas activas/pasivas por banco (semanal) y techos/referenciales regulatorios (mensual).
-- [Boletín Financiero Mensual](https://www.superbancos.gob.ec/estadisticas/portalestudios/bancos/) (Superbancos) — balance y estado de resultados por banco, mensual.
+- [Portal CAPCOL](https://www.superbancos.gob.ec/estadisticas/portalestudios/capcol-bancos/) (Superbancos) — cartera y depósitos de bancos privados y de [Banca Pública](https://www.superbancos.gob.ec/estadisticas/portalestudios/capcol-instituciones-publicas/), mensual.
+- [Tasas de interés del BCE](https://contenido.bce.fin.ec/documentos/Estadisticas/SectorMonFin/TasasInteres/) — tasas activas/pasivas por entidad (semanal) y techos/referenciales regulatorios (mensual).
+- [Boletín Financiero Mensual](https://www.superbancos.gob.ec/estadisticas/portalestudios/bancos/) (Superbancos) — balance y estado de resultados de bancos privados, mensual.
+- [Estadísticas SEPS](https://estadisticas.seps.gob.ec/index.php/estadisticas-sfps/) — cartera, depósitos y estados financieros de cooperativas (S1-S3) y mutualistas, mensual.
 
-> Repositorio pensado para publicarse como `benchmark-depositos-cartera-bp`.
+> **Las tablas de hechos mezclan sectores.** Cualquier total, participación o ranking
+> debe filtrar o agrupar por `dim_banco.tipo_entidad`.
 
 ## Qué incluye
 
 1. **ETL** (`src/benchmark_bancos/`): extractores por fuente (Playwright para los 2 portales de
-   Superbancos que renderizan vía plugin OneDrive/SharePoint; descarga directa para BCE,
-   que sí es HTML/CSV estático) → parsers Python/pandas → carga idempotente a Postgres en
+   Superbancos que renderizan vía plugin OneDrive/SharePoint; descarga directa para BCE y
+   SEPS, que publican archivos estáticos) → parsers Python/pandas → carga idempotente a Postgres en
    2 capas (`staging` → `marts`, esquema estrella) más un registro de ingesta (`meta`).
    Carga incremental en tres niveles: archivo (sha256), fila (CDC por columnas) y refresh
    de marts (marca de agua: solo recalcula lo que cambió).
@@ -65,14 +68,14 @@ docker compose up -d
 #     en orden, empezando por 00 (conectado como superusuario) y luego 01, 02, 03...
 #     hasta la ultima migracion existente en sql/:
 & "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U postgres -d postgres -f sql/00_roles_db.sql
-& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U bp_etl -d benchmark_cartera_depositos -f sql/01_schema_raw.sql
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U bp_etl -d benchmark_cartera_depositos -f sql/01_schema_meta.sql
 & "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U bp_etl -d benchmark_cartera_depositos -f sql/02_schema_staging.sql
 & "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U bp_etl -d benchmark_cartera_depositos -f sql/03_schema_marts.sql
 & "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U bp_etl -d benchmark_cartera_depositos -f sql/04_indexes_views.sql
 # ... 05 a la ultima, en orden (ver sql/*.sql) ...
 
 # 4. Pipeline CAPCOL (descarga + carga) para 2021-2025
-uv run benchmark-bancos all --years 2021 2022 2023 2024 2025
+uv run main.py all --years 2021 2022 2023 2024 2025
 
 # 5. BCE (tasas semanales tsp/tsa + techos/referenciales TasasHistorico.htm)
 uv run benchmark-bancos bce
@@ -91,6 +94,7 @@ uv run benchmark-bancos seps --years 2021 2022 2023 2024 2025
 ## Estructura
 
 ```
+main.py               punto de entrada: `uv run main.py <etapa>` (delega en benchmark_bancos.cli)
 pyproject.toml        dependencias (uv), script `benchmark-bancos`, config de ruff/black/pytest
 uv.lock               versiones exactas (reproducible en local y CI)
 src/benchmark_bancos/
@@ -113,7 +117,8 @@ powerbi/              proyecto .pbip (modelo semántico + reporte)
 docs/                 arquitectura, diccionario de datos, fuentes, linaje, gobernanza, métricas
 tests/                parsers, resolución de identidad y regresiones de CDC/refresh contra
                       Postgres real (ver "Tests y CI")
-scripts/              utilidades fuera del pipeline (p.ej. motor de referencia de indicadores)
+scripts/              utilidades fuera del pipeline: compute_indicadores_excel.py (motor de
+                      referencia de indicadores), export_sample_parquet.py (regenera data/samples)
 data/raw/             archivos descargados: fuente de verdad (no versionado)
 data/samples/         muestra de marts.* en Parquet (versionada) para probar sin Postgres
 ```
@@ -126,12 +131,16 @@ data/samples/         muestra de marts.* en Parquet (versionada) para probar sin
 - **Unit** (default, sin marker): parsers, matching de identidad de banco/categoría/
   plazo/cantón (incluyendo `_weighted_agg()`/`_resolve_canton()` de
   `parse_bce_tasas.py` con `canton` en el grano, ver `sql/28_bce_canton_grain.sql`),
-  `sha256_file()` y el parseo de fecha-desde-nombre-de-archivo
-  (`src/benchmark_bancos/pipeline.py::parse_fecha_from_*_filename`) -- puros, sin DB ni red.
+  `sha256_file()`, el parseo de fecha-desde-nombre-de-archivo
+  (`src/benchmark_bancos/pipeline.py::parse_fecha_from_*_filename`) y los parsers de la
+  SEPS con fixtures sintéticos que reproducen sus variaciones reales de formato
+  (`tests/test_parse_seps.py`) -- puros, sin DB ni red.
 - **Integration** (`@pytest.mark.integration`, fixture `db_conn` en
   `tests/conftest.py`): requieren Postgres real ya migrado hasta el último `sql/*.sql`
   (ver Quickstart). Cubren las regresiones de `sql/10`/`sql/23`/`sql/24` (unicidad
-  NULL-safe) y `sql/21` (invariante de grano del pivote de `fact_saldo_cartera`), un round-trip real de
+  NULL-safe), `sql/31` (cantones homónimos en la llave de staging), `sql/21` (invariante
+  de grano del pivote de `fact_saldo_cartera`), el refresh incremental de marts (una fila
+  nueva llega sin refresh completo y la marca de agua avanza, `sql/34`), un round-trip real de
   `upsert_staging_cartera()`/`register_source_file()`/`is_source_loaded()` verificando
   el contrato de CDC (una segunda carga idéntica no dispara ningún `UPDATE`), el
   auto-ingreso two-tier de `marts.dim_canton` de punta a punta (un cantón fuera del
@@ -158,7 +167,8 @@ uv run pytest -m integration          # integration -- Postgres real arriba
 uv run pytest                          # ambos
 ```
 
-CI (`.github/workflows/`): `lint.yml` corre `ruff`+`black --check` (sin DB, sin red).
+CI (`.github/workflows/`): ambos workflows instalan con `uv sync --locked` (mismas
+versiones que local, desde `uv.lock`). `lint.yml` corre `ruff`+`black --check` (sin DB, sin red).
 `test.yml` corre `test-unit` (igual que arriba, sin servicios) y `test-integration`
 (levanta un service container `postgres:17` y aplica `sql/*.sql` en orden lexicográfico
 vía `psql` antes de correr `pytest -m integration` -- GitHub Actions no soporta el mount
@@ -176,23 +186,23 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   etc.). Ambos con desagregación geográfica (cantón/provincia/región). **No trae tasa de
   interés** (verificado contra archivos reales) — de ahí la fuente BCE.
 - **BCE tsp/tsa** (tasas semanales por entidad): histórico completo 2008-01 a la fecha,
-  **sistema financiero completo** (442 entidades en `dim_banco`: 33 bancos privados con
-  identidad curada + 409 bancos públicos/cooperativas/mutualistas/sociedad financiera/
-  tarjetas de crédito auto-registrados por RUC — ver `docs/gobernanza_datos.md`). Activas
+  **sistema financiero completo**. `dim_banco` tiene 444 entidades (2026-10-05): 36 con
+  identidad curada (33 bancos privados + 3 públicos) y 408 auto-registradas por RUC
+  (cooperativas, mutualistas, otros bancos públicos, sociedades financieras, tarjetas de
+  crédito y 2 entidades de segundo piso). Ver `docs/gobernanza_datos.md`. Activas
   por segmento de crédito (26 valores), pasivas por categoría de depósito, ambas por
   plazo y cantón (2026-09-01: grano cambiado de provincia a cantón,
   `sql/28_bce_canton_grain.sql` + reproceso del histórico completo, ver
   `src/benchmark_bancos/transform/parse_bce_tasas.py`/`src/benchmark_bancos/transform/canton_matching.py`) —
   provincia/región siguen disponibles vía `dim_canton.provincia_id → dim_provincia`.
   `fact_captaciones_depositos`: 3.077.474 filas; `fact_colocaciones_cartera`: 7.756.581
-  filas (0 `canton_id` NULL en ambas, verificado tras el reproceso —
-  `uv run benchmark-bancos bce-reprocess-canton-grain`, backfill de un solo uso para esta
-  migración, no forma parte del flujo semanal normal de `uv run benchmark-bancos bce`).
+  filas (0 `canton_id` NULL en ambas, verificado tras el reproceso de grano de
+  2026-09-01; ese backfill de un solo uso se eliminó del código el 2026-10-05).
 - **BCE `TasasHistorico.htm`** (techos y referenciales, nivel sistema): 2022-04 a
   2026-06 (páginas anteriores usan un layout HTML distinto, no soportado por el parser
   actual). Tasas activas máximas/referenciales por segmento, pasivas por instrumento y
   plazo, TPR/TAR/Tasa Legal/Tasa Máxima Convencional.
-- **Boletín Financiero Mensual** (balance/PyG por banco): 2021-01 a 2026-06. Plan de
+- **Boletín Financiero Mensual** (balance/PyG de bancos privados): 2021-01 a 2026-06. Plan de
   cuentas jerárquico completo (Catálogo Único de Cuentas), valores en USD (fuente reporta
   en miles, normalizado al cargar).
 - **SEPS** (cooperativas de ahorro y crédito S1-S3 y mutualistas, 2021-01 a 2025-12,
@@ -200,21 +210,32 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   cantón, en las mismas tablas que CAPCOL; y estados financieros por entidad en
   `fact_balance`/`fact_pyg`, para validar esos saldos contra las cuentas contables.
   Segmentos 4-5 fuera de alcance (reportan trimestral). Ver `docs/fuentes_datos.md`
-  sección 4.0.
+  sección 4.0. Dos diferencias de criterio documentadas: la cartera de las mutualistas
+  incluye vivienda VIS/VIP vendida al fideicomiso y administrada (+34% a +45% sobre su
+  balance), y el consumo de las cooperativas emisoras de tarjetas excluye las tarjetas.
 
 ## Estado del proyecto
 
-- ✅ ETL de las 4 fuentes completo y verificado (conteos `staging` = `marts` exactos, CDC
+- ✅ ETL de las 5 fuentes completo y verificado (conteos `staging` = `marts` exactos, CDC
   sin updates espurios en una segunda corrida, ver `docs/data_dictionary.md` y
   `docs/architecture.md`).
+- ✅ **Banca Pública y SEPS cargadas** (2026-09-30 / 2026-10-01): saldos conciliados
+  contra estados financieros por entidad y mes (depósitos mediana 0,00%; cartera mediana
+  0,00%, con las 4 excepciones explicadas en `docs/fuentes_datos.md` §4.0).
+- ✅ **Mejoras de ingeniería** (2026-10-05): proyecto empaquetado con uv (`src/`,
+  `pyproject.toml`, `uv.lock`, `main.py`), capa `raw` JSONB eliminada (la base pasó de
+  22 GB a ~9,4 GB), CDC por columnas sin `row_hash` y refresh de marts incremental (196 s
+  → 0,03 s sin cambios). Ver `docs/architecture.md`, "Carga incremental".
+- ⏳ **Power BI no filtra por sector todavía**: con SEPS y Banca Pública en las mismas
+  tablas, las medidas actuales suman todos los tipos de entidad. Es el siguiente paso.
 - ✅ **Power BI (`.pbip`) realineado con el esquema actual de CAPCOL** (2026-07-23,
   actualizado 2026-07-25): `fact_cartera`/`fact_depositos` → `fact_saldo_cartera`/
   `fact_saldo_depositos`, `dim_producto_cartera`/`dim_producto_deposito` →
   `dim_segmento_credito` + `dim_categoria_deposito`/`dim_plazo`, `dim_provincia` agregada
   (2 visuales dependían de `dim_canton[provincia]`), medidas de morosidad/cartera vencida
-  actualizadas al pivote de `estado_cartera` (ver abajo). Sigue cubriendo **solo CAPCOL**
-  — incorporar las tablas de BCE/Boletín (11 tablas más) es un trabajo aparte, no hecho
-  todavía.
+  actualizadas al pivote de `estado_cartera` (ver abajo). Sigue cubriendo **solo las
+  tablas de saldos** — incorporar BCE/Boletín/EEFF SEPS (11 tablas más) es un trabajo
+  aparte, no hecho todavía.
 - ✅ **`fact_saldo_cartera.estado_cartera` pivotado a columnas** (2026-07-25): era una
   dimensión degenerada (3 filas por combinación real, antipatrón EAV) — ahora
   `saldo_por_vencer`/`saldo_no_devenga_intereses`/`saldo_vencida` + `saldo_total`

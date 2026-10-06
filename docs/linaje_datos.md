@@ -1,7 +1,9 @@
 # Linaje de datos
 
-Traza, campo por campo, el recorrido `archivo fuente → raw.* → staging.* → marts.*` para
-cada una de las 4 fuentes. Es el complemento de `docs/data_dictionary.md` (qué significa
+Traza, campo por campo, el recorrido `archivo fuente → staging.* → marts.*` para cada
+una de las 5 fuentes (CAPCOL incl. Banca Pública, BCE tsp/tsa, `TasasHistorico.htm`,
+Boletín y SEPS; la SEPS está en la sección 7). Las tablas por fuente conservan una columna
+"raw" que hoy describe la salida del parser: desde `sql/33` no hay capa `raw` en la base. Es el complemento de `docs/data_dictionary.md` (qué significa
 cada campo) y `docs/architecture.md` (cómo se relacionan las tablas): este documento
 responde **de dónde viene** cada campo y **qué transformación** sufrió en el camino.
 Grounded directamente en el código (parsers de `src/benchmark_bancos/transform/`, `src/benchmark_bancos/load/load_postgres.py`)
@@ -71,7 +73,7 @@ archivo (`src/benchmark_bancos/transform/parse_cartera.py::tipo_credito_from_she
 | Valor de la columna de estado correspondiente | `saldo` | **`SUM` por groupby** sobre `(fecha, banco, cantón, tipo_credito, estado)` en `staging.cartera` (el origen trae detalle de oficina/cuenta). En `refresh_marts()`: pivote vía `SUM(saldo) FILTER (WHERE estado_cartera = '...')`, agrupando por `(fecha, banco, cantón, segmento)` — el `estado_cartera` de staging deja de ser parte del grano de `marts`, se convierte en 3 columnas de medida | `fact_saldo_cartera.saldo_por_vencer`/`.saldo_no_devenga_intereses`/`.saldo_vencida` + `.saldo_total` (columna `GENERATED`, suma de las 3) |
 | *(no existe en la fuente — confirmado contra archivos reales y la ficha metodológica)* | — | — | `tasa_ponderada`, `.morosidad`, `.saldo_x_tasa` eran columnas reservadas nunca pobladas — **eliminadas 2026-07-19** (`sql/15_rename_fact_tables.sql`, junto con el rename a `fact_saldo_cartera`); la tasa real por producto ya vive en `fact_colocaciones_cartera` |
 | Nombre del ZIP | `source_file` | — | No se propaga a `marts` |
-| SHA-256 del archivo | `source_hash` | `sha256_file()` | Solo usado por `raw.source_files` (idempotencia de carga) |
+| SHA-256 del archivo | `source_hash` | `sha256_file()` | Solo usado por `meta.source_files` (idempotencia de carga) |
 
 **Llave natural** `staging.cartera`: `(fecha, tipo_entidad, banco, canton, tipo_credito, estado_cartera)`.
 Código: `src/benchmark_bancos/transform/parse_cartera.py`, `src/benchmark_bancos/load/load_postgres.py::upsert_staging_cartera`.
@@ -130,7 +132,7 @@ el patrón ya usado por CAPCOL. Esquema (`staging.bce_tasas_pasivas.canton`,
 función de resolución (`src/benchmark_bancos/transform/canton_matching.py::resolver_canton_bce()`) e
 integración en el parser (`_resolve_canton()`, `src/benchmark_bancos/transform/parse_bce_tasas.py`) están
 todos en producción. Reprocesado el histórico completo vía
-`src/benchmark_bancos/pipeline.py::reprocess_bce_staging()` (nuevo stage CLI
+`reprocess_bce_staging()` (backfill de un solo uso, eliminado del código el 2026-10-05) (nuevo stage CLI
 `bce-reprocess-canton-grain`): `marts.fact_captaciones_depositos` quedó en **3.077.474
 filas** (0 con `canton_id` NULL), `marts.dim_canton` se mantuvo en 228 filas, todas
 `CONFIRMADO` (0 pares nuevos `AUTO_INGRESADO` — el universo sembrado en `sql/28` ya
@@ -162,7 +164,7 @@ cubría el histórico real completo de BCE). 334.556 filas cayeron en el bucket
 1.956.386 filas exactas (0 filas huérfanas en el JOIN a `dim_banco`), de las cuales
 485.588 son de los 33 bancos privados curados y 1.470.798 de las ~399 entidades
 auto-registradas. **Conteos a grano cantón, verificados en producción tras el reproceso
-completo (2026-09-01, `src/benchmark_bancos/pipeline.py::reprocess_bce_staging()`)**:
+completo (2026-09-01, `reprocess_bce_staging()` (backfill de un solo uso, eliminado del código el 2026-10-05))**:
 `marts.fact_captaciones_depositos` = **3.077.474 filas** (0 con `canton_id` NULL) — el
 aumento real (~1.57x) quedó en línea con el estimado previo (~1.6x, medido sobre
 combinaciones distintas de jun-2026: 26.998 a grano cantón vs. 16.393 a grano provincia).
@@ -251,7 +253,7 @@ anteriores, decisión explícita de alcance, ver `docs/fuentes_datos.md`).
 ## 7. SEPS — Captaciones, Colocaciones (saldos) y Estados Financieros (2026-09-30)
 
 Fuente: portal `estadisticas.seps.gob.ec`, descarga directa por `download_id`
-(`src/benchmark_bancos/extract/download_seps.py`, ids en `src/benchmark_bancos/config/::SEPS_DOWNLOAD_IDS`). Un ZIP por
+(`src/benchmark_bancos/extract/download_seps.py`, ids en `src/benchmark_bancos/config/sources.py::SEPS_DOWNLOAD_IDS`). Un ZIP por
 año y reporte, con Deflate64 (se lee con `stream_unzip`). Cobertura: cooperativas de
 segmentos 1-3 y mutualistas. Los segmentos 4-5 publican trimestralmente y quedan fuera de
 alcance. Código: `src/benchmark_bancos/transform/parse_seps.py`, `src/benchmark_bancos/pipeline.py::load_seps`. **No hay
@@ -271,16 +273,17 @@ tablas nuevas**: los tres reportes conforman contra las de CAPCOL y del Boletín
 | EEFF `CUENTA`, `DESCRIPCION CUENTA` | `codigo`; `dim_cuenta_contable` | 4* y 5* → `PYG`; el resto → `BALANCE`. `insert_dim_cuenta_contable_seps()` hace `ON CONFLICT DO NOTHING`: un código compartido conserva la descripción de Superbancos | `fact_balance`/`fact_pyg.cuenta_id` |
 | EEFF `SALDO (USD)` / `SALDO_USD` | `saldo_usd` / `valor_usd` | Ya en USD (sin ×1000). Decimal `.` o `,` según el año; vacío o 0 se descarta (~70% de las filas; la ausencia equivale a 0) | `fact_balance.saldo_usd` / `fact_pyg.valor_usd` |
 
-**Raw**: los mismos `raw.depositos`/`raw.cartera`/`raw.boletin_*` (JSONB de la fila ya
-parseada). `raw.source_files` registra cada archivo como `seps/{año}/{archivo}`. Orden por
-año: primero EEFF (trae la razón social completa para las entidades nuevas), luego
-captaciones y colocaciones.
+**Registro de ingesta**: `meta.source_files` registra cada archivo como
+`seps/{año}/{archivo}` con su sha256. (Al cargarse por primera vez, el 2026-09-30, la salida
+del parser también se copiaba como JSONB a `raw.*`; esa capa se eliminó en `sql/33`.)
+Orden por año: primero EEFF (trae la razón social completa para las entidades nuevas),
+luego captaciones y colocaciones.
 
 ---
 
 ## Patrones de transformación transversales
 
-Válidos para las 4 fuentes, no repetidos en cada tabla arriba:
+Válidos para las 5 fuentes, no repetidos en cada tabla arriba:
 
 - **Identidad de banco**: siempre resuelta por `src/benchmark_bancos/transform/banco_matching.py::resolver_banco_codigo(nombre, fuente)`
   antes de `staging.*` — nunca en SQL. `fuente` ∈ `{CAPCOL, BCE, BOLETIN}` porque cada una
@@ -290,7 +293,8 @@ Válidos para las 4 fuentes, no repetidos en cada tabla arriba:
   Para BCE específicamente (`resolver_entidad_bce()`), desde 2026-08-30 el camino
   no-privado además exige que el RUC pase `validar_ruc_estructura()` (`RucInvalidoError`
   si falla) antes de auto-registrar `banco_codigo = "BCE_" + ruc` — ver sección 3/4 arriba
-  y `docs/gobernanza_datos.md`.
+  y `docs/gobernanza_datos.md`. La SEPS trae RUC por fila y usa
+  `resolver_entidad_seps()`, con la misma llave `BCE_<ruc>` y la misma validación.
 - **Categoría de depósito / plazo**: resueltos antes de `staging.*` por
   `categoria_deposito_matching.py` (CAPCOL, BCE tsp) y `bce_plazo_matching.py` (BCE
   tsp/tsa) — mismo principio "fail loud, no autogenerar" que banco. **Plazo
@@ -303,17 +307,14 @@ Válidos para las 4 fuentes, no repetidos en cada tabla arriba:
   en `dim_plazo` con `estado_validacion='AUTO_INGRESADO'` — ver `docs/data_dictionary.md`
   y `docs/gobernanza_datos.md` (regla de calidad #1) para el detalle completo y la
   justificación de por qué `dim_plazo` es la excepción entre los 5 catálogos "cerrados".
-- **CDC (`fecha_carga`/`fecha_actualizacion`/`row_hash`)**: se aplica en `staging.*` y en
-  los `fact_*`/`dim_banco` de `marts` — nunca en `raw.*` (append-only, idempotente por
-  archivo vía `source_hash`) ni en los catálogos pequeños de solo-catálogo (`dim_plazo`,
-  `dim_categoria_deposito`, `dim_segmento_credito`, `dim_subsegmento_credito`,
-  `dim_cuenta_contable`, `staging.banco_maestro`), que se insertan/mapean/resiembran sin
-  guard de CDC propio. `estado_validacion` (2026-08-30, `dim_banco`/`dim_cuenta_contable`/
-  `staging.banco_maestro`/`dim_plazo`) sigue esa misma línea: se extendió el `row_hash`
-  existente donde ya había uno (`dim_banco`, `sql/26`), y se agregó sin `row_hash` donde
-  nunca hubo uno (`dim_cuenta_contable`/`staging.banco_maestro`, `sql/25`; `dim_plazo`,
-  `sql/27` — este último puramente aditivo, `ON CONFLICT DO NOTHING` sin `UPDATE`, así que
-  ni siquiera hay noción de "cambió de verdad" que un `row_hash` necesite proteger).
-  Detalle del patrón en `docs/architecture.md`.
+- **CDC (`fecha_carga`/`fecha_actualizacion`)**: se aplica en `staging.*` y en los
+  `fact_*`/`dim_banco` de `marts`, comparando directamente las columnas mutables en el
+  `ON CONFLICT` (desde `sql/34` no hay `row_hash`). El refresh de `marts` es incremental
+  por marca de agua (`meta.refresh_watermark`). A nivel de archivo, `meta.source_files`
+  evita reprocesar un archivo con el mismo sha256. No hay CDC en los catálogos pequeños
+  (`dim_plazo`, `dim_categoria_deposito`, `dim_segmento_credito`,
+  `dim_subsegmento_credito`, `dim_cuenta_contable`, `staging.banco_maestro`), que se
+  insertan/mapean/resiembran sin guard propio; `estado_validacion` (2026-08-30) se agregó
+  a esos catálogos sin tocar CDC. Detalle del patrón en `docs/architecture.md`.
 - **`fecha_id` (marts)**: siempre `TO_CHAR(fecha, 'YYYYMMDD')::INT`, calculado en el
   `INSERT...SELECT` de `refresh_marts()` — nunca almacenado en `staging.*`.

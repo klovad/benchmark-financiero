@@ -22,26 +22,6 @@ CREATE TABLE IF NOT EXISTS marts.dim_cuenta_contable (
     UNIQUE (reporte, codigo)
 );
 
-CREATE TABLE IF NOT EXISTS raw.boletin_balance (
-    id           BIGSERIAL PRIMARY KEY,
-    source_file  TEXT NOT NULL,
-    source_hash  TEXT NOT NULL,
-    anio         INT NOT NULL,
-    mes          INT NOT NULL,
-    loaded_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-    data         JSONB NOT NULL
-);
-CREATE TABLE IF NOT EXISTS raw.boletin_pyg (
-    id           BIGSERIAL PRIMARY KEY,
-    source_file  TEXT NOT NULL,
-    source_hash  TEXT NOT NULL,
-    anio         INT NOT NULL,
-    mes          INT NOT NULL,
-    loaded_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-    data         JSONB NOT NULL
-);
-CREATE INDEX IF NOT EXISTS ix_raw_boletin_balance_anio_mes ON raw.boletin_balance (anio, mes);
-CREATE INDEX IF NOT EXISTS ix_raw_boletin_pyg_anio_mes ON raw.boletin_pyg (anio, mes);
 
 -- staging guarda el valor ya en USD completos (x1000 aplicado en el parser -- la fuente
 -- reporta en miles, confirmado en el encabezado real del archivo).
@@ -101,7 +81,3 @@ CREATE TABLE IF NOT EXISTS marts.fact_pyg (
     UNIQUE (fecha_id, banco_id, cuenta_id)
 );
 
-ALTER TABLE raw.source_files DROP CONSTRAINT IF EXISTS source_files_report_type_check;
-ALTER TABLE raw.source_files ADD CONSTRAINT source_files_report_type_check
-    CHECK (report_type IN ('cartera', 'depositos', 'bce_tasas_pasivas', 'bce_tasas_activas',
-                            'tasas_referenciales', 'boletin_balance', 'boletin_pyg'));

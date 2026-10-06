@@ -128,41 +128,6 @@ TIPOS_SEGMENTO_VALIDOS = {
     "ADMINISTRADORA DE TARJETAS DE CREDITO",
 }
 
-# Columnas originales de la fuente (+ fecha derivada de semana) para raw.bce_tasas_*.
-# Deliberadamente SIN agregar ni resolver identidad -- eso es trabajo de staging.
-RAW_TSP_COLS = [
-    "fecha",
-    "ruc",
-    "razon_social",
-    "sector_financiero",
-    "tipo_entidad",
-    "tipo_segmento",
-    "instrumento_captacion",
-    "provincia",
-    "canton",
-    "plazo",
-    "monto_total",
-    "numero_operaciones",
-    "tasa_pasiva_efectiva",
-    "tasa_nominal",
-]
-RAW_TSA_COLS = [
-    "fecha",
-    "ruc",
-    "razon_social",
-    "sector_financiero",
-    "tipo_entidad",
-    "tipo_segmento",
-    "segmento_credito",
-    "provincia",
-    "canton",
-    "plazo",
-    "monto_total",
-    "numero_operaciones",
-    "tasa_activa_efectiva",
-    "tasa_nominal",
-]
-
 
 class SegmentoNoResueltoError(ValueError):
     """segmento_credito de tsa no está en el universo sembrado de dim_subsegmento_credito."""

@@ -23,9 +23,9 @@ Dos modos:
   los ~394MB del histórico completo (2008-2026) cuando alcanza con una ventana reciente
   para pruebas; el directorio de salida se nombra `marts_ultimos_{N}_anios` en ese caso.
 
-Uso: python -m benchmark_bancos.export_sample_parquet [--anio 2025] [--mes 3]
-     python -m benchmark_bancos.export_sample_parquet --full
-     python -m benchmark_bancos.export_sample_parquet --full --anios-recientes 5
+Uso: uv run scripts/export_sample_parquet.py [--anio 2025] [--mes 3]
+     uv run scripts/export_sample_parquet.py --full
+     uv run scripts/export_sample_parquet.py --full --anios-recientes 5
 """
 
 import argparse

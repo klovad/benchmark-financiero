@@ -18,20 +18,6 @@
 INSERT INTO marts.dim_categoria_deposito (categoria) VALUES ('DEPÓSITOS MONETARIOS')
 ON CONFLICT (categoria) DO NOTHING;
 
-ALTER TABLE raw.source_files DROP CONSTRAINT IF EXISTS source_files_report_type_check;
-ALTER TABLE raw.source_files ADD CONSTRAINT source_files_report_type_check
-    CHECK (report_type IN ('cartera', 'depositos', 'bce_tasas_pasivas', 'bce_tasas_activas', 'tasas_referenciales'));
-
-CREATE TABLE IF NOT EXISTS raw.tasas_referenciales (
-    id           BIGSERIAL PRIMARY KEY,
-    source_file  TEXT NOT NULL,
-    source_hash  TEXT NOT NULL,
-    anio         INT NOT NULL,
-    mes          INT NOT NULL,
-    loaded_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-    data         JSONB NOT NULL
-);
-CREATE INDEX IF NOT EXISTS ix_raw_tasas_referenciales_anio_mes ON raw.tasas_referenciales (anio, mes);
 
 CREATE TABLE IF NOT EXISTS staging.tasas_referenciales (
     id                BIGSERIAL PRIMARY KEY,

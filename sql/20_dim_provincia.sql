@@ -8,7 +8,7 @@
 -- derivaba de PROVINCIA_REGION = "ORIENTE", el mapeo canónico -- ver
 -- src/benchmark_bancos/transform/parse_depositos.py, ya corregido para no usar la columna del archivo).
 -- dim_provincia es ahora la ÚNICA fuente de region -- el bug queda estructuralmente
--- imposible de repetir. Sembrada desde src/benchmark_bancos/config/::PROVINCIA_REGION (24 provincias)
+-- imposible de repetir. Sembrada desde src/benchmark_bancos/config/domain.py::PROVINCIA_REGION (24 provincias)
 -- + 2 valores especiales sin provincia real: 'ZONA NO DELIMITADA' (CAPCOL) y 'S/N' (BCE,
 -- filas a nivel nacional sin desagregar).
 --

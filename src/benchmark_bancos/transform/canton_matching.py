@@ -75,14 +75,6 @@ _CANTON_PROVINCIA_PATH = _SEEDS_DIR / "canton_provincia.csv"
 _PROVINCIAS_ESPECIALES = {"ZONA NO DELIMITADA", "S/N"}
 _PROVINCIAS_VALIDAS = set(PROVINCIA_REGION.keys()) | _PROVINCIAS_ESPECIALES
 
-# Placeholder de "sin cantón desagregado" -- ver docstring del módulo y
-# sql/28_bce_canton_grain.sql. Estructural para varios instrumentos de BCE (depósitos de
-# ahorro, monetarios, fondos de tarjetahabientes, reportos: 100% NACIONAL siempre) y para
-# todo el histórico 2008-~2015 (ningún instrumento traía cantón todavía) -- no es un dato
-# faltante ni un error de parsing.
-CANTON_NACIONAL = "NACIONAL"
-PROVINCIA_SN = "S/N"
-
 
 class CantonNoResueltoError(ValueError):
     """La `provincia` cruda no normaliza contra ninguna de las 24 provincias reales del
@@ -174,7 +166,7 @@ def resolver_canton_bce(canton_crudo: str, provincia_cruda: str) -> tuple[str, s
             f"provincia '{provincia_cruda}' (normalizada '{provincia_norm}') no "
             f"resuelve contra marts.dim_provincia para canton='{canton_crudo}'. "
             f"Revisar si BCE cambió la ortografía o agregó una provincia nueva -- "
-            f"agregar a src/benchmark_bancos/config/::PROVINCIA_REGION si es una provincia real nueva."
+            f"agregar a src/benchmark_bancos/config/domain.py::PROVINCIA_REGION si es una provincia real nueva."
         )
 
     canton_norm = normalize_canton(canton_crudo)

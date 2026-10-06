@@ -20,7 +20,7 @@ conformados"): `dim_banco` (camino curado + camino auto-registrado), `dim_segmen
 | Catálogo | Excepción(es) | Archivo:línea | Comportamiento |
 |---|---|---|---|
 | `dim_banco` — curado (33 privados + 3 públicos) | `BancoNoResueltoError` | `src/benchmark_bancos/transform/banco_matching.py:37` (raise en :121-124) | Fail-fast absoluto |
-| `dim_banco` — auto-registrado (409) | `EntidadBceNoMapeadaError` (tipo_entidad), `RucInvalidoError` (RUC) | `banco_matching.py:139`, `banco_matching.py:144` (raise en :253-256 y :270-276) | Fail-fast sobre tipo/RUC; identidad en sí **no se cura**, se auto-ingresa `AUTO_INGRESADO` |
+| `dim_banco` — auto-registrado (408, BCE y SEPS) | `EntidadBceNoMapeadaError` (tipo_entidad), `RucInvalidoError` (RUC) | `banco_matching.py:139`, `banco_matching.py:144` (raise en :253-256 y :270-276) | Fail-fast sobre tipo/RUC; identidad en sí **no se cura**, se auto-ingresa `AUTO_INGRESADO` |
 | `dim_segmento_credito`/`dim_subsegmento_credito` | `SegmentoNoResueltoError` (BCE tsa), `ValueError` (CAPCOL, sin clase propia) | `src/benchmark_bancos/transform/parse_bce_tasas.py:156` (raise :329-331); `src/benchmark_bancos/transform/parse_cartera.py:48` | Fail-fast absoluto, sin two-tier |
 | `dim_categoria_deposito` | `CategoriaNoResueltaError` (CAPCOL), `ValueError` (BCE tsp, sin clase propia) | `src/benchmark_bancos/transform/categoria_deposito_matching.py:53` (raise :88-91); `parse_bce_tasas.py:291` | Fail-fast absoluto, sin two-tier |
 | `dim_segmento_entidad` | `TipoSegmentoNoResueltoError` | `parse_bce_tasas.py:160` (raise :296-299 tsp, :336-339 tsa) | Fail-fast absoluto, sin two-tier |
@@ -37,7 +37,7 @@ conformados"): `dim_banco` (camino curado + camino auto-registrado), `dim_segmen
 | `dim_categoria_deposito` (SEPS) | `CategoriaNoResueltaError` | `categoria_deposito_matching.py::resolver_categoria_deposito_seps` | Fail-fast absoluto; compara sin tildes contra `CATEGORIAS_VALIDAS` |
 | `dim_canton` (SEPS) | `CantonNoResueltoError` | reutiliza `resolver_canton_bce()` | Two-tier, igual que BCE |
 | `dim_cuenta_contable` (SEPS) | — | `load_postgres.py::insert_dim_cuenta_contable_seps` | Sin gate; `ON CONFLICT DO NOTHING` (no pisa descripciones de Superbancos) |
-| Extractor SEPS | `ValueError` ("no redirigió a un .zip") | `src/benchmark_bancos/extract/download_seps.py` | El `download_id` del portal cambió o el año no se publicó: actualizar `src/benchmark_bancos/config/::SEPS_DOWNLOAD_IDS` copiando el link del portal |
+| Extractor SEPS | `ValueError` ("no redirigió a un .zip") | `src/benchmark_bancos/extract/download_seps.py` | El `download_id` del portal cambió o el año no se publicó: actualizar `src/benchmark_bancos/config/sources.py::SEPS_DOWNLOAD_IDS` copiando el link del portal |
 
 **Año nuevo de SEPS**: agregar la fila del año a `SEPS_DOWNLOAD_IDS` (3 ids: Depósitos >
 Reportes; Cartera de crédito > Reportes, **segunda** fila, la del ZIP `YYYY-COL.zip`;
@@ -129,7 +129,7 @@ contra datos reales nuevos.
   en la(s) tabla(s) afectada(s) (`SELECT COUNT(*) FROM staging.cartera` vs.
   `SELECT COUNT(*) FROM marts.fact_saldo_cartera`, por ejemplo).
 
-## 2. `dim_banco` — camino auto-registrado (409 entidades no-privadas)
+## 2. `dim_banco` — camino auto-registrado (408 entidades no curadas, BCE y SEPS)
 
 **Errores** (dos clases distintas, no confundir):
 - `EntidadBceNoMapeadaError` — `banco_matching.py:139-141`, lanzado en :253-256 cuando
@@ -152,11 +152,11 @@ Ambos se ven al correr `uv run benchmark-bancos bce` (dentro de `_resolve_identi
   CHECK (tipo_entidad IN (...))`) en el mismo cambio.
 - `RucInvalidoError`: **casi nunca** es "relajar la validación". Primero descartar que sea
   un artefacto de parsing (RUC leído como número y perdió un cero a la izquierda, espacio
-  en blanco, truncamiento) revisando el valor crudo real en
-  `raw.bce_tasas_pasivas`/`raw.bce_tasas_activas` (`SELECT data->>'ruc' FROM raw.bce_tasas_pasivas
-  WHERE source_file = '<archivo>' AND data->>'razon_social' = '<entidad>' LIMIT 5;`) — el
-  RUC en `raw.*` nunca se transforma (`read_raw()` lo lee como texto, sin tocar, ver
-  `parse_bce_tasas.py:197`). Si el RUC crudo genuinamente no pasa el chequeo estructural
+  en blanco, truncamiento) revisando el valor crudo en el archivo fuente. Para BCE:
+  `uv run python -c "from benchmark_bancos.transform.parse_bce_tasas import read_raw;
+  df = read_raw('data/raw/bce/tsp_desde_200801.zip'); print(df[df.razon_social.str.contains('<entidad>')].ruc.unique())"`
+  — `read_raw()` lee el RUC como texto, sin transformarlo. Para la SEPS, abrir el `.xlsm`
+  o el `.txt` del ZIP en `data/raw/seps/{año}/` (desde `sql/33` no hay copia en la base). Si el RUC crudo genuinamente no pasa el chequeo estructural
   (13 dígitos, provincia 01-24, 3er dígito 9/6, dígito verificador módulo 11), es una
   pregunta de calidad de dato real, no un bug de código — **no** aflojar
   `validar_ruc_estructura()` para "dejarlo pasar". Si aparece un caso legítimamente nuevo
@@ -210,10 +210,12 @@ justificación sintaxis-vs-semántica-regulatoria en `sql/27_dim_plazo_estado_va
 - Si el texto se ve como ruido (encoding roto, hoja equivocada, truncamiento): bug de
   parsing, arreglar `find_base_sheets()`/`_parse_sheet()`/el regex, no el set.
 
-**Después de arreglarlo**: no existe hoy un `tests/test_parse_bce_tasas.py` ni
-`tests/test_parse_cartera.py` puros (verificado contra el listado de `tests/`) — el
-precedente más cercano es `tests/test_parse_tasas_historicas.py` (tests de alias de
-segmento, ej. `test_segmento_alias_agrega_el_guion_que_falta_en_esta_fuente`, línea 14).
+**Después de arreglarlo**: agregar el caso al test del parser que corresponda —
+`tests/test_parse_bce_tasas.py` (BCE tsa), `tests/test_transform.py`
+(`test_tipo_credito_from_sheet_name...`, CAPCOL), `tests/test_parse_seps.py` (subtipos SEPS,
+incluido `test_colocaciones_subtipo_nuevo_falla_fuerte`) o
+`tests/test_parse_tasas_historicas.py` (alias de segmento, ej.
+`test_segmento_alias_agrega_el_guion_que_falta_en_esta_fuente`).
 **Esto es un hueco de cobertura real** para `SEGMENTOS_VALIDOS`/`TIPO_CREDITO_KEYWORDS`
 en sí — si se toca alguno de los dos, es buen momento para crear el archivo de test
 correspondiente en vez de dejarlo sin cubrir de nuevo. Docs: `docs/data_dictionary.md`
@@ -393,7 +395,7 @@ consultando `marts.dim_canton` (sección de abajo).
 - `provincia` no resuelve: revisar si BCE cambió la ortografía de una provincia existente
   (poco probable, `normalize_provincia()` ya cubre tilde vs. sin tilde) o si agregó una
   provincia genuinamente nueva — si es real, agregarla a
-  `src/benchmark_bancos/config/::PROVINCIA_REGION` **y** una migración `sql/NN_....sql` que la siembre en
+  `src/benchmark_bancos/config/domain.py::PROVINCIA_REGION` **y** una migración `sql/NN_....sql` que la siembre en
   `marts.dim_provincia`.
 - `canton`/`provincia` vacíos: casi siempre bug de parsing (columna mal leída, fila de
   encabezado colada) — revisar `src/benchmark_bancos/transform/parse_bce_tasas.py`, no relajar la validación
@@ -543,7 +545,7 @@ Lo que CI **sí** valida, y es exactamente su trabajo:
 Mantener un catálogo (agregar un banco al crosswalk, confirmar una fila `AUTO_INGRESADO`)
 es una actividad **deliberadamente asíncrona y a ritmo humano**, desacoplada de CI por
 diseño — no un paso pendiente de automatizar. El trabajo de CI es garantizar que, **cuando**
-un humano agrega algo, no rompe el contrato ya establecido (NULL-safety, CDC, `row_hash`,
+un humano agrega algo, no rompe el contrato ya establecido (NULL-safety, CDC por columnas,
 fail-fast donde corresponde) — no bloquear un `push`/PR porque todavía existe una fila
 `AUTO_INGRESADO` sin revisar en la base, o porque el mundo real tiene un banco que el
 crosswalk no conoce todavía. Si alguna vez se propone un gate de CI sobre "0 filas

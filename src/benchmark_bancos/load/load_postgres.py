@@ -413,30 +413,6 @@ def upsert_staging_tasas_referenciales(conn, df: pd.DataFrame) -> None:
     log.info("staging.tasas_referenciales: %d filas upsert", len(rows))
 
 
-def truncate_staging_bce(conn) -> None:
-    """Vacía staging.bce_tasas_pasivas/activas -- necesario ÚNICAMENTE para el reproceso
-    de backfill de sql/28_bce_canton_grain.sql (cambio de grano de provincia a cantón,
-    2026-09-01): la llave natural de ambas tablas se extendió con `canton` (nullable) --
-    las filas cargadas ANTES de esta migración (canton NULL, grano provincia) quedan con
-    una llave NATURAL DISTINTA a las que produce el parser ya reprocesado para el MISMO
-    dato fuente (canton siempre poblado tras el reproceso, incluido el placeholder
-    'NACIONAL') -- un upsert normal por ON CONFLICT las dejaría como filas duplicadas
-    huérfanas (grano provincia + grano cantón coexistiendo) en vez de reemplazarlas.
-
-    Seguro porque tsp/tsa son UN SOLO archivo acumulativo con el histórico semanal
-    completo (2008-actualidad), no incremental por año como CAPCOL -- reprocesar ese
-    archivo completo re-deriva el 100% del contenido real de estas 2 tablas desde cero,
-    sin pérdida de datos (la fuente de verdad es el zip en data/raw/bce/, que no se toca;
-    desde sql/33 ya no hay copia JSONB en raw.*). NO usar para una carga normal -- el único llamador previsto es
-    src/benchmark_bancos/pipeline.py::reprocess_bce_staging(), un comando de backfill de un solo uso para
-    esta migración de esquema."""
-    with conn.cursor() as cur:
-        cur.execute("TRUNCATE staging.bce_tasas_pasivas, staging.bce_tasas_activas")
-    log.info(
-        "staging.bce_tasas_pasivas/activas: TRUNCATE (backfill de reproceso de grano cantón)"
-    )
-
-
 def upsert_staging_bce_tasas_pasivas(conn, df: pd.DataFrame) -> None:
     key_cols = [
         "fecha",

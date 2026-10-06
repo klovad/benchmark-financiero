@@ -6,9 +6,8 @@
 -- genérica id/source_file/source_hash/anio/mes/data JSONB -- solo cambia QUÉ va dentro
 -- del JSONB), así que basta con vaciar y reprocesar, no hace falta ALTER TABLE.
 
-TRUNCATE TABLE raw.bce_tasas_pasivas, raw.bce_tasas_activas;
 TRUNCATE TABLE staging.bce_tasas_pasivas, staging.bce_tasas_activas;
 TRUNCATE TABLE marts.fact_tasas_pasivas, marts.fact_tasas_activas;
 
 -- Libera el hash registrado para que is_source_loaded() no salte el reprocesamiento.
-DELETE FROM raw.source_files WHERE report_type IN ('bce_tasas_pasivas', 'bce_tasas_activas');
+DELETE FROM meta.source_files WHERE report_type IN ('bce_tasas_pasivas', 'bce_tasas_activas');

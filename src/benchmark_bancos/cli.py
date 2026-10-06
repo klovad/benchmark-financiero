@@ -26,7 +26,6 @@ STAGES = [
     "load",
     "all",
     "bce",
-    "bce-reprocess-canton-grain",
     "tasas-historicas",
     "boletin",
     "seps",
@@ -68,8 +67,6 @@ def main(argv: list[str] | None = None) -> None:
         pipeline.load_years(args.years, args.out, tuple(args.portales))
     if args.stage == "bce":
         pipeline.load_bce()
-    if args.stage == "bce-reprocess-canton-grain":
-        pipeline.reprocess_bce_staging()
     if args.stage == "tasas-historicas":
         pipeline.load_tasas_historicas()
     if args.stage == "boletin":

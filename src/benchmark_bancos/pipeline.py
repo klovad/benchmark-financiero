@@ -28,7 +28,6 @@ from benchmark_bancos.load.load_postgres import (
     is_source_loaded,
     refresh_marts,
     register_source_file,
-    truncate_staging_bce,
     upsert_banco_maestro_ruc,
     upsert_dim_cuenta_contable,
     upsert_staging_bce_tasas_activas,
@@ -222,57 +221,6 @@ def load_bce(base_dir: Path = BCE_DIR) -> None:
             register_source_file(conn, zip_path.name, source_hash, report_type)
             conn.commit()
         refresh_marts(conn)
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
-
-
-def reprocess_bce_staging(base_dir: Path = BCE_DIR) -> None:
-    """Backfill de sql/28_bce_canton_grain.sql (cambio de grano provincia -> cantón,
-    2026-09-01, ver src/benchmark_bancos/transform/parse_bce_tasas.py y canton_matching.py): re-deriva
-    staging.bce_tasas_pasivas/activas -- y, vía refresh_marts(), fact_captaciones_depositos/
-    fact_colocaciones_cartera -- SIN re-descargar. Seguro porque tsp/tsa son un solo zip
-    acumulativo con el histórico completo ya en disco (no hay 'año' que iterar como en
-    CAPCOL) y el archivo siempre trajo `canton`: solo el parser dejó de descartar esa
-    columna en _weighted_agg().
-
-    A diferencia de load_bce(), este NO respeta is_source_loaded(): el hash del archivo
-    tsp/tsa no cambió (es el mismo de siempre, ya registrado en meta.source_files), así
-    que ese gate diría "ya cargado" para siempre y load_bce() normal nunca dispararía el
-    reproceso -- correcto para una carga semanal normal, pero exactamente lo que hay que
-    saltarse para un backfill de un cambio de esquema. Por eso es una función aparte, no
-    un flag de load_bce(): el flujo normal de cargas semanales queda intacto y sigue
-    siendo 100% idempotente sin este comportamiento.
-
-    truncate_staging_bce() vacía staging.bce_tasas_pasivas/activas primero -- necesario
-    porque la llave natural de ambas tablas se extendió con `canton` (sql/28): sin este
-    TRUNCATE, un upsert normal dejaría las filas viejas (canton NULL, grano provincia)
-    como duplicados huérfanos junto a las nuevas (canton siempre poblado, grano cantón)
-    en vez de reemplazarlas -- ver el docstring de esa función para el detalle completo.
-
-    Comando de un solo uso para esta migración -- no forma parte del flujo semanal
-    normal (load_bce() no lo invoca)."""
-    files = download_bce_all(base_dir)
-    conn = get_connection()
-    try:
-        truncate_staging_bce(conn)
-        conn.commit()
-        for clave, parse_fn, upsert_fn in (
-            ("tsp", parse_tsp_file, upsert_staging_bce_tasas_pasivas),
-            ("tsa", parse_tsa_file, upsert_staging_bce_tasas_activas),
-        ):
-            zip_path = files[clave]
-            log.info(
-                "Reprocesando %s (backfill grano cantón, raw.* intacto)", zip_path.name
-            )
-            df_staging, entidades = parse_fn(zip_path)
-            upsert_banco_maestro_ruc(conn, entidades)
-            upsert_fn(conn, df_staging)
-            conn.commit()
-        refresh_marts(conn, full=True)
         conn.commit()
     except Exception:
         conn.rollback()

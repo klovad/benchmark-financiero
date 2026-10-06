@@ -71,7 +71,7 @@ ver "Por qué Playwright" en `docs/architecture.md`) contra la instancia Postgre
     excepción real**: la hoja se llama `BASE B PUBLICA INVERSION PUBLIC(A)` y no matchea
     ninguna keyword actual (`vivienda interes`/`inmobiliario`/`productivo`/`consumo`/
     `microcredito`/`educativo`) — hace falta agregar una keyword nueva ("inversion" →
-    p.ej. `inversion_publica`) en `src/benchmark_bancos/config/::TIPO_CREDITO_KEYWORDS` y extender el
+    p.ej. `inversion_publica`) en `src/benchmark_bancos/config/domain.py::TIPO_CREDITO_KEYWORDS` y extender el
     `CASE` de mapeo `tipo_credito → dim_segmento_credito.segmento` en
     `src/benchmark_bancos/load/load_postgres.py::_REFRESH_MARTS_SQL` con
     `WHEN 'inversion_publica' THEN 'INVERSIÓN PÚBLICA'`. **No hace falta tocar
@@ -154,10 +154,10 @@ que la fuente se investigara, precisamente porque el proyecto ya había resuelto
 `INVERSIÓN PÚBLICA`/`BANCO PUBLICO` para BCE.
 
 **Estado 2026-09-29: puntos 1-4 implementados.** Solo queda el 5 (descarga, carga y
-verificación). `src/benchmark_bancos/config/::CAPCOL_PORTALES` define cada sub-portal (`url`,
+verificación). `src/benchmark_bancos/config/sources.py::CAPCOL_PORTALES` define cada sub-portal (`url`,
 `tipo_entidad`, `subdir`). El scraper (`scrape(..., portal=)`) y `load_years(...,
 portales=)` iteran sobre esa constante. Banca Pública se descarga a
-`data/raw/banca_publica/{año}/...` y se registra en `raw.source_files` con ese prefijo, para
+`data/raw/banca_publica/{año}/...` y se registra en `meta.source_files` (antes `raw.source_files`) con ese prefijo, para
 no chocar con los nombres de bancos privados (la columna es `UNIQUE`). Los parsers reciben
 `tipo_entidad` como argumento y rechazan cualquier valor fuera de `TIPOS_ENTIDAD_CAPCOL`.
 `_REFRESH_MARTS_SQL` usa `IN ('BANCO PRIVADO', 'BANCO PUBLICO')` y mapea
@@ -192,7 +192,7 @@ esquema:
    decisión de `data-engineer`). Extender también el `CASE` de `tipo_credito →
    dim_segmento_credito.segmento` con `WHEN 'inversion_publica' THEN 'INVERSIÓN PÚBLICA'`
    (punto de arriba).
-4. `src/benchmark_bancos/config/::TIPO_CREDITO_KEYWORDS`: agregar `"inversion": "inversion_publica"` (el
+4. `src/benchmark_bancos/config/domain.py::TIPO_CREDITO_KEYWORDS`: agregar `"inversion": "inversion_publica"` (el
    orden del diccionario importa para los `in` sucesivos — no colisiona con ninguna
    keyword existente).
 5. Descargar el histórico 2021-2025 con el scraper actualizado, cargar, y verificar (mismos
@@ -735,10 +735,14 @@ También usa el mismo Catálogo Único de Cuentas:
   equivalentes) → `fact_balance`/`fact_pyg`.
 
 `tipo_entidad` = `COOPERATIVA` o `MUTUALISTA` según el sufijo del archivo (`S1`-`S3` o
-`Mut`). Los filtros `IN (...)` de `_REFRESH_MARTS_SQL` se amplían a esos dos valores. La
-migración es mínima: tablas `raw.seps_*` (JSONB), ampliar el `CHECK` de
-`raw.source_files.report_type` y, si se incluyen CONAFIPS/FINANCOOP, el de `tipo_entidad`.
-El extractor es de descarga directa, sin Playwright (la sección 4.5 sigue vigente).
+`Mut`). Los filtros `IN (...)` de `_REFRESH_MARTS_SQL` se amplían a esos dos valores.
+Lo que finalmente se implementó (2026-09-30) fue aún más chico que lo propuesto aquí: sin
+tablas `raw.seps_*` (la SEPS reutilizó las tablas existentes y después la capa `raw` se
+eliminó por completo en `sql/33`), sin cambiar el `CHECK` de `report_type` (se registra
+como `depositos`/`cartera`/`boletin_balance`) y con 3 migraciones: `sql/29` (tipo
+`ENTIDAD DE SEGUNDO PISO`), `sql/30` (`DEPÓSITOS A LA VISTA`) y `sql/31` (provincia en la
+llave de staging). El extractor es de descarga directa, sin Playwright (la sección 4.5
+sigue vigente).
 
 
 Fuente: Superintendencia de Economía Popular y Solidaria,
@@ -1089,11 +1093,13 @@ implementar, en este orden:
    (2026-09-01) — mismo plugin/formato que `capcol-bancos`, rango parseable 2021-2025
    (coincide con lo ya cargado de bancos privados), 0 migraciones `sql/*` necesarias,
    identidad resuelta vía `src/benchmark_bancos/seeds/banco_crosswalk.csv` contra los `banco_codigo` que BCE
-   ya auto-registró. Ver sección 1.1 arriba. **Diseño completo, crosswalk implementado
-   (`src/benchmark_bancos/seeds/banco_crosswalk.csv`, `tests/test_banco_matching.py`); extractor/parser/
-   `_REFRESH_MARTS_SQL` pendientes, carril de `data-engineer`** (lista de 5 cambios en
-   sección 1.1).
+   ya auto-registró. Ver sección 1.1 arriba. **Implementado y cargado 2021-2025
+   (2026-10-01)**; los 3 bancos curados en `banco_maestro.csv` (2026-10-05).
 8. ~~Diseñar la arquitectura de SEPS (cooperativas + mutualistas)~~ ✅ Hecho (2026-09-01) —
-   ver sección 4 arriba. **Solo diseño — nada implementado**: sin extractor, sin parser,
-   sin migración `sql/NN_*.sql`. Pendiente: confirmar cardinalidad de 5 campos no
-   caracterizados (sección 4.6 punto 1) antes de escribir la migración real.
+   ver sección 4 arriba. **Implementado y cargado 2021-2025 (2026-09-30)** con el diseño
+   revisado de la sección 4.0 (conforma contra tablas existentes, sin
+   `fact_volumen_cartera`). Desviaciones de conciliación explicadas (mutualistas,
+   emisoras de tarjetas).
+9. **Pendiente**: SEPS segmentos 4-5 (reporte trimestral a 4 dígitos, diseño aparte);
+   agregar los `download_id` de cada año nuevo de la SEPS en `config/sources.py`; incorporar
+   a Power BI el filtro por `tipo_entidad` y las tablas de BCE/Boletín/EEFF.

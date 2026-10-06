@@ -8,32 +8,6 @@
 -- cada provincia; se reagrega en el parser (src/benchmark_bancos/transform/parse_bce_tasas.py): montos y
 -- operaciones se suman, las tasas se promedian ponderadas por monto (no promedio simple).
 
-ALTER TABLE raw.source_files DROP CONSTRAINT IF EXISTS source_files_report_type_check;
-ALTER TABLE raw.source_files ADD CONSTRAINT source_files_report_type_check
-    CHECK (report_type IN ('cartera', 'depositos', 'bce_tasas_pasivas', 'bce_tasas_activas'));
-
-CREATE TABLE IF NOT EXISTS raw.bce_tasas_pasivas (
-    id           BIGSERIAL PRIMARY KEY,
-    source_file  TEXT NOT NULL,
-    source_hash  TEXT NOT NULL,
-    anio         INT NOT NULL,
-    mes          INT,
-    loaded_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-    data         JSONB NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS raw.bce_tasas_activas (
-    id           BIGSERIAL PRIMARY KEY,
-    source_file  TEXT NOT NULL,
-    source_hash  TEXT NOT NULL,
-    anio         INT NOT NULL,
-    mes          INT,
-    loaded_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-    data         JSONB NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS ix_raw_bce_tasas_pasivas_anio_mes ON raw.bce_tasas_pasivas (anio, mes);
-CREATE INDEX IF NOT EXISTS ix_raw_bce_tasas_activas_anio_mes ON raw.bce_tasas_activas (anio, mes);
 
 CREATE TABLE IF NOT EXISTS staging.bce_tasas_pasivas (
     id                    BIGSERIAL PRIMARY KEY,

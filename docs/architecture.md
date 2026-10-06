@@ -2,24 +2,21 @@
 
 ## Flujo de datos
 
-El proyecto integra **3 fuentes independientes** en un único esquema estrella conformado
-(un 4to sub-portal, Banca Pública de Superbancos, se suma a CAPCOL ampliando su cobertura
-de `tipo_entidad` sin ser una fuente nueva en sí — ver más abajo; una 5ta fuente real, SEPS,
-**implementada y cargada 2021-2025 el 2026-09-30**, ver bloque SEPS abajo y
-`docs/fuentes_datos.md` sección 4.0).
+El proyecto integra **5 fuentes** en un único esquema estrella conformado: CAPCOL
+(Superbancos, con sus sub-portales de bancos privados y de Banca Pública), BCE tsp/tsa,
+BCE `TasasHistorico.htm`, el Boletín Financiero de Superbancos y la SEPS (cooperativas y
+mutualistas). Las tablas de hechos mezclan tipos de entidad: todo consumidor debe filtrar
+o agrupar por `dim_banco.tipo_entidad`.
 Cada fuente tiene su propio extractor/parser, pero todas convergen en la misma capa
 `marts.*` — la identidad de banco y los catálogos de producto/plazo son compartidos
 (resueltos en Python antes de `staging.*`, ver sección "Catálogos conformados" abajo).
 
-**Banca Pública** (`capcol-instituciones-publicas/`, investigado y diseñado 2026-09-01):
+**Banca Pública** (`capcol-instituciones-publicas/`, cargada 2021-2025 el 2026-10-01):
 mismo plugin/formato/grano que `capcol-bancos` — no es un sub-flujo nuevo en el diagrama de
-abajo, es CAPCOL cargando `tipo_entidad='BANCO PUBLICO'` además de `'BANCO PRIVADO'` en las
-mismas `raw.cartera`/`raw.depositos`/`staging.cartera`/`staging.depositos`/
-`fact_saldo_cartera`/`fact_saldo_depositos`. Cero migraciones de esquema necesarias (el
-`CHECK` de `dim_banco.tipo_entidad` y la 7ma fila `INVERSIÓN PÚBLICA` de
-`dim_segmento_credito` ya lo soportaban). Detalle completo, identidad, y qué falta
-(extractor/parser/`_REFRESH_MARTS_SQL`, carril de `data-engineer`) en
-`docs/fuentes_datos.md` sección 1.1.
+abajo, es CAPCOL cargando `tipo_entidad='BANCO PUBLICO'` además de `'BANCO PRIVADO'` en
+`staging.cartera`/`staging.depositos` → `fact_saldo_cartera`/`fact_saldo_depositos`
+(`--portales publica`, `config.CAPCOL_PORTALES`). Sin migraciones de esquema. Detalle e
+identidad en `docs/fuentes_datos.md` sección 1.1.
 
 **SEPS** (cooperativas S1-S3 + mutualistas, `uv run benchmark-bancos seps`): descarga
 directa (`src/benchmark_bancos/extract/download_seps.py`, sin Playwright) de 3 ZIP por año, parseados por
@@ -33,22 +30,21 @@ migraciones: `sql/29` (tipo `ENTIDAD DE SEGUNDO PISO`), `sql/30` (categoría
 cantones homónimos que la SEPS sí reporta en el mismo mes).
 
 ```
-CAPCOL (cartera/depósitos)          BCE tsp/tsa (tasas semanales)      TasasHistorico.htm       Boletín (BALANCE/PYG)
-Playwright, plugin OneDrive         descarga directa (urllib)          descarga directa          Playwright, plugin OneDrive
-scrape_superbancos.py               download_bce.py                    download_tasas_           scrape_boletin.py
-        │                                   │                          historicas.py                     │
-        ▼                                   ▼                                │                           ▼
-data/raw/{anio}/*.zip           data/raw/bce/ts{p,a}_*.zip          data/raw/bce/historico/*.htm   data/raw/{anio}/boletin/*.zip
-        │  parse_cartera.py/                │  parse_bce_tasas.py           │  parse_tasas_             │  parse_boletin.py
-        │  parse_depositos.py               │                               │  historicas.py            │
-        ▼                                   ▼                               ▼                           ▼
-raw.cartera / raw.depositos      raw.bce_tasas_pasivas/activas    raw.tasas_referenciales    raw.boletin_balance/pyg
-        │  upsert por llave natural (ON CONFLICT DO UPDATE ... WHERE row_hash IS DISTINCT — ver "Carga incremental")
+CAPCOL privados + Banca Pública   BCE tsp/tsa          TasasHistorico.htm     Boletín BALANCE/PYG    SEPS (cartera, depósitos, EEFF)
+Playwright (Share-one-Drive)      descarga directa     descarga directa       Playwright             descarga directa
+scrape_superbancos.py             download_bce.py      download_tasas_        scrape_boletin.py      download_seps.py
+        │                                │             historicas.py                 │                      │
+        ▼                                ▼                    ▼                       ▼                      ▼
+data/raw/{anio}/, banca_publica/  data/raw/bce/        data/raw/bce/historico/ data/raw/{anio}/boletin/ data/raw/seps/{anio}/
+        │  parse_cartera/depositos       │ parse_bce_tasas     │ parse_tasas_hist.       │ parse_boletin         │ parse_seps
+        └────────────────────────────────┴────────────────────┴─────────────────────────┴───────────────────────┘
+        │  meta.source_files: sha256 por archivo (un archivo ya cargado no se reprocesa)
+        │  COPY a tabla temporal + INSERT ... ON CONFLICT ... WHERE (cols) IS DISTINCT FROM (EXCLUDED cols)
         ▼
-staging.*   (tipado, banco_codigo/categoria/segmento ya resueltos, columnas fecha_carga/fecha_actualizacion/row_hash)
-        │  refresh_marts() (SQL puro, INSERT...SELECT...ON CONFLICT, idempotente)
+staging.*   (tipado, banco_codigo/categoría/segmento/cantón ya resueltos, fecha_carga/fecha_actualizacion)
+        │  refresh_marts(): SQL puro, idempotente, INCREMENTAL por marca de agua (meta.refresh_watermark)
         ▼
-marts.dim_* / marts.fact_*   (esquema estrella conformado — 10 dimensiones + 10 tablas de hechos)
+marts.dim_* / marts.fact_* / marts.vw_*   (esquema estrella: 10 dimensiones, 10 hechos, 16 vistas)
         │
         ▼
 Power BI (.pbip, Import desde Postgres)
@@ -321,12 +317,12 @@ llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
   para separar categoría/plazo (CAPCOL mezclaba ambos conceptos en `tipo_deposito`) y para
   resolver los buckets de plazo con prefijo ordinal de BCE (`a. MENOS DE 30 DIAS`, etc.).
 - `dim_subsegmento_credito` (26 valores, universo completo de BCE) y `dim_categoria_deposito`
-  (12 valores) **no se filtran por tipo de entidad**. Desde 2026-07-19 esto ya no es solo
+  (13 valores, incluye `DEPÓSITOS A LA VISTA` de la SEPS) **no se filtran por tipo de entidad**. Desde 2026-07-19 esto ya no es solo
   el catálogo: `fact_captaciones_depositos`/`fact_colocaciones_cartera` (BCE tsp/tsa) tampoco filtran —
-  cargan el sistema financiero completo (442 bancos en `dim_banco`: 33 privados curados +
-  409 entidades auto-registradas por RUC, ver `docs/gobernanza_datos.md`). Corrige una
-  versión anterior que sí filtraba a bancos privados **antes de llegar a `raw.*`**,
-  perdiendo el resto del sistema para siempre.
+  cargan el sistema financiero completo (hoy 444 entidades en `dim_banco`: 36 curadas y
+  408 auto-registradas por RUC, ver `docs/gobernanza_datos.md`). Corrige una versión
+  anterior (2026-07-19) que filtraba a bancos privados antes de persistir, perdiendo el
+  resto del sistema.
 - `dim_plazo` es un catálogo abierto por rango numérico de días, auto-descubierto por cada
   fuente (`INSERT ... ON CONFLICT DO NOTHING`) — **no se fuerza una equivalencia entre
   convenciones distintas** (ej. CAPCOL "DE MÁS DE 361 DÍAS" y BCE tsp "MAS DE 360 DIAS"
@@ -394,20 +390,22 @@ La fuente de verdad son los archivos en `data/raw/**` más su hash en
 `meta.source_files`. Reprocesar desde esos archivos reconstruye staging y marts.
 
 **Excepción deliberada**: `marts.dim_cuenta_contable`, `staging.banco_maestro` y
-`marts.dim_plazo` NO tienen `fecha_carga`/`fecha_actualizacion`/`row_hash` — no son
-hechos con carga incremental por `row_hash`, son catálogos que se resiembran/enriquecen
+`marts.dim_plazo` NO tienen `fecha_carga`/`fecha_actualizacion` ni guard de CDC — no son
+hechos con carga incremental, son catálogos que se resiembran/enriquecen
 (`dim_cuenta_contable`/`banco_maestro`, `ON CONFLICT DO UPDATE` sin guard de CDC porque
 no hay noción de "cambió de verdad" que proteger: `upsert_dim_cuenta_contable()` solo
 mejora `grupo_met` cuando antes era NULL, `load_banco_maestro_seed()`/
 `upsert_banco_maestro_ruc()` reafirman valores curados/RUC en cada corrida sin costo) o
 se auto-descubren de forma puramente aditiva (`dim_plazo`, `ON CONFLICT DO NOTHING`, sin
 `UPDATE` en absoluto — una fila que ya existe nunca se toca, así que no hay nada que un
-`row_hash` necesite proteger). `estado_validacion` (2026-08-30, `sql/25`/`sql/26`/`sql/27`)
-se agregó a las 3 tablas sin necesitar extender un `row_hash` que nunca existió ahí.
+guard de CDC necesite proteger). `estado_validacion` (2026-08-30, `sql/25`/`sql/26`/`sql/27`)
+se agregó a las 3 tablas sin tocar CDC. La SEPS agrega códigos a `dim_cuenta_contable` con
+`ON CONFLICT DO NOTHING` (`insert_dim_cuenta_contable_seps()`), para no pisar las
+descripciones de Superbancos.
 
 **¿Por qué no Data Vault?** Data Vault (Hub/Link/Satellite) resuelve integrar muchas
 fuentes de alta velocidad de cambio con auditoría regulatoria estricta, normalmente como
-capa de integración *debajo* de un modelo Kimball. Con 3 fuentes y cadencia
+capa de integración *debajo* de un modelo Kimball. Con 5 fuentes y cadencia
 mensual/semanal, sería sobre-ingeniería. Los archivos fuente conservados en disco más su
 `source_hash` en `meta.source_files` ya dan la parte valiosa de esa filosofía (nunca se
 pierde el dato original) sin el formalismo completo de Hub/Link/Satellite.
@@ -472,23 +470,26 @@ simple.
   combinaciones distintas de jun-2026: 26.998 a grano cantón vs. 16.393 a grano provincia)
   (BCE semanal, histórico completo 2008-2026, sistema financiero completo — no solo bancos
   privados, ver `docs/gobernanza_datos.md`); ~2.18M en `fact_balance` y ~192k en `fact_pyg`
-  (Boletín, 2021-2026). `raw.bce_tasas_pasivas`/`activas` son más grandes todavía (~3.08M y ~7.76M
-  filas respectivamente — grano cantón, sin agregar; los nombres `raw.*` no cambiaron,
-  solo los de `marts.*`). El BCE
-  semanal es el volumen dominante con margen — se cargó vía `COPY` (no `executemany`) por
-  esa razón, ~10-100x más rápido a este volumen. Postgres lo maneja sin particionar ni
-  tuning especial; `refresh_marts()` completo sobre todo el dataset acumulado toma
-  ~5-6 minutos (subió desde ~1-2 min al dejar de filtrar BCE a solo bancos privados).
+  (Boletín, 2021-2026). **Actualizado 2026-10-05**: con SEPS y Banca Pública cargadas,
+  `fact_balance` tiene ~4,88M filas, `fact_pyg` ~1,09M, `fact_saldo_cartera` ~951k y
+  `fact_saldo_depositos` ~660k; la base completa pesa ~9,4 GB (sin la capa `raw`). El BCE
+  semanal sigue siendo el volumen dominante. Toda la carga a staging va por `COPY` a una
+  tabla temporal + `INSERT ... ON CONFLICT` (~10-100x más rápido que `executemany`).
+  Postgres lo maneja sin particionar ni tuning especial. Un `refresh_marts()` completo
+  toma ~3 minutos; el incremental, que es el modo por defecto, solo recalcula lo que
+  cambió (0,03 s sin cambios).
 - **El riesgo real es el *schema drift* de la fuente**: ya se observó un cambio de
-  nomenclatura de carpetas/archivos en 2024. Mitigación: `raw.*` preserva el archivo tal
-  cual (JSONB) para poder reprocesar sin volver a descargar si un parser cambia; la
-  detección de `tipo_credito` por nombre de hoja (no de archivo) y de `tipo_deposito` por
-  columna (no por archivo) hace el parser más robusto a estos cambios superficiales.
+  nomenclatura de carpetas/archivos en 2024 (CAPCOL) y varios cambios de formato en la
+  SEPS 2021-2025 (separador, encabezados, hojas partidas por semestre). Mitigación: los
+  archivos originales se conservan en `data/raw/**`, así que un parser corregido se puede
+  volver a correr sin descargar; la detección de `tipo_credito` por nombre de hoja (no de
+  archivo), de `tipo_deposito` por columna y el fail-fast ante valores nuevos hacen que un
+  cambio de formato falle de forma visible en vez de cargar datos incorrectos.
 - **El riesgo de extracción es el acoplamiento al plugin del sitio** (selectores CSS,
   comportamiento de navegación). Aislado en `src/benchmark_bancos/extract/scrape_superbancos.py`; si el
   sitio cambia, solo ese módulo necesita ajustarse — transform/load no se ven afectados
   porque trabajan desde `data/raw/` ya descargado.
-- **Idempotencia end-to-end**: `raw.source_files` evita reprocesar un archivo sin
+- **Idempotencia end-to-end**: `meta.source_files` evita reprocesar un archivo sin
   cambios (por hash); `staging.*` y `marts.*` usan `ON CONFLICT DO UPDATE` sobre la
   llave natural, así que correr el pipeline de nuevo (o solo para un año) siempre
   converge al mismo resultado.
@@ -496,8 +497,9 @@ simple.
   con un solo comando, sin depender de la instalación local del autor.
 - Pandas es suficiente a esta escala; Airflow/Spark serían sobre-ingeniería para una
   fuente que publica mensualmente. Si el proyecto creciera a más reportes (morosidad,
-  liquidez) o más países, el patrón raw→staging→marts ya soporta agregarlos sin
-  rediseño: un parser + un mapping nuevo por reporte.
+  liquidez) o más países, el patrón archivo → staging → marts ya soporta agregarlos sin
+  rediseño: un parser + un mapping nuevo por reporte (la SEPS se integró así, sin tablas
+  nuevas).
 
 ## Portabilidad de motor — inventario de construcciones específicas de Postgres
 
@@ -507,85 +509,49 @@ diseño se apoyan en features propias de Postgres. Inventario real (grep contra
 equivalente concreto si algún día hubiera que portar a SQL Server o a un lakehouse
 (Databricks/Delta, con nota de Snowflake donde aplica):
 
-**1. Columnas calculadas `GENERATED ALWAYS AS (...) STORED`** (`row_hash` en casi todas
-las tablas de `staging`/`marts`, `saldo_total` en `fact_saldo_cartera`)
-- Dónde: `row_hash` aparece en `sql/05_dim_banco_rework.sql:32,39`,
-  `sql/07_dim_banco_dim_fecha_rebuild.sql:31`, `sql/09_fact_cartera_depositos_rework.sql:27,43`,
-  `sql/11_schema_bce.sql:54,80,103,126`, `sql/12_schema_tasas_historicas.sql:49,63,75,85,100`,
-  `sql/13_schema_boletin.sql:58,74,88,100`, `sql/15_rename_fact_tables.sql:37`,
-  `sql/16_dim_segmento_normativo.sql:131`, `sql/17_dim_banco_ruc_sin_tamano.sql:21`,
-  `sql/19_dim_segmento_entidad.sql:32,41,53,63,77`, `sql/21_fact_saldo_cartera_pivot.sql:26`,
-  `sql/26_dim_banco_estado_validacion.sql:46` (2026-08-30, extiende el `row_hash` de
-  `marts.dim_banco` para cubrir `estado_validacion` — `marts.dim_cuenta_contable` gana
-  `estado_validacion` en `sql/25` pero esa tabla nunca tuvo `row_hash`/CDC propio, ver
-  `docs/data_dictionary.md`) (30 ocurrencias en total). `saldo_total` en
-  `sql/21_fact_saldo_cartera_pivot.sql:22-23`.
-- **Nota de mantenimiento real** (bug encontrado y corregido 2026-08-30, ver
-  `docs/gobernanza_datos.md`): el `UPDATE` SCD1 de `marts.dim_banco.segmento_entidad_id`
-  en `src/benchmark_bancos/load/load_postgres.py` (bloque `dim_banco.segmento_entidad_id: conveniencia...`)
-  no puede usar `EXCLUDED` (no es un `INSERT ... ON CONFLICT`), así que **recalcula a
-  mano** la misma expresión del `row_hash` `GENERATED` en su cláusula `WHERE`. Esa
-  fórmula duplicada quedó desincronizada una vez ya (se agregó `estado_validacion` al
-  `GENERATED` sin actualizar el recálculo manual) y rompió el no-op de CDC en silencio
-  hasta que se verificó explícitamente — cualquier migración futura que extienda este
-  `row_hash` debe tocar las 2 ubicaciones en el mismo cambio.
+**1. Columnas calculadas `GENERATED ALWAYS AS (...) STORED`** (hoy solo `saldo_total` en
+`fact_saldo_cartera`)
+- Dónde: `saldo_total` en `sql/21_fact_saldo_cartera_pivot.sql:22-23`. Hasta 2026-10-05
+  casi todas las tablas de `staging`/`marts` tenían además una columna `row_hash`
+  (`GENERATED ... md5(...)`) para CDC; `sql/34` la eliminó (ver "Carga incremental"). Eso
+  también eliminó el riesgo de mantenimiento que tenía: el `UPDATE` SCD1 de
+  `dim_banco.segmento_entidad_id` recalculaba ese md5 a mano y llegó a desincronizarse
+  (2026-08-30). Hoy compara directamente la columna que escribe.
 - **SQL Server**: `columna AS (expresión) PERSISTED` — mismo concepto (columna calculada
-  materializada, indexable), pero `MD5()` no existe nativo: se reemplaza por
-  `CONVERT(VARCHAR(32), HASHBYTES('MD5', ...), 2)` (`HASHBYTES` devuelve `VARBINARY`).
+  materializada, indexable).
 - **Databricks/Delta**: Delta Lake soporta `GENERATED ALWAYS AS (expr)` en `CREATE TABLE`
-  desde Delta Lake 1.2+, sintaxis casi idéntica — aunque en la práctica de Databricks se
-  usa sobre todo para derivar columnas de partición, no hashes de fila completos.
-  **Snowflake** no tiene columnas `STORED`: sus columnas `AS (expr)` son virtuales (se
-  recalculan en cada lectura, no se persisten ni indexan), así que el patrón de acá se
-  movería a un `MERGE` que calcule el hash explícitamente al escribir, o a una vista.
-- *Por qué Postgres acá*: una sola fuente de verdad para "¿cambió esta fila?" — ni el ETL
-  ni una migración futura pueden desincronizar el hash del contenido real (ver
-  `sql/21_fact_saldo_cartera_pivot.sql` líneas 8-11 y la sección "Carga incremental" arriba).
+  desde Delta Lake 1.2+, sintaxis casi idéntica. **Snowflake** no tiene columnas `STORED`:
+  sus columnas `AS (expr)` son virtuales (se recalculan en cada lectura), lo cual para una
+  suma de 3 columnas es aceptable, o se mueve a una vista.
+- *Por qué Postgres acá*: una sola fuente de verdad para el total — ni el ETL ni una
+  migración futura pueden desincronizarlo de sus 3 componentes.
 
-**2. Patrón de upsert `ON CONFLICT (...) DO UPDATE ... WHERE row_hash IS DISTINCT FROM EXCLUDED.row_hash`**
+**2. Patrón de upsert `ON CONFLICT (...) DO UPDATE ... WHERE (cols) IS DISTINCT FROM (EXCLUDED cols)`**
 - Dónde: vive en Python, no en `sql/*.sql` (la identidad se resuelve antes de `staging`,
-  principio de diseño #2) — `src/benchmark_bancos/load/load_postgres.py` líneas 140-144
-  (`staging.cartera`), 167-176 (`staging.depositos`), 244-246 (`_upsert_bce_via_temp`,
-  genérico para las 4 tablas BCE), 297-299 (`tasas_referenciales`), 364-366 (Boletín
-  balance/PyG), 428-430 (`marts.dim_banco`), 497-502/522-527/549-556/578-585 (los 4
-  `fact_*` de CAPCOL/BCE), 618-666 (4 `fact_tasas_referenciales_*`), 681-696
-  (`fact_balance`/`fact_pyg`) — 17 usos del patrón en total.
+  principio de diseño #2) — `src/benchmark_bancos/load/load_postgres.py`: los upserts a
+  staging (`CDC_COLUMNS` + `_cdc_guard()`) y cada `INSERT` de `_REFRESH_MARTS_SQL` hacia
+  `marts`. Compara directamente las columnas mutables (antes de `sql/34`, un `row_hash`).
 - **SQL Server**: no existe `ON CONFLICT`; el equivalente es
-  `MERGE INTO destino USING origen ON (llave) WHEN MATCHED AND destino.row_hash <> origen.row_hash THEN UPDATE SET ... WHEN NOT MATCHED THEN INSERT (...) VALUES (...);`
+  `MERGE INTO destino USING origen ON (llave) WHEN MATCHED AND (destino.a <> origen.a OR ...) THEN UPDATE SET ... WHEN NOT MATCHED THEN INSERT (...) VALUES (...);`
   — mismo resultado lógico, con la salvedad de que `MERGE` en SQL Server tiene bugs de
   concurrencia documentados por Microsoft bajo aislamiento alto (no recomendado sin
   locking explícito en cargas concurrentes).
-- **Databricks/Delta**: `MERGE INTO destino USING origen ON llave WHEN MATCHED AND destino.row_hash <> origen.row_hash THEN UPDATE SET * WHEN NOT MATCHED THEN INSERT *`
+- **Databricks/Delta**: `MERGE INTO destino USING origen ON llave WHEN MATCHED AND (destino.a <> origen.a OR ...) THEN UPDATE SET * WHEN NOT MATCHED THEN INSERT *`
   — sintaxis `MERGE` nativa de Delta Lake, casi calcada. **Snowflake** usa el mismo
   `MERGE INTO` con idéntica semántica de `WHEN MATCHED`/`WHEN NOT MATCHED`.
 - *Por qué Postgres acá*: el guard "solo actualizar si cambió de verdad" vive en el SQL,
   no como lógica adicional en el ETL — correr el pipeline de nuevo (o solo para un año)
   converge sin generar `UPDATE`s espurios (ver "Carga incremental (CDC)" arriba).
 
-**3. `JSONB` en `raw.*` (+ índice GIN)**
-- Dónde: `sql/01_schema_raw.sql` líneas 20 y 32 (`data JSONB NOT NULL` en
-  `raw.cartera`/`raw.depositos`), líneas 45-46 (`CREATE INDEX ... USING GIN (data)`).
-- **SQL Server**: columna `NVARCHAR(MAX)` con el JSON como texto + `JSON_VALUE`/
-  `JSON_QUERY`/`OPENJSON` para leerlo; sin índice nativo sobre el documento completo —
-  se indexarían columnas calculadas persistidas que extraen claves puntuales, no el
-  equivalente de un GIN sobre todo el JSON (SQL Server 2025/Fabric anuncian un tipo
-  `JSON` binario nativo más cercano a JSONB, pero no es la versión objetivo de este
-  proyecto).
-- **Databricks/Delta**: sin tipo JSON binario tradicional — se guarda como `STRING` y se
-  parsea con `from_json`/`get_json_object`, o (en runtimes recientes) tipo `VARIANT`
-  semi-estructurado con poda a nivel de archivo (data skipping/Z-order) en vez de un
-  índice GIN. **Snowflake** sí tiene un tipo `VARIANT` nativo maduro con clustering
-  automático — el más parecido a JSONB de los tres motores comparados.
-- *Por qué Postgres acá*: el layout de columnas de la fuente (Superbancos) cambió entre
-  años (renombre colocaciones/captaciones → cartera/depositos en 2024, ver
-  `sql/01_schema_raw.sql` líneas 5-7) — JSONB deja `raw.*` inmune a ese drift sin perder
-  filas ni romper la carga, y el GIN permite consultar el JSON crudo sin re-parsear si
-  un parser necesita reprocesarse.
+**3. ~~`JSONB` en `raw.*` (+ índice GIN)~~ — ya no aplica (2026-10-05, `sql/33`)**
+- La capa `raw` en JSONB se eliminó (ver "Carga incremental"): el proyecto ya no usa
+  JSONB ni índices GIN, así que esta construcción dejó de ser un punto de portabilidad.
+  El drift de columnas de la fuente se absorbe en los parsers (Python), y la fuente de
+  verdad son los archivos en disco.
 
 **4. Carga masiva vía `COPY ... FROM STDIN`**
 - Dónde: `src/benchmark_bancos/load/load_postgres.py`, función `_copy_rows()` líneas 183-192 (usa
-  `cur.copy(copy_sql)` de psycopg3), invocada en líneas 208 (`COPY raw.{table} (...)
-  FROM STDIN`), 231 (`COPY _tmp_{table} (...) FROM STDIN`), 346 y 357. El patrón "COPY a
+  `cur.copy(copy_sql)` de psycopg3), invocada en los upserts a staging (`COPY _tmp_{table} (...) FROM STDIN`). El patrón "COPY a
   tabla temporal + `INSERT ... ON CONFLICT`" (líneas 217-226:
   `CREATE TEMP TABLE _tmp_{table} (LIKE staging.{table} INCLUDING DEFAULTS) ON COMMIT DROP`)
   existe, según el comentario de la línea 219, porque "COPY no soporta ON CONFLICT
@@ -598,16 +564,16 @@ las tablas de `staging`/`marts`, `saldo_total` en `fact_saldo_cartera`)
 - **Databricks/Delta**: `COPY INTO tabla FROM 'ruta_en_object_storage'` — comando nativo
   de Delta Lake pensado para este caso de uso exacto (carga masiva idempotente por
   archivo, con seguimiento de qué archivos ya se cargaron — conceptualmente equivalente
-  a `raw.source_files` acá). **Snowflake** tiene el mismo comando,
+  a `meta.source_files` acá). **Snowflake** tiene el mismo comando,
   `COPY INTO <tabla> FROM @stage`.
 - *Por qué Postgres acá*: ~10-100x más rápido que `executemany` a los volúmenes de BCE
   semanal (comentario `src/benchmark_bancos/load/load_postgres.py` líneas 184-185: "cientos de miles de
   filas por archivo, todo el histórico semanal 2008-2026 en un solo CSV").
 
-**5. Esquemas `raw` / `staging` / `marts` dentro de una sola base**
-- Dónde: `CREATE SCHEMA IF NOT EXISTS raw AUTHORIZATION bp_etl` (`sql/01_schema_raw.sql:9`),
+**5. Esquemas `meta` / `staging` / `marts` dentro de una sola base**
+- Dónde: `CREATE SCHEMA IF NOT EXISTS meta AUTHORIZATION bp_etl` (`sql/01_schema_meta.sql`),
   `staging` (`sql/02_schema_staging.sql:5`), `marts` (`sql/03_schema_marts.sql:4`).
-- **SQL Server**: mapea 1:1 — `CREATE SCHEMA raw/staging/marts AUTHORIZATION ...` dentro
+- **SQL Server**: mapea 1:1 — `CREATE SCHEMA meta/staging/marts AUTHORIZATION ...` dentro
   de la misma base, mismo mecanismo de namespacing y permisos por esquema.
 - **Databricks/Delta (Unity Catalog)**: mapea directo al patrón *medallion* estándar de
   Databricks — típicamente `bronze`/`silver`/`gold` en vez de `raw`/`staging`/`marts`

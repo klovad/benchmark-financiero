@@ -1,10 +1,17 @@
 # Muestras de `marts.*` en Parquet
 
-Exportes de `marts.*` a Parquet con `src/benchmark_bancos/export_sample_parquet.py`. Pensado para poder
+Exportes de `marts.*` a Parquet con `scripts/export_sample_parquet.py`. Pensado para poder
 probar el modelo de datos (notebooks, Power BI import, lo que sea) **sin tener Postgres
 cargado** — por ejemplo en otra sesión/máquina donde el ETL todavía no corrió. Dos
 variantes: una muestra chica de un mes (`marts_AAAA-MM/`) y una ventana de años recientes
 (`marts_ultimos_5_anios/`).
+
+> **Desactualizada (2026-10-05).** Esta muestra se exportó el 2026-09-01: no incluye
+> Banca Pública ni SEPS (cooperativas y mutualistas), trae la columna `row_hash` que se
+> eliminó en `sql/34`, y `dim_banco` tiene 442 filas (hoy 444). Sigue siendo válida para
+> bancos privados (lo que usa `scripts/compute_indicadores_excel.py`). Para regenerarla:
+> `uv run scripts/export_sample_parquet.py --full --anios-recientes 5` (pesará bastante más
+> con la SEPS).
 
 ## `marts_ultimos_5_anios/`
 
@@ -33,7 +40,7 @@ fact_colocaciones_cartera = pd.concat(
 )
 ```
 
-Regenerar: `.venv\Scripts\python -m benchmark_bancos.export_sample_parquet --full --anios-recientes 5`
+Regenerar: `uv run scripts/export_sample_parquet.py --full --anios-recientes 5`
 (requiere Postgres cargado). Para el histórico completo sin recortar, `--full` solo (sin
 `--anios-recientes`) exporta a `marts_full/` — no versionado por defecto, generarlo aparte
 si hace falta.
@@ -54,7 +61,7 @@ puntual) — genera una carpeta como esta:
   fecha), BCE tsp/tsa es semanal (~4-5 fechas), `TasasHistorico`/Boletín son mensuales.
 
 ```powershell
-.venv\Scripts\python -m benchmark_bancos.export_sample_parquet --anio 2026 --mes 3
+uv run scripts/export_sample_parquet.py --anio 2026 --mes 3
 ```
 
 Requiere Postgres cargado con ese mes (`sql/*.sql` aplicado + `uv run benchmark-bancos`
