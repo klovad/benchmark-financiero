@@ -6,7 +6,7 @@ El proyecto integra **5 fuentes** en un único esquema estrella conformado: CAPC
 (Superbancos, con sus sub-portales de bancos privados y de Banca Pública), BCE tsp/tsa,
 BCE `TasasHistorico.htm`, el Boletín Financiero de Superbancos y la SEPS (cooperativas y
 mutualistas). Las tablas de hechos mezclan tipos de entidad: todo consumidor debe filtrar
-o agrupar por `dim_banco.tipo_entidad`.
+o agrupar por `dim_entidad.tipo_entidad`.
 Cada fuente tiene su propio extractor/parser, pero todas convergen en la misma capa
 `marts.*` — la identidad de banco y los catálogos de producto/plazo son compartidos
 (resueltos en Python antes de `staging.*`, ver sección "Catálogos conformados" abajo).
@@ -53,11 +53,11 @@ BI (cualquier herramienta, Import/DirectQuery desde Postgres)
 ## Modelo de datos (esquema estrella)
 
 10 dimensiones y 10 tablas de hechos en `marts.*`, resultado final del flujo anterior.
-`dim_fecha`/`dim_banco` son compartidas por casi todas las fuentes; `dim_canton`,
+`dim_fecha`/`dim_entidad` son compartidas por casi todas las fuentes; `dim_canton`,
 `dim_provincia`, `dim_segmento_credito`, `dim_subsegmento_credito`, `dim_segmento_entidad`,
 `dim_categoria_deposito`, `dim_plazo` y `dim_cuenta_contable` son compartidas solo por las
 fuentes que las necesitan (ver "Catálogos conformados" abajo). `dim_provincia` y
-`dim_segmento_entidad` (2026-07-25) son outriggers de `dim_canton`/`dim_banco`
+`dim_segmento_entidad` (2026-07-25) son outriggers de `dim_canton`/`dim_entidad`
 respectivamente. **`dim_canton` es FK directa tanto de CAPCOL (`fact_saldo_cartera`/
 `fact_saldo_depositos`) como de BCE tsp/tsa (`fact_captaciones_depositos`/
 `fact_colocaciones_cartera`, 2026-09-01, `sql/28_bce_canton_grain.sql`)** — antes BCE
@@ -76,8 +76,8 @@ erDiagram
         int trimestre
         int anio_mes
     }
-    dim_banco {
-        int banco_id PK
+    dim_entidad {
+        int entidad_id PK
         string banco_codigo
         string banco
         string tipo_entidad
@@ -134,7 +134,7 @@ erDiagram
 
     fact_saldo_cartera {
         int fecha_id FK
-        int banco_id FK
+        int entidad_id FK
         int canton_id FK
         int segmento_id FK
         numeric saldo_por_vencer
@@ -144,7 +144,7 @@ erDiagram
     }
     fact_saldo_depositos {
         int fecha_id FK
-        int banco_id FK
+        int entidad_id FK
         int canton_id FK
         int categoria_deposito_id FK
         int plazo_id FK
@@ -154,7 +154,7 @@ erDiagram
     }
     fact_captaciones_depositos {
         int fecha_id FK
-        int banco_id FK
+        int entidad_id FK
         int categoria_deposito_id FK
         int plazo_id FK
         int canton_id FK
@@ -164,7 +164,7 @@ erDiagram
     }
     fact_colocaciones_cartera {
         int fecha_id FK
-        int banco_id FK
+        int entidad_id FK
         int subsegmento_id FK
         int plazo_id FK
         int canton_id FK
@@ -195,13 +195,13 @@ erDiagram
     }
     fact_balance {
         int fecha_id FK
-        int banco_id FK
+        int entidad_id FK
         int cuenta_id FK
         numeric saldo_usd
     }
     fact_pyg {
         int fecha_id FK
-        int banco_id FK
+        int entidad_id FK
         int cuenta_id FK
         numeric valor_usd
     }
@@ -217,13 +217,13 @@ erDiagram
     dim_fecha ||--o{ fact_balance : fecha_id
     dim_fecha ||--o{ fact_pyg : fecha_id
 
-    dim_banco ||--o{ fact_saldo_cartera : banco_id
-    dim_banco ||--o{ fact_saldo_depositos : banco_id
-    dim_banco ||--o{ fact_captaciones_depositos : banco_id
-    dim_banco ||--o{ fact_colocaciones_cartera : banco_id
-    dim_banco ||--o{ fact_balance : banco_id
-    dim_banco ||--o{ fact_pyg : banco_id
-    dim_segmento_entidad ||--o{ dim_banco : segmento_entidad_id
+    dim_entidad ||--o{ fact_saldo_cartera : entidad_id
+    dim_entidad ||--o{ fact_saldo_depositos : entidad_id
+    dim_entidad ||--o{ fact_captaciones_depositos : entidad_id
+    dim_entidad ||--o{ fact_colocaciones_cartera : entidad_id
+    dim_entidad ||--o{ fact_balance : entidad_id
+    dim_entidad ||--o{ fact_pyg : entidad_id
+    dim_segmento_entidad ||--o{ dim_entidad : segmento_entidad_id
     dim_segmento_entidad ||--o{ fact_captaciones_depositos : segmento_entidad_id
     dim_segmento_entidad ||--o{ fact_colocaciones_cartera : segmento_entidad_id
 
@@ -278,7 +278,7 @@ grueso directo; BCE sí reporta al nivel fino, así que `fact_colocaciones_carte
 `subsegmento_id`. `estado_cartera` en `fact_saldo_cartera` sigue como dimensión
 degenerada (columna directa, solo 3 valores fijos, no una jerarquía real). `plazo_id` en
 `fact_saldo_depositos` es nullable (`NULL` salvo `categoria_deposito = 'DEPÓSITOS A PLAZO'`)
-y las 4 tablas de `tasas_referenciales_*` son a nivel sistema (sin `dim_banco`, ver
+y las 4 tablas de `tasas_referenciales_*` son a nivel sistema (sin `dim_entidad`, ver
 `docs/data_dictionary.md`).
 
 Este diagrama es la vista **estructural** del modelo (qué se relaciona con qué). No
@@ -289,6 +289,17 @@ gobernanza de datos completa del proyecto, ver `docs/gobernanza_datos.md` para c
 encajan entre sí.
 
 ## Catálogos conformados (identidad compartida entre fuentes)
+
+> **2026-10-09.** Dos cambios de contrato en `marts`:
+> - `dim_banco` pasó a llamarse **`dim_entidad`** (`entidad_id`, `entidad`,
+>   `entidad_codigo`; `sql/37`), porque contiene todo el sistema financiero y no solo
+>   bancos. `staging` mantiene `banco_maestro`/`banco_codigo`.
+> - La geografía usa los **códigos oficiales del INEC**: `dim_provincia.codigo_inec` (2
+>   dígitos) y `dim_canton.codigo_inec` (4 dígitos; `sql/36`), con
+>   `seeds/canton_provincia.csv` como fuente de verdad, que el refresh sincroniza en cada
+>   corrida. Las variantes de escritura y las provincias anteriores se resuelven con alias
+>   en `canton_matching.py`, de modo que cada cantón real es una sola fila con la
+>   provincia vigente.
 
 La identidad de banco (`banco_codigo`) y los catálogos de segmento de crédito/categoría de
 depósito/plazo se resuelven **en Python, en la capa `transform`, antes de que el dato
@@ -303,14 +314,14 @@ llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
   silenciosamente. **2026-09-01** (Banca Pública, `capcol-instituciones-publicas/`, ver
   `docs/fuentes_datos.md` sección 1.1): primer uso del crosswalk donde `banco_codigo` no
   apunta a un código curado de `src/benchmark_bancos/seeds/banco_maestro.csv` sino a un `BCE_<ruc>` que
-  `resolver_entidad_bce()` ya auto-registró en `marts.dim_banco` — deliberado, para que
+  `resolver_entidad_bce()` ya auto-registró en `marts.dim_entidad` — deliberado, para que
   los 3 bancos públicos que reporta este sub-portal (`BANECUADOR B. P.`, `BANCO DE
   DESARROLLO DEL ECUADOR B.P.`, `CORPORACION FINANCIERA NACIONAL B.P.`) resuelvan a la
-  MISMA fila de `dim_banco` que ya generó BCE en vez de crear una identidad paralela. Esto
+  MISMA fila de `dim_entidad` que ya generó BCE en vez de crear una identidad paralela. Esto
   introduce una dependencia de orden de carga que no existía antes para CAPCOL/Boletín
   (que siempre resolvían por identidad 100% curada, independiente de si BCE había corrido):
   el `INNER JOIN` de `fact_saldo_cartera`/`fact_saldo_depositos` en `refresh_marts()`
-  descarta en silencio una fila cuyo `banco_codigo` todavía no exista en `marts.dim_banco`
+  descarta en silencio una fila cuyo `banco_codigo` todavía no exista en `marts.dim_entidad`
   — ver el detalle completo del riesgo y la mitigación recomendada en
   `docs/mantenimiento_catalogos.md` sección 1 y `docs/fuentes_datos.md` sección 1.1.
 - `src/benchmark_bancos/transform/categoria_deposito_matching.py` y `bce_plazo_matching.py`: mismo patrón
@@ -319,7 +330,7 @@ llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
 - `dim_subsegmento_credito` (26 valores, universo completo de BCE) y `dim_categoria_deposito`
   (13 valores, incluye `DEPÓSITOS A LA VISTA` de la SEPS) **no se filtran por tipo de entidad**. Desde 2026-07-19 esto ya no es solo
   el catálogo: `fact_captaciones_depositos`/`fact_colocaciones_cartera` (BCE tsp/tsa) tampoco filtran —
-  cargan el sistema financiero completo (hoy 444 entidades en `dim_banco`: 36 curadas y
+  cargan el sistema financiero completo (hoy 444 entidades en `dim_entidad`: 36 curadas y
   408 auto-registradas por RUC, ver `docs/gobernanza_datos.md`). Corrige una versión
   anterior (2026-07-19) que filtraba a bancos privados antes de persistir, perdiendo el
   resto del sistema.
@@ -343,7 +354,7 @@ llegue a `staging.*`** — no como tabla de alias en el esquema estrella:
   SIEMPRE por el par completo (nunca cantón solo — existen cantones reales homónimos en 2
   provincias por reclasificación administrativa histórica, ej. `LA CONCORDIA`,
   `SANTO DOMINGO`): provincia no resoluble → `CantonNoResueltoError`, fail-fast; par
-  cantón+provincia fuera del universo sembrado (`src/benchmark_bancos/seeds/canton_provincia.csv`, 228
+  cantón+provincia fuera del universo sembrado (`src/benchmark_bancos/seeds/canton_provincia.csv`, 223 desde 2026-10-09, con código INEC; antes 228
   pares) → no lanza, se auto-ingresa `AUTO_INGRESADO`.
 
 ## Carga incremental (CDC) — no full refresh
@@ -352,7 +363,7 @@ Tres niveles, de grueso a fino (rediseñado 2026-10-05, `sql/33`/`sql/34`):
 
 1. **Archivo**: `meta.source_files` registra cada archivo cargado con su sha256. Un
    archivo con el mismo hash no se vuelve a parsear (`is_source_loaded()`).
-2. **Fila de staging/marts (CDC por columnas)**: `staging.*` y los `fact_*`/`dim_banco`
+2. **Fila de staging/marts (CDC por columnas)**: `staging.*` y los `fact_*`/`dim_entidad`
    tienen `fecha_carga` (se pone una vez) y `fecha_actualizacion` (solo se mueve si el
    dato realmente cambió). El upsert compara directamente las columnas mutables:
 
@@ -518,7 +529,7 @@ equivalente concreto si algún día hubiera que portar a SQL Server o a un lakeh
   casi todas las tablas de `staging`/`marts` tenían además una columna `row_hash`
   (`GENERATED ... md5(...)`) para CDC; `sql/34` la eliminó (ver "Carga incremental"). Eso
   también eliminó el riesgo de mantenimiento que tenía: el `UPDATE` SCD1 de
-  `dim_banco.segmento_entidad_id` recalculaba ese md5 a mano y llegó a desincronizarse
+  `dim_entidad.segmento_entidad_id` recalculaba ese md5 a mano y llegó a desincronizarse
   (2026-08-30). Hoy compara directamente la columna que escribe.
 - **SQL Server**: `columna AS (expresión) PERSISTED` — mismo concepto (columna calculada
   materializada, indexable).

@@ -197,12 +197,12 @@ SELECT
     b.cartera_bruta / a.total_activos AS cartera_sobre_activos
 FROM marts.vw_cartera_bruta b
 JOIN (
-    SELECT banco_id, fecha_id, SUM(saldo_usd) AS total_activos
+    SELECT entidad_id, fecha_id, SUM(saldo_usd) AS total_activos
     FROM marts.fact_balance f
     JOIN marts.dim_cuenta_contable cc ON cc.cuenta_id = f.cuenta_id
     WHERE cc.reporte = 'BALANCE' AND cc.codigo = '1'
-    GROUP BY banco_id, fecha_id
-) a ON a.banco_id = b.banco_id AND a.fecha_id = b.fecha_id;
+    GROUP BY entidad_id, fecha_id
+) a ON a.entidad_id = b.entidad_id AND a.fecha_id = b.fecha_id;
 ```
 
 en vez de repetir la definición completa de `cartera_bruta` (14 − 1499, con sus reglas)
@@ -212,6 +212,6 @@ cada vez que un documento nuevo necesita el mismo concepto.
 2026-10-02, con los ajustes de `sql/32`) no filtran por `tipo_entidad`. **Desde 2026-09-30
 `fact_balance`/`fact_pyg` traen también cooperativas y mutualistas** (EEFF SEPS, mismo
 Catálogo Único de Cuentas), así que el consumidor **debe** unir contra
-`dim_banco.tipo_entidad` para no mezclar sectores. Las vistas siguen siendo bloques puros,
+`dim_entidad.tipo_entidad` para no mezclar sectores. Las vistas siguen siendo bloques puros,
 sin opinión de segmentación. Para mutualistas, la cartera de los reportes SEPS no es
 comparable con `vw_cartera_bruta` (ver `docs/fuentes_datos.md` §4.0).

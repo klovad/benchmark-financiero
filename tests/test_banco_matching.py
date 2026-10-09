@@ -58,7 +58,7 @@ def test_capcol_banca_publica_resuelve_al_mismo_codigo_bce_por_ruc():
     # banco_crosswalk.csv al MISMO banco_codigo "BCE_<ruc>" que ya generó
     # resolver_entidad_bce() al auto-registrar estas entidades desde BCE tsp/tsa, para
     # no crear una segunda identidad paralela para el mismo banco público. Los 3 RUC son
-    # los mismos ya vigentes en marts.dim_banco (verificado contra la base viva
+    # los mismos ya vigentes en marts.dim_entidad (verificado contra la base viva
     # 2026-09-01) -- ver docs/fuentes_datos.md sección 1 y docs/gobernanza_datos.md.
     assert resolver_banco_codigo("BANECUADOR B. P.", "CAPCOL") == "BCE_1768183520001"
     assert (
@@ -95,7 +95,7 @@ def test_resolver_entidad_bce_privados_usa_crosswalk_curado():
 
 def test_resolver_entidad_bce_no_privados_se_auto_registra_por_ruc():
     # RUC real de "COOPERATIVA DE AHORRO Y CREDITO 4 DE OCTUBRE" tal como vive hoy en
-    # marts.dim_banco (13 dígitos, con el cero inicial de provincia -- el fixture viejo
+    # marts.dim_entidad (13 dígitos, con el cero inicial de provincia -- el fixture viejo
     # de este test tenía "691702324001" (12 dígitos, sin el cero), un typo que quedó
     # invisible mientras no había validación estructural real de RUC (2026-08-30).
     codigo, banco, tipo, ruc = resolver_entidad_bce(
@@ -110,7 +110,7 @@ def test_resolver_entidad_bce_no_privados_se_auto_registra_por_ruc():
 
 
 def test_resolver_entidad_bce_mismo_ruc_distinta_razon_social_da_mismo_codigo():
-    # RUC real de una mutualista ya vigente en marts.dim_banco (13 dígitos,
+    # RUC real de una mutualista ya vigente en marts.dim_entidad (13 dígitos,
     # estructuralmente válido) -- el fixture viejo "123" solo servía mientras no había
     # validación estructural real de RUC (2026-08-30).
     ruc_valido = "0190006247001"
@@ -131,7 +131,7 @@ def test_resolver_entidad_bce_tipo_entidad_no_mapeado_falla_fuerte():
 
 
 def test_validar_ruc_estructura_ruc_real_valido():
-    # RUC real de una cooperativa vigente en marts.dim_banco (2026-08-30).
+    # RUC real de una cooperativa vigente en marts.dim_entidad (2026-08-30).
     assert validar_ruc_estructura("0691702324001") is True
 
 

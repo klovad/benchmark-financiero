@@ -30,8 +30,24 @@ OUTPUT_DIR = Path(__file__).resolve().parent / "output"
 SEGMENTOS = ["PRODUCTIVO", "CONSUMO", "INMOBILIARIO", "MICROCR", "EDUCATIVO"]
 
 
+# Muestras exportadas antes de sql/37 (2026-10-09) traen dim_banco/banco_id: se leen
+# igual y se llevan a los nombres actuales (dim_entidad/entidad_id).
+_RENOMBRE_ENTIDAD = {
+    "banco_id": "entidad_id",
+    "banco": "entidad",
+    "banco_codigo": "entidad_codigo",
+}
+
+
+def _leer(path):
+    return pd.read_parquet(path).rename(columns=_RENOMBRE_ENTIDAD)
+
+
 def rd_one(name):
-    return pd.read_parquet(DATA_DIR / f"{name}.parquet")
+    path = DATA_DIR / f"{name}.parquet"
+    if name == "dim_entidad" and not path.exists():
+        path = DATA_DIR / "dim_banco.parquet"
+    return _leer(path)
 
 
 def rd_years(prefix, years):
@@ -39,7 +55,7 @@ def rd_years(prefix, years):
     for y in years:
         p = DATA_DIR / f"{prefix}_{y}.parquet"
         if p.exists():
-            dfs.append(pd.read_parquet(p))
+            dfs.append(_leer(p))
     return pd.concat(dfs, ignore_index=True)
 
 
@@ -66,7 +82,7 @@ def segmento_improductiva(fb14, keyword):
     return rows.saldo_usd.sum()
 
 
-def promedio_ytd(fact_balance, dim_fecha, codigo, banco_id, fecha_id):
+def promedio_ytd(fact_balance, dim_fecha, codigo, entidad_id, fecha_id):
     """Promedio de saldos fin de mes de `codigo` (1=activo, 3=patrimonio), desde
     diciembre del año anterior hasta fecha_id (inclusive) -- ver glosario_cuentas.md §5.
     """
@@ -79,7 +95,7 @@ def promedio_ytd(fact_balance, dim_fecha, codigo, banco_id, fecha_id):
     ]
     fechas_ids = fechas_ytd.fecha_id.tolist()
     rows = fact_balance[
-        (fact_balance.banco_id == banco_id)
+        (fact_balance.entidad_id == entidad_id)
         & (fact_balance.fecha_id.isin(fechas_ids))
         & (fact_balance.codigo == codigo)
     ]
@@ -96,13 +112,13 @@ def main():
     )
     args = parser.parse_args()
 
-    dim_banco = rd_one("dim_banco")
+    dim_entidad = rd_one("dim_entidad")
     dim_cuenta = rd_one("dim_cuenta_contable")
     dim_fecha = rd_one("dim_fecha")
     dim_fecha["fecha"] = pd.to_datetime(dim_fecha["fecha"])
 
-    privados = dim_banco[dim_banco.tipo_entidad == "BANCO PRIVADO"][
-        ["banco_id", "banco", "banco_codigo"]
+    privados = dim_entidad[dim_entidad.tipo_entidad == "BANCO PRIVADO"][
+        ["entidad_id", "entidad", "entidad_codigo"]
     ].copy()
 
     anios = range(dim_fecha.anio.min(), dim_fecha.anio.max() + 1)
@@ -118,11 +134,11 @@ def main():
     rows_out = []
     skipped = []
     for _, b in privados.iterrows():
-        bid, bname, bcod = b.banco_id, b.banco, b.banco_codigo
+        bid, bname, bcod = b.entidad_id, b.entidad, b.entidad_codigo
         fb = fact_balance[
-            (fact_balance.fecha_id == fecha_id) & (fact_balance.banco_id == bid)
+            (fact_balance.fecha_id == fecha_id) & (fact_balance.entidad_id == bid)
         ]
-        fp = fact_pyg[(fact_pyg.fecha_id == fecha_id) & (fact_pyg.banco_id == bid)]
+        fp = fact_pyg[(fact_pyg.fecha_id == fecha_id) & (fact_pyg.entidad_id == bid)]
         if fb.empty:
             skipped.append((bname, "sin fact_balance en fecha"))
             continue

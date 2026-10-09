@@ -9,6 +9,12 @@ variantes: una muestra chica de un mes (`marts_AAAA-MM/`) y una ventana de años
 > **Regenerada el 2026-10-06.** Incluye bancos privados, Banca Pública, cooperativas,
 > mutualistas y entidades de segundo piso (SEPS); `dim_banco` con 444 filas y sin la
 > columna `row_hash` (eliminada en `sql/34`).
+>
+> **Anterior a `sql/36`/`sql/37` (2026-10-09).** Los archivos conservan los nombres de
+> entonces: `dim_banco.parquet` y la columna `banco_id` (hoy `marts.dim_entidad` /
+> `entidad_id`), `dim_canton` sin `codigo_inec` y con los 5 pares de provincia anterior
+> todavía separados. `scripts/compute_indicadores_excel.py` lee los dos formatos. Al
+> regenerar la muestra, los archivos salen con los nombres nuevos.
 
 ## `marts_ultimos_5_anios/`
 

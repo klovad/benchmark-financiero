@@ -76,7 +76,10 @@ def _parse_sheet(ws, tipo_credito: str, tipo_entidad: str) -> list[dict]:
         fecha = get(row, "FECHA")
         if fecha is None:
             continue
-        provincia = normalize_provincia(get(row, "PROVINCIA"))
+        canton, provincia = aplicar_alias_canton(
+            normalize_text(get(row, "CANTON")),
+            normalize_provincia(get(row, "PROVINCIA")),
+        )
         banco = normalize_banco(get(row, "ENTIDAD"))
         base = {
             "fecha": month_end_date(fecha),
@@ -85,9 +88,7 @@ def _parse_sheet(ws, tipo_credito: str, tipo_entidad: str) -> list[dict]:
             "banco_codigo": resolver_banco_codigo(banco, "CAPCOL"),
             "region": region_for_provincia(provincia),
             "provincia": provincia,
-            "canton": aplicar_alias_canton(
-                normalize_text(get(row, "CANTON")), provincia
-            ),
+            "canton": canton,
             "tipo_credito": tipo_credito,
         }
         for col_name, estado in ESTADO_COLUMNS.items():

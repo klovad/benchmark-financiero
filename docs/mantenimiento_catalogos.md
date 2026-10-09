@@ -11,7 +11,7 @@ para copiar/pegar un comando, no se lee de corrido como una narrativa de decisio
 
 Este documento cubre los 8 catálogos que hoy resuelven identidad en Python antes de
 `staging.*` (principio de diseño en `docs/architecture.md`, sección "Catálogos
-conformados"): `dim_banco` (camino curado + camino auto-registrado), `dim_segmento_credito`/
+conformados"): `dim_entidad` (camino curado + camino auto-registrado), `dim_segmento_credito`/
 `dim_subsegmento_credito`, `dim_categoria_deposito`, `dim_segmento_entidad`, `dim_plazo`,
 `dim_cuenta_contable`, `dim_canton`.
 
@@ -19,8 +19,8 @@ conformados"): `dim_banco` (camino curado + camino auto-registrado), `dim_segmen
 
 | Catálogo | Excepción(es) | Archivo:línea | Comportamiento |
 |---|---|---|---|
-| `dim_banco` — curado (33 privados + 3 públicos) | `BancoNoResueltoError` | `src/benchmark_bancos/transform/banco_matching.py:37` (raise en :121-124) | Fail-fast absoluto |
-| `dim_banco` — auto-registrado (408, BCE y SEPS) | `EntidadBceNoMapeadaError` (tipo_entidad), `RucInvalidoError` (RUC) | `banco_matching.py:139`, `banco_matching.py:144` (raise en :253-256 y :270-276) | Fail-fast sobre tipo/RUC; identidad en sí **no se cura**, se auto-ingresa `AUTO_INGRESADO` |
+| `dim_entidad` — curado (33 privados + 3 públicos) | `BancoNoResueltoError` | `src/benchmark_bancos/transform/banco_matching.py:37` (raise en :121-124) | Fail-fast absoluto |
+| `dim_entidad` — auto-registrado (408, BCE y SEPS) | `EntidadBceNoMapeadaError` (tipo_entidad), `RucInvalidoError` (RUC) | `banco_matching.py:139`, `banco_matching.py:144` (raise en :253-256 y :270-276) | Fail-fast sobre tipo/RUC; identidad en sí **no se cura**, se auto-ingresa `AUTO_INGRESADO` |
 | `dim_segmento_credito`/`dim_subsegmento_credito` | `SegmentoNoResueltoError` (BCE tsa), `ValueError` (CAPCOL, sin clase propia) | `src/benchmark_bancos/transform/parse_bce_tasas.py:156` (raise :329-331); `src/benchmark_bancos/transform/parse_cartera.py:48` | Fail-fast absoluto, sin two-tier |
 | `dim_categoria_deposito` | `CategoriaNoResueltaError` (CAPCOL), `ValueError` (BCE tsp, sin clase propia) | `src/benchmark_bancos/transform/categoria_deposito_matching.py:53` (raise :88-91); `parse_bce_tasas.py:291` | Fail-fast absoluto, sin two-tier |
 | `dim_segmento_entidad` | `TipoSegmentoNoResueltoError` | `parse_bce_tasas.py:160` (raise :296-299 tsp, :336-339 tsa) | Fail-fast absoluto, sin two-tier |
@@ -32,7 +32,7 @@ conformados"): `dim_banco` (camino curado + camino auto-registrado), `dim_segmen
 
 | Catálogo | Excepción | Dónde | Comportamiento |
 |---|---|---|---|
-| `dim_banco` (SEPS) | `RucInvalidoError` | `banco_matching.py::resolver_entidad_seps` | Fail-fast sobre el RUC. La entidad nueva se auto-registra (`AUTO_INGRESADO`) con `tipo_entidad` según el sufijo del archivo o `SEPS_RUC_SEGUNDO_PISO` (`src/benchmark_bancos/config/`) |
+| `dim_entidad` (SEPS) | `RucInvalidoError` | `banco_matching.py::resolver_entidad_seps` | Fail-fast sobre el RUC. La entidad nueva se auto-registra (`AUTO_INGRESADO`) con `tipo_entidad` según el sufijo del archivo o `SEPS_RUC_SEGUNDO_PISO` (`src/benchmark_bancos/config/`) |
 | `dim_segmento_credito` (SEPS) | `SubtipoCreditoSepsNoMapeadoError` | `src/benchmark_bancos/transform/parse_seps.py::SUBTIPO_CREDITO_SEPS` | Fail-fast absoluto. Agregar el valor al dict (valor `None` = excluir, como `OPERACIONES CONTINGENTES`) |
 | `dim_categoria_deposito` (SEPS) | `CategoriaNoResueltaError` | `categoria_deposito_matching.py::resolver_categoria_deposito_seps` | Fail-fast absoluto; compara sin tildes contra `CATEGORIAS_VALIDAS` |
 | `dim_canton` (SEPS) | `CantonNoResueltoError` | reutiliza `resolver_canton_bce()` | Two-tier, igual que BCE |
@@ -47,7 +47,7 @@ partida, separador, encabezado), ver la lista de variaciones ya absorbidas en el
 de `src/benchmark_bancos/transform/parse_seps.py`.
 
 `estado_validacion` (`CONFIRMADO`/`AUTO_INGRESADO`/`RECHAZADO`) solo existe en 4 tablas:
-`dim_banco` (`sql/26`), `dim_plazo` (`sql/27`), `dim_cuenta_contable` (`sql/25`),
+`dim_entidad` (`sql/26`), `dim_plazo` (`sql/27`), `dim_cuenta_contable` (`sql/25`),
 `dim_canton` (`sql/28`) — ver sección dedicada más abajo para las queries copy-paste de
 revisión/confirmación de cada una. Los otros 4 catálogos son enumeraciones cerradas por
 definición normativa/regulatoria sin campo de revisión: un valor nuevo ahí siempre aborta
@@ -55,7 +55,7 @@ la carga hasta que un humano lo resuelva en el código, nunca queda "pendiente" 
 
 ---
 
-## 1. `dim_banco` — camino curado (33 bancos privados + 3 públicos)
+## 1. `dim_entidad` — camino curado (33 bancos privados + 3 públicos)
 
 > **2026-10-05**: BanEcuador, CFN y BdE (Banca Pública CAPCOL) se agregaron a
 > `src/benchmark_bancos/seeds/banco_maestro.csv` con su llave `BCE_<ruc>` ya existente. Ganan nombre visible
@@ -88,18 +88,18 @@ contra datos reales nuevos.
   `_normalizar()` lo homologa], `banco_codigo` debe ser un código YA existente en
   `src/benchmark_bancos/seeds/banco_maestro.csv` — **o, desde 2026-09-01 (Banca Pública, ver
   `docs/fuentes_datos.md` sección 1.1), un `banco_codigo` `BCE_<ruc>` ya auto-registrado en
-  `marts.dim_banco` por `resolver_entidad_bce()`**, cuando el objetivo es que un nombre de
+  `marts.dim_entidad` por `resolver_entidad_bce()`**, cuando el objetivo es que un nombre de
   CAPCOL/BOLETIN apunte a la MISMA identidad que BCE ya generó para esa entidad en vez de
   crear una identidad paralela. `resolver_banco_codigo()` no valida contra la base viva en
   ningún caso (es una función pura, sin conexión a Postgres) — si el `banco_codigo` del
-  crosswalk no existe todavía en `marts.dim_banco` cuando el `INSERT` de `fact_saldo_cartera`/
+  crosswalk no existe todavía en `marts.dim_entidad` cuando el `INSERT` de `fact_saldo_cartera`/
   `fact_saldo_depositos` corre, el `INNER JOIN` de esa sentencia en `_REFRESH_MARTS_SQL`
   descarta la fila silenciosamente (mismo riesgo ya conocido para `dim_canton`, ver
   `src/benchmark_bancos/load/load_postgres.py::_log_cantones_no_resueltos`) — para el caso `BCE_<ruc>` esto
   significa que BCE tsp/tsa debe haberse cargado (al menos una vez, para poblar
   `staging.banco_maestro` vía `upsert_banco_maestro_ruc()`) ANTES de que la carga de CAPCOL
   para esa entidad llegue a `refresh_marts()`; verificar `SELECT banco_codigo FROM
-  marts.dim_banco WHERE banco_codigo = 'BCE_<ruc>'` devuelve 1 fila antes de confiar en que
+  marts.dim_entidad WHERE banco_codigo = 'BCE_<ruc>'` devuelve 1 fila antes de confiar en que
   el crosswalk nuevo va a producir hechos, no solo que `resolver_banco_codigo()` no lanzó
   error).
 - **Banco genuinamente nuevo** (licencia bancaria nueva, nunca visto en ninguna fuente):
@@ -120,7 +120,7 @@ contra datos reales nuevos.
 - Test nuevo en `tests/test_banco_matching.py`, patrón `test_capcol_manabi_variants_resolve_to_same_codigo`
   (línea 13) o `test_bce_legal_name_resolves_to_same_codigo_as_capcol` (línea 25): asertar
   `resolver_banco_codigo(nombre_crudo, fuente) == banco_codigo_esperado`.
-- Docs: `docs/gobernanza_datos.md` (conteo de `dim_banco` en el catálogo de metadatos si el
+- Docs: `docs/gobernanza_datos.md` (conteo de `dim_entidad` en el catálogo de metadatos si el
   banco es nuevo, o nota en "Huecos de gobernanza conocidos" si es otro caso de colisión de
   RUC como Jaramillo Arteaga/Promerica). `docs/data_dictionary.md` normalmente no cambia
   salvo que se agregue un `tipo_entidad` nuevo.
@@ -129,7 +129,7 @@ contra datos reales nuevos.
   en la(s) tabla(s) afectada(s) (`SELECT COUNT(*) FROM staging.cartera` vs.
   `SELECT COUNT(*) FROM marts.fact_saldo_cartera`, por ejemplo).
 
-## 2. `dim_banco` — camino auto-registrado (408 entidades no curadas, BCE y SEPS)
+## 2. `dim_entidad` — camino auto-registrado (408 entidades no curadas, BCE y SEPS)
 
 **Errores** (dos clases distintas, no confundir):
 - `EntidadBceNoMapeadaError` — `banco_matching.py:139-141`, lanzado en :253-256 cuando
@@ -146,9 +146,9 @@ Ambos se ven al correr `uv run benchmark-bancos bce` (dentro de `_resolve_identi
 **Dónde arreglarlo**:
 - `EntidadBceNoMapeadaError`: BCE empezó a reportar una categoría de `tipo_entidad` nueva.
   Agregar la clave cruda a `_TIPO_ENTIDAD_BCE` en `banco_matching.py:129-136`, mapeada a un
-  valor válido del `CHECK` de `dim_banco.tipo_entidad` (`sql/07:24`) — si ese `CHECK` no
+  valor válido del `CHECK` de `dim_entidad.tipo_entidad` (`sql/07:24`) — si ese `CHECK` no
   tiene un valor adecuado, hace falta una migración `sql/NN_....sql` que lo extienda
-  (`ALTER TABLE ... DROP CONSTRAINT dim_banco_tipo_entidad_check ... ADD CONSTRAINT ...
+  (`ALTER TABLE ... DROP CONSTRAINT dim_entidad_tipo_entidad_check ... ADD CONSTRAINT ...
   CHECK (tipo_entidad IN (...))`) en el mismo cambio.
 - `RucInvalidoError`: **casi nunca** es "relajar la validación". Primero descartar que sea
   un artefacto de parsing (RUC leído como número y perdió un cero a la izquierda, espacio
@@ -174,7 +174,7 @@ hubo migración de esquema). Re-ejecutar: `pytest tests/test_banco_matching.py -
 `uv run benchmark-bancos bce`, luego verificar conteos.
 
 **Nota**: una vez que una entidad *resuelve* (RUC válido, tipo mapeado), la fila nueva en
-`dim_banco` **sí se auto-ingresa** con `estado_validacion='AUTO_INGRESADO'` sin curación de
+`dim_entidad` **sí se auto-ingresa** con `estado_validacion='AUTO_INGRESADO'` sin curación de
 nombre — eso no es un error, es el comportamiento de diseño (ver sección "Los 4 catálogos
 con `estado_validacion`" más abajo para cómo revisarla/confirmarla).
 
@@ -384,7 +384,7 @@ sigue pendiente — ver "Cambio de grano de BCE a cantón" en `docs/gobernanza_d
 
 **Camino sin error (two-tier, igual mecanismo que `dim_plazo`)**: provincia válida pero el
 par `(canton, provincia)` normalizado no está en el universo sembrado
-(`src/benchmark_bancos/seeds/canton_provincia.csv`, 228 pares, mismo universo que `sql/28` sembró en
+(`src/benchmark_bancos/seeds/canton_provincia.csv`, 223 pares con código INEC desde 2026-10-09; antes 228, el universo que `sql/28` sembró en
 `marts.dim_canton` con `estado_validacion='CONFIRMADO'`) → **no lanza nada**. La fila
 llega a `marts.dim_canton` con `estado_validacion='AUTO_INGRESADO'` (DEFAULT) la próxima
 vez que `refresh_marts()` corra su `INSERT ... ON CONFLICT (canton, provincia_id) DO
@@ -401,16 +401,33 @@ consultando `marts.dim_canton` (sección de abajo).
   encabezado colada) — revisar `src/benchmark_bancos/transform/parse_bce_tasas.py`, no relajar la validación
   para aceptar vacíos.
 
-**Qué hacer (caso `AUTO_INGRESADO`)**: revisión, no reparación — igual que `dim_plazo`, ver
-sección de abajo. Antes de confirmar, verificar que sea un cantón real (no un typo de la
-fuente ni un alias de un cantón ya sembrado con otra forma de texto — ver
-`canton_matching.py::_ALIASES_CANTON` para el precedente de 5 casos ya identificados así).
+**Qué hacer (caso `AUTO_INGRESADO`)** — actualizado 2026-10-09 con los códigos INEC
+(`sql/36`). Desde entonces el refresh **sí** avisa: `sincronizar_cantones_seed()` loguea un
+WARNING con cada cantón sin `codigo_inec`. Para resolverlo, buscar el cantón en el
+Clasificador Geográfico Estadístico del INEC (DPA vigente) **dentro de su provincia**:
+
+1. **Es una variante de escritura** de un cantón ya curado: mismo nombre oficial y código,
+   como `PABLO VI` / `PABLO SEXTO` (1411). Agregar el par a
+   `canton_matching.py::_ALIASES_CANTON` y fusionar las filas ya cargadas con una migración
+   (precedente: `sql/35`).
+2. **Es el mismo cantón con su provincia anterior**, como `LA CONCORDIA` / Esmeraldas (hoy
+   2302, Santo Domingo de los Tsáchilas). Agregarlo a `_ALIASES_PROVINCIA_ANTERIOR` y
+   fusionar (precedente: `sql/36`).
+3. **Es un cantón real nuevo**, por ejemplo uno creado después de la DPA vigente. Agregar la
+   fila `canton,provincia,codigo_inec` a `seeds/canton_provincia.csv`; la siguiente corrida
+   de `refresh` le pone el código y lo marca `CONFIRMADO`, sin migración.
+
+Antes de decidir, recordar que hay homónimos reales en provincias distintas (BOLIVAR
+Carchi 0402 / Manabí 1302, OLMEDO Loja 1116 / Manabí 1318): el par cantón + provincia es
+lo que manda, nunca el nombre solo. `tests/test_canton_matching.py::TestSeedCodigosInec`
+valida el seed (códigos de 4 dígitos, únicos, con el prefijo de su provincia, los 221
+cantones vigentes cubiertos, y ningún alias apuntando fuera del seed).
 
 **Después de arreglarlo**: tests en `tests/test_canton_matching.py` — patrón
 `test_provincia_no_resuelve_lanza_fail_fast` para el fail-fast,
 `test_canton_fuera_del_universo_sembrado_no_lanza_two_tier` para el camino
 `AUTO_INGRESADO`. Si se confirma un alias nuevo (mismo cantón, forma de texto distinta),
-agregarlo a `_ALIASES_CANTON` **y** un test en `TestAliasesBce`. Docs:
+agregarlo a `_ALIASES_CANTON` **y** un test en `TestAliasesBce`/`TestAliasesTodasLasFuentes`. Docs:
 `docs/data_dictionary.md` (`dim_canton`, conteo), `docs/gobernanza_datos.md` (si cambia el
 conteo de filas `AUTO_INGRESADO`/`CONFIRMADO`). Re-ejecutar:
 `pytest tests/test_canton_matching.py -v`, el comando de pipeline, verificar
@@ -421,27 +438,27 @@ conteo de filas `AUTO_INGRESADO`/`CONFIRMADO`). Re-ejecutar:
 
 ## Los 4 catálogos con `estado_validacion`: revisar y confirmar filas pendientes
 
-`dim_banco`, `dim_plazo`, `dim_cuenta_contable` y (desde 2026-09-01) `dim_canton` tienen
+`dim_entidad`, `dim_plazo`, `dim_cuenta_contable` y (desde 2026-09-01) `dim_canton` tienen
 esta columna (`CHECK IN ('CONFIRMADO','AUTO_INGRESADO','RECHAZADO')`). `RECHAZADO` está
 reservado, ningún flujo actual lo escribe — usarlo manualmente si se decide que una fila
 auto-ingresada es inválida y no se quiere borrarla (preserva la fila para trazabilidad en
 vez de un `DELETE`).
 
-### `dim_banco`
+### `dim_entidad`
 
 **Encontrar filas pendientes**:
 ```sql
-SELECT banco_id, banco_codigo, banco, tipo_entidad, ruc, segmento_entidad_id
-FROM marts.dim_banco
+SELECT entidad_id, banco_codigo, banco, tipo_entidad, ruc, segmento_entidad_id
+FROM marts.dim_entidad
 WHERE estado_validacion = 'AUTO_INGRESADO'
 ORDER BY banco_codigo;
 ```
 
 **Confirmar una fila** — **importante**: `staging.banco_maestro` es la fuente de verdad
-para esta columna, no `marts.dim_banco` — cada `refresh_marts()` copia
-`staging.banco_maestro.estado_validacion` a `marts.dim_banco` sin preservar el valor
+para esta columna, no `marts.dim_entidad` — cada `refresh_marts()` copia
+`staging.banco_maestro.estado_validacion` a `marts.dim_entidad` sin preservar el valor
 existente (`ON CONFLICT DO UPDATE SET estado_validacion = EXCLUDED.estado_validacion`,
-`load_postgres.py:593-609`). Actualizar solo `marts.dim_banco` se revierte solo en la
+`load_postgres.py:593-609`). Actualizar solo `marts.dim_entidad` se revierte solo en la
 próxima corrida de cualquier comando de pipeline (`bce`/`load`/`boletin`/`tasas-historicas`,
 los 4 llaman `refresh_marts()` al final). Hay que tocar **las dos tablas**:
 ```sql
@@ -449,7 +466,7 @@ UPDATE staging.banco_maestro
 SET estado_validacion = 'CONFIRMADO'
 WHERE banco_codigo = 'BCE_1790123456001';
 
-UPDATE marts.dim_banco
+UPDATE marts.dim_entidad
 SET estado_validacion = 'CONFIRMADO', fecha_actualizacion = now()
 WHERE banco_codigo = 'BCE_1790123456001';
 ```

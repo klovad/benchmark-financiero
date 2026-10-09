@@ -12,7 +12,7 @@ monitoreo continuo. 5 fuentes integradas en un único esquema estrella conformad
 - [Estadísticas SEPS](https://estadisticas.seps.gob.ec/index.php/estadisticas-sfps/) — cartera, depósitos y estados financieros de cooperativas (S1-S3) y mutualistas, mensual.
 
 > **Las tablas de hechos mezclan sectores.** Cualquier total, participación o ranking
-> debe filtrar o agrupar por `dim_banco.tipo_entidad`.
+> debe filtrar o agrupar por `dim_entidad.tipo_entidad`.
 
 ## Qué incluye
 
@@ -190,7 +190,7 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   etc.). Ambos con desagregación geográfica (cantón/provincia/región). **No trae tasa de
   interés** (verificado contra archivos reales) — de ahí la fuente BCE.
 - **BCE tsp/tsa** (tasas semanales por entidad): histórico completo 2008-01 a la fecha,
-  **sistema financiero completo**. `dim_banco` tiene 444 entidades (2026-10-05): 36 con
+  **sistema financiero completo**. `dim_entidad` tiene 444 entidades (2026-10-05): 36 con
   identidad curada (33 bancos privados + 3 públicos) y 408 auto-registradas por RUC
   (cooperativas, mutualistas, otros bancos públicos, sociedades financieras, tarjetas de
   crédito y 2 entidades de segundo piso). Ver `docs/gobernanza_datos.md`. Activas
@@ -220,6 +220,12 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   balance), y el consumo de las cooperativas emisoras de tarjetas excluye las tarjetas.
 
 ## Estado del proyecto
+
+- ✅ **Geografía con códigos INEC y `dim_entidad`** (2026-10-09): cantón y provincia
+  llevan el código oficial del INEC (los 221 cantones vigentes), cada cantón real es una
+  sola fila con su provincia vigente (2 duplicados por escritura y 5 pares con provincia
+  anterior fusionados, totales nacionales sin cambio), y `marts.dim_banco` pasó a
+  llamarse `marts.dim_entidad` (`entidad_id`). Ver `docs/data_dictionary.md`.
 
 - ✅ ETL de las 5 fuentes completo y verificado (conteos `staging` = `marts` exactos, CDC
   sin updates espurios en una segunda corrida, ver `docs/data_dictionary.md` y

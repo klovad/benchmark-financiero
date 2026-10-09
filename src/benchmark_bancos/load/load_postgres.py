@@ -12,7 +12,7 @@ Idempotencia, en tres niveles (ver docs/architecture.md, "Carga incremental"):
   mismo guard de CDC hacia marts. Correr el pipeline varias veces converge al mismo
   resultado.
 - La identidad de banco (banco_codigo) se resuelve en src/benchmark_bancos/transform/banco_matching.py
-  ANTES de llegar a staging -- marts.dim_banco no es más que un catálogo poblado desde
+  ANTES de llegar a staging -- marts.dim_entidad no es más que un catálogo poblado desde
   staging.banco_maestro (sembrado desde src/benchmark_bancos/seeds/banco_maestro.csv), sin tabla de alias.
 """
 
@@ -24,6 +24,7 @@ import pandas as pd
 import psycopg
 
 from benchmark_bancos.config import DB_CONFIG, SEEDS_DIR
+from benchmark_bancos.transform.canton_matching import seed_cantones
 
 log = logging.getLogger(__name__)
 
@@ -108,7 +109,7 @@ def load_banco_maestro_seed(conn) -> None:
     fila ya existía (curada de siempre) o si upsert_banco_maestro_ruc() la creó primero
     con el DEFAULT AUTO_INGRESADO (posible en una base nueva si load_bce() corre antes
     que este seed) -- refresh_marts() llama a esta función antes de correr
-    _REFRESH_MARTS_SQL, así que el estado queda correcto antes de poblar marts.dim_banco.
+    _REFRESH_MARTS_SQL, así que el estado queda correcto antes de poblar marts.dim_entidad.
     """
     with open(_SEEDS_DIR / "banco_maestro.csv", encoding="utf-8") as f:
         rows = [
@@ -127,6 +128,54 @@ def load_banco_maestro_seed(conn) -> None:
             rows,
         )
     log.info("staging.banco_maestro: %d filas sembradas", len(rows))
+
+
+def sincronizar_cantones_seed(conn) -> None:
+    """Vuelca `seeds/canton_provincia.csv` sobre marts.dim_canton: código INEC y
+    estado CONFIRMADO para cada par curado (sql/36). Curar un cantón AUTO_INGRESADO es
+    agregar su fila (con código) al CSV; la próxima corrida lo confirma. Solo toca filas
+    que cambian. Avisa con WARNING si queda algún cantón real sin código."""
+    rows = [(c, p, cod) for (c, p), cod in seed_cantones().items()]
+    with conn.cursor() as cur:
+        cur.execute(
+            "CREATE TEMP TABLE IF NOT EXISTS _seed_canton "
+            "(canton text, provincia text, codigo_inec text)"
+        )
+        cur.execute("TRUNCATE _seed_canton")
+        cur.executemany("INSERT INTO _seed_canton VALUES (%s, %s, %s)", rows)
+        cur.execute(
+            """
+            UPDATE marts.dim_canton d
+            SET codigo_inec = s.codigo_inec, estado_validacion = 'CONFIRMADO'
+            FROM _seed_canton s
+            JOIN marts.dim_provincia p ON p.provincia = s.provincia
+            WHERE d.canton = s.canton AND d.provincia_id = p.provincia_id
+              AND (d.codigo_inec IS DISTINCT FROM s.codigo_inec
+                   OR d.estado_validacion IS DISTINCT FROM 'CONFIRMADO')
+            """
+        )
+        actualizados = cur.rowcount
+        cur.execute(
+            """
+            SELECT d.canton || ' (' || p.provincia || ')'
+            FROM marts.dim_canton d JOIN marts.dim_provincia p USING (provincia_id)
+            WHERE d.codigo_inec IS NULL AND p.provincia <> 'S/N'
+            ORDER BY 1
+            """
+        )
+        sin_codigo = [r[0] for r in cur.fetchall()]
+    if actualizados:
+        log.info(
+            "marts.dim_canton: %d cantones sincronizados desde el seed", actualizados
+        )
+    if sin_codigo:
+        log.warning(
+            "marts.dim_canton: %d cantón(es) AUTO_INGRESADO sin código INEC, revisar y "
+            "agregar a seeds/canton_provincia.csv (o a _ALIASES_CANTON si es una "
+            "variante): %s",
+            len(sin_codigo),
+            ", ".join(sin_codigo),
+        )
 
 
 def upsert_staging_cartera(conn, df: pd.DataFrame) -> None:
@@ -587,7 +636,7 @@ FROM (
 ) f
 ON CONFLICT (fecha_id) DO NOTHING;
 
--- dim_banco: identidad ya resuelta en staging.banco_codigo (src/benchmark_bancos/transform/banco_matching.py);
+-- dim_entidad (antes dim_banco, sql/37): identidad ya resuelta en staging.banco_codigo (src/benchmark_bancos/transform/banco_matching.py);
 -- el nombre a mostrar y tipo_entidad vienen de staging.banco_maestro (sembrado desde
 -- src/benchmark_bancos/seeds/banco_maestro.csv), no de cualquier texto crudo que haya llegado primero.
 -- estado_validacion (sql/26_dim_banco_estado_validacion.sql) se copia de
@@ -596,7 +645,7 @@ ON CONFLICT (fecha_id) DO NOTHING;
 -- de refresh_marts()), AUTO_INGRESADO para las ~409 entidades auto-registradas por RUC.
 --
 -- segmento_entidad_id SÍ va en el SELECT/columna del INSERT (leído de la propia
--- marts.dim_banco vía el LEFT JOIN de abajo) aunque esta sentencia nunca lo escribe en
+-- marts.dim_entidad vía el LEFT JOIN de abajo) aunque esta sentencia nunca lo escribe en
 -- el SET del ON CONFLICT -- esa columna es propiedad del UPDATE separado más abajo
 -- (SCD1 desde los hechos BCE). Bug real encontrado y corregido 2026-08-30 al verificar
 -- CDC no-op para esta migración: como segmento_entidad_id NO estaba en la lista de
@@ -610,11 +659,11 @@ ON CONFLICT (fecha_id) DO NOTHING;
 -- (2026-07-25) -- no lo introdujo esta migración, solo quedó expuesto al verificar CDC
 -- no-op de punta a punta en vez de asumirlo. Con el LEFT JOIN, una fila nueva sigue
 -- resolviendo segmento_entidad_id = NULL correctamente (no hay fila existente que unir).
-INSERT INTO marts.dim_banco (banco_codigo, banco, tipo_entidad, ruc, estado_validacion, segmento_entidad_id)
+INSERT INTO marts.dim_entidad (entidad_codigo, entidad, tipo_entidad, ruc, estado_validacion, segmento_entidad_id)
 SELECT bm.banco_codigo, bm.banco, bm.tipo_entidad, bm.ruc, bm.estado_validacion, existente.segmento_entidad_id
 FROM staging.banco_maestro bm
-LEFT JOIN marts.dim_banco existente ON existente.banco_codigo = bm.banco_codigo
-WHERE bm.banco_codigo IN (SELECT banco_codigo FROM marts.dim_banco)
+LEFT JOIN marts.dim_entidad existente ON existente.entidad_codigo = bm.banco_codigo
+WHERE bm.banco_codigo IN (SELECT entidad_codigo FROM marts.dim_entidad)
    OR bm.banco_codigo IN (
     SELECT DISTINCT banco_codigo FROM staging.cartera WHERE tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO')
     UNION
@@ -628,10 +677,10 @@ WHERE bm.banco_codigo IN (SELECT banco_codigo FROM marts.dim_banco)
     UNION
     SELECT DISTINCT banco_codigo FROM staging.boletin_pyg
 )
-ON CONFLICT (banco_codigo) DO UPDATE SET
-    banco = EXCLUDED.banco, tipo_entidad = EXCLUDED.tipo_entidad, ruc = EXCLUDED.ruc,
+ON CONFLICT (entidad_codigo) DO UPDATE SET
+    entidad = EXCLUDED.entidad, tipo_entidad = EXCLUDED.tipo_entidad, ruc = EXCLUDED.ruc,
     estado_validacion = EXCLUDED.estado_validacion, fecha_actualizacion = now()
-WHERE (marts.dim_banco.banco, marts.dim_banco.tipo_entidad, marts.dim_banco.ruc, marts.dim_banco.segmento_entidad_id, marts.dim_banco.estado_validacion) IS DISTINCT FROM (EXCLUDED.banco, EXCLUDED.tipo_entidad, EXCLUDED.ruc, EXCLUDED.segmento_entidad_id, EXCLUDED.estado_validacion);
+WHERE (marts.dim_entidad.entidad, marts.dim_entidad.tipo_entidad, marts.dim_entidad.ruc, marts.dim_entidad.segmento_entidad_id, marts.dim_entidad.estado_validacion) IS DISTINCT FROM (EXCLUDED.entidad, EXCLUDED.tipo_entidad, EXCLUDED.ruc, EXCLUDED.segmento_entidad_id, EXCLUDED.estado_validacion);
 
 -- translate() en vez de igualdad exacta: CAPCOL no es 100% consistente en su propia
 -- ortografía sin tilde (ver sql/20_dim_provincia.sql) -- normalize_provincia() en Python
@@ -698,17 +747,17 @@ ON CONFLICT (dias_desde, COALESCE(dias_hasta, -1)) DO NOTHING;
 -- estado_cartera ya no es dimensión degenerada -- son 3 medidas columnares del mismo
 -- grano (fecha, banco, cantón, segmento), ver sql/21_fact_saldo_cartera_pivot.sql.
 INSERT INTO marts.fact_saldo_cartera
-    (fecha_id, banco_id, canton_id, segmento_id, saldo_por_vencer, saldo_no_devenga_intereses, saldo_vencida)
+    (fecha_id, entidad_id, canton_id, segmento_id, saldo_por_vencer, saldo_no_devenga_intereses, saldo_vencida)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
-    b.banco_id,
+    b.entidad_id,
     c.canton_id,
     sg.segmento_id,
     COALESCE(SUM(s.saldo) FILTER (WHERE s.estado_cartera = 'por_vencer'), 0),
     COALESCE(SUM(s.saldo) FILTER (WHERE s.estado_cartera = 'no_devenga_intereses'), 0),
     COALESCE(SUM(s.saldo) FILTER (WHERE s.estado_cartera = 'vencida'), 0)
 FROM staging.cartera s
-JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
+JOIN marts.dim_entidad b ON b.entidad_codigo = s.banco_codigo
 LEFT JOIN marts.dim_provincia dp ON dp.provincia = translate(s.provincia, 'ÁÉÍÓÚ', 'AEIOU')
 LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia_id = dp.provincia_id
 JOIN marts.dim_segmento_credito sg ON sg.segmento = CASE s.tipo_credito
@@ -721,18 +770,18 @@ JOIN marts.dim_segmento_credito sg ON sg.segmento = CASE s.tipo_credito
     WHEN 'inversion_publica' THEN 'INVERSIÓN PÚBLICA'  -- solo Banca Pública
 END
 WHERE s.tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO')
-GROUP BY TO_CHAR(s.fecha, 'YYYYMMDD')::INT, b.banco_id, c.canton_id, sg.segmento_id
-ON CONFLICT (fecha_id, banco_id, COALESCE(canton_id, -1), segmento_id)
+GROUP BY TO_CHAR(s.fecha, 'YYYYMMDD')::INT, b.entidad_id, c.canton_id, sg.segmento_id
+ON CONFLICT (fecha_id, entidad_id, COALESCE(canton_id, -1), segmento_id)
 DO UPDATE SET saldo_por_vencer = EXCLUDED.saldo_por_vencer,
               saldo_no_devenga_intereses = EXCLUDED.saldo_no_devenga_intereses,
               saldo_vencida = EXCLUDED.saldo_vencida,
               fecha_actualizacion = now()
 WHERE (marts.fact_saldo_cartera.saldo_por_vencer, marts.fact_saldo_cartera.saldo_no_devenga_intereses, marts.fact_saldo_cartera.saldo_vencida) IS DISTINCT FROM (EXCLUDED.saldo_por_vencer, EXCLUDED.saldo_no_devenga_intereses, EXCLUDED.saldo_vencida);
 
-INSERT INTO marts.fact_saldo_depositos (fecha_id, banco_id, canton_id, categoria_deposito_id, plazo_id, saldo, numero_clientes, numero_cuentas)
+INSERT INTO marts.fact_saldo_depositos (fecha_id, entidad_id, canton_id, categoria_deposito_id, plazo_id, saldo, numero_clientes, numero_cuentas)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
-    b.banco_id,
+    b.entidad_id,
     c.canton_id,
     cd.categoria_deposito_id,
     pl.plazo_id,
@@ -740,14 +789,14 @@ SELECT
     s.numero_clientes,
     s.numero_cuentas
 FROM staging.depositos s
-JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
+JOIN marts.dim_entidad b ON b.entidad_codigo = s.banco_codigo
 LEFT JOIN marts.dim_provincia dp ON dp.provincia = translate(s.provincia, 'ÁÉÍÓÚ', 'AEIOU')
 LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia_id = dp.provincia_id
 JOIN marts.dim_categoria_deposito cd ON cd.categoria = s.categoria_deposito
 LEFT JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
     AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
 WHERE s.tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO')
-ON CONFLICT (fecha_id, banco_id, canton_id, categoria_deposito_id, COALESCE(plazo_id, -1))
+ON CONFLICT (fecha_id, entidad_id, canton_id, categoria_deposito_id, COALESCE(plazo_id, -1))
 DO UPDATE SET saldo = EXCLUDED.saldo,
               numero_clientes = EXCLUDED.numero_clientes,
               numero_cuentas = EXCLUDED.numero_cuentas,
@@ -762,10 +811,10 @@ WHERE (marts.fact_saldo_depositos.saldo, marts.fact_saldo_depositos.numero_clien
 -- mismo _REFRESH_MARTS_SQL ya corrió antes de esta sentencia, así que un par
 -- AUTO_INGRESADO nuevo de BCE ya existe en dim_canton para cuando este JOIN se ejecuta.
 INSERT INTO marts.fact_captaciones_depositos
-    (fecha_id, banco_id, categoria_deposito_id, plazo_id, canton_id, monto_total, numero_operaciones, tasa_pasiva_efectiva, tasa_nominal, segmento_entidad_id)
+    (fecha_id, entidad_id, categoria_deposito_id, plazo_id, canton_id, monto_total, numero_operaciones, tasa_pasiva_efectiva, tasa_nominal, segmento_entidad_id)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
-    b.banco_id,
+    b.entidad_id,
     cd.categoria_deposito_id,
     pl.plazo_id,
     c.canton_id,
@@ -775,14 +824,14 @@ SELECT
     s.tasa_nominal,
     se.segmento_entidad_id
 FROM staging.bce_tasas_pasivas s
-JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
+JOIN marts.dim_entidad b ON b.entidad_codigo = s.banco_codigo
 JOIN marts.dim_categoria_deposito cd ON cd.categoria = s.categoria_deposito
 JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
     AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
 LEFT JOIN marts.dim_provincia dp ON dp.provincia = translate(s.provincia, 'ÁÉÍÓÚ', 'AEIOU')
 LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia_id = dp.provincia_id
 LEFT JOIN marts.dim_segmento_entidad se ON se.tipo_segmento = s.tipo_segmento
-ON CONFLICT (fecha_id, banco_id, categoria_deposito_id, plazo_id, COALESCE(canton_id, -1))
+ON CONFLICT (fecha_id, entidad_id, categoria_deposito_id, plazo_id, COALESCE(canton_id, -1))
 DO UPDATE SET monto_total = EXCLUDED.monto_total,
               numero_operaciones = EXCLUDED.numero_operaciones,
               tasa_pasiva_efectiva = EXCLUDED.tasa_pasiva_efectiva,
@@ -794,10 +843,10 @@ WHERE (marts.fact_captaciones_depositos.monto_total, marts.fact_captaciones_depo
 -- canton_id: mismo patrón de resolución de 2 pasos que fact_captaciones_depositos arriba
 -- -- ver ese comentario para el detalle completo.
 INSERT INTO marts.fact_colocaciones_cartera
-    (fecha_id, banco_id, subsegmento_id, plazo_id, canton_id, monto_total, numero_operaciones, tasa_activa_efectiva, tasa_nominal, segmento_entidad_id)
+    (fecha_id, entidad_id, subsegmento_id, plazo_id, canton_id, monto_total, numero_operaciones, tasa_activa_efectiva, tasa_nominal, segmento_entidad_id)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
-    b.banco_id,
+    b.entidad_id,
     sg.subsegmento_id,
     pl.plazo_id,
     c.canton_id,
@@ -807,14 +856,14 @@ SELECT
     s.tasa_nominal,
     se.segmento_entidad_id
 FROM staging.bce_tasas_activas s
-JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
+JOIN marts.dim_entidad b ON b.entidad_codigo = s.banco_codigo
 JOIN marts.dim_subsegmento_credito sg ON sg.subsegmento = s.segmento_credito
 JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
     AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
 LEFT JOIN marts.dim_provincia dp ON dp.provincia = translate(s.provincia, 'ÁÉÍÓÚ', 'AEIOU')
 LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia_id = dp.provincia_id
 LEFT JOIN marts.dim_segmento_entidad se ON se.tipo_segmento = s.tipo_segmento
-ON CONFLICT (fecha_id, banco_id, subsegmento_id, plazo_id, COALESCE(canton_id, -1))
+ON CONFLICT (fecha_id, entidad_id, subsegmento_id, plazo_id, COALESCE(canton_id, -1))
 DO UPDATE SET monto_total = EXCLUDED.monto_total,
               numero_operaciones = EXCLUDED.numero_operaciones,
               tasa_activa_efectiva = EXCLUDED.tasa_activa_efectiva,
@@ -823,33 +872,33 @@ DO UPDATE SET monto_total = EXCLUDED.monto_total,
               fecha_actualizacion = now()
 WHERE (marts.fact_colocaciones_cartera.monto_total, marts.fact_colocaciones_cartera.numero_operaciones, marts.fact_colocaciones_cartera.tasa_activa_efectiva, marts.fact_colocaciones_cartera.tasa_nominal, marts.fact_colocaciones_cartera.segmento_entidad_id) IS DISTINCT FROM (EXCLUDED.monto_total, EXCLUDED.numero_operaciones, EXCLUDED.tasa_activa_efectiva, EXCLUDED.tasa_nominal, EXCLUDED.segmento_entidad_id);
 
--- dim_banco.segmento_entidad_id: conveniencia con la ÚLTIMA clasificación conocida (SCD
+-- dim_entidad.segmento_entidad_id: conveniencia con la ÚLTIMA clasificación conocida (SCD
 -- tipo 1) para análisis puntuales contra la situación actual, sin tener que ir a buscar
 -- la fila más reciente en los hechos semanales. Se resuelve tomando la fecha más
 -- reciente entre AMBOS hechos BCE (un banco puede aparecer solo en tsp o solo en tsa).
 --
 -- Guard de CDC: solo escribe si segmento_entidad_id cambió de verdad. Hasta sql/34 este
--- WHERE recalculaba a mano el md5 de marts.dim_banco.row_hash y se desincronizó una vez
+-- WHERE recalculaba a mano el md5 de marts.dim_entidad.row_hash y se desincronizó una vez
 -- (2026-08-30, al agregar estado_validacion): CDC roto en silencio. Comparar la única
 -- columna que este UPDATE escribe elimina esa clase de error.
 -- Alcance: solo bancos con datos BCE en staging (src_* en el refresh incremental).
-UPDATE marts.dim_banco b
+UPDATE marts.dim_entidad b
 SET segmento_entidad_id = latest.segmento_entidad_id, fecha_actualizacion = now()
 FROM (
-    SELECT DISTINCT ON (banco_id) banco_id, segmento_entidad_id
+    SELECT DISTINCT ON (entidad_id) entidad_id, segmento_entidad_id
     FROM (
-        SELECT banco_id, fecha_id, segmento_entidad_id FROM marts.fact_captaciones_depositos WHERE segmento_entidad_id IS NOT NULL
+        SELECT entidad_id, fecha_id, segmento_entidad_id FROM marts.fact_captaciones_depositos WHERE segmento_entidad_id IS NOT NULL
         UNION ALL
-        SELECT banco_id, fecha_id, segmento_entidad_id FROM marts.fact_colocaciones_cartera WHERE segmento_entidad_id IS NOT NULL
+        SELECT entidad_id, fecha_id, segmento_entidad_id FROM marts.fact_colocaciones_cartera WHERE segmento_entidad_id IS NOT NULL
     ) x
-    WHERE x.banco_id IN (
-        SELECT b2.banco_id FROM marts.dim_banco b2
-        WHERE b2.banco_codigo IN (SELECT banco_codigo FROM staging.bce_tasas_pasivas
-                                  UNION SELECT banco_codigo FROM staging.bce_tasas_activas)
+    WHERE x.entidad_id IN (
+        SELECT b2.entidad_id FROM marts.dim_entidad b2
+        WHERE b2.entidad_codigo IN (SELECT banco_codigo FROM staging.bce_tasas_pasivas
+                                    UNION SELECT banco_codigo FROM staging.bce_tasas_activas)
     )
-    ORDER BY banco_id, fecha_id DESC
+    ORDER BY entidad_id, fecha_id DESC
 ) latest
-WHERE b.banco_id = latest.banco_id
+WHERE b.entidad_id = latest.entidad_id
   AND b.segmento_entidad_id IS DISTINCT FROM latest.segmento_entidad_id;
 
 -- TasasHistorico.htm: 4 tablas anchas, una por sección real (activa_maxima +
@@ -919,29 +968,29 @@ WHERE (marts.fact_tasas_referenciales_sistema.tasa_pasiva_referencial_sistema, m
 -- (upsert_dim_cuenta_contable, antes de refresh_marts) porque su llave (reporte, codigo)
 -- no es un valor que se pueda derivar por SELECT DISTINCT de una sola columna staging
 -- como el resto de catálogos auto-descubiertos.
-INSERT INTO marts.fact_balance (fecha_id, banco_id, cuenta_id, saldo_usd)
+INSERT INTO marts.fact_balance (fecha_id, entidad_id, cuenta_id, saldo_usd)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
-    b.banco_id,
+    b.entidad_id,
     cc.cuenta_id,
     s.saldo_usd
 FROM staging.boletin_balance s
-JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
+JOIN marts.dim_entidad b ON b.entidad_codigo = s.banco_codigo
 JOIN marts.dim_cuenta_contable cc ON cc.reporte = 'BALANCE' AND cc.codigo = s.codigo
-ON CONFLICT (fecha_id, banco_id, cuenta_id)
+ON CONFLICT (fecha_id, entidad_id, cuenta_id)
 DO UPDATE SET saldo_usd = EXCLUDED.saldo_usd, fecha_actualizacion = now()
 WHERE marts.fact_balance.saldo_usd IS DISTINCT FROM EXCLUDED.saldo_usd;
 
-INSERT INTO marts.fact_pyg (fecha_id, banco_id, cuenta_id, valor_usd)
+INSERT INTO marts.fact_pyg (fecha_id, entidad_id, cuenta_id, valor_usd)
 SELECT
     TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
-    b.banco_id,
+    b.entidad_id,
     cc.cuenta_id,
     s.valor_usd
 FROM staging.boletin_pyg s
-JOIN marts.dim_banco b ON b.banco_codigo = s.banco_codigo
+JOIN marts.dim_entidad b ON b.entidad_codigo = s.banco_codigo
 JOIN marts.dim_cuenta_contable cc ON cc.reporte = 'PYG' AND cc.codigo = s.codigo
-ON CONFLICT (fecha_id, banco_id, cuenta_id)
+ON CONFLICT (fecha_id, entidad_id, cuenta_id)
 DO UPDATE SET valor_usd = EXCLUDED.valor_usd, fecha_actualizacion = now()
 WHERE marts.fact_pyg.valor_usd IS DISTINCT FROM EXCLUDED.valor_usd;
 """
@@ -1024,7 +1073,7 @@ def _log_cantones_no_resueltos(conn, fuentes=lambda sql: sql) -> None:
 
 def _log_bancos_no_resueltos(conn, fuentes=lambda sql: sql) -> None:
     """Los INSERT de fact_saldo_cartera/fact_saldo_depositos hacen INNER JOIN contra
-    marts.dim_banco, que solo contiene banco_codigo presentes en staging.banco_maestro.
+    marts.dim_entidad, que solo contiene banco_codigo presentes en staging.banco_maestro.
     Banca Pública resuelve por crosswalk a filas BCE_<ruc> que solo existen si BCE ya
     corrió al menos una vez (docs/fuentes_datos.md sección 1.1): en una base
     reconstruida desde cero con CAPCOL cargado antes que BCE, esas filas se descartarían
@@ -1052,7 +1101,7 @@ def _log_bancos_no_resueltos(conn, fuentes=lambda sql: sql) -> None:
     if rows:
         detalle = ", ".join(f"{c!r} [{t}] ({n} filas)" for t, c, n in rows)
         log.warning(
-            "marts.dim_banco: %d banco_codigo de staging.cartera/depositos sin fila en "
+            "marts.dim_entidad: %d banco_codigo de staging.cartera/depositos sin fila en "
             "staging.banco_maestro -- el INNER JOIN de refresh_marts() DESCARTARÁ sus "
             "filas (¿falta correr `uv run benchmark-bancos bce` primero?): %s",
             len(rows),
@@ -1060,7 +1109,7 @@ def _log_bancos_no_resueltos(conn, fuentes=lambda sql: sql) -> None:
         )
     else:
         log.info(
-            "marts.dim_banco: 0 banco_codigo CAPCOL sin resolver (verificado en esta corrida)"
+            "marts.dim_entidad: 0 banco_codigo CAPCOL sin resolver (verificado en esta corrida)"
         )
 
 
@@ -1148,6 +1197,7 @@ def refresh_marts(conn, full: bool = False) -> None:
     _log_bancos_no_resueltos(conn, fuentes)
     with conn.cursor() as cur:
         cur.execute(fuentes(_REFRESH_MARTS_SQL))
+        sincronizar_cantones_seed(conn)
         cur.execute(
             """
             INSERT INTO meta.refresh_watermark (proceso, hasta) VALUES ('marts', %s)

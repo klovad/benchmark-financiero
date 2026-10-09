@@ -29,7 +29,7 @@ investiga o integra una fuente nueva — es la referencia antes de rediseñar na
 > `AUTO_INGRESADO` (PABLO VI, Morona Santiago; resultó ser `PABLO SEXTO` escrito de otra forma y se fusionó en `sql/35`). Las filas de bancos privados y SEPS no
 > cambiaron (hash idéntico antes y después) y una segunda corrida no actualizó nada. El
 > Banco de Desarrollo del Ecuador (BdE) solo reporta cartera (Inversión Pública y
-> Productivo), no depósitos. (Hasta 2026-10-05 aparecía en `dim_banco` como "BANCO DEL
+> Productivo), no depósitos. (Hasta 2026-10-05 aparecía en `dim_entidad` como "BANCO DEL
 > ESTADO", su razón social histórica en BCE. Ahora es "BANCO DE DESARROLLO DEL ECUADOR",
 > curado en `banco_maestro.csv` junto con CFN y BanEcuador.) Dic-2025: BdE 1.718 M de cartera, BanEcuador
 > 1.361 M de cartera y 1.452 M de depósitos, CFN 1.290 M de cartera y 963 M de depósitos.
@@ -86,7 +86,7 @@ ver "Por qué Playwright" en `docs/architecture.md`) contra la instancia Postgre
     muestra ese mismo RUC bajo 3 razones sociales distintas en el tiempo: `BANCO DEL
     ESTADO` → `BANCO DE DESARROLLO` → `BANCO DE DESARROLLO DEL ECUADOR`, verificado
     contra `raw.bce_tasas_pasivas`), `CORPORACION FINANCIERA NACIONAL B.P.`. **Solo 3 de
-    los 6 bancos públicos ya presentes en `marts.dim_banco` aparecen en este reporte**
+    los 6 bancos públicos ya presentes en `marts.dim_entidad` aparecen en este reporte**
     (BIESS, BANCO NACIONAL DE FOMENTO e IECE no reportan cartera/depósitos de banca
     comercial a Superbancos bajo este hub — consistente con su naturaleza: seguridad
     social, absorbido en BanEcuador en 2018, y crédito educativo respectivamente).
@@ -101,13 +101,13 @@ ver "Por qué Playwright" en `docs/architecture.md`) contra la instancia Postgre
     catálogos nuevos que crear**.
 
 **Identidad de banco — decisión de diseño** (tarea explícita: resolver contra la MISMA
-fila de `dim_banco` que ya generó BCE, no una identidad paralela): los 3 nombres crudos de
+fila de `dim_entidad` que ya generó BCE, no una identidad paralela): los 3 nombres crudos de
 `ENTIDAD` (`BANECUADOR B. P.`, `BANCO DE DESARROLLO DEL ECUADOR B.P.`, `CORPORACION
 FINANCIERA NACIONAL B.P.`) no matchean `_por_regla()` (el sufijo `B. P.`/`B.P.` no es
 ni el prefijo `BP `/`BANCO ` ni un sufijo legal `S.A./C.A./LTDA` que la regla despoja) —
 resuelven vía **`src/benchmark_bancos/seeds/banco_crosswalk.csv`**, con `banco_codigo` apuntando
 **directo al `BCE_<ruc>` que `resolver_entidad_bce()` ya generó al auto-registrar estos 3
-bancos desde BCE tsp/tsa** (verificado contra `marts.dim_banco` en la instancia viva:
+bancos desde BCE tsp/tsa** (verificado contra `marts.dim_entidad` en la instancia viva:
 `BCE_1768183520001`/BANECUADOR, `BCE_1760002950001`/BANCO DE DESARROLLO DEL ECUADOR (BdE),
 `BCE_1760003090001`/CFN):
 ```csv
@@ -116,12 +116,12 @@ CAPCOL,BANECUADOR B. P.,BCE_1768183520001
 CAPCOL,CORPORACION FINANCIERA NACIONAL B.P.,BCE_1760003090001
 ```
 Es el primer uso del crosswalk donde `banco_codigo` no vive en `src/benchmark_bancos/seeds/banco_maestro.csv`
-(los 33 bancos privados curados) sino en `marts.dim_banco` únicamente por el camino
+(los 33 bancos privados curados) sino en `marts.dim_entidad` únicamente por el camino
 auto-registrado de BCE — válido porque `resolver_banco_codigo()` no valida el `banco_codigo`
 contra ninguna fuente, solo lo devuelve; ver la nota nueva en
 `docs/mantenimiento_catalogos.md` sección 1 sobre el riesgo real que esto introduce (el
 `INNER JOIN` de `fact_saldo_cartera`/`fact_saldo_depositos` en `refresh_marts()` descarta en
-silencio una fila cuyo `banco_codigo` todavía no exista en `marts.dim_banco` — para estos 3
+silencio una fila cuyo `banco_codigo` todavía no exista en `marts.dim_entidad` — para estos 3
 `banco_codigo` eso implica que BCE tsp/tsa debe haberse cargado al menos una vez antes;
 verificado hoy que las 3 filas ya existen en la base viva, así que no es un problema para la
 implementación actual, pero si algún día se reconstruye la base desde cero el orden de carga
@@ -133,7 +133,7 @@ en esta sesión (2026-09-01) — el crosswalk y el test son el único código to
 el resto (parser, extractor, `_REFRESH_MARTS_SQL`) queda para `data-engineer`, ver más abajo.
 
 **Grano y conformidad**: se integra al **mismo grano y a las mismas tablas ya existentes**
-(`marts.fact_saldo_cartera`/`fact_saldo_depositos`, `dim_banco`, `dim_canton`,
+(`marts.fact_saldo_cartera`/`fact_saldo_depositos`, `dim_entidad`, `dim_canton`,
 `dim_segmento_credito`, `dim_categoria_deposito`, `dim_plazo`) — no hace falta ninguna
 tabla ni dimensión nueva, ni un outrigger (a diferencia del choque de grano CAPCOL/BCE que
 sí justificó `dim_subsegmento_credito`): Banca Pública reporta exactamente al mismo grano
@@ -146,7 +146,7 @@ contra la instancia nativa viva): `staging.cartera.tipo_entidad`/`staging.deposi
 son `TEXT NOT NULL` **sin** `CHECK` constraint (el comentario de cabecera de
 `sql/02_schema_staging.sql:10` ya decía "Banco Privado | Banco Público | Sociedad
 Financiera" desde el diseño original, nunca se usó el segundo valor hasta ahora);
-`marts.dim_banco.tipo_entidad` `CHECK` (`sql/07`) ya incluye `'BANCO PUBLICO'` (los 6
+`marts.dim_entidad.tipo_entidad` `CHECK` (`sql/07`) ya incluye `'BANCO PUBLICO'` (los 6
 bancos públicos auto-registrados por BCE ya lo usan); `marts.dim_segmento_credito` ya
 tiene las 7 filas incluida `INVERSIÓN PÚBLICA`. **Cero migraciones `sql/NN_*.sql`
 necesarias para esta fuente** — es el caso raro donde el modelo ya estaba listo antes de
@@ -188,7 +188,7 @@ esquema:
    marts.fact_saldo_cartera`/`fact_saldo_depositos` filtran hoy
    `WHERE s.tipo_entidad = 'BANCO PRIVADO'` — cambiar a
    `WHERE s.tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO')` (o quitar el filtro y dejar
-   que el `JOIN` a `dim_banco` sea la única fuente de verdad de qué entidades existen,
+   que el `JOIN` a `dim_entidad` sea la única fuente de verdad de qué entidades existen,
    decisión de `data-engineer`). Extender también el `CASE` de `tipo_credito →
    dim_segmento_credito.segmento` con `WHEN 'inversion_publica' THEN 'INVERSIÓN PÚBLICA'`
    (punto de arriba).
@@ -199,7 +199,7 @@ esquema:
    quality gates que cualquier carga de este proyecto): `staging.cartera`/`.depositos`
    cuenta = `marts.fact_saldo_cartera`/`fact_saldo_depositos` cuenta para las filas nuevas
    `tipo_entidad='BANCO PUBLICO'`; CDC no-op en una segunda corrida; 0 filas huérfanas por
-   `banco_codigo` no resuelto contra `dim_banco` (ver riesgo de orden de carga arriba —
+   `banco_codigo` no resuelto contra `dim_entidad` (ver riesgo de orden de carga arriba —
    recomendable agregar una función `_log_bancos_no_resueltos()` análoga a
    `_log_cantones_no_resueltos()` si `data-engineer` quiere el mismo nivel de
    observabilidad que ya existe para `dim_canton`, en vez de descubrir filas descartadas
@@ -257,7 +257,7 @@ columnas aún más ricas: `destino_credito`, `destino_hipotecario`, `destino_con
   entidades restantes se auto-registran por RUC (`resolver_entidad_bce()`, sin curación
   manual — a esa escala es inviable y no aporta valor todavía, ya que no hay otra fuente
   con la que alinearlas). Ver `docs/linaje_datos.md` y `docs/gobernanza_datos.md`.
-- **`razon_social`** y **`ruc`**: nombre e identificador fiscal de la entidad — candidato a llave de integración con `dim_banco` de CAPCOL (los nombres no coinciden literalmente: CAPCOL usa "BP PICHINCHA", BCE probablemente usa razón social completa tipo "BANCO PICHINCHA C.A." — falta confirmar el mapeo exacto).
+- **`razon_social`** y **`ruc`**: nombre e identificador fiscal de la entidad — candidato a llave de integración con `dim_entidad` de CAPCOL (los nombres no coinciden literalmente: CAPCOL usa "BP PICHINCHA", BCE probablemente usa razón social completa tipo "BANCO PICHINCHA C.A." — falta confirmar el mapeo exacto).
 - **`instrumento_captacion`**: tipo de depósito (`DEPÓSITOS A PLAZO`, `DEPÓSITOS DE AHORRO`, `FONDOS DE TARJETAHABIENTES`, etc.) — más fino que CAPCOL, revisar catálogo completo.
 - **`plazo`**: buckets de rango de días con prefijo de letra ordinal (`a. MENOS DE 30 DIAS`, `b. 30 - 60 DIAS`, ... `g. MAS DE 360 DIAS`) — el prefijo de letra sirve para ordenar.
 - **`monto_total`, `numero_operaciones`**: agregados de la semana.
@@ -370,21 +370,21 @@ columnas aún más ricas: `destino_credito`, `destino_hipotecario`, `destino_con
   promedio de referencia contra el cual comparar las tasas efectivas reales de
   `tsp`/`tsa` banco por banco.
 
-### 2.4 Mapeo `razon_social`/`ruc` (BCE) ↔ `banco` (CAPCOL/`marts.dim_banco`) — investigado
+### 2.4 Mapeo `razon_social`/`ruc` (BCE) ↔ `banco` (CAPCOL/`marts.dim_entidad`) — investigado
 Se comparó la lista real de `razon_social` de BCE (filtrado `BANCOS PRIVADOS`, 37 valores,
-histórico desde 2008) contra los 28 bancos ya cargados en `marts.dim_banco` (poblado desde
+histórico desde 2008) contra los 28 bancos ya cargados en `marts.dim_entidad` (poblado desde
 CAPCOL, 2021-2025). Confirma que **se necesita un crosswalk explícito, no un join por
 texto**:
 - BCE usa razón social legal completa: `BANCO PICHINCHA C.A.`, `BANCO DE GUAYAQUIL S.A.`,
   `BANCO DE LA PRODUCCIÓN PRODUBANCO S.A.`, `BANCO GENERAL RUMIÑAHUI S.A.`.
 - CAPCOL usa códigos cortos con prefijo `BP `: `BP PICHINCHA`, `BP GUAYAQUIL`, `BP
   PRODUBANCO`, `BP GENERAL RUMIÑAHUI` — pero **no consistentemente**: unos pocos bancos en
-  `dim_banco` están con el nombre legal completo en vez del código corto (`BANCO AMIBANK
+  `dim_entidad` están con el nombre legal completo en vez del código corto (`BANCO AMIBANK
   S.A.`, `BANCO ATLÁNTIDA S.A.`), rompiendo el patrón "BP + código" que sigue el resto.
-- BCE trae ~9 entidades que no aparecen en `dim_banco` porque son bancos que ya no operan o
+- BCE trae ~9 entidades que no aparecen en `dim_entidad` porque son bancos que ya no operan o
   se fusionaron antes de 2021 (`COFIEC`, `LLOYDS BANK`, `SUDAMERICANO`, `TERRITORIAL`,
   `UNIBANCO S.A.`, `M.M. JARAMILLO ARTEAGA`) — el crosswalk debe soportar entidades
-  "solo-BCE" sin intentar forzarlas a un banco de `dim_banco`.
+  "solo-BCE" sin intentar forzarlas a un banco de `dim_entidad`.
 - **`ruc` es el candidato correcto de llave estable** (identificador fiscal), pero falta
   confirmar que CAPCOL en algún punto expone el RUC (no lo hace en los archivos de
   cartera/depósitos actuales) — si no, el crosswalk deberá construirse a mano
@@ -392,7 +392,7 @@ texto**:
   no derivado automáticamente.
 
 ### 🐛 Bug encontrado en el pipeline ya existente (no relacionado a BCE, pero descubierto durante esta comparación)
-Al listar `marts.dim_banco` se encontró que **el mismo banco aparece dividido en dos filas**
+Al listar `marts.dim_entidad` se encontró que **el mismo banco aparece dividido en dos filas**
 por un cambio de nombre a mitad del histórico en la fuente CAPCOL — esto ya afecta el
 dashboard de Power BI shippeado (rompe continuidad de series de tiempo/YoY para estos
 bancos):
@@ -407,7 +407,7 @@ bancos):
   como entidades distintas.
 - **Fix pendiente** (fuera del alcance de esta sesión de investigación BCE, pero para
   hacer pronto): agregar una tabla de alias `dim_banco_alias` o normalizar en el parser de
-  CAPCOL antes de cargar a `staging`, colapsando estos casos a un único `banco_id`. Este
+  CAPCOL antes de cargar a `staging`, colapsando estos casos a un único `entidad_id`. Este
   mismo mecanismo de alias es el que de todas formas hay que construir para el crosswalk
   CAPCOL↔BCE, así que conviene resolverlos juntos en el diseño de arquitectura.
 
@@ -415,7 +415,7 @@ bancos):
 1. ~~¿`tmp` es semanal o mensual? ¿trae tasas activas?~~ **Resuelto**: era pasivas
    mensuales, fuera de alcance. La fuente real de activas semanales es `tsa`.
 2. Confirmar si CAPCOL alguna vez expone RUC (no visto hasta ahora) para decidir si el
-   crosswalk `dim_banco` puede automatizarse parcialmente o debe ser 100% manual.
+   crosswalk `dim_entidad` puede automatizarse parcialmente o debe ser 100% manual.
 3. ¿`TasasHistorico.htm` es scrapeable de forma simple o necesita Playwright? — siguiente paso.
 4. Definir mapeo `segmento_credito` (BCE, 26 valores) → `tipo_credito` (CAPCOL, 6 valores) para el catálogo conformado de producto de crédito.
 5. Volumen ya confirmado tras filtro `BANCOS PRIVADOS`: tsp=781,813 filas, tsa=2,236,663 filas (semanal, 2008-2026). Con ~3M filas combinadas, conviene `pandas` con `chunksize` o `DuckDB` para el parser en vez de cargar todo en memoria de una vez.
@@ -545,7 +545,7 @@ bancos):
 >
 > Verificado: staging = marts en filas y en saldo (1.095.187.816.368,07 USD de cartera
 > acumulada), 0 `canton_id` NULL, 1 cantón nuevo `AUTO_INGRESADO` (ALFREDO BAQUERIZO
-> MORENO, Guayas), 2 entidades nuevas en `dim_banco` (CONAFIPS y FINANCOOP, `ENTIDAD DE
+> MORENO, Guayas), 2 entidades nuevas en `dim_entidad` (CONAFIPS y FINANCOOP, `ENTIDAD DE
 > SEGUNDO PISO`). Las filas de bancos de `fact_saldo_cartera`, `fact_saldo_depositos` y
 > `fact_balance` no cambiaron (hash idéntico a la línea base previa a la carga). La segunda
 > corrida saltó los 15 archivos y no actualizó ninguna fila (CDC sin cambios).
@@ -682,13 +682,13 @@ traen RUC ni razón social. Sí sirven para una vista del *sistema cooperativo* 
 cantón × parroquia, con demografía. CAP-Men 2025 trae solo 10 cortes (faltan enero y
 febrero). Quedan fuera del alcance de v1.
 
-**5. Identidad: 209 de 211 RUC ya existen en `marts.dim_banco`.** Son 205 `COOPERATIVA` y 4
+**5. Identidad: 209 de 211 RUC ya existen en `marts.dim_entidad`.** Son 205 `COOPERATIVA` y 4
 `MUTUALISTA`, auto-registradas por BCE. Verificado contra la base nativa viva (uptime
 desde 2026-09-26). Faltan solo dos entidades de segundo piso:
 - `CORPORACION NACIONAL DE FINANZAS POPULARES Y SOLIDARIAS` (CONAFIPS, `1768168480001`).
 - `CAJA CENTRAL FINANCOOP` (`1791708040001`).
 
-Su `tipo_entidad` no calzaba en el `CHECK` de `dim_banco` (`sql/07`). **Decidido
+Su `tipo_entidad` no calzaba en el `CHECK` de `dim_entidad` (`sql/07`). **Decidido
 (2026-09-30):** nuevo valor `'ENTIDAD DE SEGUNDO PISO'`, en `sql/29_dim_banco_tipo_segundo_piso.sql`,
 ya aplicado a la base viva. Se registran como filas propias, no se fuerzan como
 `COOPERATIVA`. La
@@ -894,12 +894,12 @@ SEPS separa por archivo en vez de por columna) que:
    `RucInvalidoError` si falla.
 2. Deriva `banco_codigo = "BCE_" + ruc"` — **el mismo prefijo y la misma llave que ya usa
    BCE para el universo auto-registrado**, deliberado: la meta explícita de la tarea es
-   resolver contra la MISMA fila de `dim_banco`, y la mayoría de las ~400+ cooperativas que
-   trae SEPS ya deberían existir en `dim_banco` desde el fix de 2026-07-19 (BCE tsp/tsa ya
+   resolver contra la MISMA fila de `dim_entidad`, y la mayoría de las ~400+ cooperativas que
+   trae SEPS ya deberían existir en `dim_entidad` desde el fix de 2026-07-19 (BCE tsp/tsa ya
    trae "COOPERATIVAS DE AHORRO Y CREDITO" sin filtrar, ~394-402 entidades).
 
 **Riesgo real, distinto del de Banca Pública, que hay que diseñar explícitamente**: Banca
-Pública reutiliza 3 entidades que YA existían en `dim_banco` por BCE — con SEPS **no hay
+Pública reutiliza 3 entidades que YA existían en `dim_entidad` por BCE — con SEPS **no hay
 esa garantía**: es plausible que existan cooperativas pequeñas que reportan a SEPS pero
 nunca llegaron al umbral de reporte de BCE tsp/tsa (o viceversa), o que SEPS cubra
 Segmento 1-3 mientras BCE trae el universo completo sin distinguir segmento en el archivo
@@ -908,13 +908,13 @@ entidad cuando no existe, cualquier RUC no visto antes por BCE produciría un `b
 que el `INNER JOIN` de `refresh_marts()` descartaría en silencio (mismo riesgo ya
 documentado en la sección 1.1 para Banca Pública, pero ahí mitigado porque las 3 entidades
 ya estaban confirmadas vigentes; acá NO se puede asumir eso para las ~400 de SEPS sin
-contarlas contra `marts.dim_banco` primero). **Diseño recomendado**: `resolver_entidad_seps()`
+contarlas contra `marts.dim_entidad` primero). **Diseño recomendado**: `resolver_entidad_seps()`
 debe llamar al mismo mecanismo de auto-registro que ya usa BCE
 (`src/benchmark_bancos/load/load_postgres.py::upsert_banco_maestro_ruc()`, hoy invocado solo desde el flujo
 BCE) para registrar en `staging.banco_maestro` cualquier RUC de SEPS que aún no tenga fila
 — haciendo esa función **fuente-agnóstica** en vez de asumir que siempre corre después de
 BCE. Esto es exactamente el mismo patrón de two-tier/AUTO_INGRESADO que ya gobierna
-`dim_banco`, solo que con un segundo punto de entrada.
+`dim_entidad`, solo que con un segundo punto de entrada.
 
 **Nota de nomenclatura a decidir explícitamente al implementar, no antes**: el prefijo
 `BCE_` en `banco_codigo` deja de ser 100% descriptivo el día que una segunda fuente
@@ -959,7 +959,7 @@ CREATE TABLE raw.seps_cartera (
 
 -- staging.depositos NO necesita tabla nueva -- SEPS entra a la MISMA tabla que CAPCOL,
 -- mismo grano/llave natural, tipo_entidad='COOPERATIVA'/'MUTUALISTA' (valores ya
--- válidos en el CHECK de marts.dim_banco.tipo_entidad, sql/07).
+-- válidos en el CHECK de marts.dim_entidad.tipo_entidad, sql/07).
 
 -- staging.volumen_cartera: tabla nueva, grano SEPS (flujo, no saldo).
 CREATE TABLE staging.volumen_cartera (
@@ -998,7 +998,7 @@ CREATE TABLE marts.dim_destino_financiero ( ... );   -- ver 4.2
 
 CREATE TABLE marts.fact_volumen_cartera (
     fecha_id                INT NOT NULL REFERENCES marts.dim_fecha,
-    banco_id                INT NOT NULL REFERENCES marts.dim_banco,
+    entidad_id                INT NOT NULL REFERENCES marts.dim_entidad,
     canton_id                INT REFERENCES marts.dim_canton,
     segmento_id             INT NOT NULL REFERENCES marts.dim_segmento_credito,
     segmento_entidad_id     INT REFERENCES marts.dim_segmento_entidad,
@@ -1013,7 +1013,7 @@ CREATE TABLE marts.fact_volumen_cartera (
     row_hash                TEXT GENERATED ALWAYS AS (
         md5(monto_operaciones::text || '|' || numero_operaciones::text)
     ) STORED,
-    PRIMARY KEY (fecha_id, banco_id, COALESCE(canton_id,-1), segmento_id,
+    PRIMARY KEY (fecha_id, entidad_id, COALESCE(canton_id,-1), segmento_id,
                  COALESCE(segmento_entidad_id,-1), COALESCE(actividad_economica_id,-1),
                  COALESCE(destino_financiero_id,-1), COALESCE(tipo_operacion,''),
                  COALESCE(estado_operacion,''))
@@ -1057,7 +1057,7 @@ implementar, en este orden:
 4. Extender `refresh_marts()` para escribir en `fact_saldo_depositos` (reutilizando el
    `INSERT` existente, ampliando el filtro `WHERE tipo_entidad IN (...)` una vez más —
    para ese punto ya incluiría `'BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA',
-   'MUTUALISTA'`, candidato a simplificarse a "sin filtro, el `JOIN` a `dim_banco` ya
+   'MUTUALISTA'`, candidato a simplificarse a "sin filtro, el `JOIN` a `dim_entidad` ya
    decide qué existe") y un `INSERT` nuevo para `fact_volumen_cartera`.
 5. Actualizar los 4 documentos de gobernanza (este archivo ya actualizado; falta
    `docs/architecture.md` con el fact/dimensiones nuevas en el diagrama Mermaid,

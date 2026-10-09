@@ -46,7 +46,7 @@ no coincidirá numéricamente con `TASAS`.
 COOPERATIVAS) es cosmético — solo cambia qué "TOTAL SISTEMA" se usa como denominador de
 `% participación` en 2 hojas de presentación. El motor de cálculo real trata bancos
 privados y cooperativas como una sola población mezclada. Los indicadores de este
-documento se calculan **solo sobre `dim_banco.tipo_entidad = 'BANCO PRIVADO'`**, que es una
+documento se calculan **solo sobre `dim_entidad.tipo_entidad = 'BANCO PRIVADO'`**, que es una
 segmentación más estricta que la que hace el propio Excel.
 
 ## Fórmulas verificadas

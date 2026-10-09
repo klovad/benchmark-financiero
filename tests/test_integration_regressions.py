@@ -220,7 +220,7 @@ def test_fact_saldo_cartera_pivot_invariant(db_conn):
 
     with db_conn.cursor() as cur:
         # El statement extraído solo hace fact_saldo_cartera -- salta el resto de
-        # refresh_marts() (dim_fecha, dim_banco, ...), así que se sembran a mano las
+        # refresh_marts() (dim_fecha, dim_entidad, ...), así que se sembran a mano las
         # dimensiones de las que depende su FK/JOIN (misma forma que el INSERT real
         # de dim_fecha en _REFRESH_MARTS_SQL, para no hardcodear nombre_mes/trimestre).
         cur.execute(
@@ -242,13 +242,13 @@ def test_fact_saldo_cartera_pivot_invariant(db_conn):
         )
         cur.execute(
             """
-            INSERT INTO marts.dim_banco (banco, banco_codigo, tipo_entidad)
+            INSERT INTO marts.dim_entidad (entidad, entidad_codigo, tipo_entidad)
             VALUES (%s, %s, 'BANCO PRIVADO')
-            RETURNING banco_id
+            RETURNING entidad_id
             """,
             ("BANCO DE PRUEBA PIVOTE", banco_codigo),
         )
-        banco_id = cur.fetchone()[0]
+        entidad_id = cur.fetchone()[0]
 
         for estado, saldo in (
             ("por_vencer", 100),
@@ -270,9 +270,9 @@ def test_fact_saldo_cartera_pivot_invariant(db_conn):
             """
             SELECT saldo_por_vencer, saldo_no_devenga_intereses, saldo_vencida, saldo_total
             FROM marts.fact_saldo_cartera
-            WHERE banco_id = %s
+            WHERE entidad_id = %s
             """,
-            (banco_id,),
+            (entidad_id,),
         )
         rows = cur.fetchall()
 

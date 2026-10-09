@@ -44,7 +44,7 @@ SELECT
     / SUM(f.saldo_usd) FILTER (WHERE cc.codigo = '1') AS activos_productivos_pct
 FROM marts.fact_balance f
 JOIN marts.dim_cuenta_contable cc ON cc.cuenta_id = f.cuenta_id
-JOIN marts.dim_banco b ON b.banco_id = f.banco_id
+JOIN marts.dim_entidad b ON b.entidad_id = f.entidad_id
 JOIN marts.dim_fecha d ON d.fecha_id = f.fecha_id
 WHERE b.banco_codigo = 'GUAYAQUIL' AND d.fecha = '2026-06-30';
 ```
@@ -70,9 +70,9 @@ de cuentas) que en teoría deberían describir el mismo universo de préstamos o
 bancos privados — este es el cruce de validación que `docs/fuentes_datos.md` (sección
 3.3, hoja `RK`) dejaba como pregunta abierta.
 
-**Metodología**: `SUM(fact_saldo_cartera.saldo_total)` agrupado por `banco_id`/`fecha_id`
+**Metodología**: `SUM(fact_saldo_cartera.saldo_total)` agrupado por `entidad_id`/`fecha_id`
 (colapsando cantón y segmento, que `vw_cartera_bruta` no desagrega) comparado contra
-`vw_cartera_bruta.cartera_bruta` para el mismo `banco_id`/`fecha_id`.
+`vw_cartera_bruta.cartera_bruta` para el mismo `entidad_id`/`fecha_id`.
 
 **Resultado** (verificado contra la base viva, 1.559 combinaciones banco × fecha con dato
 en ambas fuentes):
@@ -116,24 +116,24 @@ de esta verificación; se aplicó el 2026-10-02 — ver nota en `docs/gobernanza
 
 ```sql
 WITH capcol AS (
-    SELECT banco_id, fecha_id, SUM(saldo_total) AS capcol_total
+    SELECT entidad_id, fecha_id, SUM(saldo_total) AS capcol_total
     FROM marts.fact_saldo_cartera
-    GROUP BY banco_id, fecha_id
+    GROUP BY entidad_id, fecha_id
 ),
 balance AS (
-    SELECT f.banco_id, f.fecha_id,
+    SELECT f.entidad_id, f.fecha_id,
         SUM(f.saldo_usd) FILTER (WHERE cc.codigo = '14')
             - SUM(f.saldo_usd) FILTER (WHERE cc.codigo = '1499') AS cartera_bruta
     FROM marts.fact_balance f
     JOIN marts.dim_cuenta_contable cc ON cc.cuenta_id = f.cuenta_id
     WHERE cc.reporte = 'BALANCE' AND cc.codigo IN ('14', '1499')
-    GROUP BY f.banco_id, f.fecha_id
+    GROUP BY f.entidad_id, f.fecha_id
 )
 SELECT b.banco_codigo, d.fecha, c.capcol_total, bal.cartera_bruta,
        100.0 * (c.capcol_total - bal.cartera_bruta) / bal.cartera_bruta AS diff_pct
 FROM capcol c
-JOIN balance bal ON bal.banco_id = c.banco_id AND bal.fecha_id = c.fecha_id
-JOIN marts.dim_banco b ON b.banco_id = c.banco_id
+JOIN balance bal ON bal.entidad_id = c.entidad_id AND bal.fecha_id = c.fecha_id
+JOIN marts.dim_entidad b ON b.entidad_id = c.entidad_id
 JOIN marts.dim_fecha d ON d.fecha_id = c.fecha_id;
 ```
 

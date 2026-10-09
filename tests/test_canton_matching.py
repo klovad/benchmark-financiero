@@ -1,11 +1,14 @@
 import pytest
 
+from benchmark_bancos.config import PROVINCIA_CODIGO_INEC
 from benchmark_bancos.transform.canton_matching import (
+    _ALIASES_CANTON,
     CantonNoResueltoError,
     aplicar_alias_canton,
     es_canton_conocido,
     normalize_canton,
     resolver_canton_bce,
+    seed_cantones,
 )
 
 
@@ -92,41 +95,84 @@ class TestAliasesTodasLasFuentes:
 
     def test_capcol_usa_el_mismo_alias(self):
         # CAPCOL (parse_cartera/parse_depositos) no pasa por resolver_canton_bce.
-        assert aplicar_alias_canton("PABLO VI", "MORONA SANTIAGO") == "PABLO SEXTO"
-        assert aplicar_alias_canton("QUITO", "PICHINCHA") == "QUITO"
-        assert aplicar_alias_canton(None, "PICHINCHA") is None
+        assert aplicar_alias_canton("PABLO VI", "MORONA SANTIAGO") == (
+            "PABLO SEXTO",
+            "MORONA SANTIAGO",
+        )
+        assert aplicar_alias_canton("QUITO", "PICHINCHA") == ("QUITO", "PICHINCHA")
+        assert aplicar_alias_canton(None, "PICHINCHA") == (None, "PICHINCHA")
 
     def test_alias_depende_de_la_provincia(self):
         # El alias es por par: el mismo texto en otra provincia no se toca.
-        assert aplicar_alias_canton("PABLO VI", "GUAYAS") == "PABLO VI"
+        assert aplicar_alias_canton("PABLO VI", "GUAYAS") == ("PABLO VI", "GUAYAS")
+
+
+class TestProvinciaAnterior:
+    """sql/36: el mismo cantón reportado con la provincia que tenía antes de una
+    reorganización territorial se lleva a la provincia vigente (mismo código INEC)."""
+
+    @pytest.mark.parametrize(
+        "canton,anterior,vigente",
+        [
+            ("AGUARICO", "NAPO", "ORELLANA"),
+            ("LA JOYA DE LOS SACHAS", "NAPO", "ORELLANA"),
+            ("LORETO", "NAPO", "ORELLANA"),
+            ("SANTO DOMINGO", "PICHINCHA", "SANTO DOMINGO DE LOS TSACHILAS"),
+            ("LA CONCORDIA", "ESMERALDAS", "SANTO DOMINGO DE LOS TSACHILAS"),
+        ],
+    )
+    def test_provincia_anterior_va_a_la_vigente(self, canton, anterior, vigente):
+        assert resolver_canton_bce(canton, anterior) == (canton, vigente)
+        assert aplicar_alias_canton(canton, anterior) == (canton, vigente)
+        assert resolver_canton_bce(canton, vigente) == (canton, vigente)
 
 
 class TestCantonesHomonimosEnDosProvincias:
-    """Cantones reales con el mismo nombre en dos provincias distintas (reclasificación
-    administrativa histórica de Ecuador) -- deben resolver a pares DISTINTOS, nunca
-    colapsar a uno solo, y resolver_canton_bce() nunca debe ignorar la provincia."""
-
-    def test_la_concordia_esmeraldas_y_santo_domingo_son_pares_distintos(self):
-        assert resolver_canton_bce("LA CONCORDIA", "ESMERALDAS") == (
-            "LA CONCORDIA",
-            "ESMERALDAS",
-        )
-        assert resolver_canton_bce(
-            "LA CONCORDIA", "SANTO DOMINGO DE LOS TSACHILAS"
-        ) == ("LA CONCORDIA", "SANTO DOMINGO DE LOS TSACHILAS")
-
-    def test_santo_domingo_pichincha_y_tsachilas_son_pares_distintos(self):
-        assert resolver_canton_bce("SANTO DOMINGO", "PICHINCHA") == (
-            "SANTO DOMINGO",
-            "PICHINCHA",
-        )
-        assert resolver_canton_bce(
-            "SANTO DOMINGO", "SANTO DOMINGO DE LOS TSACHILAS"
-        ) == ("SANTO DOMINGO", "SANTO DOMINGO DE LOS TSACHILAS")
+    """Homónimos reales según el INEC: mismo nombre, dos cantones distintos. Deben
+    resolver a pares DISTINTOS, nunca colapsar a uno solo."""
 
     def test_bolivar_carchi_y_manabi_son_pares_distintos(self):
         assert resolver_canton_bce("BOLIVAR", "CARCHI") == ("BOLIVAR", "CARCHI")
         assert resolver_canton_bce("BOLIVAR", "MANABI") == ("BOLIVAR", "MANABI")
+
+    def test_olmedo_loja_y_manabi_son_pares_distintos(self):
+        assert resolver_canton_bce("OLMEDO", "LOJA") == ("OLMEDO", "LOJA")
+        assert resolver_canton_bce("OLMEDO", "MANABI") == ("OLMEDO", "MANABI")
+        seed = seed_cantones()
+        assert seed[("OLMEDO", "LOJA")] == "1116"
+        assert seed[("OLMEDO", "MANABI")] == "1318"
+
+
+class TestSeedCodigosInec:
+    """Validador del catálogo curado contra el clasificador geográfico del INEC."""
+
+    def test_codigos_de_4_digitos_unicos(self):
+        codigos = [c for c in seed_cantones().values() if c]
+        assert all(len(c) == 4 and c.isdigit() for c in codigos)
+        assert len(codigos) == len(set(codigos))
+
+    def test_prefijo_coincide_con_la_provincia(self):
+        for (canton, provincia), codigo in seed_cantones().items():
+            if codigo:
+                assert codigo[:2] == PROVINCIA_CODIGO_INEC[provincia], (
+                    canton,
+                    provincia,
+                    codigo,
+                )
+
+    def test_cubre_los_221_cantones_vigentes(self):
+        codigos = {c for c in seed_cantones().values() if c and not c.startswith("90")}
+        assert len(codigos) == 221
+
+    def test_solo_el_placeholder_nacional_no_tiene_codigo(self):
+        sin_codigo = [par for par, cod in seed_cantones().items() if not cod]
+        assert sin_codigo == [("NACIONAL", "S/N")]
+
+    def test_ningun_alias_apunta_fuera_del_seed(self):
+        for destino in _ALIASES_CANTON.values():
+            assert destino in seed_cantones(), destino
+        for origen in _ALIASES_CANTON:
+            assert origen not in seed_cantones(), origen
 
 
 def test_canton_fuera_del_universo_sembrado_no_lanza_two_tier():

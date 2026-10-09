@@ -293,11 +293,21 @@ Procedimiento:
    docker compose exec -T postgres sh -c \
      'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f /docker-entrypoint-initdb.d/35_<nombre>.sql'
    ```
-   [no probado; `35_<nombre>` es ilustrativo, hoy la última es `sql/34`]
+   [`35_<nombre>` es ilustrativo; hoy la última es `sql/37`]
 
 4. Leer el encabezado de cada migración: algunas exigen un reproceso o un
    `refresh --full` después (p. ej. `sql/28` vació hechos de BCE y requirió recargar).
    Si no dice nada, correr `uv run benchmark-bancos refresh --full` es seguro.
+
+   Migraciones de 2026-10-09 (35, 36 y 37), verificadas en una base nueva y re-aplicadas
+   sobre la de producción sin cambios:
+   - `sql/35`: fusiona 2 cantones duplicados. No requiere nada después.
+   - `sql/36`: códigos INEC y fusión de 5 pares con provincia anterior. **Si emite el
+     NOTICE `filas BCE con provincia anterior borradas`, correr `uv run benchmark-bancos
+     bce`** (reprocesa tsp/tsa con el alias, ~5 min, sin volver a descargar).
+   - `sql/37`: renombra `marts.dim_banco` → `marts.dim_entidad` y `banco_id` →
+     `entidad_id`. Cualquier consulta o reporte externo que use los nombres viejos debe
+     actualizarse.
 
 ### 3.3 ¿Hasta qué migración está la base? [verificado contra la base local]
 
@@ -420,7 +430,7 @@ el Boletín (brechas B6, B7).
 | Superbancos publicó un Boletín nuevo | `boletin --years <año>` | idem CAPCOL |
 | SEPS publicó un año nuevo | agregar el año en `SEPS_DOWNLOAD_IDS` (`config/sources.py`) + `seps --years <año>` | sin id no hay descarga |
 | SEPS reemplazó el ZIP de un año ya descargado | mover la carpeta `data/raw/seps/<año>/<reporte>/` + `seps --years <año>` | la descarga se salta si la carpeta tiene ZIP |
-| Se editó `seeds/banco_maestro.csv` (nombre o tipo de entidad) | `refresh` | el seed se re-siembra al inicio de cada refresh; `dim_banco` se actualiza |
+| Se editó `seeds/banco_maestro.csv` (nombre o tipo de entidad) | `refresh` | el seed se re-siembra al inicio de cada refresh; `dim_entidad` se actualiza |
 | Se editó `seeds/banco_crosswalk.csv` o un `*_matching.py`/parser | reprocesar los archivos afectados: hoy exige borrar su fila en `meta.source_files` (operación destructiva, coordinar con `data-engineer`) y volver a correr la etapa | el gate por sha256 salta archivos ya cargados aunque el código cambie (brecha B8) |
 | Se aplicó una migración que cambia la lógica de refresh | `refresh --full` | el incremental solo ve filas de staging con `fecha_actualizacion` nueva |
 | Se cargó CAPCOL `publica` antes que `bce` en una base nueva | `refresh --full` | ver regla 2 de 1.4 |
@@ -715,10 +725,10 @@ hasta 2026-06-30.)
 **9.4 Último mes por tipo de entidad** — detecta una fuente que se quedó atrás.
 
 ```sql
-SELECT b.tipo_entidad, max(d.fecha) AS ultimo_mes, count(DISTINCT f.banco_id) AS entidades
+SELECT b.tipo_entidad, max(d.fecha) AS ultimo_mes, count(DISTINCT f.entidad_id) AS entidades
 FROM marts.fact_saldo_cartera f
 JOIN marts.dim_fecha d USING (fecha_id)
-JOIN marts.dim_banco b USING (banco_id)
+JOIN marts.dim_entidad b USING (entidad_id)
 GROUP BY 1 ORDER BY 1;
 ```
 
@@ -736,14 +746,14 @@ SELECT (SELECT count(*) FROM staging.bce_tasas_pasivas)          AS stg_tsp,
 revisarlo con `docs/mantenimiento_catalogos.md`.
 
 ```sql
-SELECT 'dim_banco' AS dim, estado_validacion, count(*) FROM marts.dim_banco GROUP BY 2
+SELECT 'dim_entidad' AS dim, estado_validacion, count(*) FROM marts.dim_entidad GROUP BY 2
 UNION ALL SELECT 'dim_canton', estado_validacion, count(*) FROM marts.dim_canton GROUP BY 2
 UNION ALL SELECT 'dim_plazo', estado_validacion, count(*) FROM marts.dim_plazo GROUP BY 2
 UNION ALL SELECT 'dim_cuenta_contable', estado_validacion, count(*) FROM marts.dim_cuenta_contable GROUP BY 2
 ORDER BY 1, 2;
 ```
 
-(2026-10-09: `dim_banco` 36 CONFIRMADO / 408 AUTO_INGRESADO; `dim_canton` 228 / 2;
+(2026-10-09: `dim_entidad` 36 CONFIRMADO / 408 AUTO_INGRESADO; `dim_canton` 223 / 0, 222 con código INEC;
 `dim_cuenta_contable` 1.736 / 166; `dim_plazo` 21 / 0.)
 
 **9.7 ¿Hay otra corrida activa?** (antes de lanzar una manual)

@@ -4,7 +4,7 @@ banco_codigo canónico, ANTES de que el dato llegue a staging/marts.
 
 La limpieza de identidad de banco vive aquí, no como una tabla de alias en el esquema
 estrella: cada parser llama a resolver_banco_codigo() y escribe banco_codigo ya resuelto
-en staging.*; marts.dim_banco se puebla directo desde ese valor (un solo join, sin
+en staging.*; marts.dim_entidad se puebla directo desde ese valor (un solo join, sin
 indirección).
 
 Reglas determinísticas (tildes, mayúsculas, espacios, sufijos legales, prefijo BP/BANCO)
@@ -127,7 +127,7 @@ def resolver_banco_codigo(nombre: str | None, fuente: str) -> str:
 
 
 # Mapea el tipo_entidad crudo del BCE (tsp/tsa, universo completo del sistema financiero)
-# a los valores canónicos de marts.dim_banco.tipo_entidad (CHECK constraint en sql/07).
+# a los valores canónicos de marts.dim_entidad.tipo_entidad (CHECK constraint en sql/07).
 _TIPO_ENTIDAD_BCE = {
     "BANCOS PRIVADOS": "BANCO PRIVADO",
     "BANCOS PUBLICOS": "BANCO PUBLICO",
@@ -150,14 +150,14 @@ class RucInvalidoError(ValueError):
     sí. Solo se aplica al camino NO-privado de resolver_entidad_bce(): los bancos
     privados curados siguen resolviendo por banco_crosswalk.csv/banco_maestro.csv
     exactamente como antes, con o sin RUC estructuralmente válido (ver "7 pares de
-    dim_banco.banco_codigo distintos comparten el mismo ruc" en
+    dim_entidad.entidad_codigo distintos comparten el mismo ruc" en
     docs/gobernanza_datos.md -- no se quiere que una validación nueva rompa esa vía
     curada ya establecida)."""
 
 
 # Coeficientes del algoritmo estándar de dígito verificador módulo 11 para RUC de
 # Ecuador -- verificados en esta sesión (2026-08-30) contra las 409 entidades no-privadas
-# vigentes en marts.dim_banco (403 tercer-dígito 9, 6 tercer-dígito 6): 0 falsos
+# vigentes en marts.dim_entidad (403 tercer-dígito 9, 6 tercer-dígito 6): 0 falsos
 # negativos, el algoritmo no rechaza ningún RUC real ya cargado en producción. También
 # contrastados contra una implementación de referencia pública e independiente
 # (github.com/macool/id_ecuador, gema Ruby "id_ecuador", coeficientes idénticos) antes de
@@ -183,7 +183,7 @@ def validar_ruc_estructura(ruc: str) -> bool:
     """Valida la estructura de un RUC ecuatoriano de sociedad privada/extranjera (tercer
     dígito '9') o del sector público (tercer dígito '6') -- los 2 únicos tipos que
     aparecen hoy entre las entidades no-privadas de BCE (auditado 2026-08-30 contra las
-    409 vigentes en marts.dim_banco: 403 tipo 9, 6 tipo 6, ningún otro tercer dígito).
+    409 vigentes en marts.dim_entidad: 403 tipo 9, 6 tipo 6, ningún otro tercer dígito).
 
     No cubre el algoritmo de cédula/RUC de persona natural (tercer dígito 0-5, módulo 10)
     porque ninguna entidad de BCE lo usa hoy -- si algún día aparece una, agregar esa
@@ -248,7 +248,7 @@ def resolver_entidad_bce(
 
     El `ruc` de la fila se devuelve siempre (también para BANCOS PRIVADOS, donde antes se
     descartaba) -- BCE es la única de las 3 fuentes que trae RUC, así que es la única vía
-    para poblar `dim_banco.ruc` (2026-07-23). Nota de calidad conocida: al menos un par de
+    para poblar `dim_entidad.ruc` (2026-07-23). Nota de calidad conocida: al menos un par de
     bancos privados reales comparten RUC en el archivo fuente (ej. Atlántida/D-MIRO) --
     ver "huecos de gobernanza" en docs/gobernanza_datos.md antes de tratar `ruc` como
     único por banco.
@@ -289,8 +289,8 @@ def resolver_entidad_seps(
     """Resuelve una entidad SEPS (cooperativa, mutualista o entidad de segundo piso) a
     (banco_codigo, banco, tipo_entidad, ruc) -- misma llave `BCE_<ruc>` que ya usa
     resolver_entidad_bce() para el universo auto-registrado, a propósito: 209 de las 211
-    entidades SEPS 2025 ya existen en marts.dim_banco por esa vía (verificado
-    2026-09-29), así que SEPS y BCE describen la MISMA fila de dim_banco sin crosswalk.
+    entidades SEPS 2025 ya existen en marts.dim_entidad por esa vía (verificado
+    2026-09-29), así que SEPS y BCE describen la MISMA fila de dim_entidad sin crosswalk.
 
     `tipo_entidad` lo decide el caller (sufijo de archivo S1/S2/S3 vs. Mut, o la lista
     SEPS_RUC_SEGUNDO_PISO) -- la SEPS no lo trae como columna. Una entidad que ya existe

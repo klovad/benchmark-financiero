@@ -79,7 +79,10 @@ def parse_depositos_file(
         saldo = get(row, "SALDO")
         if saldo is None:
             continue
-        provincia = normalize_provincia(get(row, "PROVINCIA"))
+        canton, provincia = aplicar_alias_canton(
+            normalize_text(get(row, "CANTON")),
+            normalize_provincia(get(row, "PROVINCIA")),
+        )
         numero_cuentas = get(row, "NUMERO DE CUENTAS")
         numero_clientes = get(row, "NUMERO DE CLIENTES")
         banco = normalize_banco(get(row, "ENTIDAD"))
@@ -100,9 +103,7 @@ def parse_depositos_file(
                 # llegó a tener 2 regiones distintas para la misma provincia por esto.
                 "region": region_for_provincia(provincia),
                 "provincia": provincia,
-                "canton": aplicar_alias_canton(
-                    normalize_text(get(row, "CANTON")), provincia
-                ),
+                "canton": canton,
                 "tipo_deposito": tipo_deposito,
                 "categoria_deposito": categoria_deposito,
                 "plazo_dias_desde": plazo_dias_desde,

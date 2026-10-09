@@ -46,6 +46,39 @@ PROVINCIA_REGION = {
     "GALAPAGOS": "INSULAR",
 }
 
+# Código oficial de provincia del INEC (Clasificador Geográfico Estadístico / DPA, 2
+# dígitos). Es el prefijo del código de cantón (4 dígitos) en seeds/canton_provincia.csv
+# y lo usan los mapas y los datos del censo. 'ZONA NO DELIMITADA' conserva el 90 de la
+# DPA 2012 (sus zonas se integraron después a cantones vecinos); el placeholder 'S/N'
+# del BCE no tiene código. Volcado en marts.dim_provincia.codigo_inec por sql/36.
+PROVINCIA_CODIGO_INEC = {
+    "AZUAY": "01",
+    "BOLIVAR": "02",
+    "CAÑAR": "03",
+    "CARCHI": "04",
+    "COTOPAXI": "05",
+    "CHIMBORAZO": "06",
+    "EL ORO": "07",
+    "ESMERALDAS": "08",
+    "GUAYAS": "09",
+    "IMBABURA": "10",
+    "LOJA": "11",
+    "LOS RIOS": "12",
+    "MANABI": "13",
+    "MORONA SANTIAGO": "14",
+    "NAPO": "15",
+    "PASTAZA": "16",
+    "PICHINCHA": "17",
+    "TUNGURAHUA": "18",
+    "ZAMORA CHINCHIPE": "19",
+    "GALAPAGOS": "20",
+    "SUCUMBIOS": "21",
+    "ORELLANA": "22",
+    "SANTO DOMINGO DE LOS TSACHILAS": "23",
+    "SANTA ELENA": "24",
+    "ZONA NO DELIMITADA": "90",
+}
+
 # Entidades de segundo piso que la SEPS publica junto a las cooperativas (sql/29).
 SEPS_RUC_SEGUNDO_PISO = {
     "1768168480001",  # CONAFIPS

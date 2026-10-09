@@ -119,7 +119,7 @@ Estas son el contrato que cualquier refactor de orquestación (sección 1) debe 
 3. **Unicidad NULL-safe**: toda columna nullable dentro de una llave natural usa `COALESCE(col, centinela)` tanto en el índice único como en el target del `ON CONFLICT` (patrón fijado en `sql/10_fix_null_unique_constraints.sql` tras el bug real de `NULL <> NULL` bajo `UNIQUE`).
 4. **`refresh_marts()` puro e idempotente**: solo SQL, `INSERT...SELECT...ON CONFLICT`, sin efectos secundarios fuera de la base.
 5. **Conteos `raw = staging = marts`** por fuente tras cada carga (invariante ya verificado y documentado, ej. `bce_tasas_pasivas`: 1.956.386 filas en `staging` = `marts`).
-6. **Grano único post-pivote de `estado_cartera`**: exactamente una fila por `(fecha_id, banco_id, canton_id, segmento_id)` en `fact_saldo_cartera` desde `sql/21` — nunca 3 filas EAV otra vez.
+6. **Grano único post-pivote de `estado_cartera`**: exactamente una fila por `(fecha_id, entidad_id, canton_id, segmento_id)` en `fact_saldo_cartera` desde `sql/21` — nunca 3 filas EAV otra vez.
 
 ### 2.2 Los 2 tests de regresión ya routeados — diseño concreto
 

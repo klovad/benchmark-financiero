@@ -11,13 +11,20 @@ igualar el patrón Kimball ya usado por CAPCOL (`dim_canton` como dimensión dir
 `dim_provincia` como outrigger vía `dim_canton.provincia_id`).
 
 SIEMPRE resolver por el PAR (canton, provincia) -- nunca cantón solo -- porque existen
-cantones reales con el mismo nombre en dos provincias distintas (reclasificación
-administrativa histórica real de Ecuador, no un error de dato): LA CONCORDIA
-(Esmeraldas / Santo Domingo de los Tsáchilas), SANTO DOMINGO (Pichincha / Santo Domingo
-de los Tsáchilas), BOLÍVAR (Carchi / Manabí), LORETO y AGUARICO (Napo / Orellana, previos
-a la creación de la provincia de Orellana en 1998). Verificado contra `raw.bce_tasas_pasivas`/
-`raw.bce_tasas_activas` completos (2026-09-01): 219 nombres de cantón distintos, 226 pares
-(canton, provincia) distintos excluyendo el placeholder 'NACIONAL'.
+cantones reales con el mismo nombre en dos provincias distintas. Según el clasificador
+geográfico del INEC (DPA vigente) son solo BOLIVAR (Carchi 0402 / Manabí 1302) y OLMEDO
+(Loja 1116 / Manabí 1318).
+
+Códigos INEC (2026-10-09, `sql/36_codigos_inec.sql`): `seeds/canton_provincia.csv` trae
+el código oficial de 4 dígitos de cada cantón curado (los 221 vigentes + 'LAS
+GOLONDRINAS' 9001 de la DPA 2012; 'NACIONAL' no tiene). `refresh_marts()` lo vuelca a
+`marts.dim_canton.codigo_inec` y marca esos pares como CONFIRMADO, así que curar un
+cantón nuevo es agregar una fila al CSV. Hasta 2026-10-09 se trataban también como
+"homónimos" LA CONCORDIA (Esmeraldas), SANTO DOMINGO (Pichincha), y AGUARICO, LORETO y
+LA JOYA DE LOS SACHAS (Napo): eran el mismo cantón con su provincia anterior (Orellana se
+creó en 1998, Santo Domingo de los Tsáchilas en 2007, La Concordia pasó a esa provincia
+después de 2012), reportados así por algunas entidades incluso en 2021-2026. Ahora son
+alias que llevan al par vigente (ver `_ALIASES_CANTON`) y se fusionaron en `sql/36`.
 
 Dos niveles de validación (mismo patrón two-tier que `dim_plazo`, ver
 `sql/27_dim_plazo_estado_validacion.sql` y `docs/gobernanza_datos.md` regla de calidad #1
@@ -94,23 +101,27 @@ def normalize_canton(value: str | None) -> str | None:
     return normalize_provincia(value)
 
 
-_seed_cache: set[tuple[str, str]] | None = None
+_seed_cache: dict[tuple[str, str], str | None] | None = None
 
 
-def _seed_pairs() -> set[tuple[str, str]]:
-    """Universo de 228 pares (canton, provincia) ya sembrados en `marts.dim_canton` con
-    `estado_validacion='CONFIRMADO'` (`sql/28_bce_canton_grain.sql`) -- 132 de CAPCOL +
-    95 nuevos de BCE + el placeholder `('NACIONAL', 'S/N')`. Ya NO es un gate duro (ver
-    nivel 2 de `resolver_canton_bce`): un par que no está acá se acepta igual, solo queda
-    marcado para revisión posterior en `marts.dim_canton` en vez de bloquear la carga.
-    """
+def seed_cantones() -> dict[tuple[str, str], str | None]:
+    """Universo curado `(canton, provincia) -> codigo_inec` de
+    `seeds/canton_provincia.csv`: 223 pares (los 221 cantones vigentes del INEC + 'LAS
+    GOLONDRINAS' + el placeholder `('NACIONAL', 'S/N')`, sin código). No es un gate duro
+    (ver nivel 2 de `resolver_canton_bce`): un par que no está acá se acepta igual y
+    queda `AUTO_INGRESADO`, sin código, para revisión."""
     global _seed_cache
     if _seed_cache is None:
         with open(_CANTON_PROVINCIA_PATH, encoding="utf-8") as f:
             _seed_cache = {
-                (row["canton"], row["provincia"]) for row in csv.DictReader(f)
+                (row["canton"], row["provincia"]): row["codigo_inec"] or None
+                for row in csv.DictReader(f)
             }
     return _seed_cache
+
+
+def _seed_pairs() -> set[tuple[str, str]]:
+    return set(seed_cantones())
 
 
 # Cantones donde BCE usa un nombre/forma distinta al ya sembrado en marts.dim_canton
@@ -142,7 +153,26 @@ def _seed_pairs() -> set[tuple[str, str]]:
 # Los homónimos reales del INEC (mismo nombre, distinta provincia) son solo BOLIVAR
 # (Carchi 0402 / Manabí 1302) y OLMEDO (Loja 1116 / Manabí 1318): se distinguen por la
 # provincia y nunca van en esta tabla.
+#
+# 2026-10-09 (sql/36): alias de PROVINCIA ANTERIOR. El mismo cantón reportado con la
+# provincia que tenía antes de una reorganización territorial; se lleva a la provincia
+# vigente del INEC (mismo código). Siguen llegando así en 2015-2026 (BCE y CAPCOL).
+_ALIASES_PROVINCIA_ANTERIOR: dict[tuple[str, str], tuple[str, str]] = {
+    ("AGUARICO", "NAPO"): ("AGUARICO", "ORELLANA"),  # 2202
+    ("LA JOYA DE LOS SACHAS", "NAPO"): ("LA JOYA DE LOS SACHAS", "ORELLANA"),  # 2203
+    ("LORETO", "NAPO"): ("LORETO", "ORELLANA"),  # 2204
+    ("SANTO DOMINGO", "PICHINCHA"): (
+        "SANTO DOMINGO",
+        "SANTO DOMINGO DE LOS TSACHILAS",
+    ),  # 2301
+    ("LA CONCORDIA", "ESMERALDAS"): (
+        "LA CONCORDIA",
+        "SANTO DOMINGO DE LOS TSACHILAS",
+    ),  # 2302
+}
+
 _ALIASES_CANTON: dict[tuple[str, str], tuple[str, str]] = {
+    **_ALIASES_PROVINCIA_ANTERIOR,
     ("DISTRITO METROPOLITANO DE QUITO", "PICHINCHA"): ("QUITO", "PICHINCHA"),
     ("EL EMPALME", "GUAYAS"): ("EMPALME", "GUAYAS"),
     ("GENERAL ANTONIO ELIZALDE", "GUAYAS"): (
@@ -159,14 +189,16 @@ _ALIASES_CANTON: dict[tuple[str, str], tuple[str, str]] = {
 }
 
 
-def aplicar_alias_canton(canton: str | None, provincia: str | None) -> str | None:
-    """Devuelve el nombre canónico del cantón si `(canton, provincia)` (ya normalizados)
-    es una variante de escritura conocida; si no, el cantón tal cual. Punto único de
-    alias para todas las fuentes: BCE y SEPS lo usan vía `resolver_canton_bce()`, CAPCOL
-    directo en `parse_cartera`/`parse_depositos`."""
+def aplicar_alias_canton(
+    canton: str | None, provincia: str | None
+) -> tuple[str | None, str | None]:
+    """Devuelve el par canónico `(canton, provincia)` si el par (ya normalizado) es una
+    variante conocida (de escritura o de provincia anterior); si no, el par tal cual.
+    Punto único de alias para todas las fuentes: BCE y SEPS lo usan vía
+    `resolver_canton_bce()`, CAPCOL directo en `parse_cartera`/`parse_depositos`."""
     if canton is None or provincia is None:
-        return canton
-    return _ALIASES_CANTON.get((canton, provincia), (canton, provincia))[0]
+        return canton, provincia
+    return _ALIASES_CANTON.get((canton, provincia), (canton, provincia))
 
 
 def resolver_canton_bce(canton_crudo: str, provincia_cruda: str) -> tuple[str, str]:
@@ -197,7 +229,7 @@ def resolver_canton_bce(canton_crudo: str, provincia_cruda: str) -> tuple[str, s
         )
 
     canton_norm = normalize_canton(canton_crudo)
-    canton_norm = aplicar_alias_canton(canton_norm, provincia_norm)
+    canton_norm, provincia_norm = aplicar_alias_canton(canton_norm, provincia_norm)
 
     # Nivel 2: no es un gate. Un par fuera de _seed_pairs() se acepta igual -- solo se
     # deja constancia (vía marts.dim_canton.estado_validacion='AUTO_INGRESADO') de que no
@@ -208,7 +240,7 @@ def resolver_canton_bce(canton_crudo: str, provincia_cruda: str) -> tuple[str, s
 
 def es_canton_conocido(canton_normalizado: str, provincia_normalizada: str) -> bool:
     """True si el par (ya normalizado, tal como lo devuelve `resolver_canton_bce()`) está
-    en el universo sembrado `CONFIRMADO` (`src/benchmark_bancos/seeds/canton_provincia.csv`, 228 pares).
+    en el universo sembrado `CONFIRMADO` (`src/benchmark_bancos/seeds/canton_provincia.csv`, 223 pares).
     No cambia el comportamiento de `resolver_canton_bce()` -- esa función nunca lanza por
     esto -- es un hook de observabilidad opcional para que el parser
     (`parse_bce_tasas.py`) loguee un WARNING con el detalle de pares nuevos antes de que

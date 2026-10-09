@@ -4,7 +4,7 @@ lo que sea) sin tener Postgres cargado -- ej. en otra sesión/máquina donde el 
 todavía no corrió.
 
 Dos modos:
-- Muestra de un mes (default): los 9 catálogos pequeños (dim_banco, dim_canton,
+- Muestra de un mes (default): los 9 catálogos pequeños (dim_entidad, dim_canton,
   dim_provincia, dim_segmento_credito, dim_subsegmento_credito, dim_segmento_entidad,
   dim_categoria_deposito, dim_plazo, dim_cuenta_contable) se exportan completos -- no
   tiene sentido recortarlos por mes, y
@@ -44,7 +44,7 @@ log = logging.getLogger(__name__)
 warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy")
 
 CATALOGOS_COMPLETOS = [
-    "dim_banco",
+    "dim_entidad",
     "dim_canton",
     "dim_provincia",
     "dim_segmento_credito",
