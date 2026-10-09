@@ -47,9 +47,10 @@ arreglarlo y qué verificar después.
 Para llevarlo a otro servidor (Linux o Windows, con o sin Docker) u otro Postgres,
 operarlo de forma incremental, correrlo por partes, programarlo y verificar cada corrida,
 ver el runbook [`docs/despliegue_y_orquestacion.md`](docs/despliegue_y_orquestacion.md).
-En una base nueva conviene correr `bce` **antes** que CAPCOL: Banca Pública resuelve su
-identidad contra entidades que registra BCE (si ya se cargó en otro orden,
-`uv run benchmark-bancos refresh --full` lo corrige).
+El orden de carga importa en una base nueva: `bce` **antes** que CAPCOL, porque Banca
+Pública resuelve su identidad contra entidades que registra BCE (si ya se cargó en otro
+orden, `uv run benchmark-bancos refresh --full` lo corrige). `actualizar` ya respeta ese
+orden.
 
 ```powershell
 # 1. Entorno Python con uv (https://docs.astral.sh/uv/): crea .venv, instala Python 3.12
@@ -64,36 +65,35 @@ copy .env.example .env    # ajustar credenciales si no usaste las de ejemplo
 
 # 3. Base de datos -- dos caminos:
 
-# 3a. Docker (recomendado, reproducible): levanta Postgres 17 y aplica TODAS las
-#     migraciones (sql/00_roles_db.sql ... la ultima en sql/, en orden lexicografico)
-#     automaticamente via docker-entrypoint-initdb.d, con credenciales tomadas del
-#     .env del paso 2. No hace falta ningun psql manual.
+# 3a. Docker (recomendado, reproducible): levanta Postgres 17 y aplica todo sql/ via
+#     docker-entrypoint-initdb.d con las credenciales del .env. Despues, una sola vez,
+#     registrar esas migraciones como aplicadas:
 docker compose up -d
+uv run benchmark-bancos migrate --baseline
 
-# 3b. Postgres local ya instalado (alternativa a 3a): aplicar cada sql/*.sql a mano,
-#     en orden, empezando por 00 (conectado como superusuario) y luego 01, 02, 03...
-#     hasta la ultima migracion existente en sql/:
+# 3b. Postgres local ya instalado: sql/00 (rol y base) como superusuario, y el resto
+#     con `migrate`, que aplica en orden solo lo pendiente y lo registra en
+#     meta.schema_migrations:
 & "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U postgres -d postgres -f sql/00_roles_db.sql
-& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U bp_etl -d benchmark_cartera_depositos -f sql/01_schema_meta.sql
-& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U bp_etl -d benchmark_cartera_depositos -f sql/02_schema_staging.sql
-& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U bp_etl -d benchmark_cartera_depositos -f sql/03_schema_marts.sql
-& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U bp_etl -d benchmark_cartera_depositos -f sql/04_indexes_views.sql
-# ... 05 a la ultima, en orden (ver sql/*.sql) ...
+uv run benchmark-bancos migrate
 
-# 4. Pipeline CAPCOL (descarga + carga) para 2021-2025
-uv run main.py all --years 2021 2022 2023 2024 2025
+# En cualquier caso, para ver lo pendiente despues de un `git pull`:
+uv run benchmark-bancos migrate --status
 
-# 5. BCE (tasas semanales tsp/tsa + techos/referenciales TasasHistorico.htm)
-uv run benchmark-bancos bce
-uv run benchmark-bancos tasas-historicas
+# 4. Primera carga (en este orden)
+uv run benchmark-bancos bce                                            # BCE tsp/tsa semanales
+uv run benchmark-bancos tasas-historicas                               # techos/referenciales mensuales
+uv run benchmark-bancos all --years 2021 2022 2023 2024 2025 2026      # CAPCOL (descarga + carga)
+uv run benchmark-bancos boletin --years 2021 2022 2023 2024 2025 2026  # Boletín Financiero (balance/PyG)
+uv run benchmark-bancos seps --years 2021 2022 2023 2024 2025 2026     # SEPS (cooperativas S1-S3 + mutualistas)
 
-# 6. Boletín Financiero Mensual (balance/PyG)
-uv run benchmark-bancos boletin --years 2021 2022 2023 2024 2025 2026
+# 5. Operacion recurrente: todas las fuentes, incremental, año en curso. Codigos de
+#    salida: 0 OK, 1 error, 2 termino con errores (ver log), 75 otra corrida en curso.
+uv run benchmark-bancos actualizar
+uv run benchmark-bancos actualizar --fuentes bce seps   # solo algunas
 
-# 6b. SEPS (cooperativas S1-S3 + mutualistas: saldos de cartera/depósitos + EEFF).
-#     Correr despues de 5 (BCE) no es obligatorio: las entidades se auto-registran por RUC.
-uv run benchmark-bancos seps --years 2021 2022 2023 2024 2025
-
+# 6. Programarla (Windows, semanal, lunes 07:30; en Linux/macOS: scripts/actualizar.sh + cron)
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\registrar_tarea.ps1
 ```
 
 ## Estructura
@@ -105,6 +105,10 @@ uv.lock               versiones exactas (reproducible en local y CI)
 src/benchmark_bancos/
   cli.py              línea de comandos (`uv run benchmark-bancos <etapa>`)
   pipeline.py         orquestación por fuente: load_years, load_bce, load_boletin, load_seps...
+  orquestacion.py     etapa `actualizar` (todas las fuentes), bloqueo contra corridas
+                      simultáneas y códigos de salida
+  migrate.py          etapa `migrate`: aplica sql/ pendientes y los registra en
+                      meta.schema_migrations
   config/             settings.py (entorno/.env: rutas, DB, años), sources.py (URLs, ids de
                       descarga), domain.py (catálogos de vocabulario)
   extract/            scrape_superbancos.py, scrape_boletin.py (Playwright);
@@ -114,15 +118,18 @@ src/benchmark_bancos/
   load/               load_postgres.py: COPY a staging con CDC por columnas + refresh
                       incremental de marts
   seeds/              banco_maestro.csv / banco_crosswalk.csv / canton_provincia.csv
-sql/                  DDL: 00 (roles/DB) + 01-03 (esquemas) + migraciones incrementales; todo
-                      el directorio se aplica en orden (docker-compose y CI)
+sql/                  DDL: 00 (roles/DB, a mano o docker-compose) + 01-03 (esquemas) +
+                      migraciones incrementales; `migrate` aplica 01..NN pendientes en orden
+                      (docker-compose y CI aplican todo el directorio con psql)
 docker-compose.yml    Postgres 17 reproducible: bootstrap completo del schema + credenciales
                       desde .env, sin pasos manuales
 docs/                 arquitectura, diccionario de datos, fuentes, linaje, gobernanza, métricas
 tests/                parsers, resolución de identidad y regresiones de CDC/refresh contra
                       Postgres real (ver "Tests y CI")
-scripts/              utilidades fuera del pipeline: compute_indicadores_excel.py (motor de
-                      referencia de indicadores), export_sample_parquet.py (regenera data/samples)
+scripts/              actualizar.ps1 / actualizar.sh (corrida programada de `actualizar`),
+                      registrar_tarea.ps1 (tarea semanal de Windows); utilidades:
+                      compute_indicadores_excel.py (motor de referencia de indicadores),
+                      export_sample_parquet.py (regenera data/samples)
 data/raw/             archivos descargados: fuente de verdad (no versionado)
 data/samples/         muestra de marts.* en Parquet (versionada) para probar sin Postgres
 ```
@@ -220,6 +227,13 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   balance), y el consumo de las cooperativas emisoras de tarjetas excluye las tarjetas.
 
 ## Estado del proyecto
+
+- ✅ **Operación desatendida** (2026-10-09): etapa `migrate` con registro de migraciones
+  aplicadas (`meta.schema_migrations`, `sql/38`; `--status`, `--baseline`), etapa
+  `actualizar` que recoge lo nuevo de las 5 fuentes con cada fuente aislada, bloqueo en
+  Postgres contra corridas simultáneas, códigos de salida 0/1/2/75 y `--log-file`.
+  Programación semanal con `scripts/registrar_tarea.ps1` (Windows) o
+  `scripts/actualizar.sh` + cron. Ver `docs/despliegue_y_orquestacion.md` §3 y §7.
 
 - ✅ **Geografía con códigos INEC y `dim_entidad`** (2026-10-09): cantón y provincia
   llevan el código oficial del INEC (los 221 cantones vigentes), cada cantón real es una

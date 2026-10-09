@@ -44,3 +44,6 @@ Thumbs.db
 dist/
 build/
 .ruff_cache/
+
+# Logs de corridas programadas (scripts/actualizar.*)
+logs/

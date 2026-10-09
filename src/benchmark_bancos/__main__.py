@@ -1,3 +1,3 @@
-from benchmark_bancos.cli import main
+from benchmark_bancos.cli import run
 
-main()
+run()

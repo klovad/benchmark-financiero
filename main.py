@@ -7,6 +7,8 @@ Delega en `benchmark_bancos.cli`, que define las etapas y opciones (ver
 `python -m benchmark_bancos <etapa>`.
 
 Etapas:
+    migrate [--status|--baseline]  aplica las migraciones sql/ pendientes
+    actualizar [--fuentes ...]     actualización incremental de todas las fuentes (programable)
     extract / load / all   CAPCOL (bancos privados y Banca Pública; --portales)
     bce                    BCE tasas semanales tsp/tsa
     tasas-historicas       BCE techos y tasas referenciales (TasasHistorico.htm)
@@ -15,7 +17,7 @@ Etapas:
     refresh [--full]       solo recalcula marts desde staging
 """
 
-from benchmark_bancos.cli import main
+from benchmark_bancos.cli import run
 
 if __name__ == "__main__":
-    main()
+    run()

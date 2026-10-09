@@ -230,6 +230,9 @@ def load_bce(base_dir: Path = BCE_DIR) -> None:
 
 
 _NOMBRE_ARCHIVO = re.compile(r"TasasVigentes(\d{2})(\d{4})\.htm$")
+# Primer mes con el layout que entiende parse_tasas_historicas (lo cargado empieza en
+# 2022-04); las páginas anteriores usan otro formato.
+_TASAS_HISTORICAS_DESDE = datetime.date(2022, 4, 1)
 
 
 def parse_fecha_from_tasas_historicas_filename(name: str) -> datetime.date:
@@ -264,6 +267,12 @@ def load_tasas_historicas() -> None:
                 # Factorizar el parseo permite atraparlo aquí igual que el resto de
                 # fallas por archivo, en vez de abortar la corrida completa.
                 log.warning("%s, se omite", e)
+                continue
+            if fecha < _TASAS_HISTORICAS_DESDE:
+                # Layout HTML anterior, no soportado por el parser (ver "Alcance de los
+                # datos" en el README). Sin este corte se reintentaban ~170 páginas en
+                # cada corrida y llenaban el log de WARNING (2026-10-09).
+                log.debug("Anterior al layout soportado, se omite: %s", path.name)
                 continue
 
             source_hash = sha256_file(path)
