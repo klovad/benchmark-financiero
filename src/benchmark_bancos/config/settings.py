@@ -45,5 +45,6 @@ DB_CONFIG = {
 }
 
 DEFAULT_YEARS = [
-    int(y) for y in os.getenv("SCRAPER_YEARS", "2021,2022,2023,2024,2025").split(",")
+    int(y)
+    for y in os.getenv("SCRAPER_YEARS", "2021,2022,2023,2024,2025,2026").split(",")
 ]

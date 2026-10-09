@@ -58,4 +58,7 @@ SEPS_DOWNLOAD_IDS = {
     2023: {"captaciones": 1847, "colocaciones": 1830, "eeff": 1387},
     2024: {"captaciones": 2365, "colocaciones": 2370, "eeff": 2330},
     2025: {"captaciones": 2795, "colocaciones": 2799, "eeff": 2773},
+    # Año en curso (2026-10-09): la SEPS reemplaza el ZIP al agregar meses, con el mismo
+    # download_id; download_seps.py detecta la versión nueva (HEAD + _descarga.json).
+    2026: {"captaciones": 3263, "colocaciones": 3274, "eeff": 3258},
 }

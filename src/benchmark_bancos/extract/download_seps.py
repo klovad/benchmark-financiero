@@ -11,7 +11,9 @@ el plugin acepta ambos, verificado 2026-09-30 para 2021-2025.
 """
 
 import argparse
+import json
 import logging
+import os
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -30,32 +32,87 @@ _CHUNK_SIZE = 1 << 20  # 1 MiB
 REPORTES_SEPS = ("eeff", "captaciones", "colocaciones")
 
 
-def download_seps_file(year: int, reporte: str, out_dir: Path = SEPS_DIR) -> Path:
-    """Descarga si la carpeta destino no tiene ya un .zip (el nombre real solo se conoce
-    tras seguir la redirección, así que el chequeo de "ya descargado" es por carpeta).
-    """
-    dest_dir = out_dir / str(year) / reporte
-    existentes = sorted(dest_dir.glob("*.zip"))
-    if existentes:
-        log.info("Ya descargado, se omite: %s", existentes[0])
-        return existentes[0]
+_META = "_descarga.json"
 
+
+def _version_publicada(url: str) -> dict:
+    """HEAD al link del portal (sigue la redirección al .zip real, sin bajarlo): URL
+    final, Last-Modified y tamaño de la versión publicada hoy."""
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "Mozilla/5.0"}, method="HEAD"
+    )
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        return {
+            "url_final": resp.url,
+            "last_modified": resp.headers.get("Last-Modified"),
+            "tamano": int(resp.headers.get("Content-Length") or 0),
+        }
+
+
+def _nombre_zip(url_final: str, year: int, reporte: str, url: str) -> str:
+    nombre = Path(urllib.parse.unquote(urllib.parse.urlparse(url_final).path)).name
+    if not nombre.lower().endswith(".zip"):
+        raise ValueError(
+            f"SEPS {year}/{reporte}: la descarga {url} no redirigió a un .zip "
+            f"(final: {url_final}). ¿Cambió el download_id en el portal?"
+        )
+    return nombre
+
+
+def download_seps_file(year: int, reporte: str, out_dir: Path = SEPS_DIR) -> Path:
+    """Descarga solo si la SEPS publicó una versión distinta a la local.
+
+    El año en curso se republica cada mes con el MISMO download_id (y a veces el mismo
+    nombre de archivo), así que "la carpeta ya tiene un .zip" no basta (2026-10-09). Se
+    compara la versión publicada (URL final, Last-Modified, tamaño, vía HEAD) contra la
+    guardada en `<carpeta>/_descarga.json`. Sin ese archivo (descargas anteriores a este
+    cambio) se acepta el .zip local si coincide en nombre y tamaño. Al bajar una versión
+    nueva se borra la anterior: la carpeta queda con un solo .zip. Después, el sha256 de
+    `meta.source_files` decide si hay que recargar.
+    """
     url = SEPS_DOWNLOAD_URL.format(id=SEPS_DOWNLOAD_IDS[year][reporte])
+    dest_dir = out_dir / str(year) / reporte
     dest_dir.mkdir(parents=True, exist_ok=True)
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(req, timeout=300) as resp:
-        nombre = Path(urllib.parse.unquote(urllib.parse.urlparse(resp.url).path)).name
-        if not nombre.lower().endswith(".zip"):
-            raise ValueError(
-                f"SEPS {year}/{reporte}: la descarga {url} no redirigió a un .zip "
-                f"(final: {resp.url}). ¿Cambió el download_id en el portal?"
+    meta_path = dest_dir / _META
+    existentes = sorted(dest_dir.glob("*.zip"))
+
+    publicada = _version_publicada(url)
+    nombre = _nombre_zip(publicada["url_final"], year, reporte, url)
+    try:
+        local = json.loads(meta_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        local = None
+    if existentes:
+        mismo = (
+            local == publicada
+            if local is not None
+            else (
+                existentes[0].name == nombre
+                and existentes[0].stat().st_size == publicada["tamano"]
             )
-        dest = dest_dir / nombre
-        tmp = dest.with_suffix(".zip.part")
-        with open(tmp, "wb") as f:
-            while chunk := resp.read(_CHUNK_SIZE):
-                f.write(chunk)
-    tmp.rename(dest)
+        )
+        if mismo:
+            if local is None:
+                meta_path.write_text(json.dumps(publicada, indent=2), encoding="utf-8")
+            log.info("Sin cambios en la SEPS, se conserva: %s", existentes[0])
+            return existentes[0]
+        log.info(
+            "SEPS %s/%s: versión nueva publicada (%s)",
+            year,
+            reporte,
+            publicada["last_modified"],
+        )
+
+    dest = dest_dir / nombre
+    tmp = dest_dir / (nombre + ".part")
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=300) as resp, open(tmp, "wb") as f:
+        while chunk := resp.read(_CHUNK_SIZE):
+            f.write(chunk)
+    for viejo in existentes:
+        viejo.unlink()
+    os.replace(tmp, dest)
+    meta_path.write_text(json.dumps(publicada, indent=2), encoding="utf-8")
     log.info("Descargado %s (%.1f MB)", dest, dest.stat().st_size / 1e6)
     return dest
 

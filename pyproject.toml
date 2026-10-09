@@ -13,6 +13,7 @@ dependencies = [
     "playwright>=1.45,<2",
     # ZIPs de la SEPS con Deflate64 (zipfile de la stdlib no los abre)
     "stream-unzip>=0.0.99",
+    "lxml>=5.0",
 ]
 
 [project.scripts]

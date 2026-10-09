@@ -11,6 +11,7 @@ directamente (sin subcarpeta de tipo de reporte), nombrados
 
 import argparse
 import logging
+import unicodedata
 from pathlib import Path
 
 from playwright.sync_api import TimeoutError as PwTimeoutError
@@ -47,6 +48,16 @@ def _open_year_folder(page, year: int, retries: int = 3) -> bool:
     return False
 
 
+def es_boletin(nombre: str) -> bool:
+    """True si el archivo es un boletín mensual. Compara sin tildes: el portal escribe
+    "BOLETIN", "BOLETÍN" precompuesto y, desde sep-2026, "BOLETI" + tilde combinante
+    (U+0301), que un `"boletín" in nombre` no reconoce y se saltaba en silencio."""
+    sin_tildes = "".join(
+        c for c in unicodedata.normalize("NFKD", nombre) if not unicodedata.combining(c)
+    )
+    return "boletin" in sin_tildes.lower()
+
+
 def _download_all_files(page, dest_dir: Path) -> list[Path]:
     dest_dir.mkdir(parents=True, exist_ok=True)
     saved = []
@@ -54,7 +65,8 @@ def _download_all_files(page, dest_dir: Path) -> list[Path]:
     for i in range(count):
         entry = page.locator(".entry.file").nth(i)
         name = entry.get_attribute("data-name") or f"archivo_{i}"
-        if "boletin" not in name.lower() and "boletín" not in name.lower():
+        if not es_boletin(name):
+            log.info("Se omite (no es un boletín mensual): %s", name)
             continue  # la carpeta de año trae otros archivos además del boletín mensual
         try:
             with page.expect_download(timeout=30_000) as dl_info:

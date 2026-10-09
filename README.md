@@ -182,8 +182,8 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
 
 ## Alcance de los datos
 
-- **CAPCOL** (cartera/depósitos): bancos privados, 2021-01 a 2026-06, mensual; banca
-  pública (BanEcuador, CFN, BdE), 2021-01 a 2025-12. Cartera por
+- **CAPCOL** (cartera/depósitos): bancos privados, 2021-01 a 2026-08, mensual; banca
+  pública (BanEcuador, CFN, BdE), 2021-01 a 2026-08 (actualizado 2026-10-09). Cartera por
   tipo de crédito (comercial, consumo, inmobiliario, microcrédito, vivienda de interés
   público, educativo) y estado (por vencer / no devenga intereses / vencida). Depósitos
   por categoría (monetarios, ahorro, plazo por rango de días, garantía, restringidos,
@@ -204,13 +204,13 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   ambas). La etapa `bce` descarga de forma condicional: solo baja el archivo cuando el BCE
   publica una versión nueva.
 - **BCE `TasasHistorico.htm`** (techos y referenciales, nivel sistema): 2022-04 a
-  2026-06 (páginas anteriores usan un layout HTML distinto, no soportado por el parser
+  2026-09 (páginas anteriores usan un layout HTML distinto, no soportado por el parser
   actual). Tasas activas máximas/referenciales por segmento, pasivas por instrumento y
   plazo, TPR/TAR/Tasa Legal/Tasa Máxima Convencional.
-- **Boletín Financiero Mensual** (balance/PyG de bancos privados): 2021-01 a 2026-06. Plan de
+- **Boletín Financiero Mensual** (balance/PyG de bancos privados): 2021-01 a 2026-09. Plan de
   cuentas jerárquico completo (Catálogo Único de Cuentas), valores en USD (fuente reporta
   en miles, normalizado al cargar).
-- **SEPS** (cooperativas de ahorro y crédito S1-S3 y mutualistas, 2021-01 a 2025-12,
+- **SEPS** (cooperativas de ahorro y crédito S1-S3 y mutualistas, 2021-01 a 2026-08,
   mensual): saldos de cartera por estado y de depósitos por categoría, por entidad y
   cantón, en las mismas tablas que CAPCOL; y estados financieros por entidad en
   `fact_balance`/`fact_pyg`, para validar esos saldos contra las cuentas contables.

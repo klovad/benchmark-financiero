@@ -1,16 +1,16 @@
 # Graph Report - benchmark-bancos  (2026-10-09)
 
 ## Corpus Check
-- 100 files · ~112,668 words
+- 102 files · ~113,468 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1017 nodes · 1615 edges · 139 communities (60 shown, 79 thin omitted)
+- 1039 nodes · 1643 edges · 137 communities (58 shown, 79 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.91)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `ceab1e89`
+- Built from commit: `b55cf702`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -20,9 +20,7 @@
 - parse_boletin.py
 - banco_matching.py
 - PlazoNoResueltoError
-- test_parse_tasas_historicas.py
-- categoria_deposito_matching.py
-- parse_tasas_historicas.py
+- scrape_boletin.py
 - marts.dim_entidad
 - Catálogo completo (48 indicadores, 12 categorías)
 - marts.dim_banco
@@ -150,17 +148,17 @@
   tests/test_parse_seps.py → src/benchmark_bancos/transform/banco_matching.py
 - `test_plazo_bucket_shape_valido_pero_rango_invertido_lanza_plazo_error()` --uses--> `PlazoNoResueltoError`  [INFERRED]
   tests/test_categoria_deposito_matching.py → src/benchmark_bancos/transform/bce_plazo_matching.py
-- `test_resolver_plazo_shape_invalido_sigue_lanzando()` --uses--> `PlazoNoResueltoError`  [INFERRED]
-  tests/test_parse_tasas_historicas.py → src/benchmark_bancos/transform/bce_plazo_matching.py
-- `test_resolver_plazo_shape_valido_pero_rango_invertido_lanza_error()` --uses--> `PlazoNoResueltoError`  [INFERRED]
-  tests/test_parse_tasas_historicas.py → src/benchmark_bancos/transform/bce_plazo_matching.py
 - `test_resolve_canton_propaga_cantonnoresueltoerror()` --uses--> `CantonNoResueltoError`  [INFERRED]
   tests/test_parse_bce_tasas.py → src/benchmark_bancos/transform/canton_matching.py
+- `test_codigo_padre_sigue_la_jerarquia_del_catalogo_unico_de_cuentas()` --calls--> `_codigo_padre()`  [EXTRACTED]
+  tests/test_parse_boletin.py → src/benchmark_bancos/transform/parse_boletin.py
+- `test_descarta_otros_archivos()` --calls--> `es_boletin()`  [EXTRACTED]
+  tests/test_scrape_boletin.py → src/benchmark_bancos/extract/scrape_boletin.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (139 total, 79 thin omitted)
+## Communities (137 total, 79 thin omitted)
 
 ### Community 0 - "pipeline.py"
 Cohesion: 0.07
@@ -179,20 +177,12 @@ Cohesion: 0.09
 Nodes (43): BancoNoResueltoError, _cargar_csv(), _crosswalk(), EntidadBceNoMapeadaError, maestro(), _normalizar(), _por_regla(), Path (+35 more)
 
 ### Community 5 - "PlazoNoResueltoError"
-Cohesion: 0.13
-Nodes (25): PlazoNoResueltoError, ValueError, Resuelve el texto crudo de `plazo` del BCE (tsp/tsa) a un rango numérico de…, Chequeo de dos niveles para TODOS los valores crudos de `plazo` observados en…, Devuelve (dias_desde, dias_hasta); dias_hasta es None si el bucket es abierto…, El texto crudo de plazo no matchea ningún patrón conocido (shape inválido), o…, resolver_plazo_bce(), validar_universo_plazos_bce() (+17 more)
+Cohesion: 0.06
+Nodes (56): PlazoNoResueltoError, ValueError, Resuelve el texto crudo de `plazo` del BCE (tsp/tsa) a un rango numérico de…, Chequeo de dos niveles para TODOS los valores crudos de `plazo` observados en…, Devuelve (dias_desde, dias_hasta); dias_hasta es None si el bucket es abierto…, El texto crudo de plazo no matchea ningún patrón conocido (shape inválido), o…, Sanity check de rango, aplicado DESPUÉS de que el shape ya matcheó un patrón…, resolver_plazo_bce() (+48 more)
 
-### Community 6 - "test_parse_tasas_historicas.py"
-Cohesion: 0.15
-Nodes (19): _categoria_label(), _emitir(), Shape check primero (_PLAZO_RANGO/_PLAZO_SIN_TOPE), luego sanity de rango…, _resolver_plazo(), _segmento_label(), Desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el shape de…, Un texto que no matchea ni _PLAZO_RANGO ni _PLAZO_SIN_TOPE sigue siendo fallo…, Un shape válido con rango invertido (dias_desde > dias_hasta) es una anomalía… (+11 more)
-
-### Community 7 - "categoria_deposito_matching.py"
-Cohesion: 0.24
-Nodes (10): Sanity check de rango, aplicado DESPUÉS de que el shape ya matcheó un patrón…, validar_rango_plazo(), CategoriaNoResueltaError, ValueError, Resuelve el texto crudo de `tipo_deposito` (CAPCOL) o `instrumento_captacion`…, SEPS escribe las categorías sin tilde ('DEPOSITOS A LA VISTA', 'DEPOSITOS DE…, El texto crudo no es ni una categoría conocida ni un bucket de plazo…, resolver_categoria_deposito_seps() (+2 more)
-
-### Community 8 - "parse_tasas_historicas.py"
-Cohesion: 0.25
-Nodes (10): _clean_label(), _parse_filas(), parse_tasas_historicas_file(), DataFrame, Path, Parser de las páginas mensuales TasasVigentes{MM}{YYYY}.htm del BCE. Cada…, fecha: fin de mes correspondiente al archivo (ej. 2026-06-30 para…, _to_float() (+2 more)
+### Community 8 - "scrape_boletin.py"
+Cohesion: 0.21
+Nodes (14): _download_all_files(), es_boletin(), main(), _open_year_folder(), Path, Descarga los ZIP del Boletín Financiero Mensual (Balance y PyG) de bancos…, True si el archivo es un boletín mensual. Compara sin tildes: el portal escribe…, _reset_to_root() (+6 more)
 
 ### Community 12 - "Catálogo completo (48 indicadores, 12 categorías)"
 Cohesion: 0.06
@@ -208,7 +198,7 @@ Nodes (14): marts.vw_activo_promedio_ytd, marts.vw_cartera_bruta, marts.vw_carte
 
 ### Community 20 - "resolver_canton_bce"
 Cohesion: 0.06
-Nodes (36): parametrize, CantonNoResueltoError, es_canton_conocido(), normalize_canton(), ValueError, Universo curado `(canton, provincia) -> codigo_inec` de…, Resuelve un par crudo (canton, provincia) de BCE tsp/tsa al par normalizado…, True si el par (ya normalizado, tal como lo devuelve `resolver_canton_bce()`)… (+28 more)
+Nodes (34): CantonNoResueltoError, es_canton_conocido(), ValueError, Universo curado `(canton, provincia) -> codigo_inec` de…, Resuelve un par crudo (canton, provincia) de BCE tsp/tsa al par normalizado…, True si el par (ya normalizado, tal como lo devuelve `resolver_canton_bce()`)…, La `provincia` cruda no normaliza contra ninguna de las 24 provincias reales…, resolver_canton_bce() (+26 more)
 
 ### Community 21 - "marts.vw_cartera_market_share"
 Cohesion: 0.33
@@ -259,12 +249,12 @@ Cohesion: 0.08
 Nodes (49): Series, Resuelve una entidad SEPS (cooperativa, mutualista o entidad de segundo piso) a…, resolver_entidad_seps(), _codigo_padre(), _a_numero(), _chunks(), extraer_zip_seps(), _fecha_corte() (+41 more)
 
 ### Community 48 - "cli.py"
-Cohesion: 0.06
-Nodes (44): ArgumentParser, LogRecord, Punto de entrada del proyecto. uv run main.py <etapa> [opciones] Delega en…, build_parser(), Interfaz de línea de comandos del pipeline. Uso (con uv): uv run benchmark-…, _cabeceras_condicionales(), download_all(), download_bce_file() (+36 more)
+Cohesion: 0.07
+Nodes (39): ArgumentParser, LogRecord, Punto de entrada del proyecto. uv run main.py <etapa> [opciones] Delega en…, build_parser(), Interfaz de línea de comandos del pipeline. Uso (con uv): uv run benchmark-…, _cabeceras_condicionales(), download_all(), download_bce_file() (+31 more)
 
 ### Community 50 - "parse_cartera.py"
 Cohesion: 0.06
-Nodes (53): Catálogos de dominio usados por los parsers: mapeos de vocabulario de las…, Configuración del proyecto, separada por responsabilidad: - `settings`: lo que…, _find_project_root(), Path, Configuración que depende del entorno: rutas, base de datos y años a procesar.…, Constantes de las fuentes externas: URLs, sub-portales, nombres de carpeta, ids…, aplicar_alias_canton(), Resuelve el par (canton, provincia) crudo del BCE (tsp/tsa) contra el catálogo… (+45 more)
+Nodes (55): Catálogos de dominio usados por los parsers: mapeos de vocabulario de las…, Configuración del proyecto, separada por responsabilidad: - `settings`: lo que…, _find_project_root(), Path, Configuración que depende del entorno: rutas, base de datos y años a procesar.…, Constantes de las fuentes externas: URLs, sub-portales, nombres de carpeta, ids…, aplicar_alias_canton(), normalize_canton() (+47 more)
 
 ### Community 95 - "marts.vw_dim_canton_geografia"
 Cohesion: 0.50
@@ -299,8 +289,8 @@ Cohesion: 0.11
 Nodes (17): 1. `dim_entidad` — camino curado (33 bancos privados + 3 públicos), 2. `dim_entidad` — camino auto-registrado (408 entidades no curadas, BCE y SEPS), 3. `dim_segmento_credito` / `dim_subsegmento_credito`, 4. `dim_categoria_deposito`, 5. `dim_segmento_entidad`, 6. `dim_plazo` (two-tier, 4 puntos de entrada), 7. `dim_cuenta_contable`, 8. `dim_canton` (two-tier, BCE tsp/tsa — 2026-09-01, `sql/28_bce_canton_grain.sql`) (+9 more)
 
 ### Community 137 - "resolver_categoria_deposito"
-Cohesion: 0.20
-Nodes (15): Devuelve (categoria, dias_desde, dias_hasta). dias_* son None salvo que la…, resolver_categoria_deposito(), Desde sql/27_dim_plazo_estado_validacion.sql: un texto que matchea el *shape*…, Un texto que no matchea ni _RANGO ni _SIN_TOPE ni CATEGORIAS_VALIDAS sigue…, Un shape válido con rango invertido (dias_desde > dias_hasta) es una anomalía…, test_all_13_real_capcol_values_resolve(), test_empty_value_raises(), test_plain_category_passes_through_without_plazo() (+7 more)
+Cohesion: 0.14
+Nodes (23): CategoriaNoResueltaError, ValueError, Resuelve el texto crudo de `tipo_deposito` (CAPCOL) o `instrumento_captacion`…, SEPS escribe las categorías sin tilde ('DEPOSITOS A LA VISTA', 'DEPOSITOS DE…, El texto crudo no es ni una categoría conocida ni un bucket de plazo…, Devuelve (categoria, dias_desde, dias_hasta). dias_* son None salvo que la…, resolver_categoria_deposito(), resolver_categoria_deposito_seps() (+15 more)
 
 ### Community 138 - "parse_bce_tasas.py"
 Cohesion: 0.11
@@ -311,8 +301,8 @@ Cohesion: 0.60
 Nodes (4): marts.vw_cartera_bruta, marts.vw_cartera_improductiva_segmento, marts.dim_cuenta_contable, marts.fact_balance
 
 ### Community 146 - "test_download_bce.py"
-Cohesion: 0.18
-Nodes (6): bce(), fixture, Descarga condicional del BCE (2026-10-09): el archivo tsp/tsa se republica con…, _Resp, test_copia_local_desactualizada_se_reemplaza(), test_sin_copia_local_descarga_y_guarda_meta()
+Cohesion: 0.09
+Nodes (10): bce(), fixture, Descarga condicional del BCE (2026-10-09): el archivo tsp/tsa se republica con…, _Resp, test_copia_local_desactualizada_se_reemplaza(), test_sin_copia_local_descarga_y_guarda_meta(), fixture, Descarga condicional de la SEPS (2026-10-09): el año en curso se republica con… (+2 more)
 
 ## Knowledge Gaps
 - **185 isolated node(s):** `benchmark-bancos`, `meta.source_files`, `staging.cartera`, `staging.depositos`, `staging.banco_maestro` (+180 more)
@@ -323,11 +313,11 @@ Nodes (6): bce(), fixture, Descarga condicional del BCE (2026-10-09): el archivo
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `resolver_canton_bce()` connect `resolver_canton_bce` to `parse_cartera.py`, `parse_seps.py`, `parse_bce_tasas.py`?**
-  _High betweenness centrality (0.015) - this node is a cross-community bridge._
-- **Why does `seed_cantones()` connect `resolver_canton_bce` to `pipeline.py`, `parse_cartera.py`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
-- **Why does `resolver_entidad_bce()` connect `banco_matching.py` to `parse_bce_tasas.py`?**
-  _High betweenness centrality (0.009) - this node is a cross-community bridge._
+  _High betweenness centrality (0.023) - this node is a cross-community bridge._
+- **Why does `resolver_banco_codigo()` connect `banco_matching.py` to `parse_cartera.py`, `parse_boletin.py`?**
+  _High betweenness centrality (0.019) - this node is a cross-community bridge._
+- **Why does `resolver_categoria_deposito()` connect `resolver_categoria_deposito` to `parse_cartera.py`, `PlazoNoResueltoError`?**
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **Are the 4 inferred relationships involving `load_seps()` (e.g. with `upsert_staging_cartera()` and `upsert_staging_depositos()`) actually correct?**
   _`load_seps()` has 4 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `benchmark-bancos`, `meta.source_files`, `staging.cartera` to the rest of the system?**
