@@ -47,7 +47,7 @@ staging.*   (tipado, banco_codigo/categoría/segmento/cantón ya resueltos, fech
 marts.dim_* / marts.fact_* / marts.vw_*   (esquema estrella: 10 dimensiones, 10 hechos, 16 vistas)
         │
         ▼
-Power BI (.pbip, Import desde Postgres)
+BI (cualquier herramienta, Import/DirectQuery desde Postgres)
 ```
 
 ## Modelo de datos (esquema estrella)
@@ -494,7 +494,10 @@ simple.
   llave natural, así que correr el pipeline de nuevo (o solo para un año) siempre
   converge al mismo resultado.
 - **Para portafolio/distribución**: `docker-compose.yml` deja Postgres + esquema listos
-  con un solo comando, sin depender de la instalación local del autor.
+  con un solo comando, sin depender de la instalación local del autor. Instalación en un
+  servidor nuevo, migraciones, primera carga, operación incremental, programación,
+  respaldo y las brechas de portabilidad/orquestación pendientes: ver
+  `docs/despliegue_y_orquestacion.md`.
 - Pandas es suficiente a esta escala; Airflow/Spark serían sobre-ingeniería para una
   fuente que publica mensualmente. Si el proyecto creciera a más reportes (morosidad,
   liquidez) o más países, el patrón archivo → staging → marts ya soporta agregarlos sin
@@ -597,55 +600,10 @@ equivalente concreto si algún día hubiera que portar a SQL Server o a un lakeh
   columna de medida por cada valor mutuamente excluyente de una ex-dimensión degenerada"
   (ver comentario inicial de `sql/21_fact_saldo_cartera_pivot.sql`).
 
-## Power BI: cómo se construyó y qué quedó armado
+## Consumo (BI)
 
-El `.pbip` (`powerbi/benchmark-cartera-depositos.*`) se escribió a mano en TMDL/PBIR (no
-se generó desde Power BI Desktop, porque no hay forma de automatizar el diseño visual
-desde este entorno). Para reducir el riesgo de un archivo corrupto, el modelo semántico y
-el reporte se validaron estructuralmente contra los **JSON Schema oficiales de Microsoft**
-(`report.schema.json`, `page.schema.json`, `pagesMetadata.schema.json`,
-`visualContainer.schema.json`) antes de darlos por terminados, y cada `Entity`/`Property`
-referenciado en un visual se verificó contra las medidas/columnas reales del TMDL. Esto no
-sustituye abrirlo en Power BI Desktop, pero elimina la clase de error más común (URLs de
-`$schema` desactualizadas, campos requeridos faltantes, nombres de medida mal escritos).
+El proyecto Power BI (`.pbip`, modelo semántico y reporte escritos a mano en TMDL/PBIR)
+se retiró del repo el 2026-10-09: cubría solo los saldos de CAPCOL y no filtraba por
+`tipo_entidad`. Sigue en el historial de git si se quiere retomar. `marts.*` y las vistas
+de `sql/04`/`sql/18` son el contrato de consumo para cualquier herramienta de BI.
 
-- **Modelo semántico completo**: 8 tablas conectadas a Postgres (`marts.*`, incluye
-  `dim_provincia` desde 2026-07-25), relaciones fact→dim, 17 medidas DAX (saldo, saldo
-  "último mes", morosidad, market share, HHI, variación m/m y a/a, ratio cartera/depósitos).
-- **5 páginas de reporte con visuales reales** (no solo el lienzo vacío):
-  - **Overview y KPIs**: 4 tarjetas (`Saldo Cartera (Ultimo Mes)`, `Saldo Depositos
-    (Ultimo Mes)`, `Morosidad % (Ultimo Mes)`, `HHI Cartera (Ultimo Mes)`) + línea de
-    tendencia mensual `Saldo Cartera`/`Saldo Depositos` (todo el rango cargado en
-    `marts.dim_fecha`, 2021-01 a 2026-06 a la fecha).
-  - **Benchmark por Banco**: dos barras horizontales (cartera y depósitos del último mes
-    por `dim_banco[banco]`).
-  - **Análisis Geográfico**: dos barras horizontales por `dim_provincia[provincia]`
-    (2026-07-25: antes `dim_canton[provincia]`, columna movida a `dim_provincia` al
-    normalizar — ver "Normalización de provincia" en `docs/gobernanza_datos.md`).
-  - **Tendencias y Estacionalidad**: línea de `Saldo Cartera` por mes, una serie por año
-    (`dim_fecha[anio]` como leyenda) para ver estacionalidad.
-  - **Correlación Cartera vs Depósitos**: tabla por banco con saldo de cartera, saldo de
-    depósitos y `Ratio Cartera / Depositos`.
-  - Las medidas `*(Ultimo Mes)` filtran internamente a `MAX(dim_fecha[fecha])` para que
-    las tarjetas y barras muestren la foto del mes más reciente, no la suma de los 60
-    meses cargados (que no tendría sentido como cifra "actual").
-
-**Al abrir el `.pbip` por primera vez**: Power BI pedirá credenciales de Postgres
-(usuario `bp_etl`, la contraseña que configuraste en `sql/00_roles_db.sql`) y el modo de
-autenticación de privacidad de datos. También recomendable: click derecho en
-`dim_fecha` → "Marcar como tabla de fechas" (necesario para que `Variacion Cartera
-MoM`/`YoY` con `DATEADD` funcionen correctamente).
-
-**Qué queda para terminar tú en Desktop** (diseño, no estructura): colores, formato de
-tarjetas, un mapa real en la página geográfica (se usó barras por ser más simple de
-generar por JSON sin errores; un mapa/treemap es una mejora fácil de aplicar en Desktop),
-slicers de fecha/banco, y cualquier ajuste de layout — todo esto es iteración visual que
-es más confiable hacer en el diseñador de Desktop que a mano en JSON.
-
-**Herramienta usada para validar/construir los visuales**: se clonó y consultó (no se
-instaló como skill de Claude) el repo público
-[lukasreese/powerbi-claude-skills](https://github.com/lukasreese/powerbi-claude-skills),
-que trae copias locales de los JSON Schema de Microsoft para PBIR y templates de
-visuales ya probados. Confirma que **no existe forma de controlar Power BI Desktop en
-vivo** (ni esa herramienta ni ninguna otra conocida lo hace) — el método siempre es
-escribir los archivos `.pbip`/PBIR y abrirlos después en Desktop.

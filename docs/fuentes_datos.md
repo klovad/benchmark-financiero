@@ -1087,8 +1087,8 @@ implementar, en este orden:
 6. **Pendiente, fuera de alcance de esta expansión**: cargar `RK`/`INDICADORES` como
    tablas (documentados pero no cargados, ver `docs/metricas_financieras.md`); extender
    `TasasHistorico.htm`/Boletín a años anteriores a 2021-2022 (requeriría soportar layouts
-   HTML/Excel adicionales); actualizar el modelo Power BI (`.pbip`) para incorporar las
-   nuevas tablas de hechos.
+   HTML/Excel adicionales). (El modelo Power BI que figuraba aquí se retiró del repo el
+   2026-10-09.)
 7. ~~Investigar `capcol-instituciones-publicas/` (Banca Pública) con Playwright~~ ✅ Hecho
    (2026-09-01) — mismo plugin/formato que `capcol-bancos`, rango parseable 2021-2025
    (coincide con lo ya cargado de bancos privados), 0 migraciones `sql/*` necesarias,
@@ -1101,5 +1101,6 @@ implementar, en este orden:
    `fact_volumen_cartera`). Desviaciones de conciliación explicadas (mutualistas,
    emisoras de tarjetas).
 9. **Pendiente**: SEPS segmentos 4-5 (reporte trimestral a 4 dígitos, diseño aparte);
-   agregar los `download_id` de cada año nuevo de la SEPS en `config/sources.py`; incorporar
-   a Power BI el filtro por `tipo_entidad` y las tablas de BCE/Boletín/EEFF.
+   agregar los `download_id` de cada año nuevo de la SEPS en `config/sources.py`. Cualquier
+   capa de BI que se construya debe filtrar por `tipo_entidad` (las tablas mezclan
+   privados, públicos, cooperativas y mutualistas).

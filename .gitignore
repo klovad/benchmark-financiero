@@ -16,9 +16,8 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# Power BI
-powerbi/**/.pbi/localSettings.json
-powerbi/**/cache.abf
+# Power BI (retirado del repo; restos locales de Desktop no se versionan)
+powerbi/
 *.pbix
 
 # Playwright

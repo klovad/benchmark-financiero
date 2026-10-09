@@ -24,10 +24,9 @@ monitoreo continuo. 5 fuentes integradas en un único esquema estrella conformad
    de marts (marca de agua: solo recalcula lo que cambió).
 2. **Base de datos** (`sql/`): scripts para crear rol, base, esquemas y las migraciones
    incrementales de cada fuente, tanto en un Postgres local como vía `docker-compose.yml`.
-3. **Power BI** (`powerbi/`): proyecto `.pbip` (formato texto, versionable en git) con el
-   modelo semántico conectado a `marts.*` — **cubre el esquema original de CAPCOL**; las
-   tablas de BCE/Boletín añadidas después aún no están incorporadas al modelo semántico
-   (ver "Estado del proyecto" abajo).
+3. **Consumo**: `marts.*` queda listo para cualquier herramienta de BI. El proyecto
+   Power BI (`.pbip`) se retiró del repo el 2026-10-09; está en el historial de git
+   (commit anterior a esa fecha) si se quiere retomar.
 
 Ver `docs/architecture.md` para el diseño completo (catálogos conformados, patrón de CDC,
 diagrama ER, evaluación de escalabilidad, inventario de portabilidad de motor —
@@ -44,6 +43,13 @@ segmento, categoría, plazo, cuenta contable): qué excepción esperar, en qué 
 arreglarlo y qué verificar después.
 
 ## Quickstart
+
+Para llevarlo a otro servidor (Linux o Windows, con o sin Docker) u otro Postgres,
+operarlo de forma incremental, correrlo por partes, programarlo y verificar cada corrida,
+ver el runbook [`docs/despliegue_y_orquestacion.md`](docs/despliegue_y_orquestacion.md).
+En una base nueva conviene correr `bce` **antes** que CAPCOL: Banca Pública resuelve su
+identidad contra entidades que registra BCE (si ya se cargó en otro orden,
+`uv run benchmark-bancos refresh --full` lo corrige).
 
 ```powershell
 # 1. Entorno Python con uv (https://docs.astral.sh/uv/): crea .venv, instala Python 3.12
@@ -88,7 +94,6 @@ uv run benchmark-bancos boletin --years 2021 2022 2023 2024 2025 2026
 #     Correr despues de 5 (BCE) no es obligatorio: las entidades se auto-registran por RUC.
 uv run benchmark-bancos seps --years 2021 2022 2023 2024 2025
 
-# 7. Power BI: abrir powerbi/benchmark-cartera-depositos.pbip en Power BI Desktop
 ```
 
 ## Estructura
@@ -113,7 +118,6 @@ sql/                  DDL: 00 (roles/DB) + 01-03 (esquemas) + migraciones increm
                       el directorio se aplica en orden (docker-compose y CI)
 docker-compose.yml    Postgres 17 reproducible: bootstrap completo del schema + credenciales
                       desde .env, sin pasos manuales
-powerbi/              proyecto .pbip (modelo semántico + reporte)
 docs/                 arquitectura, diccionario de datos, fuentes, linaje, gobernanza, métricas
 tests/                parsers, resolución de identidad y regresiones de CDC/refresh contra
                       Postgres real (ver "Tests y CI")
@@ -226,16 +230,8 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   `pyproject.toml`, `uv.lock`, `main.py`), capa `raw` JSONB eliminada (la base pasó de
   22 GB a ~9,4 GB), CDC por columnas sin `row_hash` y refresh de marts incremental (196 s
   → 0,03 s sin cambios). Ver `docs/architecture.md`, "Carga incremental".
-- ⏳ **Power BI no filtra por sector todavía**: con SEPS y Banca Pública en las mismas
-  tablas, las medidas actuales suman todos los tipos de entidad. Es el siguiente paso.
-- ✅ **Power BI (`.pbip`) realineado con el esquema actual de CAPCOL** (2026-07-23,
-  actualizado 2026-07-25): `fact_cartera`/`fact_depositos` → `fact_saldo_cartera`/
-  `fact_saldo_depositos`, `dim_producto_cartera`/`dim_producto_deposito` →
-  `dim_segmento_credito` + `dim_categoria_deposito`/`dim_plazo`, `dim_provincia` agregada
-  (2 visuales dependían de `dim_canton[provincia]`), medidas de morosidad/cartera vencida
-  actualizadas al pivote de `estado_cartera` (ver abajo). Sigue cubriendo **solo las
-  tablas de saldos** — incorporar BCE/Boletín/EEFF SEPS (11 tablas más) es un trabajo
-  aparte, no hecho todavía.
+- 🗑️ **Power BI retirado del repo** (2026-10-09): el `.pbip` cubría solo los saldos de
+  CAPCOL y no filtraba por tipo de entidad. Recuperable desde el historial de git.
 - ✅ **`fact_saldo_cartera.estado_cartera` pivotado a columnas** (2026-07-25): era una
   dimensión degenerada (3 filas por combinación real, antipatrón EAV) — ahora
   `saldo_por_vencer`/`saldo_no_devenga_intereses`/`saldo_vencida` + `saldo_total`
@@ -243,19 +239,3 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   Ver `docs/data_dictionary.md`.
 - ⏳ `RK`/`INDICADORES` del Boletín están documentados (`docs/metricas_financieras.md`)
   pero no cargados como tabla — son ratios recalculables desde `fact_balance`/`fact_pyg`.
-- 🧪 **Prototipo de diseño Power BI — tema "Libro Mayor"** (2026-08-27, segunda versión):
-  `powerbi/prototipo-diseno-bi.*` — un `.pbip` **separado** del reporte productivo (para
-  no tocar sus 5 páginas ni sus 17 medidas; un tema personalizado se registra a nivel de
-  todo el reporte en PBIR, así que no se podía añadir sin re-pintar lo existente). Es una
-  **plantilla/punto de partida, no un build-out de negocio**. La primera versión del tema
-  fue rechazada por leer como el tema base de Power BI (paleta Okabe–Ito literal sobre
-  blanco, Segoe UI en las 8 clases, slicers de lista sin estilo propio); esta versión parte
-  de un concepto anclado en el dominio (bóveda/terminal de mercado bancario: lienzo oscuro,
-  acento bronce único, cifras en Consolas monoespaciada) con la categórica de 8 bancos
-  **validada computacionalmente** (CVD + contraste, no a mano) y los 3 controles de
-  personalización (selector de métrica, comparador de periodo CY/PY, ventana móvil de
-  tendencia) con estados reales (orientación horizontal, selección única forzada — corrige
-  además un bug real: sin `strictSingleSelect` las medidas `SELECTEDVALUE(...)` podían caer
-  en `BLANK()`). Ver `docs/prototipo_diseno_powerbi.md` para la paleta, la tipografía, el
-  detalle de cada control, las divergencias explícitas entre la maqueta y el render real de
-  Desktop, y cómo exportar un `.pbit` real desde Desktop.

@@ -1,39 +1,32 @@
-# Graph Report - benchmark-bancos  (2026-10-06)
+# Graph Report - benchmark-bancos  (2026-10-09)
 
 ## Corpus Check
-- 131 files · ~109,572 words
+- 96 files · ~107,367 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1515 nodes · 2053 edges · 172 communities (91 shown, 81 thin omitted)
+- 975 nodes · 1543 edges · 137 communities (56 shown, 81 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.91)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1f8b37a7`
+- Built from commit: `0f0f5eac`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- load_postgres.py
-- benchmark_cartera_depositos
 - pipeline.py
-- Prototipo de diseño Power BI — tema "Libro Mayor", personalización y plantilla de página
+- benchmark_cartera_depositos
+- load_postgres.py
+- parse_boletin.py
 - banco_matching.py
 - PlazoNoResueltoError
-- position
-- position
-- position
-- position
-- position
-- position
+- upsert_staging_bce_tasas_pasivas
+- _crear_fuentes_incrementales
+- load_banco_maestro_seed
+- _log_bancos_no_resueltos
+- _log_cantones_no_resueltos
 - Catálogo completo (48 indicadores, 12 categorías)
-- settings
-- position
-- position
-- position
-- position
-- position
 - 18_glosario_cuentas_views.sql
 - resolver_canton_bce
 - marts.vw_cartera_market_share
@@ -44,27 +37,17 @@
 - 13_schema_boletin.sql
 - Propuesta: escalabilidad de ETL, reglas de QA, alineación de config y `black`+`ruff`
 - marts.vw_cartera_market_share
-- pageOrder
 - marts.fact_saldo_cartera_new
 - 03_schema_marts.sql
-- page-benchmark-banco/page.json
-- page-correlacion/page.json
-- page-geografico/page.json
-- page-overview/page.json
-- page-tendencias/page.json
-- editorSettings.json
 - CLAUDE.md
-- config/__init__.py
 - 08_dim_segmento_categoria_plazo.sql
-- version.json
 - 02_schema_staging.sql
 - 07_dim_banco_dim_fecha_rebuild.sql
 - 16_dim_segmento_normativo.sql
 - 19_dim_segmento_entidad.sql
 - 20_dim_provincia.sql
 - parse_seps.py
-- setup_logging
-- export_sample_parquet.py
+- cli.py
 - sha256_file
 - marts.dim_subsegmento_credito
 - marts.fact_tasas_activas
@@ -84,9 +67,7 @@
 - staging.depositos
 - marts.dim_plazo
 - marts.fact_depositos
-- scrape_boletin.py
 - 01_schema_meta.sql
-- settings.py
 - marts.fact_captaciones_depositos
 - marts.fact_cartera
 - marts.fact_colocaciones_cartera
@@ -106,24 +87,11 @@
 - marts.vw_dim_canton_geografia
 - staging.bce_tasas_activas
 - Gobernanza de datos
-- position
-- settings
 - Dimensiones
-- position
-- position
-- position
-- position
-- position
-- position
-- position
-- position
 - 4. SEPS — Cooperativas de Ahorro y Crédito + Mutualistas de Vivienda — ✅ **implementada y cargada 2021-2025 (2026-09-30)**
 - Linaje de datos
-- page-prototipo-diseno/page.json
-- Benchmark de cartera, depósitos y tasas — sistema financiero del Ecuador
+- Despliegue y orquestación — runbook
 - Muestras de `marts.*` en Parquet
-- prototipo-diseno-bi.Report/definition/pages/pages.json
-- prototipo-diseno-bi.Report/definition/version.json
 - marts.vw_banco_ruc_colisiones
 - staging.depositos
 - marts.dim_cuenta_contable
@@ -131,7 +99,6 @@
 - staging.banco_maestro
 - staging.cartera
 - staging.cartera
-- _log_bancos_no_resueltos
 - staging.bce_tasas_pasivas
 - Mantenimiento de catálogos / resolución de identidad
 - marts.fact_captaciones_depositos
@@ -141,7 +108,6 @@
 - marts.dim_plazo
 - resolver_categoria_deposito
 - parse_bce_tasas.py
-- _log_cantones_no_resueltos
 - marts.vw_cartera_bruta
 - benchmark-bancos
 - marts.dim_banco
@@ -165,7 +131,6 @@
 - staging.boletin_pyg
 - staging.tasas_referenciales
 - raw.source_files
-- cli.py
 - parse_fecha_from_boletin_filename
 
 ## God Nodes (most connected - your core abstractions)
@@ -189,29 +154,29 @@
   tests/test_parse_bce_tasas.py → src/benchmark_bancos/transform/canton_matching.py
 - `test_codigo_padre_sigue_la_jerarquia_del_catalogo_unico_de_cuentas()` --calls--> `_codigo_padre()`  [EXTRACTED]
   tests/test_parse_boletin.py → src/benchmark_bancos/transform/parse_boletin.py
-- `_a_numero()` --references--> `Series`  [EXTRACTED]
-  src/benchmark_bancos/transform/parse_seps.py → powerbi/benchmark-cartera-depositos.Report/definition/pages/page-tendencias/visuals/v01LineEstacionalidad/visual.json
+- `test_source_file_hash_gate()` --calls--> `is_source_loaded()`  [EXTRACTED]
+  tests/test_integration_regressions.py → src/benchmark_bancos/load/load_postgres.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (172 total, 81 thin omitted)
+## Communities (137 total, 81 thin omitted)
 
-### Community 0 - "load_postgres.py"
-Cohesion: 0.14
-Nodes (27): _cdc_guard(), _clean(), _copy_rows(), _crear_fuentes_incrementales(), insert_dim_cuenta_contable_seps(), _leer_watermark(), load_banco_maestro_seed(), DataFrame (+19 more)
+### Community 0 - "pipeline.py"
+Cohesion: 0.20
+Nodes (23): Connection, main(), get_connection(), is_source_loaded(), Actualiza marts.* desde staging. Incremental por defecto: solo recalcula el…, Registra el RUC de TODAS las entidades resueltas por BCE (bancos privados…, refresh_marts(), register_source_file() (+15 more)
 
 ### Community 1 - "benchmark_cartera_depositos"
 Cohesion: 0.10
 Nodes (40): "marts"."dim_banco", "marts"."dim_canton", "marts"."dim_categoria_deposito", "marts"."dim_cuenta_contable", "marts"."dim_fecha", "marts"."dim_plazo", "marts"."dim_provincia", "marts"."dim_segmento_credito" (+32 more)
 
-### Community 2 - "pipeline.py"
-Cohesion: 0.16
-Nodes (27): Connection, main(), download_tasas_historicas(), _meses_hasta_hoy(), Path, Descarga de las páginas mensuales TasasVigentes{MM}{YYYY}.htm del BCE (techos…, get_connection(), is_source_loaded() (+19 more)
+### Community 2 - "load_postgres.py"
+Cohesion: 0.19
+Nodes (21): _cdc_guard(), _clean(), _copy_rows(), insert_dim_cuenta_contable_seps(), _leer_watermark(), DataFrame, Carga idempotente a Postgres: archivo parseado -> staging (tipado) -> marts…, `(t.a, t.b) IS DISTINCT FROM (EXCLUDED.a, EXCLUDED.b)` para el ON CONFLICT. (+13 more)
 
-### Community 3 - "Prototipo de diseño Power BI — tema "Libro Mayor", personalización y plantilla de página"
-Cohesion: 0.10
-Nodes (19): 0. Segundo intento — qué cambió y por qué, 10. Cómo exportar un `.pbit` real desde este prototipo, 11. Cómo abrir y probar el prototipo, 1. Por qué un `.pbip` separado y no una página nueva en el reporte productivo, 2.1 Por qué esto no es "Okabe–Ito con otro nombre", 2.2 Secuencial y qué no tiene campo de tema global, 2. Paleta de color — "Libro Mayor", 3. Tipografía (+11 more)
+### Community 3 - "parse_boletin.py"
+Cohesion: 0.16
+Nodes (16): _find_header_row(), _normalize_col(), parse_boletin_file(), _parse_hoja(), _parse_met(), DataFrame, Path, Parser del Boletín Financiero Mensual (Superbancos) -- hojas BALANCE y PYG.… (+8 more)
 
 ### Community 4 - "banco_matching.py"
 Cohesion: 0.09
@@ -221,57 +186,13 @@ Nodes (43): BancoNoResueltoError, _cargar_csv(), _crosswalk(), EntidadBceNoMapea
 Cohesion: 0.06
 Nodes (56): PlazoNoResueltoError, ValueError, Resuelve el texto crudo de `plazo` del BCE (tsp/tsa) a un rango numérico de…, Chequeo de dos niveles para TODOS los valores crudos de `plazo` observados en…, Devuelve (dias_desde, dias_hasta); dias_hasta es None si el bucket es abierto…, El texto crudo de plazo no matchea ningún patrón conocido (shape inválido), o…, Sanity check de rango, aplicado DESPUÉS de que el shape ya matcheó un patrón…, resolver_plazo_bce() (+48 more)
 
-### Community 6 - "position"
-Cohesion: 0.10
-Nodes (20): projections, name, position, height, tabOrder, width, x, y (+12 more)
-
-### Community 7 - "position"
-Cohesion: 0.10
-Nodes (20): projections, name, position, height, tabOrder, width, x, y (+12 more)
-
-### Community 8 - "position"
-Cohesion: 0.10
-Nodes (20): projections, name, position, height, tabOrder, width, x, y (+12 more)
-
-### Community 9 - "position"
-Cohesion: 0.10
-Nodes (20): projections, name, position, height, tabOrder, width, x, y (+12 more)
-
-### Community 10 - "position"
-Cohesion: 0.10
-Nodes (20): projections, filterConfig, filters, name, position, height, tabOrder, width (+12 more)
-
-### Community 11 - "position"
-Cohesion: 0.10
-Nodes (20): projections, name, position, height, tabOrder, width, x, y (+12 more)
+### Community 6 - "upsert_staging_bce_tasas_pasivas"
+Cohesion: 0.22
+Nodes (13): upsert_staging_bce_tasas_pasivas(), _bce_tasas_pasivas_row(), _cleanup_bce_tasas_pasivas(), _dim_canton_insert_statement(), Extrae, de la misma _REFRESH_MARTS_SQL que usa refresh_marts() en producción,…, Cobertura end-to-end del two-tier de canton_matching.py (nivel 2, ver…, Cobertura de orquestación (sección 2.3): _upsert_bce_via_temp() vía…, Cobertura de orquestación (sección 2.3): un cambio real de valor… (+5 more)
 
 ### Community 12 - "Catálogo completo (48 indicadores, 12 categorías)"
 Cohesion: 0.06
 Nodes (32): 1. Cómo está organizado el Catálogo Único de Cuentas, 2. Cuentas clave — ACTIVO (sección `1`), 3. Cuentas clave — PASIVO (sección `2`), 4.6 Hueco de datos conocido: PyG código `4`, 4. Cuentas clave — PATRIMONIO, INGRESOS, GASTOS (secciones `3`, `4`, `5`), 5. Bloques que combinan Balance + PyG o cruzan periodos (series de tiempo), 6. Qué NO cubre este documento (fuera de alcance, documentado en otro lado), Cómo usar este documento al escribir un ratio nuevo (+24 more)
-
-### Community 13 - "settings"
-Cohesion: 0.10
-Nodes (19): name, reportVersionAtImport, type, objects, outspacePane, page, report, visual (+11 more)
-
-### Community 14 - "position"
-Cohesion: 0.11
-Nodes (18): name, position, height, tabOrder, width, x, y, z (+10 more)
-
-### Community 15 - "position"
-Cohesion: 0.11
-Nodes (18): projections, filterConfig, filters, name, position, height, tabOrder, width (+10 more)
-
-### Community 16 - "position"
-Cohesion: 0.12
-Nodes (16): projections, name, position, height, tabOrder, width, x, y (+8 more)
-
-### Community 17 - "position"
-Cohesion: 0.12
-Nodes (16): projections, name, position, height, tabOrder, width, x, y (+8 more)
-
-### Community 18 - "position"
-Cohesion: 0.12
-Nodes (16): projections, name, position, height, tabOrder, width, x, y (+8 more)
 
 ### Community 19 - "18_glosario_cuentas_views.sql"
 Cohesion: 0.31
@@ -290,8 +211,8 @@ Cohesion: 0.27
 Nodes (9): marts.fact_tasas_activas, marts.fact_tasas_pasivas, marts.dim_banco, marts.dim_categoria_deposito, marts.dim_fecha, marts.dim_plazo, marts.dim_segmento_credito, staging.bce_tasas_activas (+1 more)
 
 ### Community 23 - "test_integration_regressions.py"
-Cohesion: 0.09
-Nodes (38): integration, _bce_tasas_pasivas_row(), _boletin_balance_row(), _cleanup_bce_tasas_pasivas(), _cleanup_boletin_balance(), _dim_canton_insert_statement(), _fact_saldo_cartera_pivot_statement(), Tests de integración (@pytest.mark.integration): requieren Postgres real ya… (+30 more)
+Cohesion: 0.11
+Nodes (27): integration, upsert_staging_boletin_balance(), _boletin_balance_row(), _cleanup_boletin_balance(), _fact_saldo_cartera_pivot_statement(), Tests de integración (@pytest.mark.integration): requieren Postgres real ya…, Regresión de sql/24_fix_staging_depositos_canton_null_safe.sql: dos filas con…, Regresión de sql/31_staging_natural_key_provincia.sql: BOLÍVAR existe en Carchi… (+19 more)
 
 ### Community 24 - "12_schema_tasas_historicas.sql"
 Cohesion: 0.27
@@ -313,10 +234,6 @@ Nodes (26): 0. Línea base verificada (para que la propuesta no asuma de más), 
 Cohesion: 0.33
 Nodes (8): marts.vw_cartera_hhi, marts.vw_cartera_market_share, marts.vw_depositos_hhi, marts.vw_depositos_market_share, marts.dim_banco, marts.dim_fecha, marts.fact_saldo_cartera, marts.fact_saldo_depositos
 
-### Community 29 - "pageOrder"
-Cohesion: 0.22
-Nodes (8): activePageName, pageOrder, $schema, page-benchmark-banco, page-correlacion, page-geografico, page-overview, page-tendencias
-
 ### Community 30 - "marts.fact_saldo_cartera_new"
 Cohesion: 0.31
 Nodes (8): marts.fact_saldo_cartera_new, marts.vw_cartera_hhi, marts.vw_cartera_market_share, marts.dim_banco, marts.dim_canton, marts.dim_fecha, marts.dim_segmento_credito, marts.fact_saldo_cartera
@@ -325,61 +242,21 @@ Nodes (8): marts.fact_saldo_cartera_new, marts.vw_cartera_hhi, marts.vw_cartera_
 Cohesion: 0.54
 Nodes (7): marts.dim_banco, marts.dim_canton, marts.dim_fecha, marts.dim_producto_cartera, marts.dim_producto_deposito, marts.fact_cartera, marts.fact_depositos
 
-### Community 32 - "page-benchmark-banco/page.json"
-Cohesion: 0.29
-Nodes (6): displayName, displayOption, height, name, $schema, width
-
-### Community 33 - "page-correlacion/page.json"
-Cohesion: 0.29
-Nodes (6): displayName, displayOption, height, name, $schema, width
-
-### Community 34 - "page-geografico/page.json"
-Cohesion: 0.29
-Nodes (6): displayName, displayOption, height, name, $schema, width
-
-### Community 35 - "page-overview/page.json"
-Cohesion: 0.29
-Nodes (6): displayName, displayOption, height, name, $schema, width
-
-### Community 36 - "page-tendencias/page.json"
-Cohesion: 0.29
-Nodes (6): displayName, displayOption, height, name, $schema, width
-
-### Community 37 - "editorSettings.json"
-Cohesion: 0.29
-Nodes (6): autodetectRelationships, parallelQueryLoading, relationshipImportEnabled, $schema, shouldNotifyUserOfNameConflictResolution, typeDetectionEnabled
-
-### Community 39 - "config/__init__.py"
-Cohesion: 0.20
-Nodes (6): fixture, Catálogos de dominio usados por los parsers: mapeos de vocabulario de las…, Configuración del proyecto, separada por responsabilidad: - `settings`: lo que…, Constantes de las fuentes externas: URLs, sub-portales, nombres de carpeta, ids…, db_conn(), Conexión a Postgres real para tests marcados @pytest.mark.integration. Nunca…
-
 ### Community 40 - "08_dim_segmento_categoria_plazo.sql"
 Cohesion: 0.50
 Nodes (3): marts.dim_categoria_deposito, marts.dim_plazo, marts.dim_segmento_credito
 
 ### Community 47 - "parse_seps.py"
 Cohesion: 0.08
-Nodes (48): Resuelve una entidad SEPS (cooperativa, mutualista o entidad de segundo piso) a…, resolver_entidad_seps(), _codigo_padre(), _a_numero(), _chunks(), extraer_zip_seps(), _fecha_corte(), _geo() (+40 more)
+Nodes (49): Series, Resuelve una entidad SEPS (cooperativa, mutualista o entidad de segundo piso) a…, resolver_entidad_seps(), _codigo_padre(), _a_numero(), _chunks(), extraer_zip_seps(), _fecha_corte() (+41 more)
 
-### Community 48 - "setup_logging"
-Cohesion: 0.15
-Nodes (15): LogRecord, download_all(), download_bce_file(), Path, Descarga directa de los archivos semanales de tasas de interés del BCE…, clave: 'tsp' o 'tsa'. Descarga si no existe ya un archivo con ese nombre., download_seps(), download_seps_file() (+7 more)
-
-### Community 49 - "export_sample_parquet.py"
-Cohesion: 0.50
-Nodes (4): export_full(), export_sample(), Path, Exporta marts.* a Parquet, para poder probar el modelo de datos (Power BI,…
+### Community 48 - "cli.py"
+Cohesion: 0.06
+Nodes (41): ArgumentParser, LogRecord, Punto de entrada del proyecto. uv run main.py <etapa> [opciones] Delega en…, build_parser(), Interfaz de línea de comandos del pipeline. Uso (con uv): uv run benchmark-…, download_all(), download_bce_file(), Path (+33 more)
 
 ### Community 50 - "sha256_file"
-Cohesion: 0.07
-Nodes (57): extract_single_xlsx(), find_base_sheets(), month_end_date(), normalize_banco(), normalize_provincia(), normalize_text(), Path, Los ZIP de Superbancos contienen exactamente un .xlsx -- salvo boletines… (+49 more)
-
-### Community 74 - "scrape_boletin.py"
-Cohesion: 0.42
-Nodes (8): _download_all_files(), main(), _open_year_folder(), Path, Descarga los ZIP del Boletín Financiero Mensual (Balance y PyG) de bancos…, _reset_to_root(), scrape(), scrape_year()
-
-### Community 76 - "settings.py"
-Cohesion: 0.50
-Nodes (3): _find_project_root(), Path, Configuración que depende del entorno: rutas, base de datos y años a procesar.…
+Cohesion: 0.06
+Nodes (54): fixture, export_full(), export_sample(), Path, Exporta marts.* a Parquet, para poder probar el modelo de datos (Power BI,…, Catálogos de dominio usados por los parsers: mapeos de vocabulario de las…, Configuración del proyecto, separada por responsabilidad: - `settings`: lo que…, _find_project_root() (+46 more)
 
 ### Community 95 - "marts.vw_dim_canton_geografia"
 Cohesion: 0.50
@@ -387,51 +264,11 @@ Nodes (3): marts.dim_provincia, marts.vw_dim_canton_geografia, marts.dim_canton
 
 ### Community 99 - "Gobernanza de datos"
 Cohesion: 0.06
-Nodes (30): Arquitectura, Bug real encontrado y corregido: NULL en `UNIQUE`/`ON CONFLICT`, Carga incremental (CDC) — no full refresh, Catálogos conformados (identidad compartida entre fuentes), Estructura real de los archivos fuente (verificado, no solo la ficha metodológica), Evaluación de escalabilidad, Flujo de datos, Modelo de datos (esquema estrella) (+22 more)
-
-### Community 100 - "position"
-Cohesion: 0.07
-Nodes (27): projections, filterConfig, filters, name, position, height, tabOrder, width (+19 more)
-
-### Community 101 - "settings"
-Cohesion: 0.09
-Nodes (23): name, reportVersionAtImport, type, name, reportVersionAtImport, type, objects, outspacePane (+15 more)
+Nodes (30): Arquitectura, Bug real encontrado y corregido: NULL en `UNIQUE`/`ON CONFLICT`, Carga incremental (CDC) — no full refresh, Catálogos conformados (identidad compartida entre fuentes), Consumo (BI), Estructura real de los archivos fuente (verificado, no solo la ficha metodológica), Evaluación de escalabilidad, Flujo de datos (+22 more)
 
 ### Community 102 - "Dimensiones"
 Cohesion: 0.09
 Nodes (22): Decisiones de modelado relevantes, Diccionario de datos, Dimensiones, Hechos, marts.dim_banco, marts.dim_canton, marts.dim_categoria_deposito, marts.dim_cuenta_contable (plan de cuentas del Boletín, BALANCE + PYG) (+14 more)
-
-### Community 103 - "position"
-Cohesion: 0.07
-Nodes (27): projections, filterConfig, filters, name, dataPoint, position, height, tabOrder (+19 more)
-
-### Community 104 - "position"
-Cohesion: 0.08
-Nodes (23): projections, filterConfig, filters, name, position, height, tabOrder, width (+15 more)
-
-### Community 105 - "position"
-Cohesion: 0.08
-Nodes (23): projections, filterConfig, filters, name, position, height, tabOrder, width (+15 more)
-
-### Community 106 - "position"
-Cohesion: 0.08
-Nodes (23): projections, filterConfig, filters, name, position, height, tabOrder, width (+15 more)
-
-### Community 107 - "position"
-Cohesion: 0.08
-Nodes (23): projections, filterConfig, filters, name, position, height, tabOrder, width (+15 more)
-
-### Community 108 - "position"
-Cohesion: 0.08
-Nodes (25): name, general, header, selection, position, height, tabOrder, width (+17 more)
-
-### Community 109 - "position"
-Cohesion: 0.08
-Nodes (25): name, general, header, selection, position, height, tabOrder, width (+17 more)
-
-### Community 110 - "position"
-Cohesion: 0.08
-Nodes (25): name, general, header, selection, position, height, tabOrder, width (+17 more)
 
 ### Community 111 - "4. SEPS — Cooperativas de Ahorro y Crédito + Mutualistas de Vivienda — ✅ **implementada y cargada 2021-2025 (2026-09-30)**"
 Cohesion: 0.08
@@ -441,21 +278,13 @@ Nodes (23): 1.1 Banca Pública (`capcol-instituciones-publicas/`) — ✅ cargad
 Cohesion: 0.18
 Nodes (10): 1. CAPCOL — Cartera, 2. CAPCOL — Depósitos, 3. BCE — tsp (tasas pasivas, semanal), 4. BCE — tsa (tasas activas, semanal), 5. BCE — `TasasHistorico.htm` (techos y referenciales, mensual, nivel sistema), 6. Boletín Financiero Mensual — BALANCE / PYG, 7. SEPS — Captaciones, Colocaciones (saldos) y Estados Financieros (2026-09-30), Linaje de datos (+2 more)
 
-### Community 113 - "page-prototipo-diseno/page.json"
-Cohesion: 0.29
-Nodes (6): displayName, displayOption, height, name, $schema, width
-
-### Community 114 - "Benchmark de cartera, depósitos y tasas — sistema financiero del Ecuador"
-Cohesion: 0.25
-Nodes (7): Alcance de los datos, Benchmark de cartera, depósitos y tasas — sistema financiero del Ecuador, Estado del proyecto, Estructura, Quickstart, Qué incluye, Tests y CI
+### Community 114 - "Despliegue y orquestación — runbook"
+Cohesion: 0.04
+Nodes (43): 10. Problemas frecuentes, 11. Brechas de portabilidad y orquestación, 1.1 Componentes y requisitos, 1.2 Configuración (variables de entorno), 1.3 Etapas del CLI [verificado con `uv run benchmark-bancos --help`], 1.4 Dependencias entre etapas, 1. Mapa del sistema, 2.1 Linux sin Docker [no probado en Linux; mismos pasos que CI] (+35 more)
 
 ### Community 115 - "Muestras de `marts.*` en Parquet"
 Cohesion: 0.40
 Nodes (4): `marts_AAAA-MM/` (muestra de un mes), `marts_ultimos_5_anios/`, Muestras de `marts.*` en Parquet, Uso típico
-
-### Community 117 - "prototipo-diseno-bi.Report/definition/pages/pages.json"
-Cohesion: 0.40
-Nodes (4): activePageName, pageOrder, $schema, page-prototipo-diseno
 
 ### Community 130 - "Mantenimiento de catálogos / resolución de identidad"
 Cohesion: 0.11
@@ -473,16 +302,12 @@ Nodes (36): _add_common_columns(), parse_tsa_file(), parse_tsp_file(), DataFrame
 Cohesion: 0.60
 Nodes (4): marts.vw_cartera_bruta, marts.vw_cartera_improductiva_segmento, marts.dim_cuenta_contable, marts.fact_balance
 
-### Community 184 - "cli.py"
-Cohesion: 0.16
-Nodes (14): ArgumentParser, Punto de entrada del proyecto. uv run main.py <etapa> [opciones] Delega en…, build_parser(), Interfaz de línea de comandos del pipeline. Uso (con uv): uv run benchmark-…, _download_all_files(), main(), _open_report_folder(), _open_year_folder() (+6 more)
-
 ### Community 185 - "parse_fecha_from_boletin_filename"
 Cohesion: 0.23
 Nodes (11): parse_fecha_from_boletin_filename(), parse_fecha_from_tasas_historicas_filename(), date, Extrae la fecha (fin de mes) de un nombre de archivo TasasVigenteMMAAAA.htm.…, Extrae la fecha (fin de mes) de un nombre de archivo 'Boletín Bancos <MES_ES>…, Tests puros (sin DB ni red) para las funciones de fecha-desde-nombre-de-archivo…, test_parse_fecha_boletin_no_matching_pattern_raises(), test_parse_fecha_boletin_unrecognized_month_raises() (+3 more)
 
 ## Knowledge Gaps
-- **545 isolated node(s):** `$schema`, `name`, `displayName`, `displayOption`, `height` (+540 more)
+- **185 isolated node(s):** `benchmark-bancos`, `meta.source_files`, `staging.cartera`, `staging.depositos`, `staging.banco_maestro` (+180 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **81 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -490,16 +315,16 @@ Nodes (11): parse_fecha_from_boletin_filename(), parse_fecha_from_tasas_historic
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `resolver_canton_bce()` connect `resolver_canton_bce` to `sha256_file`, `parse_seps.py`, `parse_bce_tasas.py`?**
-  _High betweenness centrality (0.011) - this node is a cross-community bridge._
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
+- **Why does `parse_depositos_file()` connect `sha256_file` to `pipeline.py`, `resolver_categoria_deposito`, `banco_matching.py`?**
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **Why does `resolver_categoria_deposito()` connect `resolver_categoria_deposito` to `sha256_file`, `PlazoNoResueltoError`?**
-  _High betweenness centrality (0.005) - this node is a cross-community bridge._
-- **Why does `resolver_entidad_seps()` connect `parse_seps.py` to `banco_matching.py`?**
-  _High betweenness centrality (0.004) - this node is a cross-community bridge._
+  _High betweenness centrality (0.012) - this node is a cross-community bridge._
 - **Are the 4 inferred relationships involving `load_seps()` (e.g. with `upsert_staging_cartera()` and `upsert_staging_depositos()`) actually correct?**
   _`load_seps()` has 4 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `$schema`, `name`, `displayName` to the rest of the system?**
-  _545 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `load_postgres.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.14285714285714285 - nodes in this community are weakly interconnected._
+- **What connects `benchmark-bancos`, `meta.source_files`, `staging.cartera` to the rest of the system?**
+  _185 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `benchmark_cartera_depositos` be split into smaller, more focused modules?**
   _Cohesion score 0.10121951219512196 - nodes in this community are weakly interconnected._
+- **Should `banco_matching.py` be split into smaller, more focused modules?**
+  _Cohesion score 0.08585858585858586 - nodes in this community are weakly interconnected._
