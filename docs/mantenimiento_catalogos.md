@@ -404,13 +404,13 @@ consultando `marts.dim_canton` (sección de abajo).
 **Qué hacer (caso `AUTO_INGRESADO`)**: revisión, no reparación — igual que `dim_plazo`, ver
 sección de abajo. Antes de confirmar, verificar que sea un cantón real (no un typo de la
 fuente ni un alias de un cantón ya sembrado con otra forma de texto — ver
-`canton_matching.py::_ALIASES_BCE` para el precedente de 5 casos ya identificados así).
+`canton_matching.py::_ALIASES_CANTON` para el precedente de 5 casos ya identificados así).
 
 **Después de arreglarlo**: tests en `tests/test_canton_matching.py` — patrón
 `test_provincia_no_resuelve_lanza_fail_fast` para el fail-fast,
 `test_canton_fuera_del_universo_sembrado_no_lanza_two_tier` para el camino
 `AUTO_INGRESADO`. Si se confirma un alias nuevo (mismo cantón, forma de texto distinta),
-agregarlo a `_ALIASES_BCE` **y** un test en `TestAliasesBce`. Docs:
+agregarlo a `_ALIASES_CANTON` **y** un test en `TestAliasesBce`. Docs:
 `docs/data_dictionary.md` (`dim_canton`, conteo), `docs/gobernanza_datos.md` (si cambia el
 conteo de filas `AUTO_INGRESADO`/`CONFIRMADO`). Re-ejecutar:
 `pytest tests/test_canton_matching.py -v`, el comando de pipeline, verificar
@@ -517,8 +517,8 @@ WHERE canton_id = 250;
 ```
 Antes de confirmar, verificar en `marts.vw_dim_canton_geografia` que no sea un alias de
 escritura de un cantón ya existente con otra forma de texto (ver
-`src/benchmark_bancos/transform/canton_matching.py::_ALIASES_BCE` para el precedente de 5 casos así) — si
-lo es, el fix correcto es agregarlo a `_ALIASES_BCE` y dejar la fila `AUTO_INGRESADO`
+`src/benchmark_bancos/transform/canton_matching.py::_ALIASES_CANTON` para el precedente de 5 casos así) — si
+lo es, el fix correcto es agregarlo a `_ALIASES_CANTON` y dejar la fila `AUTO_INGRESADO`
 huérfana sin usar (o `RECHAZADO` si se prefiere dejar constancia explícita), no confirmarla
 como cantón real independiente.
 

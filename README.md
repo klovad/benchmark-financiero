@@ -199,9 +199,10 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   `sql/28_bce_canton_grain.sql` + reproceso del histórico completo, ver
   `src/benchmark_bancos/transform/parse_bce_tasas.py`/`src/benchmark_bancos/transform/canton_matching.py`) —
   provincia/región siguen disponibles vía `dim_canton.provincia_id → dim_provincia`.
-  `fact_captaciones_depositos`: 3.077.474 filas; `fact_colocaciones_cartera`: 7.756.581
-  filas (0 `canton_id` NULL en ambas, verificado tras el reproceso de grano de
-  2026-09-01; ese backfill de un solo uso se eliminó del código el 2026-10-05).
+  `fact_captaciones_depositos`: 3.157.101 filas; `fact_colocaciones_cartera`: 7.961.790
+  filas, hasta la semana del 2026-09-24 (actualizado 2026-10-09; 0 `canton_id` NULL en
+  ambas). La etapa `bce` descarga de forma condicional: solo baja el archivo cuando el BCE
+  publica una versión nueva.
 - **BCE `TasasHistorico.htm`** (techos y referenciales, nivel sistema): 2022-04 a
   2026-06 (páginas anteriores usan un layout HTML distinto, no soportado por el parser
   actual). Tasas activas máximas/referenciales por segmento, pasivas por instrumento y

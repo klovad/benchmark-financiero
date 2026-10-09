@@ -130,7 +130,19 @@ def _seed_pairs() -> set[tuple[str, str]]:
 # NO confundir con 'PUERTO QUITO' (cantón real y distinto de Pichincha, sí es net-new) ni
 # con los pares de cantón-homónimo-en-otra-provincia de arriba (esos SÍ son 2 filas
 # reales distintas, no alias).
-_ALIASES_BCE: dict[tuple[str, str], tuple[str, str]] = {
+#
+# 2026-10-09: la tabla pasa a aplicarse a TODAS las fuentes (BCE, SEPS y CAPCOL vía
+# `aplicar_alias_canton()`), no solo a BCE, y suma 2 alias que habían creado cantones
+# duplicados `AUTO_INGRESADO`. Verificados contra el clasificador geográfico del INEC
+# (DPA): en cada provincia existe un solo cantón con ese nombre, así que no son homónimos.
+#   - 'ALFREDO BAQUERIZO MORENO' (SEPS) / 'ALFREDO BAQUERIZO MORENO (JUJAN)': INEC 0902,
+#     único en Guayas.
+#   - 'PABLO VI' (CAPCOL Banca Pública) / 'PABLO SEXTO': INEC 1411, único en Morona
+#     Santiago.
+# Los homónimos reales del INEC (mismo nombre, distinta provincia) son solo BOLIVAR
+# (Carchi 0402 / Manabí 1302) y OLMEDO (Loja 1116 / Manabí 1318): se distinguen por la
+# provincia y nunca van en esta tabla.
+_ALIASES_CANTON: dict[tuple[str, str], tuple[str, str]] = {
     ("DISTRITO METROPOLITANO DE QUITO", "PICHINCHA"): ("QUITO", "PICHINCHA"),
     ("EL EMPALME", "GUAYAS"): ("EMPALME", "GUAYAS"),
     ("GENERAL ANTONIO ELIZALDE", "GUAYAS"): (
@@ -139,7 +151,22 @@ _ALIASES_BCE: dict[tuple[str, str], tuple[str, str]] = {
     ),
     ("PUEBLOVIEJO", "LOS RIOS"): ("PUEBLO VIEJO", "LOS RIOS"),
     ("SAN FRANCISCO DE ORELLANA", "ORELLANA"): ("ORELLANA", "ORELLANA"),
+    ("ALFREDO BAQUERIZO MORENO", "GUAYAS"): (
+        "ALFREDO BAQUERIZO MORENO (JUJAN)",
+        "GUAYAS",
+    ),
+    ("PABLO VI", "MORONA SANTIAGO"): ("PABLO SEXTO", "MORONA SANTIAGO"),
 }
+
+
+def aplicar_alias_canton(canton: str | None, provincia: str | None) -> str | None:
+    """Devuelve el nombre canónico del cantón si `(canton, provincia)` (ya normalizados)
+    es una variante de escritura conocida; si no, el cantón tal cual. Punto único de
+    alias para todas las fuentes: BCE y SEPS lo usan vía `resolver_canton_bce()`, CAPCOL
+    directo en `parse_cartera`/`parse_depositos`."""
+    if canton is None or provincia is None:
+        return canton
+    return _ALIASES_CANTON.get((canton, provincia), (canton, provincia))[0]
 
 
 def resolver_canton_bce(canton_crudo: str, provincia_cruda: str) -> tuple[str, str]:
@@ -170,9 +197,7 @@ def resolver_canton_bce(canton_crudo: str, provincia_cruda: str) -> tuple[str, s
         )
 
     canton_norm = normalize_canton(canton_crudo)
-    canton_norm, provincia_norm = _ALIASES_BCE.get(
-        (canton_norm, provincia_norm), (canton_norm, provincia_norm)
-    )
+    canton_norm = aplicar_alias_canton(canton_norm, provincia_norm)
 
     # Nivel 2: no es un gate. Un par fuera de _seed_pairs() se acepta igual -- solo se
     # deja constancia (vía marts.dim_canton.estado_validacion='AUTO_INGRESADO') de que no

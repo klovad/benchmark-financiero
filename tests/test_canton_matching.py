@@ -2,6 +2,7 @@ import pytest
 
 from benchmark_bancos.transform.canton_matching import (
     CantonNoResueltoError,
+    aplicar_alias_canton,
     es_canton_conocido,
     normalize_canton,
     resolver_canton_bce,
@@ -71,6 +72,33 @@ class TestAliasesBce:
             "PUERTO QUITO",
             "PICHINCHA",
         )
+
+
+class TestAliasesTodasLasFuentes:
+    """Alias agregados 2026-10-09 (sql/35): crearon cantones duplicados AUTO_INGRESADO.
+    Verificados contra el INEC: un solo cantón con ese nombre en la provincia."""
+
+    def test_alfredo_baquerizo_moreno_seps_resuelve_con_apodo_jujan(self):
+        assert resolver_canton_bce("ALFREDO BAQUERIZO MORENO", "GUAYAS") == (
+            "ALFREDO BAQUERIZO MORENO (JUJAN)",
+            "GUAYAS",
+        )
+
+    def test_pablo_vi_resuelve_a_pablo_sexto(self):
+        assert resolver_canton_bce("PABLO VI", "MORONA SANTIAGO") == (
+            "PABLO SEXTO",
+            "MORONA SANTIAGO",
+        )
+
+    def test_capcol_usa_el_mismo_alias(self):
+        # CAPCOL (parse_cartera/parse_depositos) no pasa por resolver_canton_bce.
+        assert aplicar_alias_canton("PABLO VI", "MORONA SANTIAGO") == "PABLO SEXTO"
+        assert aplicar_alias_canton("QUITO", "PICHINCHA") == "QUITO"
+        assert aplicar_alias_canton(None, "PICHINCHA") is None
+
+    def test_alias_depende_de_la_provincia(self):
+        # El alias es por par: el mismo texto en otra provincia no se toca.
+        assert aplicar_alias_canton("PABLO VI", "GUAYAS") == "PABLO VI"
 
 
 class TestCantonesHomonimosEnDosProvincias:

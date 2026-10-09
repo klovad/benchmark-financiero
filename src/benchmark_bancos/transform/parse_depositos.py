@@ -13,6 +13,7 @@ import pandas as pd
 
 from benchmark_bancos.config import TIPOS_ENTIDAD_CAPCOL
 from benchmark_bancos.transform.banco_matching import resolver_banco_codigo
+from benchmark_bancos.transform.canton_matching import aplicar_alias_canton
 from benchmark_bancos.transform.categoria_deposito_matching import (
     resolver_categoria_deposito,
 )
@@ -99,7 +100,9 @@ def parse_depositos_file(
                 # llegó a tener 2 regiones distintas para la misma provincia por esto.
                 "region": region_for_provincia(provincia),
                 "provincia": provincia,
-                "canton": normalize_text(get(row, "CANTON")),
+                "canton": aplicar_alias_canton(
+                    normalize_text(get(row, "CANTON")), provincia
+                ),
                 "tipo_deposito": tipo_deposito,
                 "categoria_deposito": categoria_deposito,
                 "plazo_dias_desde": plazo_dias_desde,

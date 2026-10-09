@@ -16,6 +16,7 @@ import pandas as pd
 
 from benchmark_bancos.config import TIPO_CREDITO_KEYWORDS, TIPOS_ENTIDAD_CAPCOL
 from benchmark_bancos.transform.banco_matching import resolver_banco_codigo
+from benchmark_bancos.transform.canton_matching import aplicar_alias_canton
 from benchmark_bancos.transform.common import (
     extract_single_xlsx,
     find_base_sheets,
@@ -84,7 +85,9 @@ def _parse_sheet(ws, tipo_credito: str, tipo_entidad: str) -> list[dict]:
             "banco_codigo": resolver_banco_codigo(banco, "CAPCOL"),
             "region": region_for_provincia(provincia),
             "provincia": provincia,
-            "canton": normalize_text(get(row, "CANTON")),
+            "canton": aplicar_alias_canton(
+                normalize_text(get(row, "CANTON")), provincia
+            ),
             "tipo_credito": tipo_credito,
         }
         for col_name, estado in ESTADO_COLUMNS.items():

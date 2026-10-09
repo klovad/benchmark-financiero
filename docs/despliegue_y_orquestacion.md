@@ -356,7 +356,7 @@ El Boletín no tiene modo "solo cargar": `boletin` siempre abre el portal antes 
 
 | Fuente | Cadencia de la fuente | Cómo se detecta lo nuevo | Comando recurrente |
 |---|---|---|---|
-| BCE tsp/tsa | semanal (un ZIP acumulado 2008-hoy) | **no se detecta solo**: la descarga se salta si el archivo ya existe (`download_bce.py:25-27`). Hay que mover el archivo local antes | mover `data/raw/bce/tsp_desde_200801.zip` y `tsa_desde_200801.zip`, luego `bce` |
+| BCE tsp/tsa | semanal (un ZIP acumulado 2008-hoy) | **automático** (desde 2026-10-09): descarga condicional con `ETag`/`Last-Modified` guardados en `<zip>.meta.json`; si el servidor responde 304 no baja nada, y si el contenido no cambió el sha256 evita reprocesar | `bce` |
 | BCE TasasHistorico | mensual (una página por mes) | descarga los meses que faltan en disco | `tasas-historicas` |
 | CAPCOL privada / publica | mensual | re-descarga los años pedidos; carga solo ZIP con sha256 nuevo | `all --years <año-anterior> <año-actual>` |
 | Boletín | mensual | re-descarga los años pedidos; carga solo ZIP con sha256 nuevo | `boletin --years <año-anterior> <año-actual>` |
@@ -371,12 +371,12 @@ Semanal (BCE):
 
 ```bash
 cd <ruta-del-proyecto>
-mv -f data/raw/bce/tsp_desde_200801.zip data/raw/bce/tsp_desde_200801.zip.prev 2>/dev/null || true
-mv -f data/raw/bce/tsa_desde_200801.zip data/raw/bce/tsa_desde_200801.zip.prev 2>/dev/null || true
 uv run --no-sync benchmark-bancos bce
 ```
 
-Si el archivo nuevo es idéntico al anterior, se re-descarga pero no se recarga (sha256).
+La descarga es condicional (`ETag`/`Last-Modified` en `data/raw/bce/<zip>.meta.json`): si
+el BCE no publicó una versión nueva, el servidor responde 304 y no se baja nada. Si se baja
+y el contenido es idéntico, no se recarga (sha256).
 Si cambió, se recarga completo a staging; el CDC por columnas solo actualiza las filas
 que cambiaron y el refresh incremental solo recalcula esos `(fecha, banco_codigo)`.
 
@@ -415,7 +415,7 @@ el Boletín (brechas B6, B7).
 | Qué cambió | Qué correr | Por qué |
 |---|---|---|
 | CAPCOL publicó un mes nuevo | `all --years <año>` (o `--portales privada`/`publica`) | ZIP nuevo o con hash distinto → carga + refresh incremental |
-| BCE publicó una semana nueva | mover tsp/tsa locales + `bce` | la descarga no reemplaza archivos existentes |
+| BCE publicó una semana nueva | `bce` | la descarga condicional detecta la versión nueva y la reemplaza |
 | BCE publicó TasasHistorico de un mes nuevo | `tasas-historicas` | descarga solo meses faltantes |
 | Superbancos publicó un Boletín nuevo | `boletin --years <año>` | idem CAPCOL |
 | SEPS publicó un año nuevo | agregar el año en `SEPS_DOWNLOAD_IDS` (`config/sources.py`) + `seps --years <año>` | sin id no hay descarga |
@@ -462,10 +462,6 @@ cd <ruta-del-proyecto>
 exec 9>/tmp/benchmark-bancos.lock
 flock -n 9 || { echo "Otra corrida en curso, se omite"; exit 75; }
 
-for f in tsp tsa; do
-  [ -f "data/raw/bce/${f}_desde_200801.zip" ] && \
-    mv -f "data/raw/bce/${f}_desde_200801.zip" "data/raw/bce/${f}_desde_200801.zip.prev"
-done
 uv run --no-sync benchmark-bancos bce
 ```
 
@@ -513,8 +509,8 @@ foreach ($e in $etapas) {
 }
 ```
 
-El semanal es igual con `Move-Item -Force data\raw\bce\tsp_desde_200801.zip
-data\raw\bce\tsp_desde_200801.zip.prev` (y `tsa`) seguido de la etapa `bce`.
+El semanal es igual, solo con la etapa `bce` (la descarga condicional decide si hay
+versión nueva).
 
 Registrar la tarea (consola con permisos para crear tareas):
 
@@ -712,8 +708,8 @@ UNION ALL SELECT 'fact_pyg', count(*), min(d.fecha), max(d.fecha)
 ORDER BY tabla;
 ```
 
-(2026-10-09: `fact_colocaciones_cartera` 7.756.581 y `fact_captaciones_depositos`
-3.077.474 hasta 2026-07-02; `fact_saldo_cartera` 951.131 y `fact_balance` 4.880.588
+(2026-10-09: `fact_colocaciones_cartera` 7.961.790 y `fact_captaciones_depositos`
+3.157.101 hasta 2026-09-24; `fact_saldo_cartera` 951.131 y `fact_balance` 4.880.588
 hasta 2026-06-30.)
 
 **9.4 Último mes por tipo de entidad** — detecta una fuente que se quedó atrás.
@@ -767,7 +763,7 @@ timeouts, bancos o cantones no resueltos que se descartaron de marts).
 
 | Síntoma | Causa | Qué hacer |
 |---|---|---|
-| `bce` termina en segundos y no trae semanas nuevas | tsp/tsa ya existen en disco; la descarga se salta | mover los dos ZIP (5.2) y volver a correr |
+| `bce` termina en segundos y no trae semanas nuevas | el servidor respondió 304 (`Sin cambios en el servidor`): el BCE aún no publicó otra versión | normal; si se sospecha de un `.meta.json` corrupto, borrarlo y volver a correr |
 | `Ya cargado, se omite` para todo | mismo sha256 que lo ya registrado | normal; si se cambió el parser, ver 6.1 (reproceso) |
 | `No existe .../<año>/cartera, se omite` | el año no se descargó o el portal no tiene esa carpeta | correr `extract --years <año>`; revisar el portal |
 | `Timeout descargando ...` (ERROR) y la etapa termina con código 0 | el portal tardó más de 30 s en entregar el archivo | volver a correr la etapa; los archivos ya bajados se re-descargan pero no se recargan |
@@ -804,7 +800,7 @@ operativo), **mejora** (calidad de vida). Las propuestas de código quedan para
 | B3 | Sin registro de migraciones aplicadas ni etapa `migrate`; las migraciones históricas no son re-ejecutables (TRUNCATE/DELETE/RENAME/DROP) y nada impide re-aplicarlas | importante | `sql/14…:9-13`; `sql/07…:19`; `sql/09…:10`; `sql/15…:46-86`; `sql/21…:51`; `sql/28…:268-269`; `docker-compose.yml:37` | Tabla `meta.schema_migrations(version, aplicada_en, sha256)` + etapa `benchmark-bancos migrate` que aplica en orden solo las faltantes y falla si cambió el hash de una ya aplicada. En una base existente, sembrarla con 00..34 |
 | B4 | Código de salida 0 con fallas parciales: archivos no parseables, timeouts de descarga y años faltantes solo se loguean | importante | `pipeline.py:266, 281-286, 348, 362-367, 88`; `extract/scrape_superbancos.py:89-90`; `extract/scrape_boletin.py:68`; `extract/download_seps.py:68-73` | Contador `(cargados, omitidos_por_error)` por etapa; `cli.main()` sale con 2 si hubo omisiones por error y 1 si hubo excepción (ya detallado en `docs/propuesta_escalabilidad_etl.md` §1.4) |
 | B5 | `dim_fecha.nombre_mes` depende de `lc_time` del servidor: en `postgres:17` (locale por defecto en inglés) quedaría "January". La base local da "Enero" por estar en un Windows en español | importante | `load/load_postgres.py:577` (`TO_CHAR(fecha, 'TMMonth')`) | Calcular el nombre con un arreglo fijo (`(ARRAY['Enero',…,'Diciembre'])[EXTRACT(MONTH FROM fecha)]`) o `SET LOCAL lc_time` en `refresh_marts()`; corregir filas existentes con un `UPDATE` en una migración. No verificado en contenedor |
-| B6 | La descarga de BCE nunca refresca el archivo semanal si ya existe; SEPS igual por carpeta. La operación incremental depende de un paso manual (mover archivos) | importante | `extract/download_bce.py:25-27`; `extract/download_seps.py:38-41`. En la base local, tsp/tsa se cargaron por última vez el 2026-07-19 | Descargar a `.part`, comparar sha256 con el existente y reemplazar si cambió (o `If-Modified-Since`/`ETag`); flag `--refetch` |
+| B6 | ~~La descarga de BCE nunca refresca el archivo semanal si ya existe~~ **BCE resuelto 2026-10-09** (descarga condicional por `ETag`/`Last-Modified`, `tests/test_download_bce.py`). Sigue abierto para SEPS: salta por carpeta, aceptable en años cerrados pero no si la SEPS republica un año | importante (SEPS) | `extract/download_bce.py:25-27`; `extract/download_seps.py:38-41`. En la base local, tsp/tsa se cargaron por última vez el 2026-07-19 | Descargar a `.part`, comparar sha256 con el existente y reemplazar si cambió (o `If-Modified-Since`/`ETag`); flag `--refetch` |
 | B7 | No hay modo "solo cargar" para el Boletín ni `--no-download` para BCE/SEPS/TasasHistorico: reconstruir desde `data/raw` sin red no es posible para todas las fuentes | importante | `pipeline.py:336` (`scrape_boletin` siempre), `pipeline.py:194, 253, 126-127` | Flag `--sin-descarga` (o etapas `boletin-load`) que salte la extracción; `load_seps` ya tiene el parámetro `descargar` (`pipeline.py:116`) sin exponer en el CLI |
 | B8 | Reprocesar archivos tras un cambio de parser/crosswalk exige borrar filas de `meta.source_files` a mano | importante | `pipeline.py:97, 140, 213, 270, 352` (gate por `source_file`+`sha256`) | Flag `--reprocesar` que ignore el gate (el CDC ya hace la carga idempotente), o guardar la versión del parser en `meta.source_files` |
 | B9 | El ETL no está contenerizado (solo Postgres) | mejora | `docker-compose.yml:1-37` (un solo servicio) | Dockerfile de 2.4 + servicio `etl` en compose con `profiles: [etl]` |

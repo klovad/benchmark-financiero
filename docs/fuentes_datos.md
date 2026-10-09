@@ -26,7 +26,7 @@ investiga o integra una fuente nueva — es la referencia antes de rediseñar na
 > (7,7 MB). 2021 trae además `vivienda`, con un solo corte (ene-2021, CFN, 3 filas). Quedan
 > 22.339 filas en `fact_saldo_cartera` y 74.082 en `fact_saldo_depositos`, para 3 entidades
 > y 60 meses. Staging = marts en filas y en saldo, 0 `canton_id` NULL, 1 cantón nuevo
-> `AUTO_INGRESADO` (PABLO VI, Morona Santiago). Las filas de bancos privados y SEPS no
+> `AUTO_INGRESADO` (PABLO VI, Morona Santiago; resultó ser `PABLO SEXTO` escrito de otra forma y se fusionó en `sql/35`). Las filas de bancos privados y SEPS no
 > cambiaron (hash idéntico antes y después) y una segunda corrida no actualizó nada. El
 > Banco de Desarrollo del Ecuador (BdE) solo reporta cartera (Inversión Pública y
 > Productivo), no depósitos. (Hasta 2026-10-05 aparecía en `dim_banco` como "BANCO DEL
