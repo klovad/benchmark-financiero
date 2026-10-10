@@ -235,6 +235,11 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   Programación semanal con `scripts/registrar_tarea.ps1` (Windows) o
   `scripts/actualizar.sh` + cron. Ver `docs/despliegue_y_orquestacion.md` §3 y §7.
 
+- ✅ **Control de conciliación automático** (2026-10-09): `sql/39` + `benchmark-bancos
+  conciliar`, que también corre al final de cada `actualizar`. Compara los saldos por
+  cantón (sumados por entidad) contra la contabilidad (cartera `14 − 1499`, depósitos `21`)
+  con umbrales por tipo de entidad; un mes que no cuadra deja la corrida con código 2.
+  Histórico 2021-2026: todo dentro de umbral.
 - ✅ **Geografía con códigos INEC y `dim_entidad`** (2026-10-09): cantón y provincia
   llevan el código oficial del INEC (los 221 cantones vigentes), cada cantón real es una
   sola fila con su provincia vigente (2 duplicados por escritura y 5 pares con provincia

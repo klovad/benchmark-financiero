@@ -266,7 +266,7 @@ def load_tasas_historicas() -> None:
                 # fuera del try/except que solo envolvía parse_tasas_historicas_file.
                 # Factorizar el parseo permite atraparlo aquí igual que el resto de
                 # fallas por archivo, en vez de abortar la corrida completa.
-                log.warning("%s, se omite", e)
+                log.error("%s, se omite", e)
                 continue
             if fecha < _TASAS_HISTORICAS_DESDE:
                 # Layout HTML anterior, no soportado por el parser (ver "Alcance de los
@@ -287,7 +287,10 @@ def load_tasas_historicas() -> None:
                 # de segmentos, secciones); páginas muy antiguas (~2008-2010) no siempre
                 # calzan con el layout actual -- se documenta y se sigue con el resto en
                 # vez de abortar todo el histórico por un formato antiguo puntual.
-                log.warning(
+                # ERROR (2026-10-09): desde _TASAS_HISTORICAS_DESDE el layout es el
+                # soportado, así que una falla acá es un mes publicado que no se cargó
+                # y la corrida debe terminar con código 2.
+                log.error(
                     "No se pudo parsear %s (layout distinto), se omite: %s",
                     path.name,
                     e,
@@ -354,7 +357,7 @@ def load_boletin(years: list[int], base_dir: Path = RAW_DIR) -> None:
                 try:
                     fecha = parse_fecha_from_boletin_filename(zip_path.name)
                 except ValueError as e:
-                    log.warning("%s, se omite", e)
+                    log.error("%s, se omite", e)
                     continue
 
                 source_hash = sha256_file(zip_path)
@@ -368,7 +371,9 @@ def load_boletin(years: list[int], base_dir: Path = RAW_DIR) -> None:
                     # Igual que TasasHistorico: la plantilla del boletín cambió de
                     # formato entre años (encabezado, columnas de agregado, nombres de
                     # banco) -- se documenta y se sigue con el resto en vez de abortar.
-                    log.warning(
+                    # ERROR (2026-10-09): un boletín publicado que no se pudo cargar;
+                    # la corrida termina con código 2 en vez de 0.
+                    log.error(
                         "No se pudo parsear %s (layout/banco distinto), se omite: %s",
                         zip_path.name,
                         e,

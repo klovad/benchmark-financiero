@@ -176,6 +176,18 @@ modelos predictivos en vez de recalcular market share/HHI desde los `fact_*` cad
 Ambas vistas de market share solo cubren CAPCOL (`fact_saldo_cartera`/`fact_saldo_depositos`,
 2021-01 a 2026-06) — no existe un equivalente para las tasas de BCE ni para el Boletín todavía.
 
+### Vistas de conciliación — `marts.vw_conciliacion_saldos_balance` / `marts.vw_conciliacion_resumen` (`sql/39`, 2026-10-09)
+
+| Vista | Grano | Columnas |
+|---|---|---|
+| `vw_conciliacion_saldos_balance` | entidad × mes × medida (`cartera`, `depositos`) | `fecha_id`, `entidad_id`, `tipo_entidad`, `medida`, `saldo_reportado` (suma de cantones de `fact_saldo_cartera.saldo_total` / `fact_saldo_depositos.saldo`), `saldo_contable` (`14 − 1499` / `21` de `fact_balance`), `diferencia_pct` |
+| `vw_conciliacion_resumen` | mes × tipo de entidad × medida | `entidades`, `mediana_pct`, `dentro_05pct`, `dentro_2pct` (fracción de entidades dentro de ±0,5% / ±2%), `diferencia_agregada_pct` |
+
+Solo entidades con estados financieros cargados (bancos privados vía Boletín, cooperativas y
+mutualistas vía EEFF SEPS); la Banca Pública no tiene contra qué conciliar. Umbrales y
+desvíos conocidos: `src/benchmark_bancos/conciliacion.py` y `docs/gobernanza_datos.md`,
+regla 9.
+
 ### Vista de gobernanza — `marts.vw_entidad_ruc_colisiones` (`sql/22_vw_banco_ruc_colisiones.sql`)
 
 **Para qué**: hace consultable directamente el hueco de gobernanza "7 pares de

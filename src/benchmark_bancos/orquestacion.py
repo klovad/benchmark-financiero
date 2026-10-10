@@ -18,7 +18,7 @@ from collections.abc import Callable, Iterator
 
 import psycopg
 
-from benchmark_bancos import pipeline
+from benchmark_bancos import conciliacion, pipeline
 from benchmark_bancos.config import CAPCOL_PORTALES, DB_CONFIG, RAW_DIR
 from benchmark_bancos.extract.scrape_superbancos import scrape
 
@@ -108,4 +108,11 @@ def actualizar(
         log.error("actualizar: terminó con fuentes fallidas: %s", ", ".join(fallidas))
     else:
         log.info("actualizar: todas las fuentes OK")
+    # Control de calidad final (sql/39): una falla de conciliación se registra como
+    # ERROR (código 2) pero no se cuenta como fuente fallida.
+    try:
+        with psycopg.connect(**DB_CONFIG) as conn:
+            conciliacion.verificar(conn)
+    except Exception:
+        log.exception("actualizar: no se pudo correr el control de conciliación")
     return fallidas

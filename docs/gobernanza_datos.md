@@ -608,7 +608,16 @@ Todas verificadas en código, no solo documentadas:
    cooperativa y mes se comparan contra sus estados financieros (`14 − 1499` y cuenta
    `21`). Mediana 0,00% en 2021-2025; las desviaciones conocidas están explicadas en
    `docs/fuentes_datos.md` §4.0 (mutualistas con cartera VIS/VIP administrada, emisoras de
-   tarjetas).
+   tarjetas). **Automatizada 2026-10-09** (`sql/39`, `src/benchmark_bancos/conciliacion.py`):
+   `marts.vw_conciliacion_saldos_balance` (entidad × mes) y `marts.vw_conciliacion_resumen`
+   (mes × tipo de entidad) cubren también los bancos privados contra el Boletín.
+   `benchmark-bancos conciliar` (y el final de cada `actualizar`) evalúa los últimos 3
+   cortes contra umbrales por tipo y medida, medidos sobre 68 meses: cooperativas
+   mediana ±0,5% y ≥85-90% de entidades en ±2%; mutualistas depósitos ±0,5%; bancos
+   privados cartera ±1% y depósitos ±2% (desvío conocido de -0,5% a -1,1%); la cartera de
+   mutualistas no se evalúa (fideicomiso). Un mes fuera de umbral se registra como ERROR y
+   la corrida termina con código 2. Línea base 2026-10-09: 335 combinaciones de 2021-02 a
+   2026-08, todas dentro de umbral.
 
 ## Huecos de gobernanza conocidos
 

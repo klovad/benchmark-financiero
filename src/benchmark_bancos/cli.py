@@ -6,6 +6,7 @@ Uso (con uv):
     uv run benchmark-bancos migrate --baseline                     # base ya al día sin registro
     uv run benchmark-bancos actualizar                             # todas las fuentes, año en curso
     uv run benchmark-bancos actualizar --fuentes bce seps          # solo algunas
+    uv run benchmark-bancos conciliar [--meses 12]                 # saldos vs. contabilidad
     uv run benchmark-bancos all --years 2021 2022 2023 2024 2025   # CAPCOL: extract + load
     uv run benchmark-bancos load --portales publica                # solo carga, Banca Pública
     uv run benchmark-bancos bce                                    # BCE tsp/tsa
@@ -30,7 +31,7 @@ from pathlib import Path
 
 import psycopg
 
-from benchmark_bancos import migrate, orquestacion, pipeline
+from benchmark_bancos import conciliacion, migrate, orquestacion, pipeline
 from benchmark_bancos.config import CAPCOL_PORTALES, DB_CONFIG, DEFAULT_YEARS, RAW_DIR
 from benchmark_bancos.extract.scrape_superbancos import scrape
 from benchmark_bancos.logging_utils import setup_logging
@@ -40,6 +41,7 @@ log = logging.getLogger(__name__)
 STAGES = [
     "migrate",
     "actualizar",
+    "conciliar",
     "extract",
     "load",
     "all",
@@ -93,6 +95,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="migrate: marcar los archivos actuales como aplicados sin ejecutarlos",
     )
     parser.add_argument(
+        "--meses",
+        type=int,
+        default=3,
+        help="conciliar: cuántos cortes recientes evaluar (default 3)",
+    )
+    parser.add_argument(
         "--log-file",
         type=Path,
         default=None,
@@ -106,6 +114,10 @@ def _ejecutar(args: argparse.Namespace) -> None:
     if args.stage == "migrate":
         with psycopg.connect(**DB_CONFIG, autocommit=True) as conn:
             migrate.migrar(conn, baseline=args.baseline, solo_estado=args.status)
+        return
+    if args.stage == "conciliar":
+        with psycopg.connect(**DB_CONFIG) as conn:
+            conciliacion.verificar(conn, meses=args.meses)
         return
     if args.stage == "actualizar":
         orquestacion.actualizar(args.fuentes, args.years)
@@ -140,7 +152,9 @@ def main(argv: list[str] | None = None) -> int:
 
 def _codigo_salida(args: argparse.Namespace, contador) -> int:
     try:
-        if args.stage == "extract" or (args.stage == "migrate" and args.status):
+        if args.stage in ("extract", "conciliar") or (
+            args.stage == "migrate" and args.status
+        ):
             _ejecutar(args)  # no escriben en la base: sin bloqueo
         else:
             with orquestacion.bloqueo_corrida():
