@@ -9,10 +9,21 @@ Ahora `meta.schema_migrations` guarda cada archivo aplicado con su sha256, y
   superusuario y se corre una sola vez al instalar (o lo hace docker-compose).
 - Una base que ya tenía las migraciones aplicadas por fuera (docker-compose/CI aplican
   todo `sql/` con psql, y las bases anteriores a este cambio) tiene esquema pero el
-  registro vacío: `migrate` se niega a adivinar y pide `--baseline`, que marca como
-  aplicados todos los archivos actuales sin ejecutarlos.
+  registro vacío. Para no adivinar, cada migración reciente declara una SONDA
+  (`SONDAS`): una consulta que es verdadera si el efecto de esa migración ya está en la
+  base. El "nivel" de la base es la última migración N tal que todas las sondas hasta N
+  pasan. Con el registro vacío:
+    * si el nivel es la última migración (base al día, el caso de docker-compose/CI),
+      `migrate` hace el baseline solo y sigue;
+    * si no, se detiene y pide `--baseline`, que marca como aplicadas solo las
+      migraciones hasta el nivel verificado; las siguientes quedan pendientes y las
+      aplica el `migrate` siguiente.
+  Toda migración nueva debe agregar su sonda, salvo las de datos idempotentes listadas
+  en `_SIN_SONDA` (lo exige tests/test_orquestacion.py).
 - Si un archivo ya aplicado cambió (sha256 distinto), avisa con WARNING y no lo vuelve a
-  correr: las migraciones no son re-ejecutables por diseño.
+  correr: las migraciones no son re-ejecutables por diseño. Si el cambio fue a propósito
+  y no altera el resultado (p. ej. la portabilidad del rol en 2026-10-09),
+  `--aceptar-cambios` actualiza el sha256 registrado.
 """
 
 import hashlib
@@ -28,6 +39,45 @@ log = logging.getLogger(__name__)
 
 SQL_DIR = PROJECT_ROOT / "sql"
 _EXCLUIDAS = {"00_roles_db.sql"}
+
+_MESES_ES = (
+    "ARRAY['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto',"
+    "'Septiembre','Octubre','Noviembre','Diciembre']"
+)
+
+# archivo -> consulta booleana: verdadera si la base ya tiene el efecto de esa migración
+# (y sigue siéndolo después de las siguientes). Solo desde sql/28: una base anterior no
+# se puede ubicar con seguridad y hay que revisarla a mano.
+SONDAS: dict[str, str] = {
+    "28_bce_canton_grain.sql": """SELECT EXISTS (SELECT FROM information_schema.columns
+        WHERE table_schema = 'marts' AND table_name = 'fact_colocaciones_cartera'
+          AND column_name = 'canton_id')""",
+    "29_dim_banco_tipo_segundo_piso.sql": """SELECT EXISTS (SELECT FROM pg_constraint
+        WHERE connamespace = 'marts'::regnamespace AND contype = 'c'
+          AND pg_get_constraintdef(oid) LIKE '%ENTIDAD DE SEGUNDO PISO%')""",
+    "31_staging_natural_key_provincia.sql": """SELECT to_regclass(
+        'staging.staging_cartera_natural_key_v2') IS NOT NULL""",
+    "33_drop_raw_jsonb_meta_source_files.sql": """SELECT to_regnamespace('raw') IS NULL
+        AND to_regclass('meta.source_files') IS NOT NULL""",
+    "34_cdc_por_columnas_refresh_incremental.sql": """SELECT
+        to_regclass('meta.refresh_watermark') IS NOT NULL
+        AND NOT EXISTS (SELECT FROM information_schema.columns
+            WHERE table_schema = 'staging' AND column_name = 'row_hash')""",
+    "36_codigos_inec.sql": """SELECT EXISTS (SELECT FROM information_schema.columns
+        WHERE table_schema = 'marts' AND table_name = 'dim_canton'
+          AND column_name = 'codigo_inec')""",
+    "37_dim_entidad.sql": "SELECT to_regclass('marts.dim_entidad') IS NOT NULL",
+    "38_schema_migrations.sql": (
+        "SELECT to_regclass('meta.schema_migrations') IS NOT NULL"
+    ),
+    "39_vw_conciliacion_saldos_balance.sql": (
+        "SELECT to_regclass('marts.vw_conciliacion_resumen') IS NOT NULL"
+    ),
+    "40_dim_fecha_nombre_mes_es.sql": (
+        "SELECT NOT EXISTS (SELECT FROM marts.dim_fecha "
+        f"WHERE nombre_mes IS DISTINCT FROM ({_MESES_ES})[mes])"
+    ),
+}
 
 _DDL_REGISTRO = """
 CREATE SCHEMA IF NOT EXISTS meta;
@@ -45,6 +95,26 @@ class MigracionError(RuntimeError):
     pass
 
 
+def nivel_verificado(conn: psycopg.Connection, archivos: list[Path]) -> str | None:
+    """Última migración N tal que todas las sondas hasta N pasan (None si ni la primera
+    pasa). Las sondas se evalúan en orden y se corta en la primera que falla."""
+    nivel = None
+    with conn.cursor() as cur:
+        for p in archivos:
+            sonda = SONDAS.get(p.name)
+            if sonda is None:
+                continue
+            try:
+                cur.execute(sonda)
+                ok = bool(cur.fetchone()[0])
+            except psycopg.Error:
+                ok = False
+            if not ok:
+                break
+            nivel = p.name
+    return nivel
+
+
 @dataclass
 class Estado:
     aplicadas: dict[str, str]  # archivo -> sha256 registrado
@@ -54,7 +124,9 @@ class Estado:
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    # Finales de línea normalizados: git deja los .sql con CRLF en Windows y LF en Linux,
+    # y la misma migración no debe verse "cambiada" según desde qué máquina se migre.
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def archivos_migracion(sql_dir: Path = SQL_DIR) -> list[Path]:
@@ -95,6 +167,7 @@ def migrar(
     sql_dir: Path = SQL_DIR,
     baseline: bool = False,
     solo_estado: bool = False,
+    aceptar_cambios: bool = False,
 ) -> list[str]:
     """Aplica las migraciones pendientes. `conn` debe estar en autocommit: cada archivo
     maneja su propia transacción (varios traen BEGIN/COMMIT o bloques DO). Devuelve los
@@ -102,9 +175,22 @@ def migrar(
     if not conn.autocommit:
         raise MigracionError("migrar() necesita una conexión en autocommit")
     est = estado(conn, sql_dir, crear_registro=not solo_estado)
+    if aceptar_cambios and est.modificadas:
+        with conn.cursor() as cur:
+            for nombre in est.modificadas:
+                cur.execute(
+                    "UPDATE meta.schema_migrations SET sha256 = %s WHERE archivo = %s",
+                    (_sha256(sql_dir / nombre), nombre),
+                )
+        log.info(
+            "sha256 actualizado (cambios aceptados, no se re-ejecutan): %s",
+            ", ".join(est.modificadas),
+        )
+        est.modificadas = []
     for nombre in est.modificadas:
         log.warning(
-            "Migración ya aplicada cuyo archivo cambió después: %s (no se re-ejecuta)",
+            "Migración ya aplicada cuyo archivo cambió después: %s (no se re-ejecuta; "
+            "si el cambio fue a propósito, `migrate --aceptar-cambios`)",
             nombre,
         )
 
@@ -126,28 +212,46 @@ def migrar(
         )
         return []
 
-    if baseline:
+    if baseline or (not est.aplicadas and est.esquema_existente):
+        archivos = archivos_migracion(sql_dir)
+        nivel = nivel_verificado(conn, archivos)
+        if nivel is None:
+            raise MigracionError(
+                "No se pudo verificar el nivel de la base: ni la sonda de "
+                f"{next(iter(SONDAS))} pasa. Es anterior a 2026-09 o no es una base de "
+                "este proyecto; revisarla a mano (docs/despliegue_y_orquestacion.md §3)."
+            )
+        al_dia = nivel == archivos[-1].name
+        if not baseline and not al_dia:
+            raise MigracionError(
+                "La base ya tiene esquema pero meta.schema_migrations está vacío, y su "
+                f"nivel verificado es {nivel} (no la última migración). Correr "
+                "`benchmark-bancos migrate --baseline` para registrar hasta ese nivel y "
+                "luego `migrate` para aplicar el resto."
+            )
+        hasta = [p for p in est.pendientes if p.name <= nivel]
         with conn.cursor() as cur:
-            for p in est.pendientes:
+            for p in hasta:
                 cur.execute(
                     "INSERT INTO meta.schema_migrations (archivo, sha256, modo) "
                     "VALUES (%s, %s, 'baseline')",
                     (p.name, _sha256(p)),
                 )
         log.info(
-            "Baseline: %d migraciones marcadas como aplicadas sin ejecutarlas",
-            len(est.pendientes),
+            "Baseline%s: %d migraciones registradas sin ejecutarlas (nivel verificado: %s)",
+            "" if baseline else " automático (base al día)",
+            len(hasta),
+            nivel,
         )
-        return [p.name for p in est.pendientes]
-
-    if not est.aplicadas and est.esquema_existente:
-        raise MigracionError(
-            "La base ya tiene esquema pero meta.schema_migrations está vacío (migraciones "
-            "aplicadas por fuera, p. ej. docker-compose o una base anterior a este "
-            "registro). Si la base está al día con sql/, correr "
-            "`benchmark-bancos migrate --baseline`; si no, aplicar a mano lo que falte "
-            "primero."
-        )
+        if baseline:
+            restantes = [p.name for p in est.pendientes if p.name > nivel]
+            if restantes:
+                log.info(
+                    "Quedan pendientes para el próximo `migrate`: %s",
+                    ", ".join(restantes),
+                )
+            return [p.name for p in hasta]
+        est = estado(conn, sql_dir)
 
     aplicadas = []
     for p in est.pendientes:

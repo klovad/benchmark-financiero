@@ -233,7 +233,7 @@ def test_fact_saldo_cartera_pivot_invariant(db_conn):
                 EXTRACT(MONTH FROM %(fecha)s::date)::INT,
                 EXTRACT(DAY FROM %(fecha)s::date)::INT,
                 EXTRACT(QUARTER FROM %(fecha)s::date)::INT,
-                TO_CHAR(%(fecha)s::date, 'TMMonth'),
+                (ARRAY['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'])[EXTRACT(MONTH FROM %(fecha)s::date)::INT],
                 (EXTRACT(YEAR FROM %(fecha)s::date) * 100 + EXTRACT(MONTH FROM %(fecha)s::date))::INT
             )
             ON CONFLICT (fecha_id) DO NOTHING

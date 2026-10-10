@@ -2,7 +2,7 @@
 -- Nomenclatura y categorías según las fichas metodológicas de Superbancos
 -- (colocaciones -> cartera, captaciones -> depositos, renombradas en 2024).
 
-CREATE SCHEMA IF NOT EXISTS staging AUTHORIZATION bp_etl;
+CREATE SCHEMA IF NOT EXISTS staging;  -- dueño: el rol que aplica la migración (sql/00)
 
 CREATE TABLE IF NOT EXISTS staging.cartera (
     id               BIGSERIAL PRIMARY KEY,

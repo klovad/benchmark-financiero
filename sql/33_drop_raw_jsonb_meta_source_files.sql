@@ -19,7 +19,7 @@
 -- meta.source_files conserva sus columnas, PK y CHECK tal cual (ALTER ... SET SCHEMA
 -- mueve también constraints e índices).
 
-CREATE SCHEMA IF NOT EXISTS meta AUTHORIZATION bp_etl;
+CREATE SCHEMA IF NOT EXISTS meta;  -- dueño: el rol que aplica la migración (sql/00)
 
 ALTER TABLE IF EXISTS raw.source_files SET SCHEMA meta;
 

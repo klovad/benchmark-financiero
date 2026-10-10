@@ -61,24 +61,30 @@ uv run playwright install chromium
 
 # 2. Variables de entorno (leidas tanto por src/benchmark_bancos/config/ como por docker-compose.yml,
 #    que autocarga este .env de la raiz -- crearlo ANTES del paso 3)
-copy .env.example .env    # ajustar credenciales si no usaste las de ejemplo
+copy .env.example .env    # ajustar credenciales; POSTGRES_USER/POSTGRES_DB pueden tener cualquier nombre
 
 # 3. Base de datos -- dos caminos:
 
-# 3a. Docker (recomendado, reproducible): levanta Postgres 17 y aplica todo sql/ via
-#     docker-entrypoint-initdb.d con las credenciales del .env. Despues, una sola vez,
-#     registrar esas migraciones como aplicadas:
+# 3a. Docker (recomendado, reproducible): levanta Postgres 17, crea rol y base con los
+#     nombres del .env y aplica todo sql/ via docker-entrypoint-initdb.d. El primer
+#     `migrate` comprueba que la base esta al dia y registra esas migraciones solo:
 docker compose up -d
-uv run benchmark-bancos migrate --baseline
+uv run benchmark-bancos migrate
 
-# 3b. Postgres local ya instalado: sql/00 (rol y base) como superusuario, y el resto
-#     con `migrate`, que aplica en orden solo lo pendiente y lo registra en
-#     meta.schema_migrations:
-& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U postgres -d postgres -f sql/00_roles_db.sql
+# 3b. Postgres local ya instalado: sql/00 (rol y base) como superusuario, con los nombres
+#     del .env pasados con -v (o tomados de POSTGRES_USER/DB/PASSWORD del entorno con
+#     psql >= 15), y el resto con `migrate` corrido como ese rol, que aplica en orden
+#     solo lo pendiente y lo registra en meta.schema_migrations:
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U postgres -d postgres `
+    -v app_user=bp_etl -v app_db=benchmark_cartera_depositos -v app_password=changeme `
+    -f sql/00_roles_db.sql
 uv run benchmark-bancos migrate
 
 # En cualquier caso, para ver lo pendiente despues de un `git pull`:
 uv run benchmark-bancos migrate --status
+# Base instalada antes de 2026-10-09: una vez, aceptar las migraciones editadas ese dia
+# (sql/01, 02, 03, 33, 34; sin efecto sobre una base existente):
+uv run benchmark-bancos migrate --aceptar-cambios
 
 # 4. Primera carga (en este orden)
 uv run benchmark-bancos bce                                            # BCE tsp/tsa semanales
@@ -234,6 +240,13 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   Postgres contra corridas simultáneas, códigos de salida 0/1/2/75 y `--log-file`.
   Programación semanal con `scripts/registrar_tarea.ps1` (Windows) o
   `scripts/actualizar.sh` + cron. Ver `docs/despliegue_y_orquestacion.md` §3 y §7.
+- ✅ **Portabilidad de servidor** (2026-10-09): rol y base configurables (`sql/00` toma
+  los nombres de `-v` o del `.env`; las migraciones ya no fijan `bp_etl`, los esquemas
+  quedan a nombre de quien migra, y CI lo verifica con otro rol); `dim_fecha.nombre_mes`
+  en español sin depender del idioma del servidor (`sql/40`); `migrate` ubica una base
+  sin registro con sondas por migración (baseline automático en docker-compose/CI,
+  `--baseline` parcial en bases atrasadas) y `--aceptar-cambios` para migraciones
+  editadas a propósito. Ver `docs/despliegue_y_orquestacion.md` §2.5 y §3.
 
 - ✅ **Control de conciliación automático** (2026-10-09): `sql/39` + `benchmark-bancos
   conciliar`, que también corre al final de cada `actualizar`. Compara los saldos por

@@ -3,7 +3,8 @@
 Uso (con uv):
     uv run benchmark-bancos migrate                                # aplica sql/ pendientes
     uv run benchmark-bancos migrate --status                       # solo informa
-    uv run benchmark-bancos migrate --baseline                     # base ya al día sin registro
+    uv run benchmark-bancos migrate --baseline                     # registrar una base sin registro
+    uv run benchmark-bancos migrate --aceptar-cambios              # tras editar una migración aplicada
     uv run benchmark-bancos actualizar                             # todas las fuentes, año en curso
     uv run benchmark-bancos actualizar --fuentes bce seps          # solo algunas
     uv run benchmark-bancos conciliar [--meses 12]                 # saldos vs. contabilidad
@@ -92,7 +93,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--baseline",
         action="store_true",
-        help="migrate: marcar los archivos actuales como aplicados sin ejecutarlos",
+        help="migrate: registrar sin ejecutar las migraciones hasta el nivel verificado por sondas",
+    )
+    parser.add_argument(
+        "--aceptar-cambios",
+        action="store_true",
+        help="migrate: actualizar el sha256 de migraciones ya aplicadas que se editaron a propósito",
     )
     parser.add_argument(
         "--meses",
@@ -113,7 +119,12 @@ def _ejecutar(args: argparse.Namespace) -> None:
     years = args.years or DEFAULT_YEARS
     if args.stage == "migrate":
         with psycopg.connect(**DB_CONFIG, autocommit=True) as conn:
-            migrate.migrar(conn, baseline=args.baseline, solo_estado=args.status)
+            migrate.migrar(
+                conn,
+                baseline=args.baseline,
+                solo_estado=args.status,
+                aceptar_cambios=args.aceptar_cambios,
+            )
         return
     if args.stage == "conciliar":
         with psycopg.connect(**DB_CONFIG) as conn:

@@ -615,6 +615,8 @@ _REFRESH_MARTS_SQL = """
 -- dim_fecha: grano día (fecha_id = YYYYMMDD), conformed dimension única para grano
 -- mensual (CAPCOL/Boletín) y semanal (BCE, cuando se sumen sus fact tables). anio_mes
 -- es la llave de roll-up para comparar ambos grano sin joins adicionales.
+-- nombre_mes sale de una lista fija en español (2026-10-09): TO_CHAR(fecha, 'TMMonth')
+-- dependía del lc_time del servidor ('January' en un postgres:17 estándar).
 INSERT INTO marts.dim_fecha (fecha_id, fecha, anio, mes, dia, trimestre, nombre_mes, anio_mes)
 SELECT DISTINCT
     TO_CHAR(fecha, 'YYYYMMDD')::INT,
@@ -623,7 +625,7 @@ SELECT DISTINCT
     EXTRACT(MONTH FROM fecha)::INT,
     EXTRACT(DAY FROM fecha)::INT,
     EXTRACT(QUARTER FROM fecha)::INT,
-    TO_CHAR(fecha, 'TMMonth'),
+    (ARRAY['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'])[EXTRACT(MONTH FROM fecha)::INT],
     (EXTRACT(YEAR FROM fecha) * 100 + EXTRACT(MONTH FROM fecha))::INT
 FROM (
     SELECT fecha FROM staging.cartera

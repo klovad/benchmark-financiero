@@ -18,7 +18,11 @@ la forma de correr el pipeline.
   2026-10-09: `migrate` sobre una base nueva `postgres:17` (aplica 01..38), segunda
   corrida "base al día", `migrate --baseline` sobre la base local existente,
   `migrate --status`, `actualizar` completo en Windows y el código 75 con otra sesión
-  sosteniendo el bloqueo. La primera carga completa sobre una base nueva sigue descrita a
+  sosteniendo el bloqueo. Cambios de portabilidad del mismo día (verificados por quien los
+  implementó): `postgres:17` con `POSTGRES_USER` distinto de `bp_etl` vía initdb (no se
+  crea `bp_etl`; `meta`/`staging`/`marts` a nombre del rol configurado), `nombre_mes` en
+  español sobre un servidor `en_US.utf8`, y `migrate` con sondas (baseline automático y
+  `--baseline` parcial). La primera carga completa sobre una base nueva sigue descrita a
   partir del código (`src/benchmark_bancos/cli.py`, `pipeline.py`, `orquestacion.py`) y
   de CI (`.github/workflows/test.yml`).
 - Los comandos usan `uv run benchmark-bancos <etapa>`. Equivalentes:
@@ -51,9 +55,9 @@ lee el mismo `.env`.
 |---|---|---|
 | `POSTGRES_HOST` | `localhost` | host de la base |
 | `POSTGRES_PORT` | `5432` | puerto (docker-compose también lo usa para publicar el puerto) |
-| `POSTGRES_DB` | `benchmark_cartera_depositos` | nombre de la base |
-| `POSTGRES_USER` | `bp_etl` | rol de la app. **Debe ser `bp_etl`**: las migraciones lo tienen fijo (ver brecha B2) |
-| `POSTGRES_PASSWORD` | `changeme` | contraseña. Cambiarla en cualquier servidor real |
+| `POSTGRES_DB` | `benchmark_cartera_depositos` | nombre de la base. Cualquier nombre (desde 2026-10-09 `sql/00` lo toma de aquí) |
+| `POSTGRES_USER` | `bp_etl` | rol de la app. Cualquier nombre desde 2026-10-09 (brecha B2 resuelta): `sql/00` lo crea con este nombre y las migraciones 01..NN dejan los esquemas a nombre de quien las aplica. **`migrate` debe correr con este mismo rol**, no con un superusuario, para que sea dueño de `meta`/`staging`/`marts` |
+| `POSTGRES_PASSWORD` | `changeme` | contraseña. Cambiarla en cualquier servidor real; `sql/00` la usa al crear el rol |
 | `SCRAPER_YEARS` | `2021,2022,2023,2024,2025` | años por defecto de `--years` |
 | `SCRAPER_DOWNLOAD_DIR` | `data/raw` | relativo a la raíz del proyecto; destino de descargas |
 | `BENCHMARK_HOME` | (sin definir) | fija la raíz del proyecto. Si no está, se busca el primer directorio con `pyproject.toml` desde el cwd hacia arriba. Necesaria si el paquete se instala fuera del repo o el scheduler arranca en otro directorio |
@@ -65,7 +69,7 @@ Derivados (no configurables por separado): `data/raw/bce`, `data/raw/seps`,
 
 | Etapa | Qué hace | Red | Navegador | Opciones que respeta | Refresh de marts al final |
 |---|---|---|---|---|---|
-| `migrate` | aplica en orden los `sql/NN_*.sql` pendientes (excepto `sql/00`) y los anota en `meta.schema_migrations`; `--status` solo informa; `--baseline` marca los archivos actuales como aplicados sin ejecutarlos | no | no | `--status`, `--baseline` | no |
+| `migrate` | aplica en orden los `sql/NN_*.sql` pendientes (excepto `sql/00`) y los anota en `meta.schema_migrations`; `--status` solo informa; `--baseline` registra sin ejecutar las migraciones hasta el nivel verificado por sondas; `--aceptar-cambios` actualiza el sha256 de migraciones ya aplicadas que se editaron a propósito (sección 3) | no | no | `--status`, `--baseline`, `--aceptar-cambios` | no |
 | `actualizar` | actualización incremental de todas las fuentes, en orden `bce`, `capcol` (extract + load de ambos portales), `boletin`, `tasas-historicas`, `seps`; cada fuente aislada (si una falla, ERROR y sigue con las demás) | sí | sí (capcol, boletin) | `--fuentes`, `--years` (default: año en curso; en enero-febrero también el anterior). Ignora `--out` y `--portales` | sí (cada fuente hace el suyo) |
 | `extract` | descarga ZIP de CAPCOL (re-descarga y sobrescribe todos los archivos de los años pedidos) | sí | sí | `--years`, `--out`, `--portales` | no |
 | `load` | carga a staging los ZIP de CAPCOL ya descargados (salta por sha256) | no | no | `--years`, `--out`, `--portales` | sí |
@@ -75,6 +79,7 @@ Derivados (no configurables por separado): `data/raw/bce`, `data/raw/seps`,
 | `boletin` | descarga (siempre) + carga el Boletín Financiero | sí | sí | `--years`, `--out` | sí |
 | `seps` | descarga los reportes del año **solo si la carpeta no tiene ZIP** + carga | sí (si falta) | no | `--years` (ignora `--out`) | sí |
 | `refresh` | recalcula `marts.*` desde staging (incremental por marca de agua) | no | no | `--full` | es la etapa |
+| `conciliar` | control saldos vs. contabilidad, solo lectura (sección 9) | no | no | `--meses` | no |
 
 `--portales` acepta `privada` y/o `publica` (default: ambos). `--fuentes` acepta `bce`,
 `capcol`, `boletin`, `tasas-historicas` y/o `seps`. `--log-file <archivo>` (todas las
@@ -158,8 +163,11 @@ uv run --no-sync playwright install --with-deps chromium
 
 cp .env.example .env
 chmod 600 .env          # contiene la contraseña de la base
-# editar .env: POSTGRES_HOST/PORT/PASSWORD
+# editar .env: POSTGRES_HOST/PORT/DB/USER/PASSWORD (rol y base con el nombre que se quiera)
 ```
+
+`psql` 15 o superior para `sql/00` si se quiere que tome rol/base/contraseña del entorno
+(`\getenv`); con un `psql` más viejo, pasarlos con `-v` (sección 3.1).
 
 ### 2.2 Windows sin Docker [verificado en Windows 11 salvo la instalación de Postgres]
 
@@ -189,11 +197,13 @@ docker compose up -d    # postgres:17, volumen bp_benchmark_pgdata, puerto ${POS
 docker compose ps       # esperar a "healthy"
 ```
 
-En el **primer** arranque (volumen vacío) el contenedor aplica todo `sql/` en orden
-lexicográfico vía `docker-entrypoint-initdb.d`, pero no las anota en
-`meta.schema_migrations`: hay que correr **una vez** `migrate --baseline` (3.1). En
-arranques posteriores **no** vuelve a aplicar nada: las migraciones nuevas se aplican
-con `migrate` (3.2).
+En el **primer** arranque (volumen vacío) el contenedor crea el rol `POSTGRES_USER` y la
+base `POSTGRES_DB` del `.env` (cualquier nombre), corre `sql/00` (no-op: ya existen) y
+aplica `sql/01..NN` en orden lexicográfico vía `docker-entrypoint-initdb.d` como ese rol,
+sin anotarlas en `meta.schema_migrations`. El primer `migrate` lo resuelve solo:
+verifica con las sondas que la base está al día y la registra (**baseline automático**,
+3.1); no hace falta `--baseline` a mano. En arranques posteriores el contenedor **no**
+vuelve a aplicar nada: las migraciones nuevas se aplican con `migrate` (3.2).
 
 Después, instalar el ETL en el host con 2.1 o 2.2 (con `POSTGRES_HOST=localhost`).
 
@@ -236,16 +246,26 @@ uno está en `meta.source_files`.
 
 - **Otro Postgres (gestionado o en otro host: RDS, Azure Database for PostgreSQL, Cloud
   SQL, etc.)**: portable sin cambios de código. Requisitos: `COPY ... FROM STDIN`
-  (lo soportan todos los gestionados), extensión `plpgsql` (única extensión usada,
-  verificado en `pg_extension`), un rol llamado `bp_etl` dueño de los esquemas (brecha
-  B2), y `lc_time` en español si se quiere `dim_fecha.nombre_mes` en español (brecha B5).
-  Apuntar `POSTGRES_HOST/PORT/DB/USER/PASSWORD`, crear rol y base (equivalente de
-  `sql/00`) y correr `benchmark-bancos migrate` (sección 3).
+  (lo soportan todos los gestionados) y la extensión `plpgsql` (única usada, verificado
+  en `pg_extension`). Desde 2026-10-09 ya no hace falta un rol llamado `bp_etl` (B2) ni
+  `lc_time` en español (B5). Pasos [no probado en un servicio gestionado]:
+  1. Rol y base, una de dos:
+     - **usar el rol y la base que entrega el proveedor**: poner sus nombres en
+       `POSTGRES_USER`/`POSTGRES_DB` y saltar `sql/00`. El rol necesita poder crear
+       esquemas en esa base (dueño de la base, o `GRANT CREATE ON DATABASE`);
+     - **crear un rol propio** con `sql/00` parametrizado (3.1), conectado con el usuario
+       administrador del servicio (los gestionados no dan superusuario, pero su admin
+       tiene `CREATEROLE`/`CREATEDB`). En Postgres 16+, `CREATE DATABASE ... OWNER <rol>`
+       exige que el admin pueda asumir ese rol: si `sql/00` falla en ese paso, correr
+       antes `GRANT <rol> TO <admin>` [no probado].
+  2. `benchmark-bancos migrate` **con el rol de la app** (el del `.env`), nunca con el
+     admin: los esquemas quedan a nombre de quien ejecuta. `migrate` no necesita
+     superusuario (ninguna migración 01..NN crea extensiones ni roles).
   Si el proveedor exige TLS, hoy no hay variable para `sslmode` (brecha B10).
 - **Otro motor (SQL Server, Databricks/Delta, Snowflake)**: **no portable sin un
   adaptador**. Toda la capa de carga es SQL de Postgres (`COPY`, `ON CONFLICT`,
-  `IS DISTINCT FROM`, tablas temporales `ON COMMIT DROP`, `TO_CHAR(... 'TMMonth')`,
-  `DO $$`, `\gexec`). El inventario construcción por construcción, con su equivalente en
+  `IS DISTINCT FROM`, tablas temporales `ON COMMIT DROP`, `DO $$`, y en `sql/00`
+  `\gexec`/`\getenv`/`\if` de psql). El inventario construcción por construcción, con su equivalente en
   SQL Server y Databricks/Delta, está en `docs/architecture.md`, sección "Portabilidad de
   motor". Para BI sobre otro motor, lo práctico es replicar `marts.*` (pg_dump, Parquet
   como `scripts/export_sample_parquet.py`, o CDC del motor) en vez de portar el ETL.
@@ -261,56 +281,97 @@ Desde 2026-10-09 las migraciones se aplican con `benchmark-bancos migrate`
 - aplica **solo los pendientes**, en orden lexicográfico, uno por uno (cada archivo se
   envía completo en autocommit y se anota al terminar); si uno falla, sale con código 1 y
   los anteriores quedan aplicados y registrados (corregir y volver a correr `migrate`);
-- **excluye `sql/00_roles_db.sql`** (crea rol y base, necesita superusuario): se corre a
-  mano una vez, o lo hace docker-compose;
-- si la base **ya tiene esquema pero el registro está vacío** (base armada por
-  docker-compose o CI, que aplican `sql/` con `psql`, o base anterior a 2026-10-09) se
-  niega a adivinar y pide `--baseline`;
-- si un archivo ya aplicado **cambió** (sha256 distinto) avisa con `WARNING` y **no** lo
-  vuelve a ejecutar;
+- **excluye `sql/00_roles_db.sql`** (crea rol y base; necesita superusuario o un admin con
+  `CREATEROLE`/`CREATEDB`): se corre a mano una vez, o lo hace docker-compose;
+- **no nombra ningún rol**: desde 2026-10-09 `sql/01`, `02`, `03`, `33` y `34` crean los
+  esquemas sin `AUTHORIZATION bp_etl`, así que `meta`/`staging`/`marts` quedan a nombre
+  del rol que corre `migrate` (el `POSTGRES_USER` del `.env`). Correrlo siempre con el rol
+  de la app, no con `postgres`;
+- **sondas** (`migrate.py`: `SONDAS` y `nivel_verificado`): cada migración desde la 28
+  declara una consulta que es verdadera si su efecto ya está en la base. El **nivel
+  verificado** es la última migración N tal que todas las sondas hasta N pasan. Se usan
+  solo cuando la base **ya tiene esquema pero el registro está vacío** (base armada por
+  docker-compose o CI, que aplican `sql/` con `psql`, o base anterior a 2026-10-09):
+  - nivel = última migración → **baseline automático**: registra todo como `baseline` y
+    sigue (caso docker-compose/CI: no hace falta intervenir);
+  - nivel anterior a la última → sale con código 1 indicando el nivel y pide
+    `--baseline`, que registra **solo hasta ese nivel**; el resto queda pendiente para el
+    `migrate` siguiente;
+  - ninguna sonda pasa (base anterior a 2026-09, cuando no existía `sql/28`, o base ajena)
+    → código 1: revisar a mano (3.3);
+- si un archivo ya aplicado **cambió** (sha256 distinto) avisa con `WARNING` en cada
+  corrida y **no** lo vuelve a ejecutar. Si el cambio fue a propósito y no altera el
+  resultado, `migrate --aceptar-cambios` actualiza el sha256 registrado (sin re-ejecutar);
 - muestra en el log los `RAISE NOTICE` propios de las migraciones (p. ej. el de `sql/36`
   que pide reprocesar el BCE) y oculta el ruido de `IF [NOT] EXISTS ..., skipping`;
 - toma el bloqueo de 1.3.1 (salvo `--status`), así que no corre en medio de una carga.
-  `--status` no ejecuta migraciones, pero crea `meta.schema_migrations` vacía si no
-  existe (`migrate.py:66`).
+  `--status` es de solo lectura: no crea el registro si falta, y avisa con `WARNING` si
+  la base tiene esquema y el registro está vacío.
 
 ### 3.1 Base nueva
 
-**Sin Docker** [verificado 2026-10-09 sobre una base nueva `postgres:17`: `migrate`
-aplicó 01..38 y una segunda corrida dijo "base al día"; el paso de `sql/00` con `psql`
-no probado fuera de CI]:
+**Paso 1: rol y base (`sql/00`, una vez, como superusuario o admin).** Desde 2026-10-09
+el archivo toma rol, base y contraseña, en este orden, de: variables de psql
+(`-v app_user=... -v app_db=... -v app_password=...`), variables de entorno
+`POSTGRES_USER`/`POSTGRES_DB`/`POSTGRES_PASSWORD` (vía `\getenv`, **requiere psql 15 o
+superior**), o los defaults `bp_etl`/`benchmark_cartera_depositos`/`changeme`. Es
+idempotente: si el rol o la base ya existen no hace nada (tampoco cambia la contraseña de
+un rol existente).
+
+Linux/macOS, tomando todo del `.env` [no probado con psql fuera de un contenedor; la
+lectura desde el entorno se verificó en el initdb de `postgres:17`]:
 
 ```bash
-set -a; . ./.env; set +a
-# 00 crea el rol bp_etl (password 'changeme') y la base: requiere superusuario
+set -a; . ./.env; set +a          # exporta POSTGRES_USER/DB/PASSWORD: sql/00 los lee con \getenv
 psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -f sql/00_roles_db.sql
-# Cambiar la contraseña literal de sql/00 por la del .env
+```
+
+Con psql < 15 (sin `\getenv`), o para no depender del entorno, pasar los nombres con
+`-v` [no probado]:
+
+```bash
 psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 \
-  -c "ALTER ROLE bp_etl PASSWORD '$POSTGRES_PASSWORD'"
-# 01..NN como bp_etl, con registro
+     -v app_user="$POSTGRES_USER" -v app_db="$POSTGRES_DB" -v app_password="$POSTGRES_PASSWORD" \
+     -f sql/00_roles_db.sql
+```
+
+Windows (PowerShell) [no probado]:
+
+```powershell
+$psql = "C:\Program Files\PostgreSQL\17\bin\psql.exe"
+& $psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 `
+        -v app_user=<rol-del-.env> -v app_db=<base-del-.env> -v app_password=<clave-del-.env> `
+        -f sql/00_roles_db.sql
+```
+
+Sin `-v` ni variables de entorno se crean `bp_etl` con contraseña `changeme`: cambiarla
+después con `ALTER ROLE bp_etl PASSWORD '...'`. En un Postgres gestionado se puede saltar
+este paso y usar el rol que entrega el proveedor (2.5).
+
+**Paso 2: migraciones 01..NN como el rol de la app** [verificado 2026-10-09 sobre una
+base nueva `postgres:17`: `migrate` aplicó todas y una segunda corrida dijo "base al
+día"]:
+
+```bash
 uv run --no-sync benchmark-bancos migrate
 uv run --no-sync benchmark-bancos migrate --status     # "N aplicadas, 0 pendientes"
 ```
 
-Windows (PowerShell), mismo procedimiento [no probado]:
-
-```powershell
-$psql = "C:\Program Files\PostgreSQL\17\bin\psql.exe"
-& $psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f sql/00_roles_db.sql
-& $psql -h localhost -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -c "ALTER ROLE bp_etl PASSWORD '<la-del-.env>'"
-uv run --no-sync benchmark-bancos migrate
-```
-
-**Con Docker**: `docker compose up -d` sobre un volumen vacío aplica todo `sql/` con
-`psql` (2.3) sin anotarlo. Después, una sola vez:
+**Con Docker**: `docker compose up -d` sobre un volumen vacío crea rol y base desde el
+`.env` y aplica todo `sql/` con `psql` (2.3), sin registro. El primer `migrate` hace el
+baseline automático [verificado 2026-10-09 con `postgres:17` inicializado como lo hace
+docker-compose (`POSTGRES_USER` distinto de `bp_etl`, `sql/` en
+`docker-entrypoint-initdb.d`); `docker compose up` en sí, no probado]:
 
 ```bash
-uv run --no-sync benchmark-bancos migrate --baseline   # marca 01..NN como aplicadas
-uv run --no-sync benchmark-bancos migrate --status     # 0 pendientes
+uv run --no-sync benchmark-bancos migrate          # log: "Baseline automático (base al día): N migraciones registradas ..."
+uv run --no-sync benchmark-bancos migrate --status # 0 pendientes
 ```
 
-[no probado con docker-compose; `--baseline` verificado sobre la base local]. Lo mismo
-aplica a una base armada con el bucle `psql` de CI.
+Lo mismo vale para una base armada con el bucle `psql` de CI. **CI verifica portabilidad
+de rol**: el job de integración usa un rol distinto de `bp_etl`, aplica `sql/` con `psql`
+y después corre `benchmark-bancos migrate` (baseline automático) y comprueba que queden
+0 pendientes (`.github/workflows/test.yml`).
 
 ### 3.2 Base existente: aplicar solo las migraciones nuevas
 
@@ -320,31 +381,57 @@ aplica a una base armada con el bucle `psql` de CI.
 > `sql/10` borra filas; `sql/15`, `16` y `21` renombran o eliminan tablas y fallan (o
 > peor) en una segunda pasada. `migrate` existe para evitarlo.
 
-**Primera vez en una base anterior a 2026-10-09** (registro vacío) [verificado sobre la
-base local: `--baseline` marcó 01..38]:
+**Base ya registrada antes de 2026-10-09 (una vez, tras actualizar el repo).** Ese día se
+editaron `sql/01`, `02`, `03`, `33` y `34` (se quitó `AUTHORIZATION bp_etl`; en una base
+existente no cambia nada: los esquemas siguen a nombre del rol que los creó). Hasta
+aceptar el cambio, `migrate` y `migrate --status` avisan `Migración ya aplicada cuyo
+archivo cambió después` por cada una:
 
-1. Confirmar que la base está al día con el `sql/` del commit desplegado (consulta de
-   3.3 y `git log` de lo desplegado). `--baseline` marca **todos** los archivos actuales
-   como aplicados sin comprobar nada: si a la base le falta alguno, aplicarlo antes a
-   mano con `psql -v ON_ERROR_STOP=1 -f sql/NN_<nombre>.sql`.
-2. `uv run --no-sync benchmark-bancos migrate --baseline`.
+```bash
+uv run --no-sync benchmark-bancos migrate --aceptar-cambios   # actualiza el sha256, no re-ejecuta; luego aplica lo pendiente
+uv run --no-sync benchmark-bancos migrate --status            # 0 pendientes, sin WARNING
+```
+
+[`--aceptar-cambios` verificado por quien lo implementó; en esta revisión solo se
+comprobó que la base local, ya actualizada, da "40 aplicadas, 0 pendientes" sin avisos.]
+`--aceptar-cambios` acepta **todos** los archivos modificados a la vez: usarlo solo si el
+cambio fue a propósito (revisar antes con `git log -p -- sql/NN_<nombre>.sql`).
+
+**Base con esquema y sin registro, a medio migrar** (base anterior a 2026-10-09 que nunca
+pasó por `migrate`, o un respaldo viejo restaurado) [verificado 2026-10-09: base
+aplicada hasta `sql/36` → `migrate` falló con "nivel verificado es 36_codigos_inec.sql",
+`--baseline` registró hasta la 36 y el `migrate` siguiente aplicó 37-40]:
+
+```bash
+uv run --no-sync benchmark-bancos migrate --status     # WARNING: registro vacío
+uv run --no-sync benchmark-bancos migrate              # código 1: "... su nivel verificado es NN_..."
+uv run --no-sync benchmark-bancos migrate --baseline   # registra hasta NN; log: "Quedan pendientes para el próximo `migrate`: ..."
+uv run --no-sync benchmark-bancos migrate              # aplica las que quedaron pendientes
+```
+
+El baseline cubre también las migraciones **sin sonda** (todas las anteriores a la 28, y
+`sql/30`, `32` y `35`, migraciones de datos idempotentes que caen entre dos sondas). Si
+`migrate` dice que ni la primera sonda pasa, la base es anterior a 2026-09: compararla a
+mano con `sql/` (3.3), aplicar lo que falte con `psql -v ON_ERROR_STOP=1 -f
+sql/NN_<nombre>.sql` hasta pasar al menos la 28, y recién entonces `--baseline`.
 
 **Cada despliegue** (registro ya sembrado):
 
 1. Respaldo previo (sección 8).
 2. `git pull` y `uv run --no-sync benchmark-bancos migrate --status`: lista los
-   pendientes por nombre.
+   pendientes por nombre y avisa si algún archivo aplicado cambió.
 3. Leer el encabezado de cada pendiente: algunas exigen un reproceso o un
    `refresh --full` después.
 4. `uv run --no-sync benchmark-bancos migrate`. Revisar en el log los `NOTICE` de cada
-   archivo y cualquier `WARNING` de "archivo cambió".
+   archivo y cualquier `WARNING` de "archivo cambió" (si el cambio fue intencional y así
+   lo indica el commit, `migrate --aceptar-cambios`).
 5. Si la migración lo pide, el reproceso indicado; si no dice nada, correr
    `uv run benchmark-bancos refresh --full` es seguro.
 
 Con el Postgres de docker-compose el procedimiento es el mismo desde el host
 (`POSTGRES_HOST=localhost`); no hace falta `docker compose exec`.
 
-Migraciones de 2026-10-09 (35 a 38):
+Migraciones de 2026-10-09 (35 a 40):
 - `sql/35`: fusiona 2 cantones duplicados. No requiere nada después.
 - `sql/36`: códigos INEC y fusión de 5 pares con provincia anterior. **Si emite el
   NOTICE `filas BCE con provincia anterior borradas`, correr `uv run benchmark-bancos
@@ -352,8 +439,36 @@ Migraciones de 2026-10-09 (35 a 38):
 - `sql/37`: renombra `marts.dim_banco` → `marts.dim_entidad` y `banco_id` →
   `entidad_id`. Cualquier consulta o reporte externo que use los nombres viejos debe
   actualizarse.
-- `sql/38`: crea `meta.schema_migrations` (mismo DDL que `migrate.py:32-41`). No requiere
-  nada después; en bases armadas con `psql` queda vacía hasta el `--baseline`.
+- `sql/38`: crea `meta.schema_migrations` (mismo DDL que `_DDL_REGISTRO` en
+  `migrate.py`). En bases armadas con `psql` queda vacía hasta el primer `migrate`
+  (baseline automático).
+- `sql/39`: vistas de conciliación saldos vs. contabilidad (sección 9). Nada después.
+- `sql/40`: corrige `marts.dim_fecha.nombre_mes` a español en bases cargadas sobre un
+  servidor con `lc_time` en otro idioma (antes salía `January`); en un servidor en
+  español no cambia nada. Desde ese día `refresh_marts()` usa una lista fija de meses
+  (`load/load_postgres.py`, `_REFRESH_MARTS_SQL`), sin depender del locale. Nada después.
+
+### 3.2.1 Agregar una migración nueva (desarrollo)
+
+1. Crear `sql/NN_<descripcion>.sql` con el número siguiente. **Sin nombres de rol**
+   (`AUTHORIZATION`, `OWNER TO`, `GRANT ... TO <rol>`): los objetos quedan a nombre de
+   quien aplica. Encabezado que diga qué hace y si requiere reproceso o `refresh --full`.
+2. **Agregar su sonda en `SONDAS`** (`src/benchmark_bancos/migrate.py`): un `SELECT
+   <booleano>` verdadero cuando el efecto de la migración está en la base **y que lo siga
+   siendo después de todas las siguientes** (p. ej. `to_regclass(...) IS NOT NULL`, una
+   columna en `information_schema.columns`). Una migración de datos idempotente sin efecto
+   verificable puede quedar sin sonda agregándola a `_SIN_SONDA` en el test, pero **la
+   última migración siempre necesita sonda** (el baseline automático compara contra
+   ella). `tests/test_orquestacion.py::test_toda_migracion_desde_la_28_tiene_sonda` lo
+   exige y corre sin base.
+3. Probar sobre una base de desarrollo: `migrate`, y que `migrate --status` dé 0
+   pendientes. Con base de integración: `uv run pytest -m integration
+   tests/test_orquestacion.py` (nunca contra producción, ver sección 10).
+4. Agregarla a la lista "Migraciones de ..." de 3.2 y actualizar este runbook si cambia
+   la operación.
+5. No editar migraciones ya aplicadas. Si hace falta (un cambio sin efecto sobre el
+   resultado, como el de 2026-10-09), avisar en el commit que cada base existente debe
+   correr `migrate --aceptar-cambios` una vez.
 
 ### 3.3 ¿Hasta qué migración está la base? [verificado contra la base local]
 
@@ -364,17 +479,25 @@ SELECT archivo, modo, aplicada_en FROM meta.schema_migrations ORDER BY archivo D
 SELECT modo, count(*) FROM meta.schema_migrations GROUP BY modo;
 ```
 
-(2026-10-09, base local: 38 filas, todas `baseline`.) `migrate --status` da lo mismo
-contrastado contra `sql/`.
+`migrate --status` da lo mismo contrastado contra `sql/` (2026-10-09, base local: "40
+aplicadas, 0 pendientes").
 
-Sin registro (base anterior, antes del `--baseline`), se infiere por los objetos que
-crean las migraciones recientes:
+Sin registro, `migrate` calcula el nivel con las sondas y lo dice en su mensaje de error.
+Para inspeccionar a mano, las sondas son consultas de solo lectura (texto completo en
+`SONDAS`); por ejemplo:
 
 ```sql
 SELECT to_regclass('meta.schema_migrations') IS NOT NULL                 AS sql38_aplicada,
        to_regclass('marts.dim_entidad') IS NOT NULL                       AS sql37_aplicada,
        to_regclass('meta.refresh_watermark') IS NOT NULL                  AS sql34_aplicada,
        to_regnamespace('raw') IS NULL                                     AS sql33_aplicada;
+```
+
+Dueño de los esquemas (debe ser el rol de la app) [no probado]:
+
+```sql
+SELECT nspname, pg_get_userbyid(nspowner) AS duenio
+FROM pg_namespace WHERE nspname IN ('meta', 'staging', 'marts');
 ```
 
 ---
@@ -691,17 +814,18 @@ esquema completo):
 
 ```bash
 pg_restore -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
-           --no-owner --role=bp_etl -j 4 --exit-on-error "<ruta-de-respaldos>/benchmark_AAAAMMDD.dump"
+           --no-owner --role="$POSTGRES_USER" -j 4 --exit-on-error "<ruta-de-respaldos>/benchmark_AAAAMMDD.dump"
 ```
 
-- `--no-owner --role=bp_etl`: los objetos quedan a nombre de `bp_etl` aunque el dump
-  venga de otro servidor.
+- `--no-owner --role="$POSTGRES_USER"`: los objetos quedan a nombre del rol de la app de
+  este servidor aunque el dump venga de otro con un rol distinto (p. ej. `bp_etl`).
 - `-j 4`: restauración paralela (solo con formato `-Fc`/`-Fd`).
 - Después: consultas de la sección 9 (deben coincidir con las del servidor de origen) y
   `migrate --status` / `migrate` para las migraciones más nuevas que el dump (3.2). El
-  dump trae `meta.schema_migrations` si el origen ya la tenía; si el dump es anterior a
-  2026-10-09, aplicar a mano con `psql` las migraciones posteriores a ese dump y recién
-  entonces `migrate --baseline` (marca todo `sql/` como aplicado, brecha B17).
+  dump trae `meta.schema_migrations` si el origen ya la tenía (si su registro tiene
+  sha256 viejos de `sql/01..34`, `migrate --aceptar-cambios`, 3.2); si el dump es
+  anterior a 2026-10-09 (registro vacío), `migrate` ubica su nivel con las sondas: correr
+  `migrate --baseline` y luego `migrate` (3.2, "a medio migrar").
 - Con docker-compose: no montar el dump en `docker-entrypoint-initdb.d`; restaurar con
   `docker compose exec -T postgres pg_restore ... < archivo.dump` sobre una base creada
   por el contenedor **sin** haber aplicado `sql/01..NN` (o restaurar con `--clean
@@ -864,8 +988,12 @@ timeouts, bancos o cantones no resueltos que se descartaron de marts).
 | `Timeout descargando ...` (ERROR) y la etapa termina con código 2 | el portal tardó más de 30 s en entregar el archivo | volver a correr la etapa (o `actualizar --fuentes <fuente>`); los archivos ya bajados se re-descargan pero no se recargan |
 | `actualizar: falló la fuente X, se sigue con las demás` y código 2 | excepción en esa fuente (red, portal, catálogo); las demás se procesaron | leer el traceback en el log, corregir y `actualizar --fuentes X` |
 | `Hay otra corrida de benchmark-bancos en curso sobre esta base; no se hizo nada`, código 75 | otra sesión tiene el bloqueo (tarea programada, consola, otro servidor) | esperar; quién lo tiene: consulta 9.7. Si el proceso ya no existe, el bloqueo se liberó con su conexión |
-| `migrate`: `La base ya tiene esquema pero meta.schema_migrations está vacío` (código 1) | base armada por docker-compose/CI o anterior a 2026-10-09 | confirmar que está al día (3.3) y `migrate --baseline` |
-| `migrate`: `Migración ya aplicada cuyo archivo cambió después: NN_...` (WARNING) | alguien editó una migración ya aplicada | no se re-ejecuta; si el cambio importa, escribir una migración nueva con la corrección |
+| `migrate`: `La base ya tiene esquema pero meta.schema_migrations está vacío, y su nivel verificado es NN_...` (código 1) | base sin registro y atrasada respecto de `sql/` (anterior a 2026-10-09, respaldo viejo) | `migrate --baseline` (registra hasta NN) y luego `migrate` (3.2) |
+| `migrate`: `No se pudo verificar el nivel de la base: ni la sonda de 28_... pasa` (código 1) | base anterior a 2026-09 o de otro proyecto | revisar a mano (3.3); aplicar con `psql` hasta la 28 y luego `--baseline` |
+| `migrate`: `Migración ya aplicada cuyo archivo cambió después: NN_...` (WARNING, en cada corrida) | se editó una migración ya aplicada; esperable una vez en bases instaladas antes de 2026-10-09 (`sql/01`, `02`, `03`, `33`, `34`) | si el cambio fue a propósito: `migrate --aceptar-cambios` (una vez). Si no, no se re-ejecuta: escribir una migración nueva con la corrección |
+| `sql/00`: `invalid command \getenv` | `psql` anterior a 15 (sin `ON_ERROR_STOP`, sigue y usa los defaults `bp_etl`/`changeme`) | pasar los nombres con `-v app_user=... -v app_db=... -v app_password=...` (3.1) o usar un `psql` ≥ 15 |
+| `sql/00` en Postgres gestionado: `must be able to SET ROLE ...` al crear la base | Postgres 16+: el admin no es miembro del rol nuevo | `GRANT <rol> TO <admin>` y volver a correr `sql/00` [no probado]; o usar rol y base del proveedor (2.5) |
+| Esquemas `meta`/`staging`/`marts` a nombre de `postgres` (o del admin) y el ETL falla con `permission denied` | `migrate` (o `sql/01..NN` con `psql`) se corrió con el superusuario en vez del rol de la app | correr `migrate` con el `POSTGRES_USER` de la app; para una base ya creada así, `ALTER SCHEMA ... OWNER TO` y `REASSIGN OWNED` como superusuario [no probado] |
 | `migrate`: `Falló NN_...` (código 1) | error SQL en esa migración | las anteriores quedaron registradas; corregir y volver a correr `migrate` |
 | Tarea de cron sin log y sin efecto | `uv` no está en el `PATH` de cron (sale con 127 antes de crear el log) | línea `PATH=` en el crontab (7.3) |
 | La tarea de Windows no corre con el equipo sin sesión | `registrar_tarea.ps1` la registra solo con sesión iniciada | cambiar a "Ejecutar tanto si el usuario inició sesión como si no" (7.2) |
@@ -877,14 +1005,14 @@ timeouts, bancos o cantones no resueltos que se descartaron de marts).
 | `*NoResueltoError` (banco, segmento, categoría, plazo, cuenta) | valor nuevo en la fuente | `docs/mantenimiento_catalogos.md` |
 | Filas de Banca Pública faltan en marts; log dice bancos no resueltos | CAPCOL `publica` cargado antes que `bce` | `bce` y luego `refresh --full` |
 | `psycopg.OperationalError: connection refused` | host/puerto, Postgres caído, o contenedor y Postgres nativo compitiendo por 5432 | `docker compose ps`; `SELECT version(), pg_postmaster_start_time();` |
-| `password authentication failed for user "bp_etl"` | `.env` distinto de la contraseña del rol (`sql/00` crea el rol con `changeme`) | `ALTER ROLE bp_etl PASSWORD '...'` como superusuario |
-| Migración: `role "xxx" does not exist` o esquemas de otro dueño | `POSTGRES_USER` distinto de `bp_etl` | usar `bp_etl` (brecha B2) |
+| `password authentication failed for user "<rol>"` | `.env` distinto de la contraseña del rol (`sql/00` sin `-v` ni entorno lo crea con `changeme`, y no cambia la de un rol existente) | `ALTER ROLE <rol> PASSWORD '...'` como superusuario |
+| Migración: `role "bp_etl" does not exist` | `sql/` de antes de 2026-10-09 (con `AUTHORIZATION bp_etl`) y otro `POSTGRES_USER` | actualizar el repo (B2 resuelta) |
 | Migración vieja falla con "relation does not exist" sobre una base con datos | se re-aplicó todo `sql/` con `psql` | detener; restaurar si alcanzó a correr algo destructivo; usar `migrate` (3.2) |
 | Acentos rotos en consola o logs de Windows (`dep�sitos`) | codificación de consola | `PYTHONUTF8=1` (o `chcp 65001`) |
 | `.env` no se lee cuando corre el scheduler | cwd distinto y sin `pyproject.toml` hacia arriba | `cd <ruta-del-proyecto>` en el script, o `BENCHMARK_HOME=<ruta-del-proyecto>` |
 | `uv run pytest` (u otro ejecutable del venv) sale con código 1 sin mostrar nada | el lanzador `.exe` tiene grabada la ruta de Python de cuando el `.venv` estaba en otra carpeta (pasó al mover el proyecto, 2026-10-09); `uv sync` no lo regenera si la versión del paquete no cambió | `uv sync --reinstall-package <paquete>` (p. ej. `pytest`), o recrear el entorno: borrar `.venv` y `uv sync` |
 | `pytest -m integration` contra la base de producción | algunos tests de tabla temporal hacen `commit` y limpian con `DELETE` | correrlos solo contra una base de desarrollo o el contenedor de CI |
-| `dim_fecha.nombre_mes` en inglés | `TO_CHAR(fecha, 'TMMonth')` depende de `lc_time` del servidor | brecha B5 |
+| `dim_fecha.nombre_mes` en inglés | base cargada antes de 2026-10-09 en un servidor con `lc_time` en inglés (`TO_CHAR(fecha, 'TMMonth')`) | `migrate` (aplica `sql/40`); B5 resuelta |
 | Dos corridas se pisaron (marca de agua avanzó sin ver filas) | solo posible antes de 2026-10-09 (sin bloqueo) | `refresh --full` |
 
 ---
@@ -899,10 +1027,10 @@ operativo), **mejora** (calidad de vida). Las propuestas de código quedan para
 | # | Brecha | Clase | Evidencia | Propuesta concreta |
 |---|---|---|---|---|
 | B1 | ~~Sin bloqueo contra corridas simultáneas~~ **Resuelto 2026-10-09**: `pg_try_advisory_lock` en todas las etapas que escriben; la segunda corrida sale con 75 sin tocar nada (probado con otra sesión sosteniendo el bloqueo; `tests/test_orquestacion.py::test_exit_75_si_hay_otra_corrida`). `data/_tmp_extract` sigue compartido, pero solo lo usan etapas de carga, que ya están serializadas por el bloqueo | resuelto | `orquestacion.py:40-52`; `cli.py:141-150` | (opcional) `EXTRACT_DIR` por corrida si algún día se permite paralelizar contra bases distintas desde el mismo directorio |
-| B2 | Rol `bp_etl` y nombre de base fijos en las migraciones; con otro `POSTGRES_USER`, `docker compose up`, el bucle de CI y `migrate` fallan | importante (bloqueante si el servidor impone otro rol, p. ej. Postgres gestionado con usuario asignado) | `sql/00_roles_db.sql:6-14`; `sql/01_schema_meta.sql:14`; `sql/02_schema_staging.sql:5`; `sql/03_schema_marts.sql:4`; `sql/33…:22`; `sql/34…:44` | Quitar `AUTHORIZATION bp_etl` de 01..NN (el dueño es quien ejecuta) y dejar `sql/00` como único lugar con el nombre, parametrizado con `psql -v app_user=...` |
-| B3 | ~~Sin registro de migraciones aplicadas ni etapa `migrate`~~ **Resuelto 2026-10-09**: `meta.schema_migrations` (`sql/38`) + `benchmark-bancos migrate [--status\|--baseline]`; aplica solo pendientes, se niega sobre base con esquema y registro vacío, avisa si cambió un archivo ya aplicado. Probado sobre base nueva `postgres:17` (aplicó 01..38, segunda corrida "base al día") y `--baseline` sobre la base local; `tests/test_orquestacion.py::test_migrate_*`. Quedan abiertos B17 y B18 | resuelto | `migrate.py:84-162`; `cli.py:106-109` | — |
+| B2 | ~~Rol `bp_etl` y nombre de base fijos en las migraciones~~ **Resuelto 2026-10-09**: `sql/00` toma rol, base y contraseña de `-v app_user/app_db/app_password`, o de `POSTGRES_USER/DB/PASSWORD` (`\getenv`, psql ≥ 15), o defaults; `sql/01`, `02`, `03`, `33`, `34` ya no dicen `AUTHORIZATION bp_etl` (dueño = quien aplica). Verificado: `postgres:17` con `POSTGRES_USER=etl_app` inicializado como docker-compose → no se crea `bp_etl`, `meta`/`staging`/`marts` con dueño `etl_app`. CI lo verifica con un rol distinto de `bp_etl`. Bases existentes: `migrate --aceptar-cambios` una vez (3.2) | resuelto | `sql/00_roles_db.sql:18-46`; `sql/01_schema_meta.sql:14`; `sql/02_schema_staging.sql:5`; `sql/03_schema_marts.sql:4`; `sql/33…:22`; `sql/34…:44`; `.github/workflows/test.yml` | — |
+| B3 | ~~Sin registro de migraciones aplicadas ni etapa `migrate`~~ **Resuelto 2026-10-09**: `meta.schema_migrations` (`sql/38`) + `benchmark-bancos migrate [--status\|--baseline]`; aplica solo pendientes, con esquema y registro vacío ubica la base por sondas (B17, B19), avisa si cambió un archivo ya aplicado (`--aceptar-cambios` para aceptarlo). Probado sobre base nueva `postgres:17` (aplicó 01..38, segunda corrida "base al día") y `--baseline` sobre la base local; `tests/test_orquestacion.py::test_migrate_*`. B17, B18 y B19 también resueltos | resuelto | `migrate.py:162-275`; `cli.py:90-102` | — |
 | B4 | ~~Código de salida 0 con fallas parciales~~ **Resuelto 2026-10-09**: además de lo de abajo, los "se omite" que significan dato perdido (nombre de archivo irreconocible o archivo no parseable de TasasHistorico ≥ 2022-04 y del Boletín, `pipeline.py`) pasaron a `ERROR`, y la conciliación fuera de umbral también; quedan en `WARNING` solo los esperables (carpeta de año aún no publicada). Antes: cualquier registro `ERROR` (timeouts de scrapers, fuente fallida de `actualizar`) da código 2 (`tests/test_orquestacion.py::test_exit_2_si_se_registraron_errores`). Sigue abierto: archivos no parseables y carpetas de año faltantes se registran como `WARNING` y dan 0 | importante | `cli.py:158-164`; siguen en `WARNING`: `pipeline.py:88, 135, 266, 287, 348, 354, 368`; `extract/scrape_superbancos.py:60, 101`; `extract/scrape_boletin.py:47` | Subir a `ERROR` los "se omite" que significan dato perdido (archivo no parseable, `pipeline.py:266, 354`), dejando en `WARNING` los esperables (año aún no publicado en enero) |
-| B5 | `dim_fecha.nombre_mes` depende de `lc_time` del servidor: en `postgres:17` (locale por defecto en inglés) quedaría "January". La base local da "Enero" por estar en un Windows en español | importante | `load/load_postgres.py:577` (`TO_CHAR(fecha, 'TMMonth')`) | Calcular el nombre con un arreglo fijo (`(ARRAY['Enero',…,'Diciembre'])[EXTRACT(MONTH FROM fecha)]`) o `SET LOCAL lc_time` en `refresh_marts()`; corregir filas existentes con un `UPDATE` en una migración. No verificado en contenedor |
+| B5 | ~~`dim_fecha.nombre_mes` depende de `lc_time` del servidor~~ **Resuelto 2026-10-09**: `refresh_marts()` usa una lista fija de meses en español en vez de `TO_CHAR(fecha, 'TMMonth')`, y `sql/40` corrige las filas ya cargadas en servidores con otro idioma (su sonda verifica que no quede ninguna distinta). Verificado: `postgres:17` con `en_US.utf8` + carga real de `tasas-historicas` → meses en español | resuelto | `load/load_postgres.py:618-620`; `sql/40_dim_fecha_nombre_mes_es.sql` | — |
 | B6 | ~~La descarga de BCE nunca refresca el archivo semanal si ya existe~~ **BCE resuelto 2026-10-09** (descarga condicional por `ETag`/`Last-Modified`, `tests/test_download_bce.py`). **SEPS resuelto 2026-10-09** (HEAD + `_descarga.json`, `tests/test_download_seps.py`) | resuelto | `extract/download_bce.py:25-27`; `extract/download_seps.py:38-41`. En la base local, tsp/tsa se cargaron por última vez el 2026-07-19 | Descargar a `.part`, comparar sha256 con el existente y reemplazar si cambió (o `If-Modified-Since`/`ETag`); flag `--refetch` |
 | B7 | No hay modo "solo cargar" para el Boletín ni `--no-download` para BCE/SEPS/TasasHistorico: reconstruir desde `data/raw` sin red no es posible para todas las fuentes | importante | `pipeline.py:336` (`scrape_boletin` siempre), `pipeline.py:194, 253, 126-127` | Flag `--sin-descarga` (o etapas `boletin-load`) que salte la extracción; `load_seps` ya tiene el parámetro `descargar` (`pipeline.py:116`) sin exponer en el CLI |
 | B8 | Reprocesar archivos tras un cambio de parser/crosswalk exige borrar filas de `meta.source_files` a mano | importante | `pipeline.py:97, 140, 213, 270, 352` (gate por `source_file`+`sha256`) | Flag `--reprocesar` que ignore el gate (el CDC ya hace la carga idempotente), o guardar la versión del parser en `meta.source_files` |
@@ -913,10 +1041,10 @@ operativo), **mejora** (calidad de vida). Las propuestas de código quedan para
 | B13 | Sin registro de corridas en la base; logs en texto. **Parcial 2026-10-09**: `--log-file` escribe a archivo en UTF-8 y los scripts guardan un log por corrida | mejora | `logging_utils.py:31-52`; `scripts/actualizar.ps1`, `scripts/actualizar.sh` | Tabla `meta.corridas(run_id, etapa, inicio, fin, estado, codigo_salida, archivos, omitidos)` y opción de log JSON |
 | B14 | ~~Sin reintentos/backoff en descargas directas; un error de red aborta la etapa~~ **Resuelto 2026-10-09**: `extract/red.py::con_reintentos` (3 intentos, espera 5/15 s, solo errores transitorios: red, timeout, HTTP 5xx/429; nunca 304/404) en BCE, SEPS, TasasHistorico y en la navegación y cada descarga de los scrapers de Playwright (`tests/test_red.py`) | mejora | `extract/download_bce.py:31`; `extract/download_seps.py:46`; `extract/download_tasas_historicas.py:48-54` | Reintento con backoff exponencial (3 intentos) en un helper común de descarga |
 | B15 | `download_id` de SEPS fijos por año en código: cada año nuevo requiere cambio y despliegue (`actualizar` en enero del año siguiente omitirá SEPS del año nuevo hasta agregarlos) | mejora | `config/sources.py:55-64` | Mover a un archivo de configuración versionado (YAML/CSV en `seeds/`) o descubrirlos desde la página del portal |
-| B16 | Construcciones exclusivas de Postgres en toda la capa de carga: portar a otro motor exige un adaptador | mejora (conocida y aceptada) | `load/load_postgres.py` (COPY, `ON CONFLICT`, `IS DISTINCT FROM`, `ON COMMIT DROP`); `sql/00…:14` (`\gexec`) | Mantener Postgres como motor del ETL y replicar `marts.*` hacia otros motores; inventario en `docs/architecture.md`, "Portabilidad de motor" |
-| B17 | `migrate --baseline` marca **todos** los archivos pendientes como aplicados sin comprobar que la base los tenga: un baseline sobre una base atrasada esconde migraciones faltantes | importante | `migrate.py:115-127` | Aceptar `--baseline hasta=NN` (marcar solo hasta ese archivo) y/o comprobar objetos sentinela (consulta de 3.3) antes de marcar |
+| B16 | Construcciones exclusivas de Postgres en toda la capa de carga: portar a otro motor exige un adaptador | mejora (conocida y aceptada) | `load/load_postgres.py` (COPY, `ON CONFLICT`, `IS DISTINCT FROM`, `ON COMMIT DROP`); `sql/00…:18-46` (`\getenv`, `\if`, `\gexec` de psql) | Mantener Postgres como motor del ETL y replicar `marts.*` hacia otros motores; inventario en `docs/architecture.md`, "Portabilidad de motor" |
+| B17 | ~~`migrate --baseline` marca **todos** los archivos pendientes como aplicados sin comprobar que la base los tenga~~ **Resuelto 2026-10-09**: sondas por migración desde la 28 (`SONDAS`); `--baseline` registra solo hasta el nivel verificado y deja el resto pendiente; sin ninguna sonda que pase, error. Verificado: base aplicada hasta 36 → `migrate` falla con "nivel 36", `--baseline` registra hasta 36, `migrate` aplica 37-40. `test_toda_migracion_desde_la_28_tiene_sonda` exige la sonda de cada migración nueva. Limitación: una base anterior a `sql/28` sigue requiriendo revisión manual | resuelto | `migrate.py:50-79` (`SONDAS`), `97-114` (`nivel_verificado`), `212-251`; `tests/test_orquestacion.py:168-176` | — |
 | B18 | ~~`migrate --status` no es estrictamente de solo lectura (crea `meta` y `meta.schema_migrations` si faltan) y en una base con registro vacío informa "0 aplicadas, N pendientes" sin advertir~~ **Resuelto 2026-10-09**: `--status` ya no escribe (`estado(crear_registro=False)`) y avisa con WARNING si el registro está vacío que `migrate` exigirá `--baseline` | mejora | `migrate.py:64-70, 102-113` | Consultar con `to_regclass` en vez de crear; en `--status`, repetir el aviso de baseline si `esquema_existente` y registro vacío |
-| B19 | docker-compose y CI siguen aplicando `sql/` con `psql`, sin registro: cada base nueva de esos caminos requiere un `migrate --baseline` manual | mejora | `docker-compose.yml:29`; `.github/workflows/test.yml:75-81` | En CI, reemplazar el bucle por `sql/00` + `uv run benchmark-bancos migrate`; en compose, montar solo `sql/00` en `docker-entrypoint-initdb.d` y documentar `migrate` como paso siguiente |
+| B19 | ~~docker-compose y CI aplican `sql/` con `psql`, sin registro: cada base nueva de esos caminos requería un `migrate --baseline` manual~~ **Resuelto 2026-10-09**: siguen aplicando `sql/` con `psql`, pero el primer `migrate` verifica con las sondas que la base está al día y hace el **baseline automático**. CI corre `benchmark-bancos migrate` después del bucle `psql` y comprueba 0 pendientes | resuelto | `migrate.py:212-251`; `docker-compose.yml` (monta `sql/` en `docker-entrypoint-initdb.d`); `.github/workflows/test.yml` | (opcional) en compose, montar solo `sql/00` y dejar 01..NN a `migrate`, para un único camino de aplicación |
 | B20 | Programación: la tarea de Windows solo corre con sesión iniciada; `scripts/actualizar.sh` depende de que `uv` esté en el `PATH` de cron y descarta la salida, así que sin `PATH` falla sin dejar log | mejora | `scripts/registrar_tarea.ps1:28-30` (sin `-User`/`-Principal`); `scripts/actualizar.sh:14` | Parámetro `-SinSesion` en `registrar_tarea.ps1` (principal con contraseña o S4U); en `actualizar.sh`, anteponer `$HOME/.local/bin` al `PATH` y escribir a stderr si `uv` no existe |
 | B21 | ~~Sin reintento automático de una fuente fallida dentro de `actualizar`~~ **Resuelto 2026-10-09**: una fuente que falla se reintenta una vez al final de la corrida, tras 120 s (`tests/test_orquestacion.py::test_actualizar_reintenta_una_fuente_que_falla_una_vez`) | mejora | `orquestacion.py:98-106` | Reintentar una vez las fuentes fallidas al final de la corrida, o que el script relance `actualizar --fuentes <fallidas>` tras unos minutos (complementa B14) |
 
@@ -924,12 +1052,17 @@ operativo), **mejora** (calidad de vida). Las propuestas de código quedan para
 
 - Instalación en Linux, imagen de contenedor del ETL, `playwright install --with-deps`
   en un servidor sin GUI.
-- `sql/00` con `psql` fuera de CI/docker-compose, y `migrate --baseline` sobre una base
-  recién creada por docker-compose (`migrate` sobre base nueva y `--baseline` sobre la
-  base local sí se probaron).
+- `sql/00` con `psql` fuera de un contenedor (con `-v` o con `\getenv`), y en un Postgres
+  gestionado (incluido el caso `GRANT <rol> TO <admin>` de Postgres 16+). Sí se verificó
+  el initdb de `postgres:17` con un `POSTGRES_USER` distinto de `bp_etl`.
+- `docker compose up` seguido del baseline automático (verificado con un `postgres:17`
+  inicializado del mismo modo, no con el compose del repo).
+- `migrate --aceptar-cambios` en esta revisión (lo verificó quien lo implementó; la base
+  local ya no tiene archivos modificados).
+- La consulta de dueño de esquemas de 3.3 y la corrección de esquemas creados por el
+  superusuario (sección 10).
 - La primera carga completa en una base nueva (por etapas o con `actualizar --years
   ...`); el orden recomendado sale del código, no de una corrida.
 - `scripts/actualizar.sh` y cron en Linux/macOS; la tarea de Windows sin sesión iniciada;
   Kubernetes, Airflow, Prefect y Dagster.
 - `pg_restore` (solo se verificó que el dump se genera y se puede listar).
-- El comportamiento de `nombre_mes` en el contenedor `postgres:17` (B5).

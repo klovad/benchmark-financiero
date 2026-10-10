@@ -30,26 +30,24 @@ jobs:
     # schema se aplica explícitamente vía psql, sql/*.sql en orden lexicográfico de
     # nombre de archivo -- mismo orden en el que correrían como initdb scripts.
     #
-    # POSTGRES_USER=bp_etl / POSTGRES_DB=benchmark_cartera_depositos: mismos valores
-    # que espera sql/00_roles_db.sql (ver también los comentarios de
-    # docker-compose.yml). El propio contenedor postgres:17 crea el rol bp_etl y la
-    # base benchmark_cartera_depositos a partir de estas env vars ANTES de que
-    # cualquier paso de este job corra -- así que los guards `IF NOT EXISTS`/
-    # `WHERE NOT EXISTS` de sql/00 evalúan false cuando se aplica y el script queda
-    # como no-op idempotente, igual que en docker-compose.yml. POSTGRES_PASSWORD es
-    # una password descartable solo para este job, nunca la real.
+    # POSTGRES_USER=etl_ci (a propósito distinto del default bp_etl, 2026-10-09): verifica
+    # que nada dependa del nombre del rol. El contenedor crea el rol y la base a partir
+    # de estas env vars antes de cualquier paso; sql/00 los lee con \getenv y queda como
+    # no-op idempotente. Después de aplicar sql/ con psql (registro de migraciones vacío),
+    # `benchmark-bancos migrate` debe hacer el baseline automático y dejar 0 pendientes.
+    # POSTGRES_PASSWORD es descartable, solo para este job.
     runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: bp_etl
+          POSTGRES_USER: etl_ci
           POSTGRES_DB: benchmark_cartera_depositos
           POSTGRES_PASSWORD: ci_throwaway_password
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U bp_etl -d benchmark_cartera_depositos"
+          --health-cmd "pg_isready -U etl_ci -d benchmark_cartera_depositos"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -57,7 +55,7 @@ jobs:
       POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
       POSTGRES_DB: benchmark_cartera_depositos
-      POSTGRES_USER: bp_etl
+      POSTGRES_USER: etl_ci
       POSTGRES_PASSWORD: ci_throwaway_password
     steps:
       - uses: actions/checkout@v4
@@ -79,6 +77,13 @@ jobs:
             echo "Aplicando $f"
             PGPASSWORD="$POSTGRES_PASSWORD" psql -h localhost -p 5432 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f "$f"
           done
+
+      - name: migrate (baseline automático sobre la base armada con psql)
+        run: |
+          set -e
+          uv run benchmark-bancos migrate
+          uv run benchmark-bancos migrate --status 2>&1 | tee estado.txt
+          grep -q "0 pendientes" estado.txt
 
       - name: pytest (integration)
         run: uv run pytest -m integration -v

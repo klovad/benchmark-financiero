@@ -19,13 +19,18 @@ services:
       # existentes de una vez y no requiere editar este archivo cada vez que se agregue
       # una migracion nueva (sql/22, sql/23, ...).
       #
-      # sql/00_roles_db.sql SI se incluye deliberadamente: crea el rol/DB con
-      # `IF NOT EXISTS`/`WHERE NOT EXISTS` (ver el archivo), y el propio contenedor ya
-      # crea el rol POSTGRES_USER y la base POSTGRES_DB automaticamente a partir de las
-      # env vars de arriba antes de correr los scripts de init -- asi que ambos guards
-      # de sql/00 evaluan false aqui y el script queda como no-op idempotente, sin
-      # pisar la password real con el literal 'changeme' que trae de su rama manual
-      # (psql -U postgres, para cuando se corre fuera de Docker).
+      # sql/00_roles_db.sql SI se incluye deliberadamente: toma rol/base/password de
+      # POSTGRES_USER/POSTGRES_DB/POSTGRES_PASSWORD (\getenv; la imagen trae psql 17) y
+      # los crea solo si no existen. El propio contenedor ya crea ese rol y esa base a
+      # partir de las env vars de arriba antes de correr los scripts de init, asi que
+      # sql/00 queda como no-op idempotente. POSTGRES_USER puede tener cualquier nombre
+      # (desde 2026-10-09 ninguna migracion fija 'bp_etl'): sql/01..NN corren como ese
+      # rol y los esquemas meta/staging/marts quedan a su nombre.
+      #
+      # Estos scripts no se anotan en meta.schema_migrations: el primer
+      # `benchmark-bancos migrate` desde el host verifica con sus sondas que la base esta
+      # al dia y la registra solo (baseline automatico). Las migraciones posteriores se
+      # aplican con `migrate`, no con este montaje (solo corre con el volumen vacio).
       - ./sql:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]

@@ -1,5 +1,5 @@
 -- Ejecutar conectado a la base benchmark_cartera_depositos.
--- psql -h localhost -p 5432 -U bp_etl -d benchmark_cartera_depositos -f sql/01_schema_meta.sql
+-- psql -h localhost -p 5432 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f sql/01_schema_meta.sql
 --
 -- Schema meta: control de ingesta (no datos de negocio).
 --
@@ -11,7 +11,7 @@
 -- Bases ya existentes: sql/33 hace la migración equivalente (mueve raw.source_files a
 -- meta y borra las tablas raw). En una base nueva sql/33 no tiene nada que hacer.
 
-CREATE SCHEMA IF NOT EXISTS meta AUTHORIZATION bp_etl;
+CREATE SCHEMA IF NOT EXISTS meta;  -- dueño: el rol que aplica la migración (sql/00)
 
 -- Idempotencia a nivel de archivo: un archivo con el mismo sha256 no se reprocesa.
 CREATE TABLE IF NOT EXISTS meta.source_files (

@@ -113,21 +113,40 @@ def test_anios_en_curso(hoy, esperado):
     assert orquestacion.anios_en_curso(hoy) == esperado
 
 
-def test_migrate_rechaza_base_con_esquema_y_sin_registro(monkeypatch, tmp_path):
-    (tmp_path / "01_x.sql").write_text("SELECT 1;")
+@pytest.fixture
+def base_sin_registro(monkeypatch, tmp_path):
+    """Base con esquema y registro vacío; dos migraciones en disco."""
+    archivos = [tmp_path / "01_x.sql", tmp_path / "02_y.sql"]
+    for a in archivos:
+        a.write_text("SELECT 1;")
     monkeypatch.setattr(
         migrate,
         "estado",
         lambda conn, sql_dir, crear_registro=True: migrate.Estado(
-            {}, [tmp_path / "01_x.sql"], [], True
+            {}, archivos, [], True
         ),
     )
 
     class Conn:
         autocommit = True
 
-    with pytest.raises(migrate.MigracionError, match="--baseline"):
-        migrate.migrar(Conn(), tmp_path)
+    return Conn(), tmp_path
+
+
+def test_migrate_pide_baseline_si_la_base_esta_a_medio_migrar(
+    monkeypatch, base_sin_registro
+):
+    conn, sql_dir = base_sin_registro
+    monkeypatch.setattr(migrate, "nivel_verificado", lambda c, a: "01_x.sql")
+    with pytest.raises(migrate.MigracionError, match="nivel verificado es 01_x.sql"):
+        migrate.migrar(conn, sql_dir)
+
+
+def test_migrate_no_adivina_si_ninguna_sonda_pasa(monkeypatch, base_sin_registro):
+    conn, sql_dir = base_sin_registro
+    monkeypatch.setattr(migrate, "nivel_verificado", lambda c, a: None)
+    with pytest.raises(migrate.MigracionError, match="revisarla a mano"):
+        migrate.migrar(conn, sql_dir, baseline=True)
 
 
 @pytest.mark.integration
@@ -163,3 +182,37 @@ def test_migrate_aplica_pendientes_una_vez_y_detecta_cambios(tmp_path, caplog):
         conn.execute("DROP TABLE IF EXISTS meta._zz_test_migrate")
         conn.execute("DELETE FROM meta.schema_migrations WHERE archivo LIKE '%zz_%'")
         conn.close()
+
+
+def test_toda_migracion_desde_la_28_tiene_sonda():
+    """Gobernanza: una migración nueva sin sonda dejaría a `migrate --baseline` sin
+    forma de ubicar una base que ya la tiene aplicada."""
+    archivos = [p.name for p in migrate.archivos_migracion()]
+    desde_28 = [a for a in archivos if a >= "28_"]
+    sin_sonda = [a for a in desde_28 if a not in migrate.SONDAS and a not in _SIN_SONDA]
+    assert sin_sonda == [], f"agregar la sonda en migrate.SONDAS: {sin_sonda}"
+    assert archivos[-1] in migrate.SONDAS  # la última siempre
+    assert set(migrate.SONDAS) <= set(archivos)  # ninguna sonda huérfana
+
+
+# Migraciones de datos idempotentes, sin efecto de esquema verificable: el baseline las
+# cubre por estar entre dos sondas.
+_SIN_SONDA = {
+    "30_seps.sql",
+    "32_vistas_glosario_seps_banca_publica.sql",
+    "35_fusion_cantones_duplicados.sql",
+}
+
+
+@pytest.mark.integration
+def test_nivel_verificado_de_una_base_al_dia_es_la_ultima_migracion():
+    with psycopg.connect(**DB_CONFIG, autocommit=True) as conn:
+        archivos = migrate.archivos_migracion()
+        assert migrate.nivel_verificado(conn, archivos) == archivos[-1].name
+
+
+def test_sha256_no_depende_de_los_finales_de_linea(tmp_path):
+    lf, crlf = tmp_path / "lf.sql", tmp_path / "crlf.sql"
+    lf.write_bytes(b"SELECT 1;\nSELECT 2;\n")
+    crlf.write_bytes(b"SELECT 1;\r\nSELECT 2;\r\n")
+    assert migrate._sha256(lf) == migrate._sha256(crlf)

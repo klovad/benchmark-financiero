@@ -41,7 +41,7 @@ ALTER TABLE marts.fact_tasas_referenciales_sistema             DROP COLUMN IF EX
 ALTER TABLE marts.fact_balance                                 DROP COLUMN IF EXISTS row_hash;
 ALTER TABLE marts.fact_pyg                                     DROP COLUMN IF EXISTS row_hash;
 
-CREATE SCHEMA IF NOT EXISTS meta AUTHORIZATION bp_etl;
+CREATE SCHEMA IF NOT EXISTS meta;  -- dueño: el rol que aplica la migración (sql/00)
 
 CREATE TABLE IF NOT EXISTS meta.refresh_watermark (
     proceso TEXT PRIMARY KEY,           -- hoy solo 'marts'

@@ -1,7 +1,7 @@
 -- Capa marts: esquema estrella listo para consumo en Power BI.
 -- Alcance: bancos privados del Ecuador (staging.*.tipo_entidad = 'Banco Privado').
 
-CREATE SCHEMA IF NOT EXISTS marts AUTHORIZATION bp_etl;
+CREATE SCHEMA IF NOT EXISTS marts;  -- dueño: el rol que aplica la migración (sql/00)
 
 CREATE TABLE IF NOT EXISTS marts.dim_fecha (
     fecha_id     INT PRIMARY KEY,          -- YYYYMM
