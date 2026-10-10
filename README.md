@@ -234,6 +234,20 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
 
 ## Estado del proyecto
 
+- ✅ **Datos al día y TasasHistorico desde 2009** (2026-10-09/10): todas las fuentes
+  cargadas hasta lo último publicado (CAPCOL privados y Banca Pública hasta 2026-08,
+  SEPS 2026 hasta 2026-08, Boletín y TasasHistorico hasta 2026-09, BCE semanal hasta
+  2026-09-24). TasasHistorico ampliado a 2009-07 (antes 2022-04): el parser leía mal el
+  punto decimal y no reconocía la sección "VIGENTES"; 2022-04 a 2022-07 se habían cargado
+  sin tasas de cartera y se reprocesaron. Antes de 2009-07 queda fuera por decisión (otros
+  segmentos, valor bajo).
+- ✅ **Reintentos** (2026-10-09): descargas con reintento ante cortes de red/timeouts
+  (`extract/red.py`) y una fuente fallida se reintenta una vez al final de `actualizar`.
+- ✅ **Repositorio liviano** (2026-10-10): muestras Parquet reducidas a 13 meses
+  (`data/samples/marts_ultimos_13_meses`, ~42 MB) y el historial de git reescrito para
+  quitar las muestras viejas (de ~890 MB a ~29 MB). Los hashes de los commits cambiaron:
+  una copia clonada antes de esa fecha hay que volver a clonarla.
+
 - ✅ **Operación desatendida** (2026-10-09): etapa `migrate` con registro de migraciones
   aplicadas (`meta.schema_migrations`, `sql/38`; `--status`, `--baseline`), etapa
   `actualizar` que recoge lo nuevo de las 5 fuentes con cada fuente aislada, bloqueo en
@@ -278,3 +292,17 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   Ver `docs/data_dictionary.md`.
 - ⏳ `RK`/`INDICADORES` del Boletín están documentados (`docs/metricas_financieras.md`)
   pero no cargados como tabla — son ratios recalculables desde `fact_balance`/`fact_pyg`.
+
+### Pendientes (opcionales, 2026-10-10)
+
+1. Aviso activo cuando falla la corrida semanal (hoy: revisar `logs/` o `LastTaskResult`
+   en el Programador de tareas; 0 = OK, 2 = revisar log).
+2. La tarea programada de Windows corre solo con la sesión iniciada (correrla sin sesión
+   requiere guardar la contraseña en Windows).
+3. SEPS segmentos 4 y 5 (reporte trimestral con otro diseño).
+4. `RK`/`INDICADORES` del Boletín como tablas.
+5. Probar contra un Postgres gestionado real (verificado con simulación).
+6. Power BI: retirado del repo y en espera; la base ya está lista (`dim_entidad` +
+   `tipo_entidad`, `codigo_inec`, vistas de indicadores y conciliación, muestra Parquet).
+
+Fuera de alcance por decisión: TasasHistorico antes de 2009-07.
