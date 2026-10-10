@@ -659,10 +659,13 @@ ON CONFLICT (fecha_id) DO NOTHING;
 -- UPDATE real (`fecha_actualizacion = now()`) en CADA corrida de refresh_marts(), no
 -- solo cuando algo cambiaba de verdad. Preexistía desde sql/19_dim_segmento_entidad.sql
 -- (2026-07-25) -- no lo introdujo esta migración, solo quedó expuesto al verificar CDC
--- no-op de punta a punta en vez de asumirlo. Con el LEFT JOIN, una fila nueva sigue
--- resolviendo segmento_entidad_id = NULL correctamente (no hay fila existente que unir).
+-- no-op de punta a punta en vez de asumirlo. Una fila nueva (sin fila existente que unir)
+-- toma 'NO REPORTA AL BCE' (sql/41: la columna es NOT NULL); el UPDATE desde los hechos
+-- BCE lo reemplaza si la entidad aparece en tsp/tsa.
 INSERT INTO marts.dim_entidad (entidad_codigo, entidad, tipo_entidad, ruc, estado_validacion, segmento_entidad_id)
-SELECT bm.banco_codigo, bm.banco, bm.tipo_entidad, bm.ruc, bm.estado_validacion, existente.segmento_entidad_id
+SELECT bm.banco_codigo, bm.banco, bm.tipo_entidad, bm.ruc, bm.estado_validacion,
+       COALESCE(existente.segmento_entidad_id,
+                (SELECT segmento_entidad_id FROM marts.dim_segmento_entidad WHERE tipo_segmento = 'NO REPORTA AL BCE'))
 FROM staging.banco_maestro bm
 LEFT JOIN marts.dim_entidad existente ON existente.entidad_codigo = bm.banco_codigo
 WHERE bm.banco_codigo IN (SELECT entidad_codigo FROM marts.dim_entidad)

@@ -304,8 +304,9 @@ columnas aún más ricas: `destino_credito`, `destino_hipotecario`, `destino_con
   `COOPERATIVAS DE AHORRO Y CREDITO` → `SEGMENTO 1`..`SEGMENTO 5`/`SIN SEGMENTO`
   (segmentación por activos totales de la Junta de Política y Regulación Financiera,
   JPRF-F-2023-074 — Segmento 1 > USD 80MM, bajando por umbrales hasta Segmento 5 =
-  cajas/bancos/cajas comunales; seps.gob.ec); `MUTUALISTAS` → `SEGMENTO 1 MUTUALISTA` o
-  `MUTUALISTAS`; `BANCOS PUBLICOS`/`SOCIEDAD FINANCIERA`/`ADMINISTRADORA DE TARJETAS DE
+  cajas/bancos/cajas comunales; seps.gob.ec); `MUTUALISTAS` → `SEGMENTO 1 MUTUALISTA` hasta 2024-12 y
+  `MUTUALISTAS` desde 2025-01 (mismas entidades y misma clasificación; la SEPS sigue
+  publicando `SEGMENTO 1 MUTUALISTA` — el ETL homologa al primero, `sql/41`); `BANCOS PUBLICOS`/`SOCIEDAD FINANCIERA`/`ADMINISTRADORA DE TARJETAS DE
   CREDITO` → una sola categoría, igual a `tipo_entidad`. **Cambia en el tiempo por
   entidad** (verificado: una cooperativa real pasa de `SIN SEGMENTO` a `SEGMENTO 3` a
   `SEGMENTO 1` entre 2009 y 2023 según crece) — no es un atributo fijo del banco, es un

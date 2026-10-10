@@ -13,7 +13,12 @@ import pandas as pd
 import pytest
 
 from benchmark_bancos.transform.canton_matching import CantonNoResueltoError
-from benchmark_bancos.transform.parse_bce_tasas import _resolve_canton, _weighted_agg
+from benchmark_bancos.transform.parse_bce_tasas import (
+    TipoSegmentoNoResueltoError,
+    _homologar_tipo_segmento,
+    _resolve_canton,
+    _weighted_agg,
+)
 
 
 def _row(canton: str, provincia: str, monto_total: float, **overrides) -> dict:
@@ -151,3 +156,17 @@ def test_resolve_canton_no_lanza_para_canton_fuera_del_universo_sembrado():
     result = _resolve_canton(df)
     assert result["canton"].iloc[0] == "UN CANTON QUE NO EXISTE"
     assert result["provincia"].iloc[0] == "GUAYAS"
+
+
+def test_homologar_tipo_segmento_unifica_mutualistas():
+    serie = pd.Series([" Mutualistas ", "SEGMENTO 1 MUTUALISTA", "banco grande"])
+    assert _homologar_tipo_segmento(serie, "tsp").tolist() == [
+        "SEGMENTO 1 MUTUALISTA",
+        "SEGMENTO 1 MUTUALISTA",
+        "BANCO GRANDE",
+    ]
+
+
+def test_homologar_tipo_segmento_rechaza_valor_fuera_de_catalogo():
+    with pytest.raises(TipoSegmentoNoResueltoError, match="tsa"):
+        _homologar_tipo_segmento(pd.Series(["SEGMENTO 6"]), "tsa")

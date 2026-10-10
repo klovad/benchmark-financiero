@@ -23,7 +23,7 @@ conformados"): `dim_entidad` (camino curado + camino auto-registrado), `dim_segm
 | `dim_entidad` — auto-registrado (408, BCE y SEPS) | `EntidadBceNoMapeadaError` (tipo_entidad), `RucInvalidoError` (RUC) | `banco_matching.py:139`, `banco_matching.py:144` (raise en :253-256 y :270-276) | Fail-fast sobre tipo/RUC; identidad en sí **no se cura**, se auto-ingresa `AUTO_INGRESADO` |
 | `dim_segmento_credito`/`dim_subsegmento_credito` | `SegmentoNoResueltoError` (BCE tsa), `ValueError` (CAPCOL, sin clase propia) | `src/benchmark_bancos/transform/parse_bce_tasas.py:156` (raise :329-331); `src/benchmark_bancos/transform/parse_cartera.py:48` | Fail-fast absoluto, sin two-tier |
 | `dim_categoria_deposito` | `CategoriaNoResueltaError` (CAPCOL), `ValueError` (BCE tsp, sin clase propia) | `src/benchmark_bancos/transform/categoria_deposito_matching.py:53` (raise :88-91); `parse_bce_tasas.py:291` | Fail-fast absoluto, sin two-tier |
-| `dim_segmento_entidad` | `TipoSegmentoNoResueltoError` | `parse_bce_tasas.py:160` (raise :296-299 tsp, :336-339 tsa) | Fail-fast absoluto, sin two-tier |
+| `dim_segmento_entidad` | `TipoSegmentoNoResueltoError` | `parse_bce_tasas.py:142` (raise en `_homologar_tipo_segmento`, :146) | Fail-fast absoluto, sin two-tier |
 | `dim_plazo` | `PlazoNoResueltoError` (shape/rango inválido) | `src/benchmark_bancos/transform/bce_plazo_matching.py:27` (4 puntos de raise, ver sección) | **Two-tier**: shape+rango sano fuera del universo curado → `AUTO_INGRESADO`, no lanza |
 | `dim_cuenta_contable` | Ninguna — `ValueError` genérico solo ante bug de parsing (`_find_header_row`) | `src/benchmark_bancos/transform/parse_boletin.py:104-106` | Sin gate — todo código nuevo se auto-ingresa `AUTO_INGRESADO` por diseño |
 | `dim_canton` (BCE tsp/tsa) | `CantonNoResueltoError` (provincia no resoluble, o canton/provincia vacíos) | `src/benchmark_bancos/transform/canton_matching.py:81` (raise en `resolver_canton_bce()`) | **Two-tier**: provincia válida pero par (canton, provincia) fuera del universo curado → `AUTO_INGRESADO`, no lanza. Integración en `parse_bce_tasas.py` pendiente (carril de `data-engineer`, ver `docs/gobernanza_datos.md`) |
@@ -262,12 +262,14 @@ conteos.
 
 ## 5. `dim_segmento_entidad`
 
-**Error**: `TipoSegmentoNoResueltoError` — `parse_bce_tasas.py:160-161`, lanzado en
-:296-299 (tsp) / :336-339 (tsa) cuando `tipo_segmento` no está en `TIPOS_SEGMENTO_VALIDOS`
-(14 valores, `parse_bce_tasas.py:103-118`). Se ve al correr `uv run benchmark-bancos bce`.
+**Error**: `TipoSegmentoNoResueltoError` — `parse_bce_tasas.py:142`, lanzado por
+`_homologar_tipo_segmento` (:146, usado para tsp y tsa) cuando `tipo_segmento`, después de
+aplicar `ALIAS_TIPO_SEGMENTO` (:135), no está en `TIPOS_SEGMENTO_VALIDOS` (:117). Se ve al correr `uv run benchmark-bancos bce`.
 Sin two-tier, fail-fast absoluto.
 
-**Dónde arreglarlo**: un tier regulatorio genuinamente nuevo (ej. SEPS agrega un
+**Dónde arreglarlo**: si el BCE solo cambió la etiqueta de una clasificación existente (como
+`MUTUALISTAS` en 2025-01 para `SEGMENTO 1 MUTUALISTA`), agregar el par a
+`ALIAS_TIPO_SEGMENTO` — sin migración. Un tier regulatorio genuinamente nuevo (ej. SEPS agrega un
 "SEGMENTO 6" para cooperativas) → agregar a `TIPOS_SEGMENTO_VALIDOS`
 (`parse_bce_tasas.py:103-118`) **y** una migración que inserte la fila en
 `marts.dim_segmento_entidad` (`sql/19_dim_segmento_entidad.sql:20-25`, `ON CONFLICT
@@ -275,7 +277,9 @@ Sin two-tier, fail-fast absoluto.
 `_REFRESH_MARTS_SQL`, solo `LEFT JOIN` de lectura en las líneas ~733/765 de
 `load_postgres.py`).
 
-**Nota de riesgo latente** (no activo hoy): como el `JOIN` en `fact_captaciones_depositos`/
+**Nota de riesgo latente** (cerrado 2026-10-10: `segmento_entidad_id` es NOT NULL en los
+hechos BCE y en `dim_entidad` desde `sql/41`, así que un valor no mapeado haría fallar el
+refresh en vez de quedar en NULL; se conserva el análisis original): como el `JOIN` en `fact_captaciones_depositos`/
 `fact_colocaciones_cartera` es `LEFT JOIN` (no `INNER`), un `tipo_segmento` no mapeado que
 lograra saltarse la validación de Python terminaría con `segmento_entidad_id = NULL` en
 vez de un error — hoy es inalcanzable porque Python valida antes de `staging`, pero es el
@@ -286,9 +290,9 @@ segmento_entidad_id IS NULL` contra `COUNT(*) FROM staging.bce_tasas_pasivas WHE
 tipo_segmento IS NULL` — si el primero es mayor, hay filas con `tipo_segmento` no-NULL que
 no matchearon.
 
-**Después de arreglarlo**: no hay archivo de test dedicado a `TIPOS_SEGMENTO_VALIDOS` hoy
-(mismo hueco de cobertura que la sección 3) — considerar crear uno si se toca esta
-constante. Docs: `docs/data_dictionary.md` (conteo 14 → nuevo), `docs/gobernanza_datos.md`.
+**Después de arreglarlo**: `tests/test_parse_bce_tasas.py` cubre el alias y el rechazo de
+valores fuera de catálogo (`test_homologar_tipo_segmento_*`, 2026-10-10); agregar un caso
+si se suma un alias. Docs: `docs/data_dictionary.md` (conteo 14 → nuevo), `docs/gobernanza_datos.md`.
 Re-ejecutar: `pytest -m "not integration" -v`, `uv run benchmark-bancos bce`, verificar
 conteos.
 

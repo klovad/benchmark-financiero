@@ -272,6 +272,10 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   sola fila con su provincia vigente (2 duplicados por escritura y 5 pares con provincia
   anterior fusionados, totales nacionales sin cambio), y `marts.dim_banco` pasó a
   llamarse `marts.dim_entidad` (`entidad_id`). Ver `docs/data_dictionary.md`.
+- ✅ **Segmento de entidad homologado** (2026-10-10, `sql/41`): las mutualistas quedan en
+  un solo valor (`SEGMENTO 1 MUTUALISTA`; el BCE las rotula `MUTUALISTAS` desde 2025) y
+  las entidades que no reportan al BCE (segundo piso) en `NO REPORTA AL BCE`; la columna
+  ya no admite nulos en `dim_entidad` ni en los hechos BCE.
 
 - ✅ ETL de las 5 fuentes completo y verificado (conteos `staging` = `marts` exactos, CDC
   sin updates espurios en una segunda corrida, ver `docs/data_dictionary.md` y

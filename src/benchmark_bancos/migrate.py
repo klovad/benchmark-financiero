@@ -77,6 +77,10 @@ SONDAS: dict[str, str] = {
         "SELECT NOT EXISTS (SELECT FROM marts.dim_fecha "
         f"WHERE nombre_mes IS DISTINCT FROM ({_MESES_ES})[mes])"
     ),
+    "41_segmento_entidad_homologado.sql": """SELECT EXISTS (
+            SELECT FROM marts.dim_segmento_entidad WHERE tipo_segmento = 'NO REPORTA AL BCE')
+        AND NOT EXISTS (
+            SELECT FROM marts.dim_segmento_entidad WHERE tipo_segmento = 'MUTUALISTAS')""",
 }
 
 _DDL_REGISTRO = """

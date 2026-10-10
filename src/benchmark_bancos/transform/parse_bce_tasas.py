@@ -40,6 +40,9 @@ las tasas se promedian PONDERADAS por monto_total de cada fila (no un promedio s
 normativa de tamaño/estructura de CADA entidad -- BANCO GRANDE/MEDIANO/PEQUEÑO para
 bancos privados, SEGMENTO 1-5/SIN SEGMENTO para cooperativas (JPRF, umbrales por
 activos), SEGMENTO 1 MUTUALISTA para mutualistas, una sola categoría para el resto.
+Desde 2025-01 el BCE etiqueta a las mutualistas como "MUTUALISTAS"; se homologa a
+"SEGMENTO 1 MUTUALISTA" (`ALIAS_TIPO_SEGMENTO`, sql/41) -- misma clasificación normativa,
+que la SEPS sigue publicando con ese nombre.
 Detectada 2026-07-25 (el usuario preguntó dónde se había considerado -- no se había
 considerado: se preservaba en raw.* pero se descartaba antes de staging sin examinar su
 contenido). Es un atributo de la ENTIDAD en esa fecha, no del instrumento/segmento de
@@ -123,10 +126,13 @@ TIPOS_SEGMENTO_VALIDOS = {
     "SEGMENTO 5",
     "SIN SEGMENTO",
     "SEGMENTO 1 MUTUALISTA",
-    "MUTUALISTAS",
     "SOCIEDAD FINANCIERA",
     "ADMINISTRADORA DE TARJETAS DE CREDITO",
 }
+
+# Etiquetas del BCE que nombran una clasificación ya existente en el catálogo (sql/41):
+# "MUTUALISTAS" (desde 2025-01) es el mismo Segmento 1 de las mutualistas.
+ALIAS_TIPO_SEGMENTO = {"MUTUALISTAS": "SEGMENTO 1 MUTUALISTA"}
 
 
 class SegmentoNoResueltoError(ValueError):
@@ -135,6 +141,18 @@ class SegmentoNoResueltoError(ValueError):
 
 class TipoSegmentoNoResueltoError(ValueError):
     """tipo_segmento no está en el universo sembrado de dim_segmento_entidad."""
+
+
+def _homologar_tipo_segmento(serie: pd.Series, archivo: str) -> pd.Series:
+    """Normaliza tipo_segmento, aplica ALIAS_TIPO_SEGMENTO y rechaza valores fuera del
+    catálogo de dim_segmento_entidad."""
+    serie = serie.str.strip().str.upper().replace(ALIAS_TIPO_SEGMENTO)
+    desconocidos = set(serie.unique()) - TIPOS_SEGMENTO_VALIDOS
+    if desconocidos:
+        raise TipoSegmentoNoResueltoError(
+            f"tipo_segmento desconocido en {archivo}: {desconocidos}"
+        )
+    return serie
 
 
 def _resolve_segmento_entidad(df: pd.DataFrame) -> pd.DataFrame:
@@ -291,12 +309,7 @@ def parse_tsp_file(
         raise ValueError(f"instrumento_captacion desconocido en tsp: {desconocidas}")
     df["categoria_deposito"] = categorias
 
-    df["tipo_segmento"] = df["tipo_segmento"].str.strip().str.upper()
-    desconocidos_seg = set(df["tipo_segmento"].unique()) - TIPOS_SEGMENTO_VALIDOS
-    if desconocidos_seg:
-        raise TipoSegmentoNoResueltoError(
-            f"tipo_segmento desconocido en tsp: {desconocidos_seg}"
-        )
+    df["tipo_segmento"] = _homologar_tipo_segmento(df["tipo_segmento"], "tsp")
     segmento_entidad = _resolve_segmento_entidad(df)
 
     group_cols = [
@@ -332,12 +345,7 @@ def parse_tsa_file(
         )
     df["segmento_credito"] = segmentos
 
-    df["tipo_segmento"] = df["tipo_segmento"].str.strip().str.upper()
-    desconocidos_seg = set(df["tipo_segmento"].unique()) - TIPOS_SEGMENTO_VALIDOS
-    if desconocidos_seg:
-        raise TipoSegmentoNoResueltoError(
-            f"tipo_segmento desconocido en tsa: {desconocidos_seg}"
-        )
+    df["tipo_segmento"] = _homologar_tipo_segmento(df["tipo_segmento"], "tsa")
     segmento_entidad = _resolve_segmento_entidad(df)
 
     group_cols = [
