@@ -5,12 +5,12 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1177 nodes · 1870 edges · 153 communities (72 shown, 81 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 43 edges (avg confidence: 0.91)
+- 1180 nodes · 1821 edges · 154 communities (70 shown, 84 thin omitted)
+- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 83 edges (avg confidence: 0.88)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `3b1862cf`
+- Built from commit: `758d993f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -23,13 +23,13 @@
 - cli.py
 - test_parse_tasas_historicas.py
 - test_orquestacion.py
-- con_reintentos
+- scrape_boletin.py
 - Catálogo completo (48 indicadores, 12 categorías)
 - marts.dim_banco
-- pipeline.py
-- config/__init__.py
-- settings.py
-- db_conn
+- parse_boletin.py
+- con_reintentos
+- setup_logging
+- DataFrame
 - marts.vw_conciliacion_saldos_balance
 - 18_glosario_cuentas_views.sql
 - resolver_canton_bce
@@ -51,7 +51,7 @@
 - CLAUDE.md
 - download_seps.py
 - 08_dim_segmento_categoria_plazo.sql
-- parse_fecha_from_boletin_filename
+- date
 - 02_schema_staging.sql
 - 07_dim_banco_dim_fecha_rebuild.sql
 - 16_dim_segmento_normativo.sql
@@ -59,7 +59,7 @@
 - 20_dim_provincia.sql
 - parse_seps.py
 - download_bce.py
-- parse_cartera.py
+- config/__init__.py
 - marts.dim_subsegmento_credito
 - marts.fact_tasas_activas
 - marts.fact_tasas_pasivas
@@ -78,8 +78,9 @@
 - staging.depositos
 - marts.dim_plazo
 - marts.fact_depositos
-- ContadorErrores
+- orquestacion.py
 - 01_schema_meta.sql
+- parametrize
 - marts.fact_captaciones_depositos
 - marts.fact_cartera
 - marts.fact_colocaciones_cartera
@@ -147,35 +148,35 @@
 ## God Nodes (most connected - your core abstractions)
 1. `resolver_canton_bce()` - 30 edges
 2. `resolver_banco_codigo()` - 23 edges
-3. `sha256_file()` - 21 edges
-4. `parse_depositos_file()` - 21 edges
-5. `load_seps()` - 20 edges
-6. `parse_seps_colocaciones_file()` - 19 edges
-7. `parse_seps_eeff_file()` - 19 edges
-8. `parse_seps_captaciones_file()` - 17 edges
-9. `refresh_marts()` - 16 edges
-10. `load_bce()` - 16 edges
+3. `load_seps()` - 20 edges
+4. `sha256_file()` - 20 edges
+5. `parse_depositos_file()` - 20 edges
+6. `parse_seps_colocaciones_file()` - 18 edges
+7. `parse_seps_eeff_file()` - 18 edges
+8. `parse_seps_captaciones_file()` - 16 edges
+9. `resolver_categoria_deposito()` - 16 edges
+10. `load_boletin()` - 15 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `test_resolver_entidad_seps_reusa_llave_bce_y_rellena_ruc_numerico()` --uses--> `RucInvalidoError`  [INFERRED]
-  tests/test_parse_seps.py → src/benchmark_bancos/transform/banco_matching.py
-- `test_resolver_plazo_shape_invalido_sigue_lanzando()` --uses--> `PlazoNoResueltoError`  [INFERRED]
-  tests/test_parse_tasas_historicas.py → src/benchmark_bancos/transform/bce_plazo_matching.py
-- `test_resolver_plazo_shape_valido_pero_rango_invertido_lanza_error()` --uses--> `PlazoNoResueltoError`  [INFERRED]
-  tests/test_parse_tasas_historicas.py → src/benchmark_bancos/transform/bce_plazo_matching.py
 - `test_resolve_canton_propaga_cantonnoresueltoerror()` --uses--> `CantonNoResueltoError`  [INFERRED]
   tests/test_parse_bce_tasas.py → src/benchmark_bancos/transform/canton_matching.py
-- `test_desvio_conocido_de_bancos_privados_en_depositos_no_falla()` --uses--> `Resultado`  [INFERRED]
-  tests/test_conciliacion.py → src/benchmark_bancos/conciliacion.py
+- `test_resolver_entidad_seps_reusa_llave_bce_y_rellena_ruc_numerico()` --uses--> `RucInvalidoError`  [INFERRED]
+  tests/test_parse_seps.py → src/benchmark_bancos/transform/banco_matching.py
+- `test_codigo_padre_sigue_la_jerarquia_del_catalogo_unico_de_cuentas()` --calls--> `_codigo_padre()`  [EXTRACTED]
+  tests/test_parse_boletin.py → src/benchmark_bancos/transform/parse_boletin.py
+- `test_parse_fecha_tasas_historicas_no_matching_pattern_raises()` --calls--> `parse_fecha_from_tasas_historicas_filename()`  [EXTRACTED]
+  tests/test_pipeline_fecha_parsing.py → src/benchmark_bancos/pipeline.py
+- `test_parse_fecha_tasas_historicas_valid_filename()` --calls--> `parse_fecha_from_tasas_historicas_filename()`  [EXTRACTED]
+  tests/test_pipeline_fecha_parsing.py → src/benchmark_bancos/pipeline.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (153 total, 81 thin omitted)
+## Communities (154 total, 84 thin omitted)
 
 ### Community 0 - "load_postgres.py"
-Cohesion: 0.11
-Nodes (32): _cdc_guard(), _clean(), _copy_rows(), _crear_fuentes_incrementales(), insert_dim_cuenta_contable_seps(), _leer_watermark(), load_banco_maestro_seed(), _log_bancos_no_resueltos() (+24 more)
+Cohesion: 0.06
+Nodes (73): date, _ejecutar(), _cdc_guard(), _clean(), _copy_rows(), _crear_fuentes_incrementales(), get_connection(), insert_dim_cuenta_contable_seps() (+65 more)
 
 ### Community 1 - "benchmark_cartera_depositos"
 Cohesion: 0.10
@@ -199,35 +200,31 @@ Nodes (9): ArgumentParser, Punto de entrada del proyecto. uv run main.py <etapa>
 
 ### Community 7 - "test_parse_tasas_historicas.py"
 Cohesion: 0.08
-Nodes (40): _categoria_label(), _clean_label(), _emitir(), _normalizar_ancho(), _parse_filas(), parse_tasas_historicas_file(), DataFrame, Path (+32 more)
+Nodes (40): DataFrame, parametrize, _categoria_label(), _clean_label(), _emitir(), _normalizar_ancho(), _parse_filas(), parse_tasas_historicas_file() (+32 more)
 
 ### Community 8 - "test_orquestacion.py"
 Cohesion: 0.06
 Nodes (34): evaluar(), Connection, Control de conciliación saldos vs. contabilidad (2026-10-09, `sql/39`). Evalúa…, Devuelve un mensaje por cada (mes, tipo, medida) fuera de umbral., Evalúa los últimos `meses` cortes con contabilidad cargada. Registra un ERROR…, Resultado, Umbral, verificar() (+26 more)
 
-### Community 9 - "con_reintentos"
-Cohesion: 0.12
-Nodes (23): BaseException, download_tasas_historicas(), _meses_hasta_hoy(), Path, Descarga de las páginas mensuales TasasVigentes{MM}{YYYY}.htm del BCE (techos…, con_reintentos(), es_transitorio(), Reintentos para las descargas (2026-10-09). Antes un corte de red momentáneo o… (+15 more)
+### Community 9 - "scrape_boletin.py"
+Cohesion: 0.21
+Nodes (14): _download_all_files(), es_boletin(), main(), _open_year_folder(), Path, Descarga los ZIP del Boletín Financiero Mensual (Balance y PyG) de bancos…, True si el archivo es un boletín mensual. Compara sin tildes: el portal escribe…, _reset_to_root() (+6 more)
 
 ### Community 12 - "Catálogo completo (48 indicadores, 12 categorías)"
 Cohesion: 0.06
 Nodes (32): 1. Cómo está organizado el Catálogo Único de Cuentas, 2. Cuentas clave — ACTIVO (sección `1`), 3. Cuentas clave — PASIVO (sección `2`), 4.6 Hueco de datos conocido: PyG código `4`, 4. Cuentas clave — PATRIMONIO, INGRESOS, GASTOS (secciones `3`, `4`, `5`), 5. Bloques que combinan Balance + PyG o cruzan periodos (series de tiempo), 6. Qué NO cubre este documento (fuera de alcance, documentado en otro lado), Cómo usar este documento al escribir un ratio nuevo (+24 more)
 
-### Community 14 - "pipeline.py"
-Cohesion: 0.18
-Nodes (25): _ejecutar(), get_connection(), is_source_loaded(), Connection, Actualiza marts.* desde staging. Incremental por defecto: solo recalcula el…, Registra el RUC de TODAS las entidades resueltas por BCE (bancos privados…, refresh_marts(), register_source_file() (+17 more)
+### Community 14 - "parse_boletin.py"
+Cohesion: 0.16
+Nodes (16): _find_header_row(), _normalize_col(), parse_boletin_file(), _parse_hoja(), _parse_met(), DataFrame, Path, Parser del Boletín Financiero Mensual (Superbancos) -- hojas BALANCE y PYG.… (+8 more)
 
-### Community 15 - "config/__init__.py"
-Cohesion: 0.33
-Nodes (3): Catálogos de dominio usados por los parsers: mapeos de vocabulario de las…, Configuración del proyecto, separada por responsabilidad: - `settings`: lo que…, Constantes de las fuentes externas: URLs, sub-portales, nombres de carpeta, ids…
+### Community 15 - "con_reintentos"
+Cohesion: 0.25
+Nodes (9): BaseException, download_tasas_historicas(), _meses_hasta_hoy(), Path, Descarga de las páginas mensuales TasasVigentes{MM}{YYYY}.htm del BCE (techos…, con_reintentos(), es_transitorio(), Reintentos para las descargas (2026-10-09). Antes un corte de red momentáneo o… (+1 more)
 
-### Community 16 - "settings.py"
-Cohesion: 0.50
-Nodes (3): _find_project_root(), Path, Configuración que depende del entorno: rutas, base de datos y años a procesar.…
-
-### Community 17 - "db_conn"
-Cohesion: 0.50
-Nodes (3): db_conn(), fixture, Conexión a Postgres real para tests marcados @pytest.mark.integration. Nunca…
+### Community 16 - "setup_logging"
+Cohesion: 0.29
+Nodes (6): LogRecord, Path, Configuracion de logging compartida por todo el pipeline. Reemplaza los…, Configura el root logger una sola vez por proceso. Idempotente: si el root…, _RunIdFilter, setup_logging()
 
 ### Community 18 - "marts.vw_conciliacion_saldos_balance"
 Cohesion: 0.29
@@ -239,7 +236,7 @@ Nodes (14): marts.vw_activo_promedio_ytd, marts.vw_cartera_bruta, marts.vw_carte
 
 ### Community 20 - "resolver_canton_bce"
 Cohesion: 0.06
-Nodes (37): CantonNoResueltoError, es_canton_conocido(), normalize_canton(), ValueError, Resuelve el par (canton, provincia) crudo del BCE (tsp/tsa) contra el catálogo…, Universo curado `(canton, provincia) -> codigo_inec` de…, Resuelve un par crudo (canton, provincia) de BCE tsp/tsa al par normalizado…, True si el par (ya normalizado, tal como lo devuelve `resolver_canton_bce()`)… (+29 more)
+Nodes (36): CantonNoResueltoError, es_canton_conocido(), normalize_canton(), ValueError, Universo curado `(canton, provincia) -> codigo_inec` de…, Resuelve un par crudo (canton, provincia) de BCE tsp/tsa al par normalizado…, True si el par (ya normalizado, tal como lo devuelve `resolver_canton_bce()`)…, La `provincia` cruda no normaliza contra ninguna de las 24 provincias reales… (+28 more)
 
 ### Community 21 - "marts.vw_cartera_market_share"
 Cohesion: 0.33
@@ -251,7 +248,7 @@ Nodes (9): marts.fact_tasas_activas, marts.fact_tasas_pasivas, marts.dim_banco, 
 
 ### Community 23 - "test_integration_regressions.py"
 Cohesion: 0.09
-Nodes (39): upsert_staging_bce_tasas_pasivas(), _bce_tasas_pasivas_row(), _boletin_balance_row(), _cleanup_bce_tasas_pasivas(), _cleanup_boletin_balance(), _dim_canton_insert_statement(), _fact_saldo_cartera_pivot_statement(), integration (+31 more)
+Nodes (37): upsert_staging_bce_tasas_pasivas(), _bce_tasas_pasivas_row(), _boletin_balance_row(), _cleanup_bce_tasas_pasivas(), _cleanup_boletin_balance(), _dim_canton_insert_statement(), _fact_saldo_cartera_pivot_statement(), integration (+29 more)
 
 ### Community 24 - "12_schema_tasas_historicas.sql"
 Cohesion: 0.27
@@ -286,36 +283,32 @@ Cohesion: 0.38
 Nodes (6): export_full(), export_recientes(), export_sample(), Path, Exporta marts.* a Parquet, para poder probar el modelo de datos (notebooks, BI,…, Catálogos completos + cada hecho con sus últimos `meses` meses con datos.
 
 ### Community 37 - "scrape_superbancos.py"
-Cohesion: 0.14
-Nodes (20): _download_all_files(), main(), _open_report_folder(), _open_year_folder(), Path, Descarga los archivos ZIP de cartera y depósitos del portal CAPCOL de…, Vuelve al listado raíz de años vía el breadcrumb 'Inicio'. OJO: recargar la…, _reset_to_root() (+12 more)
+Cohesion: 0.33
+Nodes (10): _download_all_files(), main(), _open_report_folder(), _open_year_folder(), Path, Descarga los archivos ZIP de cartera y depósitos del portal CAPCOL de…, Vuelve al listado raíz de años vía el breadcrumb 'Inicio'. OJO: recargar la…, _reset_to_root() (+2 more)
 
 ### Community 39 - "download_seps.py"
-Cohesion: 0.17
-Nodes (14): download_seps(), download_seps_file(), _nombre_zip(), Path, Descarga directa de los reportes anuales de la SEPS (captaciones, colocaciones,…, HEAD al link del portal (sigue la redirección al .zip real, sin bajarlo): URL…, Descarga solo si la SEPS publicó una versión distinta a la local. El año en…, _version_publicada() (+6 more)
+Cohesion: 0.36
+Nodes (8): download_seps(), download_seps_file(), _nombre_zip(), Path, Descarga directa de los reportes anuales de la SEPS (captaciones, colocaciones,…, HEAD al link del portal (sigue la redirección al .zip real, sin bajarlo): URL…, Descarga solo si la SEPS publicó una versión distinta a la local. El año en…, _version_publicada()
 
 ### Community 40 - "08_dim_segmento_categoria_plazo.sql"
 Cohesion: 0.50
 Nodes (3): marts.dim_categoria_deposito, marts.dim_plazo, marts.dim_segmento_credito
 
-### Community 41 - "parse_fecha_from_boletin_filename"
-Cohesion: 0.23
-Nodes (11): parse_fecha_from_boletin_filename(), parse_fecha_from_tasas_historicas_filename(), date, Extrae la fecha (fin de mes) de un nombre de archivo TasasVigenteMMAAAA.htm.…, Extrae la fecha (fin de mes) de un nombre de archivo 'Boletín Bancos <MES_ES>…, Tests puros (sin DB ni red) para las funciones de fecha-desde-nombre-de-archivo…, test_parse_fecha_boletin_no_matching_pattern_raises(), test_parse_fecha_boletin_unrecognized_month_raises() (+3 more)
-
 ### Community 47 - "parse_seps.py"
 Cohesion: 0.08
-Nodes (48): Series, Resuelve una entidad SEPS (cooperativa, mutualista o entidad de segundo piso) a…, resolver_entidad_seps(), _a_numero(), _chunks(), extraer_zip_seps(), _fecha_corte(), _geo() (+40 more)
+Nodes (49): Series, Resuelve una entidad SEPS (cooperativa, mutualista o entidad de segundo piso) a…, resolver_entidad_seps(), _codigo_padre(), _a_numero(), _chunks(), extraer_zip_seps(), _fecha_corte() (+41 more)
 
 ### Community 48 - "download_bce.py"
 Cohesion: 0.47
 Nodes (8): _cabeceras_condicionales(), download_all(), download_bce_file(), _leer_meta(), _meta_path(), Path, Descarga directa de los archivos semanales de tasas de interés del BCE…, clave: 'tsp' o 'tsa'. Descarga solo si el servidor tiene una versión distinta a…
 
-### Community 50 - "parse_cartera.py"
+### Community 50 - "config/__init__.py"
 Cohesion: 0.06
-Nodes (60): aplicar_alias_canton(), Devuelve el par canónico `(canton, provincia)` si el par (ya normalizado) es…, extract_single_xlsx(), find_base_sheets(), month_end_date(), normalize_banco(), normalize_provincia(), normalize_text() (+52 more)
+Nodes (53): Catálogos de dominio usados por los parsers: mapeos de vocabulario de las…, Configuración del proyecto, separada por responsabilidad: - `settings`: lo que…, _find_project_root(), Path, Configuración que depende del entorno: rutas, base de datos y años a procesar.…, Constantes de las fuentes externas: URLs, sub-portales, nombres de carpeta, ids…, aplicar_alias_canton(), Resuelve el par (canton, provincia) crudo del BCE (tsp/tsa) contra el catálogo… (+45 more)
 
-### Community 74 - "ContadorErrores"
-Cohesion: 0.40
-Nodes (3): ContadorErrores, LogRecord, Cuenta los registros ERROR/CRITICAL de la corrida (scrapers con timeout,…
+### Community 74 - "orquestacion.py"
+Cohesion: 0.15
+Nodes (10): anios_en_curso(), bloqueo_corrida(), ContadorErrores, CorridaEnCurso, date, LogRecord, RuntimeError, Orquestación de corridas desatendidas (2026-10-09). - `bloqueo_corrida()`:… (+2 more)
 
 ### Community 95 - "marts.vw_dim_canton_geografia"
 Cohesion: 0.50
@@ -362,24 +355,24 @@ Cohesion: 0.07
 Nodes (21): bce(), fixture, Descarga condicional del BCE (2026-10-09): el archivo tsp/tsa se republica con…, _Resp, test_copia_local_desactualizada_se_reemplaza(), test_sin_copia_local_descarga_y_guarda_meta(), fixture, Descarga condicional de la SEPS (2026-10-09): el año en curso se republica con… (+13 more)
 
 ## Knowledge Gaps
-- **190 isolated node(s):** `benchmark-bancos`, `actualizar.sh script`, `meta.source_files`, `staging.cartera`, `staging.depositos` (+185 more)
+- **190 isolated node(s):** `Qué incluye`, `Quickstart`, `Estructura`, `Tests y CI`, `Alcance de los datos` (+185 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **81 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **84 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `resolver_canton_bce()` connect `resolver_canton_bce` to `parse_cartera.py`, `parse_seps.py`, `parse_bce_tasas.py`?**
-  _High betweenness centrality (0.021) - this node is a cross-community bridge._
-- **Why does `validar_universo_plazos_bce()` connect `resolver_categoria_deposito` to `parse_bce_tasas.py`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
-- **Why does `parse_boletin_file()` connect `parse_cartera.py` to `banco_matching.py`, `pipeline.py`?**
-  _High betweenness centrality (0.010) - this node is a cross-community bridge._
-- **Are the 4 inferred relationships involving `load_seps()` (e.g. with `upsert_staging_cartera()` and `upsert_staging_depositos()`) actually correct?**
-  _`load_seps()` has 4 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `benchmark-bancos`, `actualizar.sh script`, `meta.source_files` to the rest of the system?**
+- **Why does `sha256_file()` connect `config/__init__.py` to `load_postgres.py`, `parse_bce_tasas.py`, `parse_seps.py`?**
+  _High betweenness centrality (0.024) - this node is a cross-community bridge._
+- **Why does `resolver_categoria_deposito()` connect `resolver_categoria_deposito` to `config/__init__.py`?**
+  _High betweenness centrality (0.023) - this node is a cross-community bridge._
+- **Why does `_resolver_plazo()` connect `test_parse_tasas_historicas.py` to `resolver_categoria_deposito`?**
+  _High betweenness centrality (0.020) - this node is a cross-community bridge._
+- **Are the 15 inferred relationships involving `load_seps()` (e.g. with `download_seps()` and `get_connection()`) actually correct?**
+  _`load_seps()` has 15 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 5 inferred relationships involving `sha256_file()` (e.g. with `load_bce()` and `load_boletin()`) actually correct?**
+  _`sha256_file()` has 5 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `Qué incluye`, `Quickstart`, `Estructura` to the rest of the system?**
   _190 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `load_postgres.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.10795454545454546 - nodes in this community are weakly interconnected._
-- **Should `benchmark_cartera_depositos` be split into smaller, more focused modules?**
-  _Cohesion score 0.10121951219512196 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05649122807017544 - nodes in this community are weakly interconnected._
