@@ -12,6 +12,22 @@ from benchmark_bancos.config import DB_CONFIG
 
 
 @pytest.fixture
+def sin_esperas_ni_conciliacion(monkeypatch):
+    # actualizar() espera antes de reintentar y concilia contra la base al final.
+    monkeypatch.setattr(orquestacion.time, "sleep", lambda s: None)
+    monkeypatch.setattr(orquestacion.conciliacion, "verificar", lambda conn: [])
+    monkeypatch.setattr(orquestacion.psycopg, "connect", lambda **kw: _Conn())
+
+
+class _Conn:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+@pytest.fixture
 def sin_bloqueo(monkeypatch):
     monkeypatch.setattr(orquestacion, "bloqueo_corrida", contextlib.nullcontext)
 
@@ -54,7 +70,7 @@ def test_contador_no_se_acumula_entre_corridas(monkeypatch, sin_bloqueo):
     assert cli.main(["refresh"]) == 0
 
 
-def test_actualizar_sigue_si_una_fuente_falla(monkeypatch):
+def test_actualizar_sigue_si_una_fuente_falla(monkeypatch, sin_esperas_ni_conciliacion):
     corridas = []
 
     def falla():
@@ -66,6 +82,23 @@ def test_actualizar_sigue_si_una_fuente_falla(monkeypatch):
     fallidas = orquestacion.actualizar(anios=[2026])
     assert fallidas == ["capcol"]
     assert corridas == ["bce", "boletin", "tasas-historicas", "seps"]
+
+
+def test_actualizar_reintenta_una_fuente_que_falla_una_vez(
+    monkeypatch, sin_esperas_ni_conciliacion
+):
+    intentos = []
+
+    def falla_la_primera():
+        intentos.append(1)
+        if len(intentos) == 1:
+            raise RuntimeError("portal respondió a medias")
+
+    pasos = {f: (lambda: None) for f in orquestacion.FUENTES}
+    pasos["seps"] = falla_la_primera
+    monkeypatch.setattr(orquestacion, "_pasos", lambda anios: pasos)
+    assert orquestacion.actualizar(anios=[2026]) == []
+    assert len(intentos) == 2
 
 
 @pytest.mark.parametrize(

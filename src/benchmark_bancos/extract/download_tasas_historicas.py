@@ -14,6 +14,7 @@ import urllib.request
 from pathlib import Path
 
 from benchmark_bancos.config import BCE_BASE_URL, BCE_DIR
+from benchmark_bancos.extract.red import con_reintentos
 from benchmark_bancos.logging_utils import setup_logging
 
 log = logging.getLogger(__name__)
@@ -45,8 +46,12 @@ def download_tasas_historicas(out_dir: Path = HISTORICO_DIR) -> list[Path]:
         url = f"{BCE_BASE_URL}/{nombre}"
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                data = resp.read()
+
+            def bajar(req=req) -> bytes:
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    return resp.read()
+
+            data = con_reintentos(bajar, nombre)
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 log.info("No existe %s (404), se omite", nombre)

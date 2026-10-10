@@ -18,6 +18,7 @@ from playwright.sync_api import TimeoutError as PwTimeoutError
 from playwright.sync_api import sync_playwright
 
 from benchmark_bancos.config import BOLETIN_URL, DEFAULT_YEARS, RAW_DIR
+from benchmark_bancos.extract.red import con_reintentos
 from benchmark_bancos.logging_utils import setup_logging
 
 log = logging.getLogger(__name__)
@@ -68,12 +69,17 @@ def _download_all_files(page, dest_dir: Path) -> list[Path]:
         if not es_boletin(name):
             log.info("Se omite (no es un boletín mensual): %s", name)
             continue  # la carpeta de año trae otros archivos además del boletín mensual
-        try:
+
+        def bajar(entry=entry) -> Path:
             with page.expect_download(timeout=30_000) as dl_info:
                 entry.dblclick()
             download = dl_info.value
             target = dest_dir / download.suggested_filename
             download.save_as(target)
+            return target
+
+        try:
+            target = con_reintentos(bajar, f"descarga '{name}'", intentos=2)
             saved.append(target)
             log.info("Descargado: %s", target)
         except PwTimeoutError:
@@ -96,7 +102,10 @@ def scrape(
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=headless)
         page = browser.new_page(accept_downloads=True)
-        page.goto(BOLETIN_URL, wait_until="networkidle", timeout=60_000)
+        con_reintentos(
+            lambda: page.goto(BOLETIN_URL, wait_until="networkidle", timeout=60_000),
+            "portal del Boletín",
+        )
         page.wait_for_timeout(2000)
         for year in years:
             log.info("=== Año %s ===", year)

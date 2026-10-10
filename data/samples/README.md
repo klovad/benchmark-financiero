@@ -1,86 +1,64 @@
 # Muestras de `marts.*` en Parquet
 
-Exportes de `marts.*` a Parquet con `scripts/export_sample_parquet.py`. Pensado para poder
-probar el modelo de datos (notebooks, Power BI import, lo que sea) **sin tener Postgres
-cargado** — por ejemplo en otra sesión/máquina donde el ETL todavía no corrió. Dos
-variantes: una muestra chica de un mes (`marts_AAAA-MM/`) y una ventana de años recientes
-(`marts_ultimos_5_anios/`).
+Exportes de `marts.*` con `scripts/export_sample_parquet.py`, para probar el modelo de
+datos (notebooks, BI, lo que sea) **sin tener Postgres cargado**. **No es data
+productiva**: la fuente de verdad es la base, que se actualiza cada semana
+(`benchmark-bancos actualizar`); estas muestras se regeneran solo cuando hace falta.
 
-> **Regenerada el 2026-10-06.** Incluye bancos privados, Banca Pública, cooperativas,
-> mutualistas y entidades de segundo piso (SEPS); `dim_banco` con 444 filas y sin la
-> columna `row_hash` (eliminada en `sql/34`).
->
-> **Anterior a `sql/36`/`sql/37` (2026-10-09).** Los archivos conservan los nombres de
-> entonces: `dim_banco.parquet` y la columna `banco_id` (hoy `marts.dim_entidad` /
-> `entidad_id`), `dim_canton` sin `codigo_inec` y con los 5 pares de provincia anterior
-> todavía separados. `scripts/compute_indicadores_excel.py` lee los dos formatos. Al
-> regenerar la muestra, los archivos salen con los nombres nuevos.
+## `marts_ultimos_13_meses/` (versionada)
 
-## `marts_ultimos_5_anios/`
+Regenerada el 2026-10-09. Antes se versionaban 5 años (~178 MB); se acotó a 13 meses
+(~42 MB) porque alcanza para probar el modelo y comparar un mes contra el mismo mes del
+año anterior.
 
-Todo `marts.*` tal cual está en Postgres, limitado a los últimos 5 años calendario con
-datos (2022-2026; 11.494.879 filas de hechos, ~161 MB — regenerado 2026-10-06 con la SEPS
-y la Banca Pública. Pesa menos que la versión anterior de 7,5 M filas/~287 MB porque ya
-no lleva `row_hash`, un hash por fila que el Parquet no puede comprimir; el histórico
-completo desde 2008 pesa más todavía, se descartó versionar eso para no inflar el repo
-sin necesidad real). Los 10 catálogos (`dim_banco`, `dim_canton`, `dim_provincia`,
-`dim_segmento_credito`, `dim_subsegmento_credito`, `dim_segmento_entidad`,
-`dim_categoria_deposito`, `dim_plazo`, `dim_cuenta_contable`, `dim_fecha`) van completos
-en un solo archivo cada uno — son chicos y los hechos filtrados igual necesitan el
-catálogo completo para resolver sus FK (`dim_fecha` no se recorta a la ventana de 5 años
-tampoco, mismo motivo; `dim_canton` va con las 228 filas post-`sql/28`, incluido el
-placeholder `NACIONAL`/`S-N`). Los 10 hechos se **particionan por año**
-(`{tabla}_{anio}.parquet`, vía `dim_fecha.anio`): sin particionar, el histórico completo
-de `fact_colocaciones_cartera` pesaría muy por encima del límite de 100 MB/archivo de
-GitHub sin Git LFS; particionado, el archivo más grande de esta ventana pesa ~12,5 MB
-(`fact_colocaciones_cartera_2023.parquet`). Para reconstruir una tabla completa en pandas:
+- **Catálogos y `dim_fecha`**: completos, un archivo cada uno (`dim_entidad`,
+  `dim_canton` con `codigo_inec`, `dim_provincia`, `dim_segmento_credito`,
+  `dim_subsegmento_credito`, `dim_segmento_entidad`, `dim_categoria_deposito`,
+  `dim_plazo`, `dim_cuenta_contable`, `dim_fecha`). Son chicos y los hechos necesitan el
+  catálogo completo para resolver sus FK.
+- **Hechos**: un archivo por tabla con **los últimos 13 meses con datos de esa tabla**.
+  Cada fuente llega a un mes distinto, así que las ventanas no coinciden exactamente: al
+  2026-10-09, saldos CAPCOL/SEPS hasta 2026-08, Boletín y tasas referenciales hasta
+  2026-09, BCE semanal hasta la semana del 2026-09-24.
 
-```python
-import glob
-import pandas as pd
-fact_colocaciones_cartera = pd.concat(
-    pd.read_parquet(f) for f in sorted(glob.glob("data/samples/marts_ultimos_5_anios/fact_colocaciones_cartera_*.parquet"))
-)
-```
+| Hecho | Filas |
+|---|---|
+| `fact_saldo_cartera` | 228.470 |
+| `fact_saldo_depositos` | 149.228 |
+| `fact_colocaciones_cartera` | 910.746 |
+| `fact_captaciones_depositos` | 379.654 |
+| `fact_balance` | 996.557 |
+| `fact_pyg` | 229.509 |
+| `fact_tasas_referenciales_*` (4) | 325 |
 
-Regenerar: `uv run scripts/export_sample_parquet.py --full --anios-recientes 5`
-(requiere Postgres cargado). Para el histórico completo sin recortar, `--full` solo (sin
-`--anios-recientes`) exporta a `marts_full/` — no versionado por defecto, generarlo aparte
-si hace falta.
-
-## `marts_AAAA-MM/` (muestra de un mes)
-
-No versionada por defecto (se regenera al vuelo cuando hace falta un sample chico
-puntual) — genera una carpeta como esta:
-
-- **Catálogos** (`dim_banco`, `dim_canton`, `dim_segmento_credito`,
-  `dim_subsegmento_credito`, `dim_categoria_deposito`, `dim_plazo`,
-  `dim_cuenta_contable`): completos, no recortados por fecha — son chicos y los hechos
-  necesitan el catálogo completo para resolver sus FK.
-- **`dim_fecha`**: acotada a las fechas que realmente aparecen en los hechos exportados
-  (el corte mensual de CAPCOL/`TasasHistorico`/Boletín + los cortes semanales de BCE
-  tsp/tsa dentro del mes).
-- **Hechos**: filtrados por `(anio, mes)` vía `dim_fecha`. CAPCOL es mensual (una
-  fecha), BCE tsp/tsa es semanal (~4-5 fechas), `TasasHistorico`/Boletín son mensuales.
+Nombres actuales (`sql/36`/`sql/37`): `dim_entidad`/`entidad_id` (antes `dim_banco`/
+`banco_id`) y `codigo_inec` en la geografía. `scripts/compute_indicadores_excel.py` lee esta
+carpeta por defecto (y todavía entiende los exportes viejos con `dim_banco`).
 
 ```powershell
-uv run scripts/export_sample_parquet.py --anio 2026 --mes 3
+uv run scripts/export_sample_parquet.py                       # regenera esta carpeta
+uv run scripts/export_sample_parquet.py --meses-recientes 24  # otra ventana (no versionar)
 ```
 
-Requiere Postgres cargado con ese mes (`sql/*.sql` aplicado + `uv run benchmark-bancos`
-corrido para las fuentes que lo cubran). Si un mes no tiene cobertura en alguna fuente
-(ej. CAPCOL solo llega hasta donde el ETL se haya corrido — ver "Alcance de los datos"
-en el `README.md` del repo), esa tabla sale con 0 filas, no falla.
+## Otros exportes (no versionados)
+
+- `--full` → `marts_full/`: todo el histórico, hechos particionados por año
+  (`{tabla}_{anio}.parquet`) para no pasar el límite de 100 MB por archivo de GitHub.
+- `--anio 2026 --mes 3` → `marts_2026-03/`: un mes puntual, con `dim_fecha` acotada a las
+  fechas usadas.
+
+Todos requieren Postgres cargado.
 
 ## Uso típico
 
 ```python
 import pandas as pd
-fact_saldo_cartera = pd.read_parquet("data/samples/marts_ultimos_5_anios/fact_saldo_cartera_2026.parquet")
-dim_banco = pd.read_parquet("data/samples/marts_ultimos_5_anios/dim_banco.parquet")
-df = fact_saldo_cartera.merge(dim_banco, on="banco_id")
+base = "data/samples/marts_ultimos_13_meses"
+fact_saldo_cartera = pd.read_parquet(f"{base}/fact_saldo_cartera.parquet")
+dim_entidad = pd.read_parquet(f"{base}/dim_entidad.parquet")
+df = fact_saldo_cartera.merge(dim_entidad, on="entidad_id")
+df = df[df.tipo_entidad == "COOPERATIVA"]  # las tablas mezclan tipos de entidad
 ```
 
 Grano, tipos y relaciones de cada tabla: `docs/data_dictionary.md` y
-`docs/architecture.md` en la raíz del repo — el Parquet es un espejo 1:1 de `marts.*`,
-sin transformación adicional.
+`docs/architecture.md`. El Parquet es un espejo 1:1 de `marts.*`, sin transformación.

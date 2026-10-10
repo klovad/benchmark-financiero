@@ -14,6 +14,7 @@
 import contextlib
 import datetime
 import logging
+import time
 from collections.abc import Callable, Iterator
 
 import psycopg
@@ -31,6 +32,7 @@ EXIT_ERRORES = 2  # la corrida terminó, pero hubo errores (ver log)
 EXIT_BLOQUEADO = 75  # otra corrida en curso (EX_TEMPFAIL)
 
 FUENTES = ("bce", "capcol", "boletin", "tasas-historicas", "seps")
+ESPERA_REINTENTO_FUENTE = 120.0  # segundos antes de reintentar una fuente fallida
 
 
 class CorridaEnCurso(RuntimeError):
@@ -88,20 +90,40 @@ def _pasos(anios: list[int]) -> dict[str, Callable[[], None]]:
 
 
 def actualizar(
-    fuentes: list[str] | None = None, anios: list[int] | None = None
+    fuentes: list[str] | None = None,
+    anios: list[int] | None = None,
+    espera_reintento: float = ESPERA_REINTENTO_FUENTE,
 ) -> list[str]:
     """Corre la actualización incremental de las fuentes pedidas (todas por defecto) y
-    devuelve las que fallaron."""
+    devuelve las que fallaron. Una fuente que falla se reintenta una vez al final, tras
+    `espera_reintento` segundos (las descargas ya reintentan cortes de red por su cuenta;
+    esto cubre el resto, p. ej. un portal que respondió a medias)."""
     anios = anios or anios_en_curso()
     pasos = _pasos(anios)
-    fallidas = []
+    pendientes = []
     for fuente in fuentes or FUENTES:
         log.info("=== actualizar: %s (años %s) ===", fuente, anios)
         try:
             pasos[fuente]()
+        except Exception as e:
+            log.warning(
+                "actualizar: falló la fuente %s (%s: %s), se reintenta al final",
+                fuente,
+                type(e).__name__,
+                e,
+            )
+            pendientes.append(fuente)
+
+    fallidas = []
+    if pendientes:
+        time.sleep(espera_reintento)
+    for fuente in pendientes:
+        log.info("=== actualizar: reintento de %s ===", fuente)
+        try:
+            pasos[fuente]()
         except Exception:
             log.exception(
-                "actualizar: falló la fuente %s, se sigue con las demás", fuente
+                "actualizar: la fuente %s falló también al reintentar", fuente
             )
             fallidas.append(fuente)
     if fallidas:

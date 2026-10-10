@@ -23,6 +23,7 @@ import urllib.request
 from pathlib import Path
 
 from benchmark_bancos.config import BCE_DIR, BCE_URLS
+from benchmark_bancos.extract.red import con_reintentos
 from benchmark_bancos.logging_utils import setup_logging
 
 log = logging.getLogger(__name__)
@@ -64,12 +65,15 @@ def download_bce_file(clave: str, out_dir: Path = BCE_DIR) -> Path:
     headers = {"User-Agent": "Mozilla/5.0", **_cabeceras_condicionales(dest)}
     req = urllib.request.Request(url, headers=headers)
     tmp = dest.with_suffix(dest.suffix + ".part")
-    try:
+
+    def bajar() -> tuple[str | None, str | None]:
         with urllib.request.urlopen(req, timeout=120) as resp, open(tmp, "wb") as f:
             while chunk := resp.read(_CHUNK_SIZE):
                 f.write(chunk)
-            etag = resp.headers.get("ETag")
-            last_modified = resp.headers.get("Last-Modified")
+            return resp.headers.get("ETag"), resp.headers.get("Last-Modified")
+
+    try:
+        etag, last_modified = con_reintentos(bajar, f"BCE {dest.name}")
     except urllib.error.HTTPError as e:
         tmp.unlink(missing_ok=True)
         if e.code == 304:

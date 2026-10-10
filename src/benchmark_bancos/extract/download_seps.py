@@ -24,6 +24,7 @@ from benchmark_bancos.config import (
     SEPS_DOWNLOAD_IDS,
     SEPS_DOWNLOAD_URL,
 )
+from benchmark_bancos.extract.red import con_reintentos
 from benchmark_bancos.logging_utils import setup_logging
 
 log = logging.getLogger(__name__)
@@ -76,7 +77,9 @@ def download_seps_file(year: int, reporte: str, out_dir: Path = SEPS_DIR) -> Pat
     meta_path = dest_dir / _META
     existentes = sorted(dest_dir.glob("*.zip"))
 
-    publicada = _version_publicada(url)
+    publicada = con_reintentos(
+        lambda: _version_publicada(url), f"SEPS {year}/{reporte} (HEAD)"
+    )
     nombre = _nombre_zip(publicada["url_final"], year, reporte, url)
     try:
         local = json.loads(meta_path.read_text(encoding="utf-8"))
@@ -106,9 +109,13 @@ def download_seps_file(year: int, reporte: str, out_dir: Path = SEPS_DIR) -> Pat
     dest = dest_dir / nombre
     tmp = dest_dir / (nombre + ".part")
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(req, timeout=300) as resp, open(tmp, "wb") as f:
-        while chunk := resp.read(_CHUNK_SIZE):
-            f.write(chunk)
+
+    def bajar() -> None:
+        with urllib.request.urlopen(req, timeout=300) as resp, open(tmp, "wb") as f:
+            while chunk := resp.read(_CHUNK_SIZE):
+                f.write(chunk)
+
+    con_reintentos(bajar, f"SEPS {year}/{reporte}")
     for viejo in existentes:
         viejo.unlink()
     os.replace(tmp, dest)

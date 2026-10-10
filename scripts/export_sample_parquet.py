@@ -1,31 +1,21 @@
 """
-Exporta marts.* a Parquet, para poder probar el modelo de datos (Power BI, notebooks,
-lo que sea) sin tener Postgres cargado -- ej. en otra sesión/máquina donde el ETL
-todavía no corrió.
+Exporta marts.* a Parquet, para poder probar el modelo de datos (notebooks, BI, lo que
+sea) sin tener Postgres cargado. No es data productiva: la fuente de verdad es Postgres.
 
-Dos modos:
-- Muestra de un mes (default): los 9 catálogos pequeños (dim_entidad, dim_canton,
-  dim_provincia, dim_segmento_credito, dim_subsegmento_credito, dim_segmento_entidad,
-  dim_categoria_deposito, dim_plazo, dim_cuenta_contable) se exportan completos -- no
-  tiene sentido recortarlos por mes, y
-  los hechos filtrados necesitan el catálogo completo para resolver sus FK. dim_fecha se
-  exporta acotada a las fechas que realmente aparecen en los hechos filtrados (mantiene
-  el sample chico y autocontenido). Las 10 tablas de hechos se filtran por (anio, mes)
-  vía dim_fecha -- CAPCOL es mensual (una fecha por mes), BCE tsp/tsa es semanal (~4-5
-  fechas por mes), TasasHistorico/Boletín son mensuales.
-- Histórico completo (--full): los catálogos + dim_fecha se exportan en un solo archivo
-  (chicos); los hechos se particionan por año (`{tabla}_{anio}.parquet`) vía dim_fecha --
-  necesario porque de un solo archivo, fact_colocaciones_cartera solo (histórico BCE
-  semanal desde 2008) pesa 230MB, por encima del límite de 100MB/archivo de GitHub sin
-  Git LFS. Particionado por año ningún archivo pasa ese límite. `--anios-recientes N`
-  limita los hechos particionados a los últimos N años calendario con datos (los
-  catálogos/dim_fecha se quedan completos igual, son chicos) -- útil para no versionar
-  los ~394MB del histórico completo (2008-2026) cuando alcanza con una ventana reciente
-  para pruebas; el directorio de salida se nombra `marts_ultimos_{N}_anios` en ese caso.
+Tres modos:
+- Últimos meses (default, `--meses-recientes 13`): lo que se versiona en
+  `data/samples/marts_ultimos_13_meses/` (2026-10-09; antes 5 años, ~178 MB). Catálogos y
+  dim_fecha completos (chicos, y los hechos necesitan el catálogo completo para resolver
+  sus FK); cada hecho filtrado a sus últimos N meses con datos (cada fuente llega a un mes
+  distinto: Boletín y BCE van uno adelante de CAPCOL/SEPS), un archivo por tabla.
+- Histórico completo (`--full`): hechos particionados por año (`{tabla}_{anio}.parquet`)
+  para no pasar el límite de 100 MB por archivo de GitHub. No se versiona.
+- Un mes puntual (`--anio 2025 --mes 3`): dim_fecha acotada a las fechas usadas.
 
-Uso: uv run scripts/export_sample_parquet.py [--anio 2025] [--mes 3]
+Uso: uv run scripts/export_sample_parquet.py                     # últimos 13 meses
+     uv run scripts/export_sample_parquet.py --meses-recientes 24
      uv run scripts/export_sample_parquet.py --full
-     uv run scripts/export_sample_parquet.py --full --anios-recientes 5
+     uv run scripts/export_sample_parquet.py --anio 2025 --mes 3
 """
 
 import argparse
@@ -69,7 +59,35 @@ FACTS = [
 ]
 
 
-def export_full(out_dir: Path, anios_recientes: int | None = None) -> None:
+def export_recientes(out_dir: Path, meses: int) -> None:
+    """Catálogos completos + cada hecho con sus últimos `meses` meses con datos."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    with psycopg.connect(**DB_CONFIG, autocommit=True) as conn:
+        for tabla in CATALOGOS_COMPLETOS + ["dim_fecha"]:
+            df = pd.read_sql(f"SELECT * FROM marts.{tabla}", conn)
+            df.to_parquet(out_dir / f"{tabla}.parquet", index=False)
+            log.info("%s: %d filas (catálogo completo)", tabla, len(df))
+
+        for tabla in FACTS:
+            df = pd.read_sql(
+                f"""
+                WITH meses AS (
+                    SELECT DISTINCT d.anio_mes FROM marts.{tabla} f
+                    JOIN marts.dim_fecha d ON d.fecha_id = f.fecha_id
+                    ORDER BY d.anio_mes DESC LIMIT %(meses)s
+                )
+                SELECT f.* FROM marts.{tabla} f
+                JOIN marts.dim_fecha d ON d.fecha_id = f.fecha_id
+                WHERE d.anio_mes IN (SELECT anio_mes FROM meses)
+                """,
+                conn,
+                params={"meses": meses},
+            )
+            df.to_parquet(out_dir / f"{tabla}.parquet", index=False)
+            log.info("%s: %d filas (últimos %d meses)", tabla, len(df), meses)
+
+
+def export_full(out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     with psycopg.connect(**DB_CONFIG, autocommit=True) as conn:
         for tabla in CATALOGOS_COMPLETOS + ["dim_fecha"]:
@@ -86,8 +104,6 @@ def export_full(out_dir: Path, anios_recientes: int | None = None) -> None:
                 """,
                 conn,
             )["anio"].tolist()
-            if anios_recientes is not None:
-                anios = anios[-anios_recientes:]
             for anio in anios:
                 df = pd.read_sql(
                     f"""
@@ -140,35 +156,35 @@ def export_sample(anio: int, mes: int, out_dir: Path) -> None:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--anio", type=int, default=2025)
-    parser.add_argument("--mes", type=int, default=3)
+    parser.add_argument("--anio", type=int, default=None)
+    parser.add_argument("--mes", type=int, default=None)
     parser.add_argument(
         "--full",
         action="store_true",
         help="Exporta todo el histórico, sin filtrar por mes",
     )
     parser.add_argument(
-        "--anios-recientes",
+        "--meses-recientes",
         type=int,
-        default=None,
-        help="Con --full, limita los hechos a los últimos N años calendario con datos",
+        default=13,
+        help="Modo por defecto: últimos N meses con datos de cada hecho",
     )
     args = parser.parse_args()
 
     if args.full:
-        if args.anios_recientes:
-            destino = (
-                PROJECT_ROOT
-                / "data"
-                / "samples"
-                / f"marts_ultimos_{args.anios_recientes}_anios"
-            )
-        else:
-            destino = PROJECT_ROOT / "data" / "samples" / "marts_full"
-        export_full(destino, anios_recientes=args.anios_recientes)
-    else:
+        destino = PROJECT_ROOT / "data" / "samples" / "marts_full"
+        export_full(destino)
+    elif args.anio and args.mes:
         destino = (
             PROJECT_ROOT / "data" / "samples" / f"marts_{args.anio:04d}-{args.mes:02d}"
         )
         export_sample(args.anio, args.mes, destino)
+    else:
+        destino = (
+            PROJECT_ROOT
+            / "data"
+            / "samples"
+            / f"marts_ultimos_{args.meses_recientes}_meses"
+        )
+        export_recientes(destino, args.meses_recientes)
     log.info("Listo: %s", destino)

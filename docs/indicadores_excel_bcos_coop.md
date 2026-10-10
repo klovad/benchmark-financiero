@@ -54,7 +54,7 @@ segmentación más estricta que la que hace el propio Excel.
 Verificado comparando el valor cacheado real de `Formulas N!E<fila>` (columna `E` = BP
 GUAYAQUIL, código banco `1006`; columna `F` = BP PACÍFICO, código banco `1028`) contra el
 recálculo desde `fact_balance`/`fact_pyg` de `data/samples/marts_full` (nombre del
-sample en ese momento, corte `2026-03-31`; renombrado a `data/samples/marts_ultimos_5_anios`
+sample en ese momento, corte `2026-03-31`; renombrado a `marts_ultimos_5_anios` y, desde 2026-10-09, `marts_ultimos_13_meses`
 el 2026-07-25, ver `data/samples/README.md`). Coincidencia exacta (diff = 0.000000) en
 ambos bancos para todos los indicadores de la tabla.
 
@@ -114,7 +114,7 @@ Verificación cruzada adicional en BP PACÍFICO (mismo corte) para `IND_87`/`IND
 
 [`scripts/compute_indicadores_excel.py`](../scripts/compute_indicadores_excel.py) implementa
 estas fórmulas para los bancos privados del data mart, al corte más reciente disponible en
-`data/samples/marts_ultimos_5_anios` (antes `marts_full`, ver `data/samples/README.md`; o
+`data/samples/marts_ultimos_13_meses` (antes `marts_ultimos_5_anios` y `marts_full`, ver `data/samples/README.md`; o
 el que se indique con `--fecha-id`). Corrió limpio para 23/33
 bancos privados a `2026-06-30` (10 sin `fact_balance` ese corte: AMIBANK, COFIEC, D-MIRO,
 FINCA, JARAMILLO ARTEAGA, LLOYDS BANK, PROMERICA, SUDAMERICANO, TERRITORIAL, UNIBANCO —

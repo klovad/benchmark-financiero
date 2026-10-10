@@ -25,6 +25,7 @@ from benchmark_bancos.config import (
     FOLDER_NAMES,
     RAW_DIR,
 )
+from benchmark_bancos.extract.red import con_reintentos
 from benchmark_bancos.logging_utils import setup_logging
 
 log = logging.getLogger(__name__)
@@ -78,12 +79,17 @@ def _download_all_files(page, dest_dir: Path) -> list[Path]:
     for i in range(count):
         entry = page.locator(".entry.file").nth(i)
         name = entry.get_attribute("data-name") or f"archivo_{i}"
-        try:
+
+        def bajar(entry=entry) -> Path:
             with page.expect_download(timeout=30_000) as dl_info:
                 entry.dblclick()
             download = dl_info.value
             target = dest_dir / download.suggested_filename
             download.save_as(target)
+            return target
+
+        try:
+            target = con_reintentos(bajar, f"descarga '{name}'", intentos=2)
             saved.append(target)
             log.info("Descargado: %s", target)
         except PwTimeoutError:
@@ -118,7 +124,10 @@ def scrape(
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=headless)
         page = browser.new_page(accept_downloads=True)
-        page.goto(cfg["url"], wait_until="networkidle", timeout=60_000)
+        con_reintentos(
+            lambda: page.goto(cfg["url"], wait_until="networkidle", timeout=60_000),
+            f"portal CAPCOL {portal}",
+        )
         page.wait_for_timeout(2000)
         for year in years:
             log.info("=== %s: Año %s ===", portal, year)

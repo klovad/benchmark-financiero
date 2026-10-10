@@ -250,7 +250,7 @@ No filtran por `tipo_entidad`, y **desde 2026-09-30 sí hace falta filtrar en el
 consumidor**: `fact_balance`/`fact_pyg` traen bancos privados (Boletín) y cooperativas y
 mutualistas (EEFF SEPS). Unir contra `dim_entidad.tipo_entidad` para no mezclar sectores. Escritas siguiendo la misma lógica de
 [`scripts/compute_indicadores_excel.py`](../scripts/compute_indicadores_excel.py) (motor de
-referencia en pandas, corrido y verificado contra `data/samples/marts_ultimos_5_anios`
+referencia en pandas, corrido y verificado contra `data/samples/marts_ultimos_13_meses`
 -- antes `marts_full`, ver `data/samples/README.md`), pero **las
 vistas SQL en sí no se ejecutaron todavía contra una instancia Postgres real** — validar
 sintaxis en el primer uso real.
