@@ -219,8 +219,8 @@ sección/métrica, no ancha) — se ensancha a 4 tablas en `marts` dentro de `re
 | "OTRAS TASAS REFERENCIALES" + fila (label ∈ 4 métricas de sistema) | `seccion='sistema'`, `metrica` | `_METRICAS_SISTEMA` mapea el label exacto (`TASA PASIVA REFERENCIAL`, `TASA ACTIVA REFERENCIAL`, `TASA LEGAL`, `TASA MÁXIMA CONVENCIONAL`) a la columna destino | `fact_tasas_referenciales_sistema` (4 columnas, `PRIMARY KEY(fecha_id)`, pivotado con `FILTER`) |
 
 **Llave natural** `staging.tasas_referenciales`: `(fecha, seccion, COALESCE(dimension_valor,''), COALESCE(plazo_dias_desde,-1), COALESCE(plazo_dias_hasta,-1), metrica)`.
-Código: `src/benchmark_bancos/transform/parse_tasas_historicas.py`. Cobertura: solo 2022-04 a 2026-06 —
-páginas anteriores usan un layout HTML distinto no soportado (ver `docs/fuentes_datos.md`).
+Código: `src/benchmark_bancos/transform/parse_tasas_historicas.py`. Cobertura: 2009-07 a 2026-09 (ampliada el
+2026-10-09, ver `docs/fuentes_datos.md` §2.3 para qué se corrigió y qué queda fuera).
 
 ## 6. Boletín Financiero Mensual — BALANCE / PYG
 

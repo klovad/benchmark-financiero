@@ -216,9 +216,9 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   filas, hasta la semana del 2026-09-24 (actualizado 2026-10-09; 0 `canton_id` NULL en
   ambas). La etapa `bce` descarga de forma condicional: solo baja el archivo cuando el BCE
   publica una versión nueva.
-- **BCE `TasasHistorico.htm`** (techos y referenciales, nivel sistema): 2022-04 a
-  2026-09 (páginas anteriores usan un layout HTML distinto, no soportado por el parser
-  actual). Tasas activas máximas/referenciales por segmento, pasivas por instrumento y
+- **BCE `TasasHistorico.htm`** (techos y referenciales, nivel sistema): **2009-07 a
+  2026-09** (206 meses; ampliado el 2026-10-09 desde 2022-04). Antes de 2009-07 la página
+  usa segmentos que ya no existen en el catálogo; 2009-09 se omite (formato irregular). Tasas activas máximas/referenciales por segmento, pasivas por instrumento y
   plazo, TPR/TAR/Tasa Legal/Tasa Máxima Convencional.
 - **Boletín Financiero Mensual** (balance/PyG de bancos privados): 2021-01 a 2026-09. Plan de
   cuentas jerárquico completo (Catálogo Único de Cuentas), valores en USD (fuente reporta

@@ -5,6 +5,7 @@ from benchmark_bancos.transform.bce_plazo_matching import PlazoNoResueltoError
 from benchmark_bancos.transform.parse_tasas_historicas import (
     _categoria_label,
     _emitir,
+    _normalizar_ancho,
     _parse_filas,
     _resolver_plazo,
     _segmento_label,
@@ -99,3 +100,83 @@ def test_parse_filas_rastrea_seccion_sin_asumir_que_tabla_0_es_activa_maxima():
 
 def test_emitir_ignora_seccion_desconocida():
     assert _emitir("seccion_inventada", "X", 1.0) is None
+
+
+# --- Histórico 2009-07 a 2022-07 (2026-10-09) ---
+
+
+def test_activas_vigentes_par_izquierdo_referencial_derecho_maxima():
+    """Hasta 2022-07 una sola sección 'VIGENTES' trae Referenciales y Máximas lado a lado;
+    los valores con punto decimal ('7.23') se leen bien."""
+    tabla = pd.DataFrame(
+        [
+            ["1. TASAS DE INTERÉS ACTIVAS EFECTIVAS VIGENTES"] * 4,
+            [
+                "Tasas Referenciales",
+                "Tasas Referenciales",
+                "Tasas Máximas",
+                "Tasas Máximas",
+            ],
+            ["Consumo", "15.98", "Consumo", "16.77"],
+        ]
+    )
+    filas = _parse_filas([tabla])
+    por_seccion = {f["seccion"]: f["valor"] for f in filas}
+    assert por_seccion == {"activa_referencial": 15.98, "activa_maxima": 16.77}
+
+
+def test_seccion_de_inversiones_del_sector_publico_se_ignora():
+    """Su cabecera trae la última celda vacía; antes no se detectaba y sus plazos se
+    mezclaban con los de 'pasiva_plazo'."""
+    tabla = pd.DataFrame(
+        [
+            ["3. TASAS DE INTERÉS PASIVAS EFECTIVAS REFERENCIALES POR PLAZO"] * 4,
+            ["Plazo 30-60", "4.00", "Plazo 121-180", "5.00"],
+            ["4. TASAS DE INTERÉS PASIVAS EFECTIVAS MÁXIMAS PARA LAS INVERSIONES"] * 3
+            + [None],
+            ["Plazo 30-60", "9.99", "Plazo 121-180", "9.99"],
+        ]
+    )
+    valores = sorted(f["valor"] for f in _parse_filas([tabla]))
+    assert valores == [4.0, 5.0]
+
+
+def test_nota_dentro_de_la_seccion_de_plazos_no_rompe_el_archivo():
+    tabla = pd.DataFrame(
+        [
+            ["3. TASAS DE INTERÉS PASIVAS EFECTIVAS REFERENCIALES POR PLAZO"] * 4,
+            ["De las instituciones financieras", "1.00", None, None],
+            ["Plazo 30-60", "4.00", None, None],
+        ]
+    )
+    assert [f["valor"] for f in _parse_filas([tabla])] == [4.0]
+
+
+@pytest.mark.parametrize(
+    "crudo,esperado",
+    [
+        ("Consumo *", "CONSUMO"),
+        ("Consumo /1", "CONSUMO"),
+        ("Microcrédito Minorista 1*.", "MICROCRÉDITO MINORISTA"),
+        (
+            "Productivo Empresarial (* Este segmento entra en vigencia a partir del 18/06/2009 *)",
+            "PRODUCTIVO EMPRESARIAL",
+        ),
+        ("Microcrédito Acumulación Ampliada", "MICROCRÉDITO DE ACUMULACIÓN AMPLIADA"),
+    ],
+)
+def test_segmento_label_historico(crudo, esperado):
+    assert _segmento_label(crudo) == esperado
+
+
+def test_categoria_label_colapsa_espacios_dobles():
+    assert _categoria_label("Depósitos  de Ahorro") == "DEPÓSITOS DE AHORRO"
+
+
+def test_normalizar_ancho_quita_columna_vacia_o_duplicada():
+    vacia = pd.DataFrame([["a", "1", "b", "2", None], ["c", "3", "d", "4", None]])
+    assert _normalizar_ancho(vacia).shape[1] == 4
+    duplicada = pd.DataFrame([["a", "1", "b", "2", "2"], ["c", "3", "d", "4", "4"]])
+    assert _normalizar_ancho(duplicada).shape[1] == 4
+    normal = pd.DataFrame([["x"] * 4, ["a", "1", "b", "2"]])
+    assert _normalizar_ancho(normal).shape[1] == 4

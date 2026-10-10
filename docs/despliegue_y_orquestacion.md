@@ -248,7 +248,7 @@ uno está en `meta.source_files`.
   SQL, etc.)**: portable sin cambios de código. Requisitos: `COPY ... FROM STDIN`
   (lo soportan todos los gestionados) y la extensión `plpgsql` (única usada, verificado
   en `pg_extension`). Desde 2026-10-09 ya no hace falta un rol llamado `bp_etl` (B2) ni
-  `lc_time` en español (B5). Pasos [no probado en un servicio gestionado]:
+  `lc_time` en español (B5). Pasos [verificado 2026-10-09 simulando un servicio gestionado en `postgres:17`: admin `NOSUPERUSER CREATEROLE CREATEDB`, `sql/00` desde el psql del host y `migrate` con el rol de la app; no probado contra un proveedor real]:
   1. Rol y base, una de dos:
      - **usar el rol y la base que entrega el proveedor**: poner sus nombres en
        `POSTGRES_USER`/`POSTGRES_DB` y saltar `sql/00`. El rol necesita poder crear
@@ -256,8 +256,9 @@ uno está en `meta.source_files`.
      - **crear un rol propio** con `sql/00` parametrizado (3.1), conectado con el usuario
        administrador del servicio (los gestionados no dan superusuario, pero su admin
        tiene `CREATEROLE`/`CREATEDB`). En Postgres 16+, `CREATE DATABASE ... OWNER <rol>`
-       exige que el admin pueda asumir ese rol: si `sql/00` falla en ese paso, correr
-       antes `GRANT <rol> TO <admin>` [no probado].
+       exige que el admin pueda asumir ese rol ("must be able to SET ROLE"): `sql/00` ya
+       se otorga esa membresía solo cuando quien lo corre no es superusuario
+       (`GRANT <rol> TO <admin> WITH SET TRUE`; antes de 16, `GRANT` simple) [verificado].
   2. `benchmark-bancos migrate` **con el rol de la app** (el del `.env`), nunca con el
      admin: los esquemas quedan a nombre de quien ejecuta. `migrate` no necesita
      superusuario (ninguna migración 01..NN crea extensiones ni roles).
@@ -335,7 +336,7 @@ psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U postgres -d postgres -v ON_ERROR
      -f sql/00_roles_db.sql
 ```
 
-Windows (PowerShell) [no probado]:
+Windows (PowerShell) [verificado 2026-10-09, con `-v` y con variables de entorno]:
 
 ```powershell
 $psql = "C:\Program Files\PostgreSQL\17\bin\psql.exe"
@@ -360,8 +361,8 @@ uv run --no-sync benchmark-bancos migrate --status     # "N aplicadas, 0 pendien
 **Con Docker**: `docker compose up -d` sobre un volumen vacío crea rol y base desde el
 `.env` y aplica todo `sql/` con `psql` (2.3), sin registro. El primer `migrate` hace el
 baseline automático [verificado 2026-10-09 con `postgres:17` inicializado como lo hace
-docker-compose (`POSTGRES_USER` distinto de `bp_etl`, `sql/` en
-`docker-entrypoint-initdb.d`); `docker compose up` en sí, no probado]:
+docker-compose y con el `docker compose up` del repo (rol `etl_compose`, otro
+puerto y nombre de proyecto para no tocar la base local)]:
 
 ```bash
 uv run --no-sync benchmark-bancos migrate          # log: "Baseline automático (base al día): N migraciones registradas ..."
@@ -992,7 +993,7 @@ timeouts, bancos o cantones no resueltos que se descartaron de marts).
 | `migrate`: `No se pudo verificar el nivel de la base: ni la sonda de 28_... pasa` (código 1) | base anterior a 2026-09 o de otro proyecto | revisar a mano (3.3); aplicar con `psql` hasta la 28 y luego `--baseline` |
 | `migrate`: `Migración ya aplicada cuyo archivo cambió después: NN_...` (WARNING, en cada corrida) | se editó una migración ya aplicada; esperable una vez en bases instaladas antes de 2026-10-09 (`sql/01`, `02`, `03`, `33`, `34`) | si el cambio fue a propósito: `migrate --aceptar-cambios` (una vez). Si no, no se re-ejecuta: escribir una migración nueva con la corrección |
 | `sql/00`: `invalid command \getenv` | `psql` anterior a 15 (sin `ON_ERROR_STOP`, sigue y usa los defaults `bp_etl`/`changeme`) | pasar los nombres con `-v app_user=... -v app_db=... -v app_password=...` (3.1) o usar un `psql` ≥ 15 |
-| `sql/00` en Postgres gestionado: `must be able to SET ROLE ...` al crear la base | Postgres 16+: el admin no es miembro del rol nuevo | `GRANT <rol> TO <admin>` y volver a correr `sql/00` [no probado]; o usar rol y base del proveedor (2.5) |
+| `sql/00` en Postgres gestionado: `must be able to SET ROLE ...` al crear la base | Postgres 16+: el admin no es miembro del rol nuevo | corregido 2026-10-09: `sql/00` se otorga la membresía `WITH SET TRUE` si no es superusuario; con un `sql/00` anterior, `GRANT <rol> TO <admin> WITH SET TRUE` y volver a correr; o usar rol y base del proveedor (2.5) |
 | Esquemas `meta`/`staging`/`marts` a nombre de `postgres` (o del admin) y el ETL falla con `permission denied` | `migrate` (o `sql/01..NN` con `psql`) se corrió con el superusuario en vez del rol de la app | correr `migrate` con el `POSTGRES_USER` de la app; para una base ya creada así, `ALTER SCHEMA ... OWNER TO` y `REASSIGN OWNED` como superusuario [no probado] |
 | `migrate`: `Falló NN_...` (código 1) | error SQL en esa migración | las anteriores quedaron registradas; corregir y volver a correr `migrate` |
 | Tarea de cron sin log y sin efecto | `uv` no está en el `PATH` de cron (sale con 127 antes de crear el log) | línea `PATH=` en el crontab (7.3) |
@@ -1052,11 +1053,11 @@ operativo), **mejora** (calidad de vida). Las propuestas de código quedan para
 
 - Instalación en Linux, imagen de contenedor del ETL, `playwright install --with-deps`
   en un servidor sin GUI.
-- `sql/00` con `psql` fuera de un contenedor (con `-v` o con `\getenv`), y en un Postgres
-  gestionado (incluido el caso `GRANT <rol> TO <admin>` de Postgres 16+). Sí se verificó
-  el initdb de `postgres:17` con un `POSTGRES_USER` distinto de `bp_etl`.
-- `docker compose up` seguido del baseline automático (verificado con un `postgres:17`
-  inicializado del mismo modo, no con el compose del repo).
+- Un proveedor gestionado real (RDS, Azure, Cloud SQL). Sí se verificó (2026-10-09) la
+  simulación en `postgres:17` con un admin `NOSUPERUSER CREATEROLE CREATEDB`: `sql/00`
+  desde el psql del host (bash y PowerShell, con `-v` y con variables de entorno, dos
+  corridas), `migrate` con el rol de la app sin superusuario, carga real y tests de
+  integración; y el `docker compose up` del repo con un rol distinto de `bp_etl`.
 - `migrate --aceptar-cambios` en esta revisión (lo verificó quien lo implementó; la base
   local ya no tiene archivos modificados).
 - La consulta de dueño de esquemas de 3.3 y la corrección de esquemas creados por el

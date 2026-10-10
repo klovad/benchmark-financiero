@@ -360,12 +360,26 @@ columnas aún más ricas: `destino_credito`, `destino_hipotecario`, `destino_con
     tabla contiene qué sección.
   - Único alias real de nombre necesario: "Productivo Corporativo" (esta fuente) →
     "PRODUCTIVO - CORPORATIVO" (`dim_subsegmento_credito`, con guion).
-- **Cobertura cargada**: 51 meses (2022-04 a 2026-06); páginas anteriores a 2022-04 usan
-  un layout HTML más antiguo no soportado por este parser (se omiten con warning, no
-  abortan el resto del batch). Dentro del rango cargado, **4 meses consecutivos
-  (2022-04 a 2022-07)** no traen la sección de segmento de crédito en absoluto —
-  coincide con el período de las resoluciones JPRF-F-2022-031/053 que revisaron la
-  metodología, gap real de la fuente en ese período de transición, no un error del parser.
+- **Cobertura cargada** (2026-10-09): **2009-07 a 2026-09**, 206 meses (antes 2022-04 a
+  2026-06). Lo que impedía leer el histórico no era un layout distinto sino tres detalles:
+  (1) hasta 2022-03 el BCE escribía los números con punto decimal ("7.23") y el parser
+  leía con `thousands="."`, así que salían como 723 y se descartaban; (2) hasta 2022-07 la
+  sección de cartera se titulaba "ACTIVAS EFECTIVAS **VIGENTES**", con Referenciales y
+  Máximas lado a lado, y ningún marcador la reconocía; (3) dobles espacios y notas al pie
+  en los nombres ("Depósitos  de Ahorro", "Consumo *", "Microcrédito Minorista 1*."). Por
+  (2), **2022-04 a 2022-07 se habían cargado sin la sección de segmentos**, y se había
+  documentado como un vacío de la fuente: era el parser. Se reprocesaron.
+  - Secciones que se ignoran a propósito: la de 2018-2019 "solo para el sector financiero
+    popular y solidario" (la general ya trae esos segmentos) y la de "pasivas máximas
+    para las inversiones del sector público", cuyos plazos se mezclaban con los de
+    `pasiva_plazo` porque su cabecera tiene una celda vacía.
+  - Alias nuevos: "Microcrédito Acumulación Ampliada/Simple" (2009-2015, sin "de") → la
+    forma con "de" que usa BCE tsa para esas mismas fechas.
+  - Fuera de alcance: antes de 2009-07 (Comercial Corporativo, Microcrédito de
+    Subsistencia y otros segmentos que no existen en el catálogo; tablas de 6-7
+    columnas) y 2009-09 (tabla irregular, `_TASAS_HISTORICAS_EXCLUIDAS`).
+  - Control: si un segmento o categoría no está en el catálogo, `tasas-historicas`
+    registra ERROR (antes el INNER JOIN de marts lo descartaba en silencio).
 - Esto da las tasas **máximas y referenciales regulatorias** — el techo normativo y el
   promedio de referencia contra el cual comparar las tasas efectivas reales de
   `tsp`/`tsa` banco por banco.
@@ -1080,7 +1094,7 @@ implementar, en este orden:
    — plan aprobado, ver `docs/architecture.md` sección "Catálogos conformados".
 5. ~~Construir e integrar las 3 fuentes~~ ✅ Hecho — BCE tsp/tsa, `TasasHistorico.htm` y
    Boletín BALANCE/PYG cargados en Postgres con CDC verificado. Cobertura real: BCE
-   semanal 2008-2026 completo; `TasasHistorico.htm` 2022-04 a 2026-06 (páginas más
+   semanal 2008-2026 completo; `TasasHistorico.htm` 2009-07 a 2026-09 (páginas más
    antiguas usan un layout HTML distinto, no soportado); Boletín 2021-01 a 2026-06. Ver
    `docs/data_dictionary.md` para el esquema final y `docs/metricas_financieras.md` para
    el catálogo de indicadores financieros del Boletín.

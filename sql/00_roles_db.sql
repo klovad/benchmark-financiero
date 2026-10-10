@@ -41,6 +41,22 @@ SELECT format('CREATE ROLE %I WITH LOGIN PASSWORD %L', :'app_user', :'app_passwo
 WHERE NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = :'app_user')
 \gexec
 
+-- Postgres gestionado (RDS, Azure, Cloud SQL...): el administrador no es superusuario,
+-- solo tiene CREATEROLE/CREATEDB, y para crear la base a nombre de otro rol debe ser
+-- miembro de ese rol ("must be able to SET ROLE"). Si hace falta, se otorga la membresía
+-- a sí mismo (puede: quien crea un rol con CREATEROLE queda con ADMIN OPTION sobre él).
+-- Verificado 2026-10-09 en postgres:17 con un admin NOSUPERUSER CREATEROLE CREATEDB.
+-- En Postgres 16+ el creador ya es "miembro" (con ADMIN) pero sin la opción SET, que es
+-- la que exige CREATE DATABASE ... OWNER; antes de 16 basta la membresía simple.
+SELECT CASE WHEN current_setting('server_version_num')::int >= 160000
+            THEN format('GRANT %I TO %I WITH SET TRUE', :'app_user', current_user)
+            ELSE format('GRANT %I TO %I', :'app_user', current_user) END
+WHERE NOT (SELECT rolsuper FROM pg_catalog.pg_roles WHERE rolname = current_user)
+  AND CASE WHEN current_setting('server_version_num')::int >= 160000
+           THEN NOT pg_has_role(current_user, :'app_user', 'SET')
+           ELSE NOT pg_has_role(current_user, :'app_user', 'MEMBER') END
+\gexec
+
 SELECT format('CREATE DATABASE %I OWNER %I', :'app_db', :'app_user')
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'app_db')
 \gexec

@@ -230,9 +230,14 @@ def load_bce(base_dir: Path = BCE_DIR) -> None:
 
 
 _NOMBRE_ARCHIVO = re.compile(r"TasasVigentes(\d{2})(\d{4})\.htm$")
-# Primer mes con el layout que entiende parse_tasas_historicas (lo cargado empieza en
-# 2022-04); las páginas anteriores usan otro formato.
-_TASAS_HISTORICAS_DESDE = datetime.date(2022, 4, 1)
+# Primer mes que entiende parse_tasas_historicas (2026-10-09; antes 2022-04). Antes de
+# 2009-07 la página trae segmentos que ya no existen en el catálogo (Comercial
+# Corporativo, Microcrédito de Subsistencia, ...) y tablas de 6-7 columnas.
+_TASAS_HISTORICAS_DESDE = datetime.date(2009, 7, 1)
+# Meses sueltos con un formato que no vale la pena soportar (se omiten sin ERROR para que
+# la corrida semanal no termine siempre con código 2). 2009-09: tabla de 5 columnas donde
+# la quinta repite la cuarta solo en parte de las filas.
+_TASAS_HISTORICAS_EXCLUIDAS = {"TasasVigentes092009.htm"}
 
 
 def parse_fecha_from_tasas_historicas_filename(name: str) -> datetime.date:
@@ -247,6 +252,37 @@ def parse_fecha_from_tasas_historicas_filename(name: str) -> datetime.date:
         )
     mes, anio = int(m.group(1)), int(m.group(2))
     return datetime.date(anio, mes, calendar.monthrange(anio, mes)[1])
+
+
+def _log_segmentos_tasas_sin_catalogo(conn) -> None:
+    """fact_tasas_referenciales_cartera/_depositos_instrumento unen por nombre contra
+    dim_subsegmento_credito/dim_categoria_deposito (INNER JOIN): un nombre con otra
+    escritura se descartaba sin aviso (pasó con los dobles espacios de 2009-2020). ERROR para que
+    la corrida termine con código 2 y se agregue el alias en parse_tasas_historicas."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.dimension_valor, count(*), min(s.fecha), max(s.fecha)
+            FROM staging.tasas_referenciales s
+            WHERE (s.seccion IN ('activa_maxima', 'activa_referencial')
+                   AND NOT EXISTS (SELECT 1 FROM marts.dim_subsegmento_credito d
+                                   WHERE d.subsegmento = s.dimension_valor))
+               OR (s.seccion = 'pasiva_instrumento'
+                   AND NOT EXISTS (SELECT 1 FROM marts.dim_categoria_deposito d
+                                   WHERE d.categoria = s.dimension_valor))
+            GROUP BY 1 ORDER BY 1
+            """
+        )
+        for segmento, filas, desde, hasta in cur.fetchall():
+            log.error(
+                "TasasHistorico: '%s' (%d filas, %s a %s) no está en "
+                "dim_subsegmento_credito / dim_categoria_deposito: agregar el alias en "
+                "parse_tasas_historicas (_SEGMENTO_ALIAS / _CATEGORIA_ALIAS)",
+                segmento,
+                filas,
+                desde,
+                hasta,
+            )
 
 
 def load_tasas_historicas() -> None:
@@ -268,7 +304,10 @@ def load_tasas_historicas() -> None:
                 # fallas por archivo, en vez de abortar la corrida completa.
                 log.error("%s, se omite", e)
                 continue
-            if fecha < _TASAS_HISTORICAS_DESDE:
+            if (
+                fecha < _TASAS_HISTORICAS_DESDE
+                or path.name in _TASAS_HISTORICAS_EXCLUIDAS
+            ):
                 # Layout HTML anterior, no soportado por el parser (ver "Alcance de los
                 # datos" en el README). Sin este corte se reintentaban ~170 páginas en
                 # cada corrida y llenaban el log de WARNING (2026-10-09).
@@ -301,6 +340,7 @@ def load_tasas_historicas() -> None:
             conn.commit()
         refresh_marts(conn)
         conn.commit()
+        _log_segmentos_tasas_sin_catalogo(conn)
     except Exception:
         conn.rollback()
         raise

@@ -44,7 +44,13 @@ def _clean_label(s) -> str | None:
 
 # La única discrepancia real de nombre entre esta fuente y el universo de
 # dim_subsegmento_credito (sembrado desde tsa): esta página omite el guion.
-_SEGMENTO_ALIAS = {"PRODUCTIVO CORPORATIVO": "PRODUCTIVO - CORPORATIVO"}
+_SEGMENTO_ALIAS = {
+    "PRODUCTIVO CORPORATIVO": "PRODUCTIVO - CORPORATIVO",
+    # 2009-2015 la página omite el "de"; BCE tsa usa la forma con "de" para el mismo
+    # segmento en esas fechas (verificado contra staging.bce_tasas_activas, 2026-10-09).
+    "MICROCRÉDITO ACUMULACIÓN AMPLIADA": "MICROCRÉDITO DE ACUMULACIÓN AMPLIADA",
+    "MICROCRÉDITO ACUMULACIÓN SIMPLE": "MICROCRÉDITO DE ACUMULACIÓN SIMPLE",
+}
 
 # "Depósitos de Tarjetahabientes" (esta fuente) y "FONDOS DE TARJETAHABIENTES"
 # (CAPCOL/BCE tsp) son el mismo concepto con wording distinto -- se armoniza al nombre ya
@@ -104,23 +110,37 @@ def _resolver_plazo(texto: str) -> tuple[int, int | None]:
 
 
 def _segmento_label(raw: str) -> str:
-    label = (
-        re.sub(r"\d+$", "", raw.strip()).strip().upper()
-    )  # quita superíndices de nota al pie (ej. "Inmobiliario3")
+    # Notas al pie pegadas al nombre: "Inmobiliario3", "Consumo *", "Consumo /1",
+    # "Microcrédito Minorista 1.", "Productivo Empresarial (* Este segmento ... *)".
+    label = re.sub(r"\(\*.*\*\)", "", raw)
+    label = re.sub(r"[\s\d*./]+$", "", label.strip())
+    label = re.sub(r"\s+", " ", label).strip().upper()
     return _SEGMENTO_ALIAS.get(label, label)
 
 
 def _categoria_label(raw: str) -> str:
-    label = (
-        re.sub(r"[\d*]+$", "", raw.strip()).strip().upper()
-    )  # quita marcadores de nota al pie (ej. "Depósitos a Plazo*")
+    label = re.sub(
+        r"[\d*]+$", "", raw.strip()
+    )  # nota al pie (ej. "Depósitos a Plazo*")
+    # Espacios dobles en páginas de 2009-2020 ("Depósitos  de Ahorro").
+    label = re.sub(r"\s+", " ", label).strip().upper()
     return _CATEGORIA_ALIAS.get(label, label)
 
 
 # Orden de prioridad: "activa máximas" primero, porque su encabezado también contiene el
 # texto "activas" y podría confundirse con el de "activas referenciales" si se buscara al revés.
 _SECCION_MARCADORES = [
+    # Secciones que no se modelan (2026-10-09): van primero para que no las capture un
+    # marcador más general. La de 2018-2019 es una segunda tabla de activas solo para el
+    # sector popular y solidario (la general ya trae esos segmentos); la de inversiones del
+    # sector público trae plazos que se mezclarían con los de "pasiva_plazo".
+    ("VIGENTES PARA EL SECTOR FINANCIERO POPULAR Y SOLIDARIO (SEGMENTOS", "ignorar"),
+    ("PASIVAS EFECTIVAS MÁXIMAS PARA LAS INVERSIONES", "ignorar"),
+    # Hasta 2022-07: una sola sección "vigentes" con Referenciales (par izquierdo) y
+    # Máximas (par derecho) lado a lado.
+    ("TASAS DE INTERÉS ACTIVAS EFECTIVAS VIGENTES", "activa_vigente"),
     ("TASAS DE INTERÉS ACTIVAS MÁXIMAS", "activa_maxima"),
+    ("TASAS DE INTERÉS MÁXIMA POR SEGMENTO", "activa_maxima"),  # solo 2021-05
     ("TASAS DE INTERÉS ACTIVAS EFECTIVAS REFERENCIALES", "activa_referencial"),
     (
         "TASAS DE INTERÉS PASIVAS EFECTIVAS PROMEDIO POR INSTRUMENTO",
@@ -139,6 +159,8 @@ _METRICAS_SISTEMA = {
 
 
 def _emitir(seccion: str, label: str, valor: float) -> dict | None:
+    if seccion.startswith("activa") and not _segmento_label(label):
+        return None
     if seccion == "activa_maxima":
         return {
             "seccion": seccion,
@@ -161,6 +183,8 @@ def _emitir(seccion: str, label: str, valor: float) -> dict | None:
             "valor": valor,
         }
     if seccion == "pasiva_plazo":
+        if not label.strip().upper().startswith("PLAZO"):
+            return None  # nota dentro de la sección (2009-10 a 2010-05), no un plazo
         desde, hasta = _resolver_plazo(label)
         return {
             "seccion": seccion,
@@ -179,27 +203,47 @@ def _emitir(seccion: str, label: str, valor: float) -> dict | None:
     return None
 
 
+def _normalizar_ancho(tabla: pd.DataFrame) -> pd.DataFrame:
+    """Algunas páginas (2009-09, 2016-01/02/06) traen una quinta columna: vacía, o copia
+    exacta de la anterior por un colspan. Se quitan las columnas vacías y las idénticas a
+    la anterior en TODAS las filas; una tabla normal de 4 columnas nunca cumple esto."""
+    tabla = tabla.dropna(axis=1, how="all")
+    cols = list(tabla.columns)
+    quedan = [cols[0]] + [
+        c for prev, c in zip(cols, cols[1:]) if not tabla[c].equals(tabla[prev])
+    ]
+    tabla = tabla[quedan]
+    tabla.columns = range(tabla.shape[1])
+    return tabla
+
+
 def _parse_filas(tablas: list[pd.DataFrame]) -> list[dict]:
     filas = []
     seccion = None
     for tabla in tablas:
         if tabla.shape[1] != 4:
+            tabla = _normalizar_ancho(tabla)
+        if tabla.shape[1] != 4:
             continue  # layout de página antigua no reconocido, se ignora esta tabla puntual
         for _, row in tabla.iterrows():
             col0, col1, col2, col3 = row[0], row[1], row[2], row[3]
-            valores_distintos = len({str(col0), str(col1), str(col2), str(col3)})
+            # Cabecera: una sola celda con contenido repetida por el colspan. Se cuentan
+            # solo las celdas no vacías: hay cabeceras con la última celda vacía (p. ej.
+            # "4. TASAS ... MÁXIMAS PARA LAS INVERSIONES" hasta 2022).
+            no_vacios = {str(v) for v in (col0, col1, col2, col3) if not pd.isna(v)}
+            valores_distintos = len(no_vacios)
 
             if valores_distintos == 1:
                 # fila fusionada en las 4 columnas: encabezado/pie de sección o texto
                 # informativo -- se usa solo para actualizar qué sección está vigente.
-                texto = re.sub(r"\s+", " ", str(col0).upper())
+                texto = re.sub(r"\s+", " ", next(iter(no_vacios)).upper())
                 for marcador, nombre in _SECCION_MARCADORES:
                     if marcador in texto:
                         seccion = nombre
                         break
                 continue
 
-            if seccion is None:
+            if seccion is None or seccion == "ignorar":
                 continue
 
             # Layout "1 valor" (activa_maxima: 3 columnas de label fusionadas + 1 valor)
@@ -212,12 +256,18 @@ def _parse_filas(tablas: list[pd.DataFrame]) -> list[dict]:
                         filas.append(fila)
                 continue
 
-            # Layout "2 pares independientes" (resto de secciones)
+            # Layout "2 pares independientes" (resto de secciones). En "activa_vigente"
+            # el par izquierdo es la tasa referencial y el derecho la máxima.
             for label_col, valor_col in ((0, 1), (2, 3)):
                 label, valor = _clean_label(row[label_col]), _to_float(row[valor_col])
                 if label is None or valor is None:
                     continue
-                fila = _emitir(seccion, label, valor)
+                destino = seccion
+                if seccion == "activa_vigente":
+                    destino = (
+                        "activa_referencial" if label_col == 0 else "activa_maxima"
+                    )
+                fila = _emitir(destino, label, valor)
                 if fila:
                     filas.append(fila)
     return filas
@@ -230,7 +280,10 @@ def parse_tasas_historicas_file(path: Path, fecha) -> pd.DataFrame:
     # pandas.read_html usa thousands=',' por defecto SIEMPRE (incluso especificando
     # decimal=","), lo que corrompe silenciosamente "7,99" -> "799" -- hay que fijar
     # thousands explícito a algo que no aparezca en los datos para desactivar ese default.
-    tablas = pd.read_html(path, decimal=",", thousands=".")
+    # Celdas como texto (2026-10-09): hasta 2022-03 el BCE escribía "7.23" con punto, y
+    # con thousands="." pandas lo convertía en el entero 723, que _to_float descartaba:
+    # esos meses no extraían nada. _to_float acepta coma y punto decimal.
+    tablas = pd.read_html(path, thousands=None, decimal="§")
 
     filas = _parse_filas(tablas)
     if not filas:
