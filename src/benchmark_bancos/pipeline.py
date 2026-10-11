@@ -59,6 +59,23 @@ from benchmark_bancos.transform.parse_tasas_historicas import (
 log = logging.getLogger(__name__)
 
 
+def orden_publicacion(path: Path) -> tuple[int, str]:
+    """Clave de orden para los archivos CAPCOL de una carpeta de año: por el mes del
+    nombre ('... JUNIO 2026.zip', 'banca-publica-...-dic-21.zip'), no alfabético.
+
+    Superbancos publica un archivo acumulado del año; cada publicación reemplaza los meses
+    que trae (upsert_staging_cartera/depositos borran lo que la anterior dejó). Si conviven
+    'JUNIO' y 'AGOSTO', el orden alfabético cargaría AGOSTO primero y JUNIO lo pisaría con
+    datos viejos. Sin mes reconocible el archivo va primero (mes 0)."""
+    mes = 0
+    for t in re.findall(r"[A-ZÑ]+", path.stem.upper()):
+        if t in _MESES_ES:
+            mes = _MESES_ES[t]
+        elif len(t) == 3 and t in _ABREV_MESES:
+            mes = _ABREV_MESES[t]
+    return mes, path.name
+
+
 def load_years(
     years: list[int],
     base_dir: Path = RAW_DIR,
@@ -87,7 +104,9 @@ def load_years(
                     if not report_dir.exists():
                         log.warning("No existe %s, se omite", report_dir)
                         continue
-                    for zip_path in sorted(report_dir.glob("*.zip")):
+                    for zip_path in sorted(
+                        report_dir.glob("*.zip"), key=orden_publicacion
+                    ):
                         source_key = (
                             f"{cfg['subdir']}/{zip_path.name}"
                             if cfg["subdir"]
@@ -362,6 +381,7 @@ _MESES_ES = {
     "NOVIEMBRE": 11,
     "DICIEMBRE": 12,
 }
+_ABREV_MESES = {nombre[:3]: numero for nombre, numero in _MESES_ES.items()}
 _NOMBRE_BOLETIN = re.compile(
     r"BOLET[IÍ]N\s+BANCOS\s+([A-ZÑ]+)\s+(\d{4})", re.IGNORECASE
 )

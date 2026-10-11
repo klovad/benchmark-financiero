@@ -272,6 +272,14 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   sola fila con su provincia vigente (2 duplicados por escritura y 5 pares con provincia
   anterior fusionados, totales nacionales sin cambio), y `marts.dim_banco` pasó a
   llamarse `marts.dim_entidad` (`entidad_id`). Ver `docs/data_dictionary.md`.
+- ✅ **Reconstrucción completa probada y base renovada** (2026-10-10): instalación desde
+  cero en ~70 min (65 min de `actualizar` descargando todo, 48 min con los archivos ya
+  descargados; tiempos por fuente en `docs/despliegue_y_orquestacion.md` §4). La
+  comparación con la base en uso encontró saldos duplicados de 13 bancos privados
+  (ene-jun 2026) por una republicación de Superbancos con nombres cambiados: ahora cada
+  publicación reemplaza a la anterior y el refresh borra los hechos que la fuente ya no
+  trae. Los ids de las dimensiones quedaron compactos (`dim_entidad` 1..444) y el refresh
+  ya no gasta ids en cada corrida.
 - ✅ **Segmento de entidad homologado** (2026-10-10, `sql/41`): las mutualistas quedan en
   un solo valor (`SEGMENTO 1 MUTUALISTA`; el BCE las rotula `MUTUALISTAS` desde 2025) y
   las entidades que no reportan al BCE (segundo piso) en `NO REPORTA AL BCE`; la columna

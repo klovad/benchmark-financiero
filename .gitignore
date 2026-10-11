@@ -1,6 +1,8 @@
 # Datos crudos descargados de la fuente (se regeneran con el ETL, no se versionan)
 data/raw/**
 !data/raw/.gitkeep
+# respaldos de una carpeta raw reemplazada (p. ej. tras reconstruir la base)
+data/raw_*/
 data/_tmp_extract/
 data/_tmp_inspect/
 

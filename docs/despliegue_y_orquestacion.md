@@ -517,8 +517,9 @@ uv run benchmark-bancos seps --years 2021 2022 2023 2024 2025 2026     # 5. SEPS
 uv run benchmark-bancos refresh --full                                 # 6. red de seguridad: marts desde todo staging
 ```
 
-Equivalente en una sola invocación [no probado como primera carga; mismo orden, cada
-fuente aislada, código 2 si alguna falló]:
+Equivalente en una sola invocación [verificado 2026-10-10 en Windows 11 sobre una base
+vacía, dos veces: con descarga completa y con los archivos ya descargados; mismo orden,
+cada fuente aislada, código 2 si alguna falló]:
 
 ```bash
 uv run benchmark-bancos actualizar --years 2021 2022 2023 2024 2025 2026 --log-file <ruta-de-logs>/primera_carga.log
@@ -526,8 +527,28 @@ uv run benchmark-bancos refresh --full
 ```
 
 - El primer refresh de una base nueva es completo (no hay marca de agua); los siguientes
-  son incrementales. Un refresh completo tarda ~3 min en la base de 2026-10 (medido en
-  `docs/architecture.md`, "Carga incremental"); el resto de tiempos no está medido.
+  son incrementales.
+- **Tiempos medidos** (2026-10-10, Windows 11, Postgres 17 local, 2021-2026 + BCE desde
+  2008; ~1,6 GB descargados, base final ~10 GB):
+
+  | Paso | Descargando todo | Con archivos ya descargados |
+  |---|---|---|
+  | `migrate` (41 migraciones) | 3 s | 3 s |
+  | `bce` | 18 min 44 s | 15 min 40 s |
+  | CAPCOL privada + pública | 6 min 46 s | 6 min 33 s |
+  | `boletin` | 4 min 46 s | 4 min 44 s |
+  | `tasas-historicas` (2009-2026) | 24 s | 3 s |
+  | `seps` | 34 min 49 s | 21 min |
+  | **`actualizar` completo** | **65 min 33 s** | **48 min 2 s** |
+  | `refresh --full` posterior | 3 min 48 s | 2 min 56 s |
+  | `conciliar --meses 70` | 3 s | 3 s |
+
+  `refresh` sin novedades: 2 s. CAPCOL y Boletín abren el portal con Playwright y
+  descargan siempre, por eso casi no cambian entre columnas.
+- La prueba sirvió para comparar contra la base en uso: 26 de 31 tablas idénticas; la
+  diferencia (saldos de 13 bancos privados ene-jun 2026 duplicados en la base vieja por
+  una republicación con nombres cambiados) está documentada y corregida en
+  `docs/gobernanza_datos.md`, "Huecos de gobernanza conocidos".
 - `--years` también se puede fijar con `SCRAPER_YEARS` en `.env` (no aplica a
   `actualizar`, cuyo default es el año en curso).
 - SEPS solo descarga años presentes en `SEPS_DOWNLOAD_IDS`
@@ -535,7 +556,14 @@ uv run benchmark-bancos refresh --full
   con un aviso.
 
 **Reconstruir desde archivos ya descargados** (servidor sin acceso a los portales, o
-restaurar sin respaldo de la base): copiar `data/raw/**` al servidor nuevo y correr
+restaurar sin respaldo de la base): copiar `data/raw/**` al servidor nuevo y correr.
+Si en una carpeta de año conviven varias publicaciones acumuladas de CAPCOL
+('... JUNIO 2026.zip' y '... AGOSTO 2026.zip'), se cargan por mes de publicación y la
+última reemplaza a las anteriores (desde 2026-10-10; antes el orden era alfabético).
+**La carpeta `data/raw` tiene que ser la misma que alimentó la base**: si se reconstruye
+la base desde otra carpeta, dejar esa carpeta como `data/raw` (y la vieja como respaldo,
+`data/raw_*` está en `.gitignore`); si no, la próxima corrida cargaría como nuevos los
+archivos viejos que la base no registró y reemplazaría meses con una publicación anterior.
 
 ```bash
 uv run benchmark-bancos bce                        # petición condicional al BCE: sin red falla (download_bce.py:68-78, brecha B7)

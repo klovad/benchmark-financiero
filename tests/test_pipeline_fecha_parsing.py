@@ -35,3 +35,23 @@ def test_parse_fecha_boletin_unrecognized_month_raises():
 def test_parse_fecha_boletin_no_matching_pattern_raises():
     with pytest.raises(ValueError):
         parse_fecha_from_boletin_filename("archivo_random.zip")
+
+
+def test_orden_publicacion_ordena_por_mes_y_no_alfabetico():
+    from pathlib import Path
+
+    from benchmark_bancos.pipeline import orden_publicacion
+
+    nombres = [
+        "Cartera Productiva AGOSTO 2026.zip",
+        "Cartera Productiva JUNIO 2026.zip",
+        "banca-publica-colocaciones-consumo-dic-21.zip",
+        "Cartera sin mes.zip",
+    ]
+    ordenados = [p.name for p in sorted(map(Path, nombres), key=orden_publicacion)]
+    assert ordenados == [
+        "Cartera sin mes.zip",
+        "Cartera Productiva JUNIO 2026.zip",
+        "Cartera Productiva AGOSTO 2026.zip",
+        "banca-publica-colocaciones-consumo-dic-21.zip",
+    ]

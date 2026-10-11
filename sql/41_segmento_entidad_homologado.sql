@@ -17,9 +17,10 @@
 -- El resto de valores (BANCO GRANDE, BANCOS PUBLICOS, SIN SEGMENTO, ...) queda como lo
 -- publica el BCE.
 
-INSERT INTO marts.dim_segmento_entidad (tipo_segmento) VALUES
-    ('SEGMENTO 1 MUTUALISTA'), ('NO REPORTA AL BCE')
-ON CONFLICT (tipo_segmento) DO NOTHING;
+-- Sin ON CONFLICT: un INSERT en conflicto igual gasta un id de la secuencia.
+INSERT INTO marts.dim_segmento_entidad (tipo_segmento)
+SELECT 'SEGMENTO 1 MUTUALISTA'
+WHERE NOT EXISTS (SELECT 1 FROM marts.dim_segmento_entidad WHERE tipo_segmento = 'SEGMENTO 1 MUTUALISTA');
 
 UPDATE staging.bce_tasas_pasivas SET tipo_segmento = 'SEGMENTO 1 MUTUALISTA'
 WHERE tipo_segmento = 'MUTUALISTAS';
@@ -44,12 +45,21 @@ FROM marts.dim_segmento_entidad viejo, marts.dim_segmento_entidad nuevo
 WHERE e.segmento_entidad_id = viejo.segmento_entidad_id
   AND viejo.tipo_segmento = 'MUTUALISTAS' AND nuevo.tipo_segmento = 'SEGMENTO 1 MUTUALISTA';
 
+-- La fila 'MUTUALISTAS' ya no tiene referencias: se reusa (mismo id) como
+-- 'NO REPORTA AL BCE', así el catálogo queda con ids 1..14 sin huecos. Si no existiera,
+-- se crea.
+UPDATE marts.dim_segmento_entidad SET tipo_segmento = 'NO REPORTA AL BCE'
+WHERE tipo_segmento = 'MUTUALISTAS'
+  AND NOT EXISTS (SELECT 1 FROM marts.dim_segmento_entidad WHERE tipo_segmento = 'NO REPORTA AL BCE');
+DELETE FROM marts.dim_segmento_entidad WHERE tipo_segmento = 'MUTUALISTAS';
+INSERT INTO marts.dim_segmento_entidad (tipo_segmento)
+SELECT 'NO REPORTA AL BCE'
+WHERE NOT EXISTS (SELECT 1 FROM marts.dim_segmento_entidad WHERE tipo_segmento = 'NO REPORTA AL BCE');
+
 UPDATE marts.dim_entidad e
 SET segmento_entidad_id = s.segmento_entidad_id, fecha_actualizacion = now()
 FROM marts.dim_segmento_entidad s
 WHERE e.segmento_entidad_id IS NULL AND s.tipo_segmento = 'NO REPORTA AL BCE';
-
-DELETE FROM marts.dim_segmento_entidad WHERE tipo_segmento = 'MUTUALISTAS';
 
 ALTER TABLE marts.dim_entidad ALTER COLUMN segmento_entidad_id SET NOT NULL;
 ALTER TABLE marts.fact_captaciones_depositos ALTER COLUMN segmento_entidad_id SET NOT NULL;

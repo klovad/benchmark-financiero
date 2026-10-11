@@ -178,6 +178,51 @@ def sincronizar_cantones_seed(conn) -> None:
         )
 
 
+def _reemplazar_publicacion_anterior(cur, tabla: str, alcance: tuple[str, ...]) -> int:
+    """Borra de staging.<tabla> las filas que la publicación recién cargada (_tmp_<tabla>,
+    un solo source_file) reemplaza y no volvió a traer. Devuelve cuántas borró.
+
+    CAPCOL y SEPS publican un archivo acumulado: el de AGOSTO trae enero-agosto y reemplaza
+    al de JUNIO. El upsert empareja por el nombre crudo de la entidad, así que si la fuente
+    renombra una entidad ('BP BANCO COMERCIAL DE MANABI' -> 'BANCO COMERCIAL DE MANABI',
+    archivo de agosto 2026) o deja de reportar un cantón, la fila vieja quedaba al lado de
+    la nueva y el refresh las sumaba (cartera de 13 bancos inflada en ene-jun 2026,
+    detectado 2026-10-10 al reconstruir la base desde cero). Cada archivo es la única fuente
+    de su `alcance` (verificado en la base reconstruida: un solo source_file por
+    combinación), así que lo que quede ahí de otro archivo es de una publicación anterior.
+
+    Las filas que siguen en cada (fecha, banco_codigo) afectado se marcan como
+    actualizadas para que el refresh incremental recalcule esos grupos."""
+    on = " AND ".join(f"s.{c} = k.{c}" for c in alcance)
+    cols = ", ".join(alcance)
+    cur.execute(
+        f"""
+        WITH borradas AS (
+            DELETE FROM staging.{tabla} s
+            USING (SELECT DISTINCT {cols}, source_file FROM _tmp_{tabla}) k
+            WHERE {on} AND s.source_file IS DISTINCT FROM k.source_file
+            RETURNING s.fecha, s.banco_codigo
+        ), marcadas AS (
+            UPDATE staging.{tabla} t SET fecha_actualizacion = now()
+            FROM (SELECT DISTINCT fecha, banco_codigo FROM borradas) b,
+                 (SELECT DISTINCT source_file FROM _tmp_{tabla}) f
+            WHERE t.fecha = b.fecha AND t.banco_codigo = b.banco_codigo
+              AND t.source_file = f.source_file
+            RETURNING 1
+        )
+        SELECT (SELECT count(*) FROM borradas), (SELECT count(*) FROM marcadas)
+        """
+    )
+    borradas, _ = cur.fetchone()
+    if borradas:
+        log.info(
+            "staging.%s: %d filas de una publicación anterior reemplazadas",
+            tabla,
+            borradas,
+        )
+    return borradas
+
+
 def upsert_staging_cartera(conn, df: pd.DataFrame) -> None:
     rows = [
         tuple(
@@ -221,6 +266,9 @@ def upsert_staging_cartera(conn, df: pd.DataFrame) -> None:
                           banco_codigo = EXCLUDED.banco_codigo, fecha_actualizacion = now()
             WHERE (staging.cartera.saldo, staging.cartera.region, staging.cartera.provincia, staging.cartera.source_file) IS DISTINCT FROM (EXCLUDED.saldo, EXCLUDED.region, EXCLUDED.provincia, EXCLUDED.source_file)
             """
+        )
+        _reemplazar_publicacion_anterior(
+            cur, "cartera", ("tipo_entidad", "fecha", "tipo_credito")
         )
         cur.execute("DROP TABLE _tmp_cartera")
     log.info("staging.cartera: %d filas upsert", len(rows))
@@ -286,6 +334,7 @@ def upsert_staging_depositos(conn, df: pd.DataFrame) -> None:
             WHERE (staging.depositos.saldo, staging.depositos.region, staging.depositos.provincia, staging.depositos.numero_clientes, staging.depositos.numero_cuentas, staging.depositos.source_file) IS DISTINCT FROM (EXCLUDED.saldo, EXCLUDED.region, EXCLUDED.provincia, EXCLUDED.numero_clientes, EXCLUDED.numero_cuentas, EXCLUDED.source_file)
             """
         )
+        _reemplazar_publicacion_anterior(cur, "depositos", ("tipo_entidad", "fecha"))
         cur.execute("DROP TABLE _tmp_depositos")
     log.info("staging.depositos: %d filas upsert", len(rows))
 
@@ -492,6 +541,42 @@ def upsert_staging_bce_tasas_activas(conn, df: pd.DataFrame) -> None:
     )
 
 
+def _cargar_tmp_cuentas(cur, rows: list[tuple]) -> None:
+    """Deja las cuentas del archivo en _tmp_cuentas (columnas explícitas, no LIKE
+    dim_cuenta_contable, para no arrastrar el DEFAULT de cuenta_id)."""
+    cur.execute(
+        """
+        CREATE TEMP TABLE IF NOT EXISTS _tmp_cuentas (
+            reporte text, codigo text, cuenta text, nivel int, codigo_padre text,
+            seccion text, grupo_met text
+        ) ON COMMIT DROP
+        """
+    )
+    cur.execute("TRUNCATE _tmp_cuentas")
+    cur.executemany(
+        "INSERT INTO _tmp_cuentas VALUES (%s, %s, %s, %s, %s, %s, %s)", rows
+    )
+
+
+def _insertar_cuentas_nuevas(cur, con_grupo_met: bool) -> None:
+    """INSERT solo de los códigos que no existen: un INSERT ... ON CONFLICT gasta un
+    cuenta_id por cada fila en conflicto (llegó a 110.378 con 1.902 cuentas)."""
+    destino = ", grupo_met" if con_grupo_met else ""
+    origen = ", t.grupo_met" if con_grupo_met else ""
+    cur.execute(
+        f"""
+        INSERT INTO marts.dim_cuenta_contable
+            (reporte, codigo, cuenta, nivel, codigo_padre, seccion{destino})
+        SELECT DISTINCT ON (t.reporte, t.codigo)
+               t.reporte, t.codigo, t.cuenta, t.nivel, t.codigo_padre, t.seccion{origen}
+        FROM _tmp_cuentas t
+        WHERE NOT EXISTS (SELECT 1 FROM marts.dim_cuenta_contable d
+                          WHERE d.reporte = t.reporte AND d.codigo = t.codigo)
+        ORDER BY t.reporte, t.codigo
+        """
+    )
+
+
 def upsert_dim_cuenta_contable(conn, cuentas_df: pd.DataFrame) -> None:
     """Plan de cuentas descubierto en cada archivo del Boletín -- volumen pequeño
     (~1500 cuentas), executemany alcanza. grupo_met se actualiza si el archivo nuevo trae
@@ -512,17 +597,20 @@ def upsert_dim_cuenta_contable(conn, cuentas_df: pd.DataFrame) -> None:
         for r in cuentas_df.itertuples(index=False)
     ]
     with conn.cursor() as cur:
-        cur.executemany(
+        _cargar_tmp_cuentas(cur, rows)
+        cur.execute(
             """
-            INSERT INTO marts.dim_cuenta_contable (reporte, codigo, cuenta, nivel, codigo_padre, seccion, grupo_met)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (reporte, codigo) DO UPDATE SET
-                cuenta = EXCLUDED.cuenta, nivel = EXCLUDED.nivel, codigo_padre = EXCLUDED.codigo_padre,
-                seccion = EXCLUDED.seccion,
-                grupo_met = COALESCE(marts.dim_cuenta_contable.grupo_met, EXCLUDED.grupo_met)
-            """,
-            rows,
+            UPDATE marts.dim_cuenta_contable d
+            SET cuenta = t.cuenta, nivel = t.nivel, codigo_padre = t.codigo_padre,
+                seccion = t.seccion, grupo_met = COALESCE(d.grupo_met, t.grupo_met)
+            FROM _tmp_cuentas t
+            WHERE d.reporte = t.reporte AND d.codigo = t.codigo
+              AND (d.cuenta, d.nivel, d.codigo_padre, d.seccion, d.grupo_met)
+                  IS DISTINCT FROM
+                  (t.cuenta, t.nivel, t.codigo_padre, t.seccion, COALESCE(d.grupo_met, t.grupo_met))
+            """
         )
+        _insertar_cuentas_nuevas(cur, con_grupo_met=True)
     log.info("marts.dim_cuenta_contable: %d filas upsert", len(rows))
 
 
@@ -541,14 +629,8 @@ def insert_dim_cuenta_contable_seps(conn, cuentas_df: pd.DataFrame) -> None:
         for r in cuentas_df.itertuples(index=False)
     ]
     with conn.cursor() as cur:
-        cur.executemany(
-            """
-            INSERT INTO marts.dim_cuenta_contable (reporte, codigo, cuenta, nivel, codigo_padre, seccion)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            ON CONFLICT (reporte, codigo) DO NOTHING
-            """,
-            rows,
-        )
+        _cargar_tmp_cuentas(cur, [r + (None,) for r in rows])
+        _insertar_cuentas_nuevas(cur, con_grupo_met=False)
     log.info(
         "marts.dim_cuenta_contable: %d códigos SEPS vistos (solo se insertan los nuevos)",
         len(rows),
@@ -646,30 +728,28 @@ ON CONFLICT (fecha_id) DO NOTHING;
 -- corrida por load_banco_maestro_seed(), llamado justo antes que esta sentencia dentro
 -- de refresh_marts()), AUTO_INGRESADO para las ~409 entidades auto-registradas por RUC.
 --
--- segmento_entidad_id SÍ va en el SELECT/columna del INSERT (leído de la propia
--- marts.dim_entidad vía el LEFT JOIN de abajo) aunque esta sentencia nunca lo escribe en
--- el SET del ON CONFLICT -- esa columna es propiedad del UPDATE separado más abajo
--- (SCD1 desde los hechos BCE). Bug real encontrado y corregido 2026-08-30 al verificar
--- CDC no-op para esta migración: como segmento_entidad_id NO estaba en la lista de
--- columnas del INSERT, Postgres computaba `EXCLUDED.segmento_entidad_id` como NULL (el
--- DEFAULT de una columna omitida en el INSERT, no el valor real de la fila en conflicto)
--- -- eso hacía que el guard de CDC (entonces sobre row_hash, desde sql/34 sobre las
--- columnas mismas) casi nunca coincidiera con la fila real para cualquier
--- banco con segmento_entidad_id ya poblado (prácticamente los 442), disparando un
--- UPDATE real (`fecha_actualizacion = now()`) en CADA corrida de refresh_marts(), no
--- solo cuando algo cambiaba de verdad. Preexistía desde sql/19_dim_segmento_entidad.sql
--- (2026-07-25) -- no lo introdujo esta migración, solo quedó expuesto al verificar CDC
--- no-op de punta a punta en vez de asumirlo. Una fila nueva (sin fila existente que unir)
--- toma 'NO REPORTA AL BCE' (sql/41: la columna es NOT NULL); el UPDATE desde los hechos
--- BCE lo reemplaza si la entidad aparece en tsp/tsa.
+-- UPDATE de las existentes + INSERT solo de las nuevas, en vez de un INSERT ... ON
+-- CONFLICT DO UPDATE (2026-10-10): Postgres pide un valor a la secuencia por cada fila
+-- propuesta aunque termine en conflicto, así que cada refresh gastaba ~444 ids y
+-- entidad_id llegó a 12.163 con 444 filas. segmento_entidad_id no se toca acá: es del
+-- UPDATE desde los hechos BCE más abajo (SCD1). Una entidad nueva entra con
+-- 'NO REPORTA AL BCE' (sql/41: NOT NULL) y ese UPDATE lo reemplaza si aparece en tsp/tsa.
+-- La guarda IS DISTINCT FROM evita pisar fecha_actualizacion sin un cambio real (bug de
+-- CDC corregido 2026-08-30, ver docs/gobernanza_datos.md).
+UPDATE marts.dim_entidad d
+SET entidad = bm.banco, tipo_entidad = bm.tipo_entidad, ruc = bm.ruc,
+    estado_validacion = bm.estado_validacion, fecha_actualizacion = now()
+FROM staging.banco_maestro bm
+WHERE bm.banco_codigo = d.entidad_codigo
+  AND (d.entidad, d.tipo_entidad, d.ruc, d.estado_validacion)
+      IS DISTINCT FROM (bm.banco, bm.tipo_entidad, bm.ruc, bm.estado_validacion);
+
 INSERT INTO marts.dim_entidad (entidad_codigo, entidad, tipo_entidad, ruc, estado_validacion, segmento_entidad_id)
 SELECT bm.banco_codigo, bm.banco, bm.tipo_entidad, bm.ruc, bm.estado_validacion,
-       COALESCE(existente.segmento_entidad_id,
-                (SELECT segmento_entidad_id FROM marts.dim_segmento_entidad WHERE tipo_segmento = 'NO REPORTA AL BCE'))
+       (SELECT segmento_entidad_id FROM marts.dim_segmento_entidad WHERE tipo_segmento = 'NO REPORTA AL BCE')
 FROM staging.banco_maestro bm
-LEFT JOIN marts.dim_entidad existente ON existente.entidad_codigo = bm.banco_codigo
-WHERE bm.banco_codigo IN (SELECT entidad_codigo FROM marts.dim_entidad)
-   OR bm.banco_codigo IN (
+WHERE NOT EXISTS (SELECT 1 FROM marts.dim_entidad d WHERE d.entidad_codigo = bm.banco_codigo)
+  AND bm.banco_codigo IN (
     SELECT DISTINCT banco_codigo FROM staging.cartera WHERE tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO')
     UNION
     SELECT DISTINCT banco_codigo FROM staging.depositos WHERE tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO')
@@ -681,11 +761,7 @@ WHERE bm.banco_codigo IN (SELECT entidad_codigo FROM marts.dim_entidad)
     SELECT DISTINCT banco_codigo FROM staging.boletin_balance
     UNION
     SELECT DISTINCT banco_codigo FROM staging.boletin_pyg
-)
-ON CONFLICT (entidad_codigo) DO UPDATE SET
-    entidad = EXCLUDED.entidad, tipo_entidad = EXCLUDED.tipo_entidad, ruc = EXCLUDED.ruc,
-    estado_validacion = EXCLUDED.estado_validacion, fecha_actualizacion = now()
-WHERE (marts.dim_entidad.entidad, marts.dim_entidad.tipo_entidad, marts.dim_entidad.ruc, marts.dim_entidad.segmento_entidad_id, marts.dim_entidad.estado_validacion) IS DISTINCT FROM (EXCLUDED.entidad, EXCLUDED.tipo_entidad, EXCLUDED.ruc, EXCLUDED.segmento_entidad_id, EXCLUDED.estado_validacion);
+);
 
 -- translate() en vez de igualdad exacta: CAPCOL no es 100% consistente en su propia
 -- ortografía sin tilde (ver sql/20_dim_provincia.sql) -- normalize_provincia() en Python
@@ -721,6 +797,9 @@ SELECT DISTINCT c.canton, dp.provincia_id FROM (
 ) c
 JOIN marts.dim_provincia dp ON dp.provincia = translate(c.provincia, 'ÁÉÍÓÚ', 'AEIOU')
 WHERE c.canton IS NOT NULL
+  -- sin esto cada par ya existente gastaba un valor de la secuencia (ver dim_entidad)
+  AND NOT EXISTS (SELECT 1 FROM marts.dim_canton d
+                  WHERE d.canton = c.canton AND d.provincia_id = dp.provincia_id)
 ON CONFLICT (canton, provincia_id) DO NOTHING;
 
 -- dim_plazo: catálogo abierto por rango numérico, auto-descubierto desde cada fuente.
@@ -731,19 +810,27 @@ INSERT INTO marts.dim_plazo (dias_desde, dias_hasta, plazo_codigo)
 SELECT DISTINCT plazo_dias_desde, plazo_dias_hasta, tipo_deposito
 FROM staging.depositos
 WHERE plazo_dias_desde IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM marts.dim_plazo p WHERE p.dias_desde = plazo_dias_desde
+                  AND p.dias_hasta IS NOT DISTINCT FROM plazo_dias_hasta)
 ON CONFLICT (dias_desde, COALESCE(dias_hasta, -1)) DO NOTHING;
 
 INSERT INTO marts.dim_plazo (dias_desde, dias_hasta, plazo_codigo)
 SELECT DISTINCT plazo_dias_desde, plazo_dias_hasta, plazo_codigo FROM staging.bce_tasas_pasivas
+WHERE NOT EXISTS (SELECT 1 FROM marts.dim_plazo p WHERE p.dias_desde = plazo_dias_desde
+                  AND p.dias_hasta IS NOT DISTINCT FROM plazo_dias_hasta)
 ON CONFLICT (dias_desde, COALESCE(dias_hasta, -1)) DO NOTHING;
 
 INSERT INTO marts.dim_plazo (dias_desde, dias_hasta, plazo_codigo)
 SELECT DISTINCT plazo_dias_desde, plazo_dias_hasta, plazo_codigo FROM staging.bce_tasas_activas
+WHERE NOT EXISTS (SELECT 1 FROM marts.dim_plazo p WHERE p.dias_desde = plazo_dias_desde
+                  AND p.dias_hasta IS NOT DISTINCT FROM plazo_dias_hasta)
 ON CONFLICT (dias_desde, COALESCE(dias_hasta, -1)) DO NOTHING;
 
 INSERT INTO marts.dim_plazo (dias_desde, dias_hasta, plazo_codigo)
 SELECT DISTINCT plazo_dias_desde, plazo_dias_hasta, NULL FROM staging.tasas_referenciales
 WHERE seccion = 'pasiva_plazo'
+  AND NOT EXISTS (SELECT 1 FROM marts.dim_plazo p WHERE p.dias_desde = plazo_dias_desde
+                  AND p.dias_hasta IS NOT DISTINCT FROM plazo_dias_hasta)
 ON CONFLICT (dias_desde, COALESCE(dias_hasta, -1)) DO NOTHING;
 
 -- tipo_credito de CAPCOL (6 valores, snake_case) es el nombre coloquial del mismo
@@ -751,16 +838,23 @@ ON CONFLICT (dias_desde, COALESCE(dias_hasta, -1)) DO NOTHING;
 -- regulatorias) -- se resuelve aquí en vez de duplicar la columna como texto suelto.
 -- estado_cartera ya no es dimensión degenerada -- son 3 medidas columnares del mismo
 -- grano (fecha, banco, cantón, segmento), ver sql/21_fact_saldo_cartera_pivot.sql.
-INSERT INTO marts.fact_saldo_cartera
-    (fecha_id, entidad_id, canton_id, segmento_id, saldo_por_vencer, saldo_no_devenga_intereses, saldo_vencida)
+--
+-- Se calcula primero en _nuevo_saldo_cartera para poder borrar los hechos que la fuente
+-- ya no trae (2026-10-10): una publicación nueva de CAPCOL/SEPS reemplaza a la anterior
+-- (_reemplazar_publicacion_anterior) y, si deja de reportar un cantón o un segmento, su
+-- hecho viejo tiene que desaparecer, no quedar con el saldo anterior. El borrado se limita
+-- a los (fecha, entidad) recalculados en esta corrida (marca de _RE_ALCANCE, en un refresh completo
+-- toda la tabla).
+DROP TABLE IF EXISTS _nuevo_saldo_cartera;
+CREATE TEMP TABLE _nuevo_saldo_cartera ON COMMIT DROP AS
 SELECT
-    TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
+    TO_CHAR(s.fecha, 'YYYYMMDD')::INT AS fecha_id,
     b.entidad_id,
     c.canton_id,
     sg.segmento_id,
-    COALESCE(SUM(s.saldo) FILTER (WHERE s.estado_cartera = 'por_vencer'), 0),
-    COALESCE(SUM(s.saldo) FILTER (WHERE s.estado_cartera = 'no_devenga_intereses'), 0),
-    COALESCE(SUM(s.saldo) FILTER (WHERE s.estado_cartera = 'vencida'), 0)
+    COALESCE(SUM(s.saldo) FILTER (WHERE s.estado_cartera = 'por_vencer'), 0) AS saldo_por_vencer,
+    COALESCE(SUM(s.saldo) FILTER (WHERE s.estado_cartera = 'no_devenga_intereses'), 0) AS saldo_no_devenga_intereses,
+    COALESCE(SUM(s.saldo) FILTER (WHERE s.estado_cartera = 'vencida'), 0) AS saldo_vencida
 FROM staging.cartera s
 JOIN marts.dim_entidad b ON b.entidad_codigo = s.banco_codigo
 LEFT JOIN marts.dim_provincia dp ON dp.provincia = translate(s.provincia, 'ÁÉÍÓÚ', 'AEIOU')
@@ -775,7 +869,19 @@ JOIN marts.dim_segmento_credito sg ON sg.segmento = CASE s.tipo_credito
     WHEN 'inversion_publica' THEN 'INVERSIÓN PÚBLICA'  -- solo Banca Pública
 END
 WHERE s.tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO')
-GROUP BY TO_CHAR(s.fecha, 'YYYYMMDD')::INT, b.entidad_id, c.canton_id, sg.segmento_id
+GROUP BY TO_CHAR(s.fecha, 'YYYYMMDD')::INT, b.entidad_id, c.canton_id, sg.segmento_id;
+
+DELETE FROM marts.fact_saldo_cartera f
+WHERE /*alcance*/ (f.fecha_id, f.entidad_id) IN (SELECT fecha_id, entidad_id FROM _nuevo_saldo_cartera)
+  AND NOT EXISTS (
+    SELECT 1 FROM _nuevo_saldo_cartera n
+    WHERE n.fecha_id = f.fecha_id AND n.entidad_id = f.entidad_id
+      AND n.canton_id IS NOT DISTINCT FROM f.canton_id AND n.segmento_id = f.segmento_id);
+
+INSERT INTO marts.fact_saldo_cartera
+    (fecha_id, entidad_id, canton_id, segmento_id, saldo_por_vencer, saldo_no_devenga_intereses, saldo_vencida)
+SELECT fecha_id, entidad_id, canton_id, segmento_id, saldo_por_vencer, saldo_no_devenga_intereses, saldo_vencida
+FROM _nuevo_saldo_cartera
 ON CONFLICT (fecha_id, entidad_id, COALESCE(canton_id, -1), segmento_id)
 DO UPDATE SET saldo_por_vencer = EXCLUDED.saldo_por_vencer,
               saldo_no_devenga_intereses = EXCLUDED.saldo_no_devenga_intereses,
@@ -783,9 +889,12 @@ DO UPDATE SET saldo_por_vencer = EXCLUDED.saldo_por_vencer,
               fecha_actualizacion = now()
 WHERE (marts.fact_saldo_cartera.saldo_por_vencer, marts.fact_saldo_cartera.saldo_no_devenga_intereses, marts.fact_saldo_cartera.saldo_vencida) IS DISTINCT FROM (EXCLUDED.saldo_por_vencer, EXCLUDED.saldo_no_devenga_intereses, EXCLUDED.saldo_vencida);
 
-INSERT INTO marts.fact_saldo_depositos (fecha_id, entidad_id, canton_id, categoria_deposito_id, plazo_id, saldo, numero_clientes, numero_cuentas)
+-- Mismo patrón que fact_saldo_cartera: _nuevo_saldo_depositos + borrado de lo que la
+-- fuente ya no trae dentro de los (fecha, entidad) recalculados.
+DROP TABLE IF EXISTS _nuevo_saldo_depositos;
+CREATE TEMP TABLE _nuevo_saldo_depositos ON COMMIT DROP AS
 SELECT
-    TO_CHAR(s.fecha, 'YYYYMMDD')::INT,
+    TO_CHAR(s.fecha, 'YYYYMMDD')::INT AS fecha_id,
     b.entidad_id,
     c.canton_id,
     cd.categoria_deposito_id,
@@ -800,7 +909,20 @@ LEFT JOIN marts.dim_canton c ON c.canton = s.canton AND c.provincia_id = dp.prov
 JOIN marts.dim_categoria_deposito cd ON cd.categoria = s.categoria_deposito
 LEFT JOIN marts.dim_plazo pl ON pl.dias_desde = s.plazo_dias_desde
     AND pl.dias_hasta IS NOT DISTINCT FROM s.plazo_dias_hasta
-WHERE s.tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO')
+WHERE s.tipo_entidad IN ('BANCO PRIVADO', 'BANCO PUBLICO', 'COOPERATIVA', 'MUTUALISTA', 'ENTIDAD DE SEGUNDO PISO');
+
+DELETE FROM marts.fact_saldo_depositos f
+WHERE /*alcance*/ (f.fecha_id, f.entidad_id) IN (SELECT fecha_id, entidad_id FROM _nuevo_saldo_depositos)
+  AND NOT EXISTS (
+    SELECT 1 FROM _nuevo_saldo_depositos n
+    WHERE n.fecha_id = f.fecha_id AND n.entidad_id = f.entidad_id
+      AND n.canton_id IS NOT DISTINCT FROM f.canton_id
+      AND n.categoria_deposito_id = f.categoria_deposito_id
+      AND n.plazo_id IS NOT DISTINCT FROM f.plazo_id);
+
+INSERT INTO marts.fact_saldo_depositos (fecha_id, entidad_id, canton_id, categoria_deposito_id, plazo_id, saldo, numero_clientes, numero_cuentas)
+SELECT fecha_id, entidad_id, canton_id, categoria_deposito_id, plazo_id, saldo, numero_clientes, numero_cuentas
+FROM _nuevo_saldo_depositos
 ON CONFLICT (fecha_id, entidad_id, canton_id, categoria_deposito_id, COALESCE(plazo_id, -1))
 DO UPDATE SET saldo = EXCLUDED.saldo,
               numero_clientes = EXCLUDED.numero_clientes,
@@ -1132,6 +1254,9 @@ _FUENTES_REFRESH = {
     "boletin_pyg": "fecha, banco_codigo",
     "tasas_referenciales": "fecha",
 }
+# Marca del borrado de hechos de saldo: en un refresh completo la condición se reemplaza
+# por TRUE (ver refresh_marts).
+_RE_ALCANCE = re.compile(r"/\*alcance\*/[^\n]*")
 _RE_FUENTES = re.compile(r"\bstaging\.(" + "|".join(_FUENTES_REFRESH) + r")\b")
 
 
@@ -1201,7 +1326,12 @@ def refresh_marts(conn, full: bool = False) -> None:
     _log_cantones_no_resueltos(conn, fuentes)
     _log_bancos_no_resueltos(conn, fuentes)
     with conn.cursor() as cur:
-        cur.execute(fuentes(_REFRESH_MARTS_SQL))
+        sql = fuentes(_REFRESH_MARTS_SQL)
+        if desde is None:
+            # Refresh completo: los hechos de saldo que staging ya no respalda se borran en
+            # toda la tabla, no solo en los (fecha, entidad) recalculados.
+            sql = _RE_ALCANCE.sub("TRUE", sql)
+        cur.execute(sql)
         sincronizar_cantones_seed(conn)
         cur.execute(
             """

@@ -46,19 +46,19 @@ def _fact_saldo_cartera_pivot_statement() -> str:
     mano la lógica del pivote (sql/21) en el test, y evita pagar el costo de correr
     refresh_marts() completo (medido ~107s contra la base de desarrollo local, que ya
     tiene ~10M filas acumuladas entre todas las fuentes) solo para probar esta
-    invariante puntual, que por sí sola corre en <2s."""
+    invariante puntual, que por sí sola corre en <2s.
+
+    Desde 2026-10-10 son 4 statements encadenados por la tabla temporal
+    _nuevo_saldo_cartera (DROP, CREATE ... AS SELECT, DELETE de hechos que la fuente ya
+    no trae, INSERT ... ON CONFLICT); se devuelven juntos, en orden."""
     statements = [s.strip() for s in _REFRESH_MARTS_SQL.split(";")]
-    matches = [
-        s
-        for s in statements
-        if "INTO marts.fact_saldo_cartera" in s and "saldo_por_vencer" in s
-    ]
-    assert len(matches) == 1, (
-        "No se pudo aislar (de forma única) el statement de fact_saldo_cartera dentro "
-        "de _REFRESH_MARTS_SQL -- revisar si el SQL de refresh_marts() cambió de forma "
+    matches = [s for s in statements if "_nuevo_saldo_cartera" in s]
+    assert len(matches) == 4, (
+        "No se pudo aislar el bloque de fact_saldo_cartera dentro de "
+        "_REFRESH_MARTS_SQL -- revisar si el SQL de refresh_marts() cambió de forma "
         "y ajustar este extractor."
     )
-    return matches[0]
+    return ";\n".join(matches)
 
 
 @pytest.mark.integration
@@ -757,3 +757,93 @@ def test_refresh_incremental_propaga_fila_nueva_y_avanza_marca(db_conn):
         assert float(cur.fetchone()[0]) == 9.99
         cur.execute("SELECT hasta FROM meta.refresh_watermark WHERE proceso='marts'")
         assert cur.fetchone()[0] >= marca_antes
+
+
+def _fila_cartera(fecha, banco, canton, saldo, source_file, banco_codigo):
+    return {
+        "fecha": fecha,
+        "tipo_entidad": "BANCO PRIVADO",
+        "banco": banco,
+        "banco_codigo": banco_codigo,
+        "region": "COSTA",
+        "provincia": "GUAYAS",
+        "canton": canton,
+        "tipo_credito": "comercial",
+        "estado_cartera": "por_vencer",
+        "saldo": saldo,
+        "source_file": source_file,
+    }
+
+
+@pytest.mark.integration
+def test_publicacion_nueva_reemplaza_a_la_anterior_aunque_cambie_el_nombre(db_conn):
+    """Regresión del bug de 2026-10-10: Superbancos publica un archivo acumulado y en el
+    de AGOSTO 2026 renombró 'BP BANCO COMERCIAL DE MANABI' a 'BANCO COMERCIAL DE
+    MANABI'. El upsert de staging empareja por el nombre crudo, así que las filas del
+    archivo de JUNIO quedaban al lado de las nuevas y fact_saldo_cartera las sumaba
+    (saldo duplicado). Ahora la publicación nueva reemplaza todo su alcance (tipo de
+    entidad, mes, tipo de crédito) y el refresh borra el hecho del cantón que la fuente
+    dejó de reportar."""
+    banco_codigo = "ZZTEST_REEMPLAZO"
+    fecha = date(2099, 3, 31)
+    with db_conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO marts.dim_fecha (fecha_id, fecha, anio, mes, dia, trimestre, nombre_mes, anio_mes)
+            VALUES (20990331, %s, 2099, 3, 31, 1, 'Marzo', 209903)
+            ON CONFLICT (fecha_id) DO NOTHING
+            """,
+            (fecha,),
+        )
+        cur.execute(
+            "INSERT INTO marts.dim_entidad (entidad, entidad_codigo, tipo_entidad) "
+            "VALUES ('BANCO DE PRUEBA REEMPLAZO', %s, 'BANCO PRIVADO') RETURNING entidad_id",
+            (banco_codigo,),
+        )
+        entidad_id = cur.fetchone()[0]
+
+    junio = pd.DataFrame(
+        [
+            _fila_cartera(
+                fecha,
+                "BP BANCO PRUEBA",
+                "GUAYAQUIL",
+                100,
+                "JUNIO 2099.zip",
+                banco_codigo,
+            ),
+            _fila_cartera(
+                fecha, "BP BANCO PRUEBA", "DAULE", 40, "JUNIO 2099.zip", banco_codigo
+            ),
+        ]
+    )
+    agosto = pd.DataFrame(
+        [
+            _fila_cartera(
+                fecha, "BANCO PRUEBA", "GUAYAQUIL", 100, "AGOSTO 2099.zip", banco_codigo
+            )
+        ]
+    )
+
+    upsert_staging_cartera(db_conn, junio)
+    with db_conn.cursor() as cur:
+        cur.execute(_fact_saldo_cartera_pivot_statement())
+    upsert_staging_cartera(db_conn, agosto)
+    with db_conn.cursor() as cur:
+        cur.execute(_fact_saldo_cartera_pivot_statement())
+        cur.execute(
+            "SELECT banco, canton, saldo, source_file FROM staging.cartera "
+            "WHERE banco_codigo = %s",
+            (banco_codigo,),
+        )
+        staging = cur.fetchall()
+        cur.execute(
+            "SELECT count(*), sum(saldo_total) FROM marts.fact_saldo_cartera "
+            "WHERE entidad_id = %s",
+            (entidad_id,),
+        )
+        hechos, total = cur.fetchone()
+
+    assert staging == [("BANCO PRUEBA", "GUAYAQUIL", 100, "AGOSTO 2099.zip")]
+    assert hechos == 1  # el hecho de DAULE (ya no reportado) se borró
+    assert total == 100  # no 200 (nombre viejo + nuevo) ni 240

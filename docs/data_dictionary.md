@@ -124,6 +124,8 @@ entre paréntesis en cada tabla, para quien busque referencias viejas.
 **se eliminaron** en `sql/15_rename_fact_tables.sql` — la tasa real por producto ya vive
 en `fact_colocaciones_cartera`; `morosidad` es derivable de `estado_cartera` si hace falta.
 
+**Republicaciones (2026-10-10)**: CAPCOL y SEPS publican archivos acumulados; cada archivo nuevo reemplaza en staging todo su alcance (tipo de entidad × mes × tipo de crédito; en depósitos, tipo de entidad × mes) y el refresh borra los hechos que staging ya no respalda. Antes de esa fecha, un renombre de entidad en la fuente duplicaba saldos (13 bancos privados, ene-jun 2026; ver `docs/gobernanza_datos.md`, Huecos conocidos). Aplica igual a `fact_saldo_depositos`.
+
 ### marts.fact_saldo_depositos (antes `fact_depositos`) — grano: fecha × banco × cantón × categoria_deposito × plazo — CAPCOL + SEPS, mensual
 
 **Fuentes (2026-09-30)**: CAPCOL y SEPS `Boletin_captaciones`. SEPS no trae banda de plazo, así que sus filas tienen `plazo_id` NULL también en `DEPÓSITOS A PLAZO`. A diferencia de CAPCOL, SEPS **sí** concilia contra `fact_balance` `codigo='21'` (mediana 0,0000% por entidad × mes en 2025).
