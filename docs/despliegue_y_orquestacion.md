@@ -503,6 +503,28 @@ FROM pg_namespace WHERE nspname IN ('meta', 'staging', 'marts');
 
 ---
 
+### 3.4 Rol de solo lectura para análisis [verificado 2026-10-11 en `postgres:17`, en ambos órdenes]
+
+Para consumir `marts.*` desde otro proyecto (notebooks, BI) sin poder modificar nada.
+`sql/admin/rol_lectura.sql` se corre **una vez como superusuario** (no lo aplica
+`migrate`, CI ni docker-compose: están en una subcarpeta) y crea:
+
+- `marts_lectura` (NOLOGIN): grupo con `USAGE` + `SELECT` sobre `marts` y privilegios por
+  defecto para tablas/vistas futuras. Nombre fijo: lo usa `sql/42`.
+- `analista` (LOGIN, configurable con `-v lector_user=...`): miembro del grupo, con
+  `default_transaction_read_only = on`. Sin acceso a `staging` ni `meta`.
+
+```powershell
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -p 5432 -U postgres -d postgres `
+    -v ON_ERROR_STOP=1 -v app_db=benchmark_cartera_depositos -f sql/admin/rol_lectura.sql
+# pide la contraseña del nuevo rol (o -v lector_password=...)
+```
+
+`sql/42_permisos_lectura_marts.sql` (migración normal) otorga los mismos permisos si el
+grupo ya existe, y no hace nada si no existe; así funciona en cualquier orden (rol antes o
+después de migrar). Idempotente; para cambiar la contraseña: `ALTER ROLE analista PASSWORD '...'`.
+El proyecto de análisis que lo usa es `benchmark-analisis` (repo aparte, privado).
+
 ## 4. Primera carga completa
 
 Orden recomendado para una base recién migrada (respeta la regla 2 de 1.4). Todas son

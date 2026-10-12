@@ -272,6 +272,9 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   sola fila con su provincia vigente (2 duplicados por escritura y 5 pares con provincia
   anterior fusionados, totales nacionales sin cambio), y `marts.dim_banco` pasó a
   llamarse `marts.dim_entidad` (`entidad_id`). Ver `docs/data_dictionary.md`.
+- ✅ **Rol de solo lectura para análisis** (2026-10-11): `sql/admin/rol_lectura.sql`
+  (superusuario, una vez) + `sql/42`. El análisis vive en un repo aparte
+  (`benchmark-analisis`) que lee solo `marts.*`. Ver `docs/despliegue_y_orquestacion.md` §3.4.
 - ✅ **Reconstrucción completa probada y base renovada** (2026-10-10): instalación desde
   cero en ~70 min (65 min de `actualizar` descargando todo, 48 min con los archivos ya
   descargados; tiempos por fuente en `docs/despliegue_y_orquestacion.md` §4). La

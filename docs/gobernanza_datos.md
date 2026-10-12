@@ -38,6 +38,10 @@ valor. Esas tres preguntas las cubren `data_dictionary.md`, este documento, y
   fecha, nunca cliente individual. No aplican controles de confidencialidad,
   anonimización ni cifrado en reposo más allá de las credenciales de la base (`.env`,
   no versionado).
+- **Acceso** (2026-10-11): el ETL escribe con el rol de la app (dueño de los esquemas);
+  el análisis lee con un rol de solo lectura (`marts_lectura` / `analista`, solo `marts`,
+  sesiones en `read_only`) creado por `sql/admin/rol_lectura.sql` + `sql/42`. Ver
+  `docs/despliegue_y_orquestacion.md` §3.4.
 - **Retención**: sin política de purga — las 5 fuentes son series históricas y el valor
   del proyecto depende de mantener el histórico completo. Los archivos fuente en
   `data/raw/**` se conservan (son la fuente de verdad para reprocesar), y

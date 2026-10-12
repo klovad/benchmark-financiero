@@ -81,6 +81,9 @@ SONDAS: dict[str, str] = {
             SELECT FROM marts.dim_segmento_entidad WHERE tipo_segmento = 'NO REPORTA AL BCE')
         AND NOT EXISTS (
             SELECT FROM marts.dim_segmento_entidad WHERE tipo_segmento = 'MUTUALISTAS')""",
+    "42_permisos_lectura_marts.sql": """SELECT NOT EXISTS (
+            SELECT FROM pg_catalog.pg_roles WHERE rolname = 'marts_lectura')
+        OR has_schema_privilege('marts_lectura', 'marts', 'USAGE')""",
 }
 
 _DDL_REGISTRO = """
