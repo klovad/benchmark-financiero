@@ -24,7 +24,11 @@ import openpyxl
 import pandas as pd
 
 from benchmark_bancos.transform.banco_matching import resolver_banco_codigo
-from benchmark_bancos.transform.common import extract_single_xlsx, normalize_text
+from benchmark_bancos.transform.common import (
+    descartar_extraido,
+    extract_single_xlsx,
+    normalize_text,
+)
 
 
 def _strip_accents(text: str) -> str:
@@ -180,6 +184,7 @@ def parse_boletin_file(
     pyg = _parse_hoja(wb["PYG"])
     grupo_met = _parse_met(wb["MET"]) if "MET" in wb.sheetnames else {}
     wb.close()
+    descartar_extraido(xlsx_path, source_path)
 
     cuentas = []
     for reporte, df in (("BALANCE", balance), ("PYG", pyg)):

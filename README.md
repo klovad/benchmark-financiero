@@ -55,7 +55,7 @@ orden.
 ```powershell
 # 1. Entorno Python con uv (https://docs.astral.sh/uv/): crea .venv, instala Python 3.12
 #    si hace falta y las dependencias exactas de uv.lock (incluye el grupo dev: pytest,
-#    ruff, black). Sin uv: `pip install -e .` en un venv propio.
+#    ruff). Sin uv: `pip install -e .` en un venv propio.
 uv sync
 uv run playwright install chromium
 
@@ -106,7 +106,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\registrar_tarea.ps1
 
 ```
 main.py               punto de entrada: `uv run main.py <etapa>` (delega en benchmark_bancos.cli)
-pyproject.toml        dependencias (uv), script `benchmark-bancos`, config de ruff/black/pytest
+pyproject.toml        dependencias (uv), script `benchmark-bancos`, config de ruff/pytest
 uv.lock               versiones exactas (reproducible en local y CI)
 src/benchmark_bancos/
   cli.py              línea de comandos (`uv run benchmark-bancos <etapa>`)
@@ -185,7 +185,7 @@ uv run pytest                          # ambos
 ```
 
 CI (`.github/workflows/`): ambos workflows instalan con `uv sync --locked` (mismas
-versiones que local, desde `uv.lock`). `lint.yml` corre `ruff`+`black --check` (sin DB, sin red).
+versiones que local, desde `uv.lock`). `lint.yml` corre `ruff check` + `ruff format --check` (sin DB, sin red).
 `test.yml` corre `test-unit` (igual que arriba, sin servicios) y `test-integration`
 (levanta un service container `postgres:17` y aplica `sql/*.sql` en orden lexicográfico
 vía `psql` antes de correr `pytest -m integration` -- GitHub Actions no soporta el mount
@@ -272,6 +272,13 @@ los sitios reales -- deliberado, ver `docs/propuesta_escalabilidad_etl.md` secci
   sola fila con su provincia vigente (2 duplicados por escritura y 5 pares con provincia
   anterior fusionados, totales nacionales sin cambio), y `marts.dim_banco` pasó a
   llamarse `marts.dim_entidad` (`entidad_id`). Ver `docs/data_dictionary.md`.
+- ✅ **Metadatos en la base** (2026-10-31, `sql/44`): las 38 tablas y vistas de `marts` y
+  todas sus columnas tienen descripción (`COMMENT ON`), visible desde cualquier cliente;
+  un test exige que las nuevas también la traigan (regla 10 de gobernanza).
+- ✅ **Depuración de arquitectura** (2026-10-31): `sql/43` quita 2 tablas vacías y 3
+  columnas de staging siempre NULL; los parsers de CAPCOL y Boletín borran su copia
+  descomprimida en `data/_tmp_extract` al terminar; ruff queda como único formateador
+  (se quitó black). Sin código muerto en `src/` (revisadas las 226 funciones y constantes).
 - ✅ **Rol de solo lectura para análisis** (2026-10-11): `sql/admin/rol_lectura.sql`
   (superusuario, una vez) + `sql/42`. El análisis vive en un repo aparte
   (`benchmark-analisis`) que lee solo `marts.*`. Ver `docs/despliegue_y_orquestacion.md` §3.4.

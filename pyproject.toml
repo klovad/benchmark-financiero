@@ -20,12 +20,12 @@ dependencies = [
 benchmark-bancos = "benchmark_bancos.cli:main"
 
 [dependency-groups]
-# Mismas versiones que CI (.github/workflows/lint.yml): un `black --check` local que pasa
-# tiene que pasar también en CI.
+# Misma versión que CI (.github/workflows/lint.yml): un `ruff check` / `ruff format --check`
+# local que pasa tiene que pasar también en CI. Desde 2026-10-31 ruff es el único
+# formateador (antes convivía con black, que hacía lo mismo).
 dev = [
     "pytest>=8.0",
     "ruff==0.7.4",
-    "black==24.10.0",
 ]
 
 [build-system]
@@ -38,9 +38,6 @@ packages = ["src/benchmark_bancos"]
 [tool.uv]
 default-groups = ["dev"]
 
-[tool.black]
-line-length = 88
-
 [tool.ruff]
 line-length = 88
 src = ["src", "tests"]
@@ -49,10 +46,9 @@ src = ["src", "tests"]
 # Fase 1 (ver docs/propuesta_escalabilidad_etl.md sección 4.2): E/F (pycodestyle +
 # pyflakes core) + I (isort). Fase 2 (B bugbear, UP pyupgrade) queda en defer.
 select = ["E", "F", "I"]
-# E501 ignorada: black es el formateador de referencia para el largo de línea del código,
-# pero no reenvuelve comentarios ni docstrings, y este repo tiene docstrings narrativos
-# largos que documentan decisiones de diseño. Recomendación oficial de ruff al combinarlo
-# con black (https://docs.astral.sh/ruff/faq/#is-ruff-compatible-with-black).
+# E501 ignorada: `ruff format` fija el largo de línea del código pero no reenvuelve
+# comentarios ni docstrings, y este repo tiene docstrings narrativos largos que documentan
+# decisiones de diseño.
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]

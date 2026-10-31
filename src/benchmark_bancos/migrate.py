@@ -84,6 +84,13 @@ SONDAS: dict[str, str] = {
     "42_permisos_lectura_marts.sql": """SELECT NOT EXISTS (
             SELECT FROM pg_catalog.pg_roles WHERE rolname = 'marts_lectura')
         OR has_schema_privilege('marts_lectura', 'marts', 'USAGE')""",
+    "43_quitar_restos_sin_uso.sql": """SELECT to_regclass('marts.dim_producto_cartera') IS NULL
+        AND NOT EXISTS (SELECT FROM information_schema.columns
+            WHERE table_schema = 'staging' AND table_name = 'cartera'
+              AND column_name = 'morosidad')""",
+    "44_comentarios_marts.sql": (
+        "SELECT obj_description('marts.dim_entidad'::regclass, 'pg_class') IS NOT NULL"
+    ),
 }
 
 _DDL_REGISTRO = """

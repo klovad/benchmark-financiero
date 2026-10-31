@@ -40,6 +40,15 @@ def extract_single_xlsx(zip_path: Path, extract_dir: Path) -> Path:
         return extract_dir / xlsx_names[0]
 
 
+def descartar_extraido(xlsx_path: Path, source_path: Path) -> None:
+    """Borra el .xlsx que extract_single_xlsx() dejó en la carpeta temporal, una vez
+    leído (si el origen ya era un .xlsx, no hay nada que borrar). Sin esto la carpeta
+    data/_tmp_extract acumulaba una copia descomprimida de cada archivo procesado
+    (107 MB al 2026-10-31); la SEPS ya limpiaba la suya."""
+    if xlsx_path != source_path:
+        xlsx_path.unlink(missing_ok=True)
+
+
 def find_base_sheets(workbook: openpyxl.Workbook) -> list[str]:
     """Casi todos los archivos traen 1 sola hoja 'BASE ...', pero el de vivienda trae 2
     (inmobiliario y vivienda de interés público van en hojas BASE separadas)."""

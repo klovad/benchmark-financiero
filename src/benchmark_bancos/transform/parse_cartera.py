@@ -18,6 +18,7 @@ from benchmark_bancos.config import TIPO_CREDITO_KEYWORDS, TIPOS_ENTIDAD_CAPCOL
 from benchmark_bancos.transform.banco_matching import resolver_banco_codigo
 from benchmark_bancos.transform.canton_matching import aplicar_alias_canton
 from benchmark_bancos.transform.common import (
+    descartar_extraido,
     extract_single_xlsx,
     find_base_sheets,
     month_end_date,
@@ -123,6 +124,7 @@ def parse_cartera_file(
         tipo_credito = tipo_credito_from_sheet_name(sheet_name)
         records.extend(_parse_sheet(wb[sheet_name], tipo_credito, tipo_entidad))
     wb.close()
+    descartar_extraido(xlsx_path, source_path)
 
     df = pd.DataFrame.from_records(records)
     df["source_file"] = source_path.name

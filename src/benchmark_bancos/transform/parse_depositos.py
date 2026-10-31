@@ -18,6 +18,7 @@ from benchmark_bancos.transform.categoria_deposito_matching import (
     resolver_categoria_deposito,
 )
 from benchmark_bancos.transform.common import (
+    descartar_extraido,
     extract_single_xlsx,
     find_base_sheets,
     month_end_date,
@@ -119,6 +120,7 @@ def parse_depositos_file(
         )
 
     wb.close()
+    descartar_extraido(xlsx_path, source_path)
     df = pd.DataFrame.from_records(records)
     df["source_file"] = source_path.name
     df["source_hash"] = source_hash

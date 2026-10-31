@@ -154,7 +154,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 git clone <url-del-repo> <ruta-del-proyecto>
 cd <ruta-del-proyecto>
 
-# Dependencias exactas de uv.lock, sin el grupo dev (pytest/ruff/black) en producción
+# Dependencias exactas de uv.lock, sin el grupo dev (pytest/ruff) en producción
 uv sync --locked --no-dev
 
 # Chromium + librerías del sistema que necesita en un servidor sin GUI (headless).
@@ -449,11 +449,25 @@ Migraciones de 2026-10-09 (35 a 40):
   español no cambia nada. Desde ese día `refresh_marts()` usa una lista fija de meses
   (`load/load_postgres.py`, `_REFRESH_MARTS_SQL`), sin depender del locale. Nada después.
 
+Migraciones de 2026-10-10 a 2026-10-31 (41 a 44):
+- `sql/41`: homologa `dim_segmento_entidad` (mutualistas en `SEGMENTO 1 MUTUALISTA`,
+  `NO REPORTA AL BCE` para entidades sin tsp/tsa) y deja `segmento_entidad_id` NOT NULL.
+  En una base que la aplicó antes de la tarde del 2026-10-10: `migrate --aceptar-cambios`
+  una vez (se editó para mantener ids compactos). Nada después.
+- `sql/42`: permisos de solo lectura sobre `marts` para el grupo `marts_lectura`, si
+  existe (3.4). Nada después.
+- `sql/43`: quita 2 tablas vacías de `marts` y 3 columnas siempre NULL de staging. Nada después.
+- `sql/44`: descripciones (`COMMENT ON`) de todas las tablas, vistas y columnas de
+  `marts`. Nada después.
+
 ### 3.2.1 Agregar una migración nueva (desarrollo)
 
 1. Crear `sql/NN_<descripcion>.sql` con el número siguiente. **Sin nombres de rol**
    (`AUTHORIZATION`, `OWNER TO`, `GRANT ... TO <rol>`): los objetos quedan a nombre de
    quien aplica. Encabezado que diga qué hace y si requiere reproceso o `refresh --full`.
+   **Si agrega una tabla, vista o columna a `marts`, incluye su `COMMENT ON`** (regla 10
+   de `docs/gobernanza_datos.md`; `tests/test_metadatos.py` lo exige). Recrear una vista
+   con `DROP` + `CREATE` borra sus comentarios: volver a ponerlos.
 2. **Agregar su sonda en `SONDAS`** (`src/benchmark_bancos/migrate.py`): un `SELECT
    <booleano>` verdadero cuando el efecto de la migración está en la base **y que lo siga
    siendo después de todas las siguientes** (p. ej. `to_regclass(...) IS NOT NULL`, una

@@ -133,8 +133,14 @@ def test_colocaciones_semestres_serial_excel_y_hoja_auxiliar(tmp_path):
             # primer semestre: FECHA DE CORTE como serial de Excel (45688 = 2025-01-31)
             "Base_colocacionesISEM": [
                 COLOC_HDR,
-                _coloc_row(45688, "INMOBILARIO", 200.0, 0.0, 0.0,
-                           canton="DISTRITO METROPOLITANO DE QUITO"),  # fmt: skip
+                _coloc_row(
+                    45688,
+                    "INMOBILARIO",
+                    200.0,
+                    0.0,
+                    0.0,
+                    canton="DISTRITO METROPOLITANO DE QUITO",
+                ),  # fmt: skip
             ],
             # auxiliar de la portada, fecha fija 2017 -> debe ignorarse
             "Base_para_actual": [
@@ -145,10 +151,24 @@ def test_colocaciones_semestres_serial_excel_y_hoja_auxiliar(tmp_path):
         "Reporte_colocaciones_abr_2021_MUT.xlsm": {
             "Base_colocaciones": [
                 COLOC_HDR,
-                _coloc_row(d(2021, 1, 31), "CONSUMO PRIORITARIO", 70.0, 0.0, 0.0,
-                           ruc=RUC_MUT, razon="PICHINCHA"),  # fmt: skip
-                _coloc_row(d(2021, 1, 31), "COMERCIAL ORDINARIO", 30.0, 0.0, 0.0,
-                           ruc=RUC_MUT, razon="PICHINCHA"),  # fmt: skip
+                _coloc_row(
+                    d(2021, 1, 31),
+                    "CONSUMO PRIORITARIO",
+                    70.0,
+                    0.0,
+                    0.0,
+                    ruc=RUC_MUT,
+                    razon="PICHINCHA",
+                ),  # fmt: skip
+                _coloc_row(
+                    d(2021, 1, 31),
+                    "COMERCIAL ORDINARIO",
+                    30.0,
+                    0.0,
+                    0.0,
+                    ruc=RUC_MUT,
+                    razon="PICHINCHA",
+                ),  # fmt: skip
             ],
         },
     }
@@ -196,12 +216,45 @@ def test_captaciones_suma_estados_y_marca_segundo_piso(tmp_path):
         "Boletin_captaciones_Dic24_S1.xlsm": {
             "Base_captaciones": [
                 hdr,
-                [100.0, 3, 4, f, "SIERRA", "AZUAY", "CUENCA", "DEPOSITOS A PLAZO",
-                 "NUEVA - ...", RUC_COOP, "JEP"],  # fmt: skip
-                [900.0, 7, 8, f, "SIERRA", "AZUAY", "CUENCA", "DEPOSITOS A PLAZO",
-                 "VIGENTE - ...", RUC_COOP, "JEP"],  # fmt: skip
-                [5.0, 1, 1, f, "SIERRA", "PICHINCHA", "QUITO", "DEPOSITOS A LA VISTA",
-                 "VIGENTE - ...", RUC_CONAFIPS, "CONAFIPS"],  # fmt: skip
+                [
+                    100.0,
+                    3,
+                    4,
+                    f,
+                    "SIERRA",
+                    "AZUAY",
+                    "CUENCA",
+                    "DEPOSITOS A PLAZO",
+                    "NUEVA - ...",
+                    RUC_COOP,
+                    "JEP",
+                ],  # fmt: skip
+                [
+                    900.0,
+                    7,
+                    8,
+                    f,
+                    "SIERRA",
+                    "AZUAY",
+                    "CUENCA",
+                    "DEPOSITOS A PLAZO",
+                    "VIGENTE - ...",
+                    RUC_COOP,
+                    "JEP",
+                ],  # fmt: skip
+                [
+                    5.0,
+                    1,
+                    1,
+                    f,
+                    "SIERRA",
+                    "PICHINCHA",
+                    "QUITO",
+                    "DEPOSITOS A LA VISTA",
+                    "VIGENTE - ...",
+                    RUC_CONAFIPS,
+                    "CONAFIPS",
+                ],  # fmt: skip
             ]
         }
     }
