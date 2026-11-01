@@ -29,7 +29,7 @@ CATEGORIAS_VALIDAS = {
     "OPERACIONES DE REPORTO",
     # SEPS (cooperativas/mutualistas): taxonomía simplificada vista/plazo/garantía/
     # restringidos. No se fusiona con AHORRO/MONETARIOS por similitud de nombre -- ver
-    # docs/fuentes_datos.md sección 4.0 y sql/30_seps.sql.
+    # docs/fuentes_datos.md sección 4 y sql/30_seps.sql.
     "DEPÓSITOS A LA VISTA",
 }
 

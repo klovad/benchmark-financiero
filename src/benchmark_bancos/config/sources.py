@@ -6,7 +6,7 @@ CAPCOL_URL = "https://www.superbancos.gob.ec/estadisticas/portalestudios/capcol-
 CAPCOL_INSTITUCIONES_PUBLICAS_URL = "https://www.superbancos.gob.ec/estadisticas/portalestudios/capcol-instituciones-publicas/"
 
 # Sub-portales CAPCOL: mismo plugin, mismo layout de carpetas y mismas hojas BASE (ver
-# docs/fuentes_datos.md sección 1.1). tipo_entidad NO se infiere del dato -- lo fija el
+# docs/fuentes_datos.md sección 1). tipo_entidad NO se infiere del dato -- lo fija el
 # sub-portal del que vino el archivo. subdir="" conserva el layout histórico de bancos
 # privados (data/raw/{año}/{cartera|depositos}) sin mover archivos ya descargados.
 CAPCOL_PORTALES = {
@@ -48,7 +48,7 @@ BCE_URLS = {
 #   colocaciones -> Cartera de crédito > Reportes, 2da fila (ZIP con
 #                   Reporte_colocaciones_*.xlsm = SALDOS de cartera, no volumen)
 #   eeff         -> Situación Financiera > Bases de Datos, 1ra fila (TSV, 6 dígitos)
-# Ver docs/fuentes_datos.md sección 4.0.
+# Ver docs/fuentes_datos.md sección 4.
 SEPS_DOWNLOAD_URL = (
     "https://estadisticas.seps.gob.ec/?sdm_process_download=1&download_id={id}"
 )

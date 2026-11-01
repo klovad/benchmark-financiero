@@ -135,7 +135,7 @@ def load_seps(
     years: list[int], base_dir: Path = SEPS_DIR, descargar: bool = True
 ) -> None:
     """SEPS (cooperativas S1-S3 + mutualistas): descarga directa + 3 reportes por año que
-    conforman contra tablas ya existentes (docs/fuentes_datos.md sección 4.0).
+    conforman contra tablas ya existentes (docs/fuentes_datos.md sección 4).
 
     Orden por año: EEFF primero, porque trae la razón social completa. Así, una entidad
     nueva (no vista antes por BCE) se registra en staging.banco_maestro con ese nombre y
@@ -262,7 +262,7 @@ _TASAS_HISTORICAS_EXCLUIDAS = {"TasasVigentes092009.htm"}
 def parse_fecha_from_tasas_historicas_filename(name: str) -> datetime.date:
     """Extrae la fecha (fin de mes) de un nombre de archivo TasasVigenteMMAAAA.htm.
     Pura, sin DB ni red -- factorizada desde el loop de load_tasas_historicas() para
-    poder testearla en aislamiento (ver docs/propuesta_escalabilidad_etl.md sección 2.3).
+    poder testearla en aislamiento (tests/test_pipeline_fecha_parsing.py).
     """
     m = _NOMBRE_ARCHIVO.search(name)
     if not m:
@@ -390,7 +390,7 @@ _NOMBRE_BOLETIN = re.compile(
 def parse_fecha_from_boletin_filename(name: str) -> datetime.date:
     """Extrae la fecha (fin de mes) de un nombre de archivo 'Boletín Bancos <MES_ES>
     <AAAA>...'. Pura, sin DB ni red -- factorizada desde el loop de load_boletin() para
-    poder testearla en aislamiento (ver docs/propuesta_escalabilidad_etl.md sección 2.3).
+    poder testearla en aislamiento (tests/test_pipeline_fecha_parsing.py).
     """
     m = _NOMBRE_BOLETIN.search(name.upper())
     if not m:

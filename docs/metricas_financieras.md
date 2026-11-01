@@ -67,8 +67,7 @@ cantón × segmento) reconcilia contra la cartera bruta reconstruida desde el Bo
 (`marts.vw_cartera_bruta` = `14 − 1499`, ver `docs/glosario_cuentas.md` §2). Son fuentes
 independientes (Superbancos consolidado por cantón vs. Superbancos consolidado por plan
 de cuentas) que en teoría deberían describir el mismo universo de préstamos otorgados por
-bancos privados — este es el cruce de validación que `docs/fuentes_datos.md` (sección
-3.3, hoja `RK`) dejaba como pregunta abierta.
+bancos privados.
 
 **Metodología**: `SUM(fact_saldo_cartera.saldo_total)` agrupado por `entidad_id`/`fecha_id`
 (colapsando cantón y segmento, que `vw_cartera_bruta` no desagrega) comparado contra

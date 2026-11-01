@@ -1,7 +1,7 @@
 """
 Parsers de los reportes anuales de la SEPS (cooperativas S1-S3 + mutualistas).
 
-Tres archivos por año (ver docs/fuentes_datos.md sección 4.0 y src/benchmark_bancos/config/
+Tres archivos por año (ver docs/fuentes_datos.md sección 4 y src/benchmark_bancos/config/
 SEPS_DOWNLOAD_IDS), cada uno conformando contra tablas ya existentes:
 
 - captaciones (ZIP de .xlsm/.xlsx, hoja `Base_captaciones`) -> staging.depositos

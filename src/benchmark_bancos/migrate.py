@@ -91,6 +91,11 @@ SONDAS: dict[str, str] = {
     "44_comentarios_marts.sql": (
         "SELECT obj_description('marts.dim_entidad'::regclass, 'pg_class') IS NOT NULL"
     ),
+    "45_estado_validacion_curado.sql": (
+        "SELECT col_description('marts.dim_plazo'::regclass, ("
+        "SELECT attnum FROM pg_attribute WHERE attrelid = 'marts.dim_plazo'::regclass "
+        "AND attname = 'estado_validacion')) LIKE '%universo curado%'"
+    ),
 }
 
 _DDL_REGISTRO = """

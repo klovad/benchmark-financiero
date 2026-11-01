@@ -1,8 +1,7 @@
 """Tests de integración (@pytest.mark.integration): requieren Postgres real ya
 migrado hasta sql/22 (ver docker-compose.yml / tests/conftest.py::db_conn). Cubren
-los items routeados en docs/propuesta_escalabilidad_etl.md sección 2.2 (regresiones
-de sql/10 y sql/21) y una porción de la sección 2.3 (cobertura de orquestación de
-src/benchmark_bancos/load/load_postgres.py).
+las regresiones de sql/10 y sql/21 y la orquestación de carga de
+src/benchmark_bancos/load/load_postgres.py.
 
 Ninguno hace commit -- db_conn siempre hace rollback al terminar, así que no dejan
 residuos ni en la base de desarrollo local ni en el contenedor postgres:17 efímero de

@@ -9,7 +9,7 @@ jobs:
   test-unit:
     # pytest -m "not integration": matching/normalización de identidad, parsers con
     # fixtures locales, sha256_file() y el parseo de fecha-desde-nombre-de-archivo.
-    # Sin DB, sin red. Ver docs/propuesta_escalabilidad_etl.md sección 2.4.
+    # Sin DB, sin red. Los scrapers no corren en CI (dependen de sitios de terceros).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -1,6 +1,5 @@
 """Tests puros (sin DB ni red) para las funciones de fecha-desde-nombre-de-archivo
-factorizadas fuera de load_tasas_historicas()/load_boletin() -- ver
-docs/propuesta_escalabilidad_etl.md sección 2.3."""
+factorizadas fuera de load_tasas_historicas()/load_boletin()."""
 
 import datetime
 

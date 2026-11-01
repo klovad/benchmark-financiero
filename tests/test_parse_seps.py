@@ -1,5 +1,5 @@
 """Parsers SEPS con fixtures sintéticos que reproducen las variaciones reales 2021-2025
-(docs/fuentes_datos.md sección 4.0) -- sin red ni DB."""
+(docs/fuentes_datos.md sección 4) -- sin red ni DB."""
 
 import datetime
 import zipfile

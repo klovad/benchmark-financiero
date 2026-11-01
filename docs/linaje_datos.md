@@ -1,55 +1,32 @@
 # Linaje de datos
 
-Traza, campo por campo, el recorrido `archivo fuente → staging.* → marts.*` para cada
-una de las 5 fuentes (CAPCOL incl. Banca Pública, BCE tsp/tsa, `TasasHistorico.htm`,
-Boletín y SEPS; la SEPS está en la sección 7). Las tablas por fuente conservan una columna
-"raw" que hoy describe la salida del parser: desde `sql/33` no hay capa `raw` en la base. Es el complemento de `docs/data_dictionary.md` (qué significa
-cada campo) y `docs/architecture.md` (cómo se relacionan las tablas): este documento
-responde **de dónde viene** cada campo y **qué transformación** sufrió en el camino.
-Grounded directamente en el código (parsers de `src/benchmark_bancos/transform/`, `src/benchmark_bancos/load/load_postgres.py`)
-al momento de escribirse — no en la ficha metodológica de la fuente, que en varios casos
-está desactualizada (ver `docs/fuentes_datos.md`).
+Traza, campo por campo, el recorrido `archivo fuente → staging.* → marts.*` de las 5 fuentes
+(CAPCOL con Banca Pública, BCE tsp/tsa, `TasasHistorico.htm`, Boletín y SEPS en la sección
+7). Responde **de dónde viene** cada campo y **qué transformación** tuvo. Complementa a
+`docs/data_dictionary.md` (qué significa cada campo) y a `docs/architecture.md` (cómo se
+relacionan las tablas). Está escrito a partir del código (`transform/`,
+`load/load_postgres.py`), no de la ficha metodológica de cada fuente.
 
-> **2026-10-05 (`sql/33`)**: la capa `raw.*` (JSONB) se eliminó de la base. Las columnas
-> "raw" de las tablas de abajo describen la salida del parser, que hoy va directo a
-> `staging.*`. La trazabilidad al origen es el archivo en `data/raw/**` más su sha256 en
-> `meta.source_files`. La sección siguiente se conserva como registro de por qué raw no
-> aportaba un espejo del origen.
+En las tablas, la columna "raw" describe la **salida del parser**, que va directo a
+`staging.*`: desde `sql/33` no hay capa `raw` en la base.
 
 ## Principio: `raw.*` no es un espejo bit-a-bit del archivo origen
 
-Antes de leer las tablas de abajo, una aclaración importante para no asumir más de lo que
-`raw.*` realmente garantiza. En un modelo de gobernanza estricto, la capa "raw" preserva
-cada fila del archivo origen sin ninguna transformación. **Acá no es así, por diseño**:
+Lo que el parser entrega a staging no es el archivo tal cual. Tiene tres transformaciones
+deliberadas:
 
-- **CAPCOL (cartera/depósitos)**: el archivo trae detalle a nivel de oficina/cuenta
-  contable — varias filas comparten la misma llave natural (fecha, banco, cantón,
-  tipo_credito/tipo_deposito, estado). El parser (`src/benchmark_bancos/transform/parse_cartera.py`,
-  `parse_depositos.py`) las **suma por `groupby` antes de devolver el DataFrame**, y ese
-  mismo DataFrame ya agregado es lo que llega tanto a `raw.cartera`/`raw.depositos` como a
-  `staging.*`. `raw.*` nunca tiene el detalle de oficina.
-- **BCE tsp/tsa**: **corregido 2026-07-19** — una versión anterior filtraba a
-  `tipo_entidad == 'BANCOS PRIVADOS'` chunk por chunk antes de que el dato llegara a
-  `raw.*`, perdiendo para siempre ~85% de las filas (el archivo cubre las 6 categorías
-  del sistema financiero completo: bancos privados, públicos, 394-402 cooperativas de
-  ahorro y crédito, mutualistas, sociedad financiera, tarjetas de crédito). El usuario lo
-  detectó y pidió explícitamente que se preservara todo, sin filtro, para poder analizar
-  el sistema financiero completo más adelante sin tener que re-descargar. Corregido:
-  `read_raw()` (`src/benchmark_bancos/transform/parse_bce_tasas.py`) captura las 6 categorías tal cual,
-  sin filtrar ni agregar — eso es lo único que alimenta `raw.bce_tasas_pasivas`/
-  `raw.bce_tasas_activas`. Ver la sección 3 más abajo para el detalle completo del fix.
-- **Boletín**: `raw.boletin_balance`/`raw.boletin_pyg` guardan la fila ya pivotada a
-  formato largo (banco, código, valor) y con `banco_codigo`/`saldo_usd` ya resueltos —no
-  la celda cruda del Excel ancho.
+- **CAPCOL**: el archivo trae detalle por oficina o cuenta, con varias filas por llave
+  natural. `parse_cartera.py` y `parse_depositos.py` las **suman** (`groupby`) antes de
+  devolver el DataFrame.
+- **BCE tsp/tsa**: `read_raw()` lee el universo completo del sistema financiero **sin
+  filtrar**. Las tasas se reagregan ponderando por monto dentro del grano cantón
+  (`_weighted_agg()`).
+- **Boletín**: la hoja ancha se pivota a formato largo (banco, código, valor) y se resuelve
+  `banco_codigo` y `saldo_usd` (miles × 1000).
 
-En los 4 casos, la trazabilidad al archivo original **no se pierde** — se mantiene por
-`source_file` + `source_hash` (columna en cada fila de `raw.*`, más `raw.source_files`
-para idempotencia a nivel de archivo) y por el archivo mismo, conservado en
-`data/raw/**` en disco (no versionado en git, pero reproducible: cada fuente es
-re-descargable y el pipeline es idempotente por hash). Lo que `raw.*` garantiza es
-"estructura sin tipar, previa a resolver catálogos conformados (banco/categoría/plazo)" —
-no "byte idéntico al archivo". Quien necesite el detalle de oficina de CAPCOL o el
-universo completo de entidades de BCE debe volver al archivo fuente, no a `raw.*`.
+La trazabilidad al origen es el **archivo en `data/raw/**`** (no versionado, re-descargable)
+más su `source_hash` en `meta.source_files`. Para el detalle por oficina de CAPCOL, o
+cualquier columna que el parser no conserva, hay que volver al archivo.
 
 ---
 
@@ -64,8 +41,8 @@ archivo (`src/benchmark_bancos/transform/parse_cartera.py::tipo_credito_from_she
 |---|---|---|---|
 | Nombre de hoja `BASE ...` | `tipo_credito` | Regex de palabras clave (`vivienda interes`→`vivienda_interes_publico`, `inmobiliario`, `productivo`→`comercial`, `consumo`, `microcredito`, `educativo`); orden importa, `vivienda interes` se evalúa antes que `inmobiliario` | `dim_segmento_credito` (JOIN por mapeo `tipo_credito`→`segmento`, ver `sql/16_dim_segmento_normativo.sql`) → `fact_saldo_cartera.segmento_id` (2026-07-19: antes columna directa `tipo_credito` sin FK) |
 | Columna `FECHA` | `fecha` | `month_end_date()` — normaliza a fin de mes | `dim_fecha` (JOIN por `fecha`) → `fact_saldo_cartera.fecha_id` |
-| Columna `ENTIDAD` | `banco`, `banco_codigo` | `normalize_banco()` + `resolver_banco_codigo(nombre, "CAPCOL")` (`banco_matching.py`) — falla con `BancoNoResueltoError` si no resuelve. **Pendiente de implementación, diseño aprobado 2026-09-01** (`docs/fuentes_datos.md` sección 1.1): al integrar el sub-portal Banca Pública, 3 valores nuevos de `ENTIDAD` (`BANECUADOR B. P.`, `BANCO DE DESARROLLO DEL ECUADOR B.P.`, `CORPORACION FINANCIERA NACIONAL B.P.`) resuelven vía `src/benchmark_bancos/seeds/banco_crosswalk.csv` directo al `banco_codigo` `BCE_<ruc>` que BCE ya había auto-registrado — primera vez que el crosswalk apunta fuera de `src/benchmark_bancos/seeds/banco_maestro.csv` (ver riesgo de orden de carga en `docs/gobernanza_datos.md`) | `dim_entidad` (JOIN por `banco_codigo`, poblado desde `staging.banco_maestro`) → `fact_saldo_cartera.entidad_id` |
-| *(implícito, no una columna)* | `tipo_entidad` | **Hoy hardcodeado `'BANCO PRIVADO'` en `_parse_sheet()`** (`parse_cartera.py`) para toda fila, sin importar el origen — al integrar Banca Pública esto debe parametrizarse por sub-portal de origen (`'BANCO PUBLICO'` para `capcol-instituciones-publicas/`), pendiente en el carril de `data-engineer`; si se reapunta el scraper sin este cambio, las filas de Banca Pública quedarían mal etiquetadas `'BANCO PRIVADO'` sin error visible (ver `docs/fuentes_datos.md` sección 1.1, punto 2 de la lista de pendientes) | filtra el `WHERE s.tipo_entidad = ...` de `fact_saldo_cartera`/`fact_saldo_depositos` en `_REFRESH_MARTS_SQL` |
+| Columna `ENTIDAD` | `banco`, `banco_codigo` | `normalize_banco()` + `resolver_banco_codigo(nombre, "CAPCOL")` (`banco_matching.py`) — falla con `BancoNoResueltoError` si no resuelve. **Pendiente de implementación, diseño aprobado 2026-09-01** (`docs/fuentes_datos.md` sección 1): al integrar el sub-portal Banca Pública, 3 valores nuevos de `ENTIDAD` (`BANECUADOR B. P.`, `BANCO DE DESARROLLO DEL ECUADOR B.P.`, `CORPORACION FINANCIERA NACIONAL B.P.`) resuelven vía `src/benchmark_bancos/seeds/banco_crosswalk.csv` directo al `banco_codigo` `BCE_<ruc>` que BCE ya había auto-registrado — primera vez que el crosswalk apunta fuera de `src/benchmark_bancos/seeds/banco_maestro.csv` (ver riesgo de orden de carga en `docs/gobernanza_datos.md`) | `dim_entidad` (JOIN por `banco_codigo`, poblado desde `staging.banco_maestro`) → `fact_saldo_cartera.entidad_id` |
+| *(implícito, no una columna)* | `tipo_entidad` | **Hoy hardcodeado `'BANCO PRIVADO'` en `_parse_sheet()`** (`parse_cartera.py`) para toda fila, sin importar el origen — al integrar Banca Pública esto debe parametrizarse por sub-portal de origen (`'BANCO PUBLICO'` para `capcol-instituciones-publicas/`), pendiente en el carril de `data-engineer`; si se reapunta el scraper sin este cambio, las filas de Banca Pública quedarían mal etiquetadas `'BANCO PRIVADO'` sin error visible (ver `docs/fuentes_datos.md` sección 1, punto 2 de la lista de pendientes) | filtra el `WHERE s.tipo_entidad = ...` de `fact_saldo_cartera`/`fact_saldo_depositos` en `_REFRESH_MARTS_SQL` |
 | Columna `PROVINCIA` | `provincia` | `normalize_provincia()` (2026-07-25, antes `normalize_text()`) | `dim_provincia` (JOIN `provincia`, con `translate()` de respaldo para una fila histórica con tilde — ver `docs/gobernanza_datos.md`) → `dim_canton.provincia_id` |
 | Columna `CANTON` | `canton` | `normalize_text()` | `dim_canton` (JOIN `canton`+`provincia_id`) → `fact_saldo_cartera.canton_id` |
 | *(derivado de `PROVINCIA`)* | `region` | `region_for_provincia()` vía `PROVINCIA_REGION` (`src/benchmark_bancos/config/`) | **No se materializa en `marts`** directamente — vive en `staging.cartera` (informativo) y en `dim_provincia.region` (única fuente de verdad en `marts`, 2026-07-25) |
@@ -150,7 +127,7 @@ cubría el histórico real completo de BCE). 334.556 filas cayeron en el bucket
 | `provincia`, `canton` | tal cual (raw sí preserva ambos) | `_resolve_canton()` llama `resolver_canton_bce(canton, provincia)` (`src/benchmark_bancos/transform/canton_matching.py`) sobre las ~226 combinaciones distintas (patrón `_resolve_identidad`), resuelve el PAR completo (nunca cantón solo, por los homónimos en 2 provincias) y devuelve `(canton, provincia)` normalizados sin colapsar — `CantonNoResueltoError` si la provincia no resuelve, nunca por un cantón fuera del universo sembrado (two-tier) | `provincia`, `canton` (siempre poblado, columna agregada por `sql/28`) | `dim_canton` (JOIN `canton`+`provincia` vía `dim_provincia`) → `fact_captaciones_depositos.canton_id` (columna agregada por `sql/28`, reemplaza `provincia_id`) |
 | `monto_total`, `numero_operaciones` | tal cual | Sin agregar entre cantones — un valor por fila de cantón real (grano más fino ya alcanzado); `_weighted_agg()` se mantiene como red de seguridad ante duplicados reales del archivo fuente en la misma llave, no como colapso geográfico | igual | `fact_captaciones_depositos.monto_total`/`.numero_operaciones` |
 | `tasa_pasiva_efectiva`, `tasa_nominal` | tal cual | Tal cual, sin reagregar (ya al grano más fino real) salvo que existan duplicados exactos en la llave, en cuyo caso `_weighted_agg()` promedia ponderado por `monto_total` | igual | `fact_captaciones_depositos.tasa_pasiva_efectiva`/`.tasa_nominal` — **nunca sumar/promediar simple al reagregar a un nivel superior, siempre reponderar por `monto_total`** (ver `docs/gobernanza_datos.md`, sumabilidad) |
-| `tipo_segmento` | preservada en `raw.*` (columna original) | 2026-07-25 (antes descartada sin examinar su contenido, ver `docs/gobernanza_datos.md` "Clasificación normativa de entidad"): validada contra `TIPOS_SEGMENTO_VALIDOS` (14 valores), resuelta una vez por `(fecha, banco_codigo)` (`_resolve_segmento_entidad`, gana la fila de mayor `monto_total` en el puñado de casos donde no es estable dentro de la semana) | `tipo_segmento` | `dim_segmento_entidad` (JOIN `tipo_segmento`) → `fact_captaciones_depositos.segmento_entidad_id`; además `dim_entidad.segmento_entidad_id` (última clasificación conocida, actualizada en `refresh_marts()`) |
+| `tipo_segmento` | preservada en `raw.*` (columna original) | Validada contra `TIPOS_SEGMENTO_VALIDOS` (14 valores), resuelta una vez por `(fecha, banco_codigo)` (`_resolve_segmento_entidad`, gana la fila de mayor `monto_total` en el puñado de casos donde no es estable dentro de la semana) | `tipo_segmento` | `dim_segmento_entidad` (JOIN `tipo_segmento`) → `fact_captaciones_depositos.segmento_entidad_id`; además `dim_entidad.segmento_entidad_id` (última clasificación conocida, actualizada en `refresh_marts()`) |
 | `sector_financiero` | preservada en `raw.*` (columna original) | descartada, no pasa a staging (redundante con `dim_entidad.tipo_entidad`) | — | — |
 
 **Llave natural** `staging.bce_tasas_pasivas`: `(fecha, banco_codigo, categoria_deposito, plazo_dias_desde, COALESCE(plazo_dias_hasta,-1), COALESCE(provincia,''), COALESCE(canton,''))`

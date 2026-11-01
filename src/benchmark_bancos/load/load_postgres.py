@@ -24,6 +24,11 @@ import pandas as pd
 import psycopg
 
 from benchmark_bancos.config import DB_CONFIG, SEEDS_DIR
+from benchmark_bancos.transform import (
+    bce_plazo_matching,
+    categoria_deposito_matching,
+    parse_tasas_historicas,
+)
 from benchmark_bancos.transform.canton_matching import seed_cantones
 
 log = logging.getLogger(__name__)
@@ -175,6 +180,101 @@ def sincronizar_cantones_seed(conn) -> None:
             "variante): %s",
             len(sin_codigo),
             ", ".join(sin_codigo),
+        )
+
+
+def plazos_curados() -> set[tuple[int, int | None]]:
+    """Rangos (dias_desde, dias_hasta) de los universos curados de plazo de las 4
+    fuentes (PLAZOS_TSP_VALIDOS, PLAZOS_TSA_VALIDOS, PLAZOS_VALIDOS de CAPCOL y de
+    TasasHistorico), resueltos con el mismo parser que usa cada fuente."""
+    rangos = {
+        bce_plazo_matching.resolver_plazo_bce(t)
+        for t in bce_plazo_matching.PLAZOS_TSP_VALIDOS
+        | bce_plazo_matching.PLAZOS_TSA_VALIDOS
+    }
+    rangos |= {
+        categoria_deposito_matching.resolver_categoria_deposito(t)[1:]
+        for t in categoria_deposito_matching.PLAZOS_VALIDOS
+    }
+    rangos |= {
+        parse_tasas_historicas._resolver_plazo(t)
+        for t in parse_tasas_historicas.PLAZOS_VALIDOS
+    }
+    return rangos
+
+
+def sincronizar_plazos_curados(conn) -> None:
+    """Marca CONFIRMADO en marts.dim_plazo los rangos de plazos_curados() (sql/45).
+    Antes solo sql/27 los confirmaba, y solo los que ya existían al migrar: en una base
+    nueva todos quedaban AUTO_INGRESADO. Curar un bucket nuevo es agregar su texto al
+    universo de su fuente. Solo toca filas que cambian; avisa si queda alguno sin curar."""
+    rangos = sorted(plazos_curados(), key=lambda r: (r[0], r[1] is None, r[1] or 0))
+    with conn.cursor() as cur:
+        cur.execute(
+            "CREATE TEMP TABLE IF NOT EXISTS _plazo_curado (dias_desde int, dias_hasta int)"
+        )
+        cur.execute("TRUNCATE _plazo_curado")
+        cur.executemany("INSERT INTO _plazo_curado VALUES (%s, %s)", rangos)
+        cur.execute(
+            """
+            UPDATE marts.dim_plazo d SET estado_validacion = 'CONFIRMADO'
+            FROM _plazo_curado c
+            WHERE d.dias_desde = c.dias_desde
+              AND d.dias_hasta IS NOT DISTINCT FROM c.dias_hasta
+              AND d.estado_validacion <> 'CONFIRMADO'
+            """
+        )
+        if cur.rowcount:
+            log.info("marts.dim_plazo: %d plazos confirmados", cur.rowcount)
+        cur.execute(
+            """
+            SELECT dias_desde || '-' || COALESCE(dias_hasta::text, '...')
+            FROM marts.dim_plazo WHERE estado_validacion = 'AUTO_INGRESADO' ORDER BY dias_desde
+            """
+        )
+        sin_curar = [r[0] for r in cur.fetchall()]
+    if sin_curar:
+        log.warning(
+            "marts.dim_plazo: %d plazo(s) AUTO_INGRESADO fuera de los universos curados, "
+            "revisar: %s",
+            len(sin_curar),
+            ", ".join(sin_curar),
+        )
+
+
+def sincronizar_cuentas_seed(conn) -> None:
+    """Marca CONFIRMADO en marts.dim_cuenta_contable las cuentas de
+    `seeds/cuenta_contable.csv` (sql/45): el plan de cuentas revisado de Superbancos y la
+    SEPS. Una cuenta que el Boletín o la SEPS traigan por primera vez queda
+    AUTO_INGRESADO; curarla es agregar su fila al CSV. Solo toca filas que cambian."""
+    with open(_SEEDS_DIR / "cuenta_contable.csv", encoding="utf-8") as f:
+        rows = [(r["reporte"], r["codigo"]) for r in csv.DictReader(f)]
+    with conn.cursor() as cur:
+        cur.execute(
+            "CREATE TEMP TABLE IF NOT EXISTS _seed_cuenta (reporte text, codigo text)"
+        )
+        cur.execute("TRUNCATE _seed_cuenta")
+        cur.executemany("INSERT INTO _seed_cuenta VALUES (%s, %s)", rows)
+        cur.execute(
+            """
+            UPDATE marts.dim_cuenta_contable d SET estado_validacion = 'CONFIRMADO'
+            FROM _seed_cuenta s
+            WHERE d.reporte = s.reporte AND d.codigo = s.codigo
+              AND d.estado_validacion <> 'CONFIRMADO'
+            """
+        )
+        if cur.rowcount:
+            log.info("marts.dim_cuenta_contable: %d cuentas confirmadas", cur.rowcount)
+        cur.execute(
+            "SELECT count(*) FROM marts.dim_cuenta_contable "
+            "WHERE estado_validacion = 'AUTO_INGRESADO'"
+        )
+        sin_curar = cur.fetchone()[0]
+    if sin_curar:
+        log.warning(
+            "marts.dim_cuenta_contable: %d cuenta(s) AUTO_INGRESADO, revisar y agregar a "
+            "seeds/cuenta_contable.csv",
+            sin_curar,
         )
 
 
@@ -1202,7 +1302,7 @@ def _log_bancos_no_resueltos(conn, fuentes=lambda sql: sql) -> None:
     """Los INSERT de fact_saldo_cartera/fact_saldo_depositos hacen INNER JOIN contra
     marts.dim_entidad, que solo contiene banco_codigo presentes en staging.banco_maestro.
     Banca Pública resuelve por crosswalk a filas BCE_<ruc> que solo existen si BCE ya
-    corrió al menos una vez (docs/fuentes_datos.md sección 1.1): en una base
+    corrió al menos una vez (docs/fuentes_datos.md sección 1): en una base
     reconstruida desde cero con CAPCOL cargado antes que BCE, esas filas se descartarían
     sin error. Mismo criterio log-only que _log_cantones_no_resueltos()."""
     with conn.cursor() as cur:
@@ -1333,6 +1433,8 @@ def refresh_marts(conn, full: bool = False) -> None:
             sql = _RE_ALCANCE.sub("TRUE", sql)
         cur.execute(sql)
         sincronizar_cantones_seed(conn)
+        sincronizar_plazos_curados(conn)
+        sincronizar_cuentas_seed(conn)
         cur.execute(
             """
             INSERT INTO meta.refresh_watermark (proceso, hasta) VALUES ('marts', %s)

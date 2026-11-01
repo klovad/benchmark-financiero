@@ -87,7 +87,7 @@ contra datos reales nuevos.
   `nombre_fuente` el texto crudo tal cual aparece en la fuente [no importa mayúsculas,
   `_normalizar()` lo homologa], `banco_codigo` debe ser un código YA existente en
   `src/benchmark_bancos/seeds/banco_maestro.csv` — **o, desde 2026-09-01 (Banca Pública, ver
-  `docs/fuentes_datos.md` sección 1.1), un `banco_codigo` `BCE_<ruc>` ya auto-registrado en
+  `docs/fuentes_datos.md` sección 1), un `banco_codigo` `BCE_<ruc>` ya auto-registrado en
   `marts.dim_entidad` por `resolver_entidad_bce()`**, cuando el objetivo es que un nombre de
   CAPCOL/BOLETIN apunte a la MISMA identidad que BCE ya generó para esa entidad en vez de
   crear una identidad paralela. `resolver_banco_codigo()` no valida contra la base viva en
@@ -277,18 +277,9 @@ Sin two-tier, fail-fast absoluto.
 `_REFRESH_MARTS_SQL`, solo `LEFT JOIN` de lectura en las líneas ~733/765 de
 `load_postgres.py`).
 
-**Nota de riesgo latente** (cerrado 2026-10-10: `segmento_entidad_id` es NOT NULL en los
-hechos BCE y en `dim_entidad` desde `sql/41`, así que un valor no mapeado haría fallar el
-refresh en vez de quedar en NULL; se conserva el análisis original): como el `JOIN` en `fact_captaciones_depositos`/
-`fact_colocaciones_cartera` es `LEFT JOIN` (no `INNER`), un `tipo_segmento` no mapeado que
-lograra saltarse la validación de Python terminaría con `segmento_entidad_id = NULL` en
-vez de un error — hoy es inalcanzable porque Python valida antes de `staging`, pero es el
-mismo tipo de descarte silencioso ya documentado para `dim_canton` en
-`docs/gobernanza_datos.md` ("Bug de descarte silencioso... mitigado 2026-08-30"). Si algún
-día se sospecha, comparar `COUNT(*) FROM marts.fact_captaciones_depositos WHERE
-segmento_entidad_id IS NULL` contra `COUNT(*) FROM staging.bce_tasas_pasivas WHERE
-tipo_segmento IS NULL` — si el primero es mayor, hay filas con `tipo_segmento` no-NULL que
-no matchearon.
+`segmento_entidad_id` es NOT NULL en los hechos BCE y en `dim_entidad` (`sql/41`): un
+valor que se saltara la validación de Python haría fallar el refresh en vez de quedar en
+NULL. Las entidades sin tsp/tsa (segundo piso) quedan en `NO REPORTA AL BCE`.
 
 **Después de arreglarlo**: `tests/test_parse_bce_tasas.py` cubre el alias y el rechazo de
 valores fuera de catálogo (`test_homologar_tipo_segmento_*`, 2026-10-10); agregar un caso
@@ -313,9 +304,9 @@ conteos.
 está en `PLAZOS_TSP_VALIDOS` (7)/`PLAZOS_TSA_VALIDOS` (14)/`PLAZOS_VALIDOS` (5, CAPCOL,
 `categoria_deposito_matching.py:44-50`)/`PLAZOS_VALIDOS` (6, TasasHistorico,
 `parse_tasas_historicas.py:63-74`) → **no lanza nada**. La fila llega a
-`marts.dim_plazo` con `estado_validacion='AUTO_INGRESADO'` (DEFAULT, `sql/27`). Esto **no
-se ve en ningún log de pipeline** — se descubre consultando `marts.dim_plazo` (sección de
-abajo), no por un error.
+`marts.dim_plazo` con `estado_validacion='AUTO_INGRESADO'` (DEFAULT, `sql/27`). No es un
+error: el refresh lo avisa con un WARNING (`sincronizar_plazos_curados`, `sql/45`) y se ve
+consultando `marts.dim_plazo` (sección de abajo).
 
 **Dónde arreglarlo (caso fail-fast)**:
 - Shape que no matchea ningún regex: revisar si BCE/CAPCOL/TasasHistorico cambió su
@@ -327,12 +318,11 @@ abajo), no por un error.
   degenerado) — nunca "agregar una excepción para este caso", encontrar y arreglar la
   extracción.
 
-**Qué hacer (caso `AUTO_INGRESADO`)**: normalmente no hay nada que "arreglar" en código —
-es revisión, no reparación (ver sección de abajo para la query/confirmación). Si tras
-revisar se confirma que es un bucket real y nuevo del BCE, opcionalmente se puede agregar
-al set `PLAZOS_*_VALIDOS` correspondiente como documentación del universo conocido — esto
-**no cambia el comportamiento** (el set ya no es un gate, ver `bce_plazo_matching.py:68-73`),
-solo mantiene el comentario "universo confirmado" honesto.
+**Qué hacer (caso `AUTO_INGRESADO`)**: es revisión, no reparación. Si el bucket es real
+y nuevo, agregar su texto al set `PLAZOS_*_VALIDOS` de su fuente: el próximo refresh lo
+marca `CONFIRMADO` (`sql/45`). El set no es un gate de carga, solo define qué está curado.
+`tests/test_catalogos_curados.py` compara el universo con la lista fija de `sql/45` y
+fallará: actualizar la lista del test, no la migración.
 
 **Después de arreglarlo (caso fail-fast)**: test en `tests/test_bce_plazo_matching.py`
 (patrón `test_bucket_shape_invalido_sigue_lanzando_incluso_fuera_del_universo`, línea 73, o
@@ -351,7 +341,9 @@ BALANCE/PYG del Boletín se acepta y se hace upsert vía `upsert_dim_cuenta_cont
 (`src/benchmark_bancos/load/load_postgres.py:455-465`, `ON CONFLICT (reporte, codigo) DO UPDATE`), llegando
 con `estado_validacion='AUTO_INGRESADO'` (DEFAULT, `sql/25`) porque el `INSERT` no lista
 esa columna. Esto es diseño deliberado, no un hueco: el Catálogo Único de Cuentas crece y
-cambia legítimamente con cada archivo del Boletín.
+cambia legítimamente con cada archivo del Boletín. Lo revisado vive en
+`seeds/cuenta_contable.csv`; el refresh confirma esas cuentas y avisa con WARNING cuántas
+quedan `AUTO_INGRESADO` (`sincronizar_cuentas_seed`, `sql/45`).
 
 El único fallo real posible acá es un **bug de parsing**, no de identidad de catálogo:
 `_find_header_row()` (`src/benchmark_bancos/transform/parse_boletin.py:85-106`) lanza `ValueError` genérico
@@ -376,15 +368,14 @@ la estructura real del archivo cambió. Re-ejecutar: `pytest tests/test_parse_bo
 `uv run benchmark-bancos boletin --years <años afectados>`, verificar
 `staging.boletin_balance`/`boletin_pyg` == `marts.fact_balance`/`fact_pyg` en filas.
 
-## 8. `dim_canton` (two-tier, BCE tsp/tsa — 2026-09-01, `sql/28_bce_canton_grain.sql`)
+## 8. `dim_canton` (two-tier, `sql/28`)
 
 **Error**: `CantonNoResueltoError` — `src/benchmark_bancos/transform/canton_matching.py:81-97`, lanzado
 desde `resolver_canton_bce(canton, provincia)` en 2 casos: `canton`/`provincia` vacíos, o
 `provincia` (tras `normalize_provincia()`) no está entre las 24 provincias reales del
 Ecuador + `ZONA NO DELIMITADA` + `S/N` (`_PROVINCIAS_VALIDAS`, `canton_matching.py:66-68`).
-Se verá al correr `uv run benchmark-bancos bce` una vez que `data-engineer` integre la
-llamada en `src/benchmark_bancos/transform/parse_bce_tasas.py` (a la fecha de esta entrada, esa integración
-sigue pendiente — ver "Cambio de grano de BCE a cantón" en `docs/gobernanza_datos.md`).
+Se ve al correr `uv run benchmark-bancos bce` (`parse_bce_tasas.py::_resolve_canton()`),
+`seps` o la carga de CAPCOL.
 
 **Camino sin error (two-tier, igual mecanismo que `dim_plazo`)**: provincia válida pero el
 par `(canton, provincia)` normalizado no está en el universo sembrado
@@ -487,10 +478,10 @@ WHERE estado_validacion = 'AUTO_INGRESADO'
 ORDER BY dias_desde;
 ```
 
-**Confirmar una fila** — acá sí basta con `marts.dim_plazo`: los 4 `INSERT INTO
-marts.dim_plazo` de `_REFRESH_MARTS_SQL` usan `ON CONFLICT (dias_desde, COALESCE(dias_hasta,
--1)) DO NOTHING` (sin `estado_validacion` en la lista de columnas), así que una fila ya
-existente **nunca se toca** de nuevo, confirmada o no:
+**Confirmar una fila**: agregar su texto al set `PLAZOS_*_VALIDOS` de su fuente (ver
+sección 6); el refresh la confirma y, en una base nueva, la vuelve a confirmar. Un `UPDATE`
+a mano también persiste (ninguna carga baja un `CONFIRMADO`), pero se pierde al
+reconstruir la base:
 ```sql
 UPDATE marts.dim_plazo
 SET estado_validacion = 'CONFIRMADO'
@@ -507,10 +498,9 @@ WHERE estado_validacion = 'AUTO_INGRESADO'
 ORDER BY reporte, codigo;
 ```
 
-**Confirmar una fila** — igual que `dim_plazo`, el `ON CONFLICT (reporte, codigo) DO
-UPDATE` de `upsert_dim_cuenta_contable()` (`load_postgres.py:459-462`) no lista
-`estado_validacion` en su `SET`, así que persiste sin revertirse en la siguiente carga del
-Boletín:
+**Confirmar una fila**: agregar `reporte,codigo,cuenta` a `seeds/cuenta_contable.csv`;
+el próximo refresh la marca `CONFIRMADO`. Un `UPDATE` a mano persiste entre cargas (el
+upsert no toca `estado_validacion`), pero se pierde al reconstruir la base:
 ```sql
 UPDATE marts.dim_cuenta_contable
 SET estado_validacion = 'CONFIRMADO'
@@ -527,7 +517,7 @@ WHERE estado_validacion = 'AUTO_INGRESADO'
 ORDER BY canton;
 ```
 
-**Confirmar una fila** — igual que `dim_plazo`/`dim_cuenta_contable`, el
+**Confirmar una fila** — el
 `INSERT INTO marts.dim_canton ... ON CONFLICT (canton, provincia_id) DO NOTHING` de
 `_REFRESH_MARTS_SQL` no lista `estado_validacion`, así que una fila ya existente **nunca
 se toca** de nuevo:

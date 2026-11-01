@@ -89,7 +89,7 @@ def test_parse_depositos_file_schema_and_no_duplicates():
 
 
 def test_tipo_credito_inversion_publica_banca_publica():
-    # Hoja real de capcol-instituciones-publicas (docs/fuentes_datos.md sección 1.1).
+    # Hoja real de capcol-instituciones-publicas (docs/fuentes_datos.md sección 1).
     assert (
         tipo_credito_from_sheet_name("BASE B PUBLICA INVERSION PUBLICA")
         == "inversion_publica"
