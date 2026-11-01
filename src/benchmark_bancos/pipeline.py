@@ -59,6 +59,23 @@ from benchmark_bancos.transform.parse_tasas_historicas import (
 log = logging.getLogger(__name__)
 
 
+def _omitir_ya_cargado(
+    conn, source_file: str, source_hash: str, reprocesar: bool
+) -> bool:
+    """Gate de idempotencia: un archivo con el mismo nombre y sha256 que uno ya
+    registrado en meta.source_files no se vuelve a cargar. Con `reprocesar` (después de
+    cambiar un parser o el crosswalk) se carga igual: el upsert de staging compara por
+    columnas y solo toca las filas cuyo valor cambió, así que repetir un archivo es
+    inocuo y el refresh incremental recalcula solo lo afectado."""
+    if not is_source_loaded(conn, source_file, source_hash):
+        return False
+    if reprocesar:
+        log.info("Ya cargado, se reprocesa: %s", source_file)
+        return False
+    log.info("Ya cargado, se omite: %s", source_file)
+    return True
+
+
 def orden_publicacion(path: Path) -> tuple[int, str]:
     """Clave de orden para los archivos CAPCOL de una carpeta de año: por el mes del
     nombre ('... JUNIO 2026.zip', 'banca-publica-...-dic-21.zip'), no alfabético.
@@ -80,6 +97,7 @@ def load_years(
     years: list[int],
     base_dir: Path = RAW_DIR,
     portales: tuple[str, ...] = tuple(CAPCOL_PORTALES),
+    reprocesar: bool = False,
 ) -> None:
     """tipo_entidad de cada fila lo fija el sub-portal CAPCOL de donde vino el archivo
     (benchmark_bancos.config.CAPCOL_PORTALES), no el parser. source_file se prefija con el subdir del
@@ -113,8 +131,9 @@ def load_years(
                             else zip_path.name
                         )
                         source_hash = sha256_file(zip_path)
-                        if is_source_loaded(conn, source_key, source_hash):
-                            log.info("Ya cargado, se omite: %s", source_key)
+                        if _omitir_ya_cargado(
+                            conn, source_key, source_hash, reprocesar
+                        ):
                             continue
                         log.info("Procesando %s (%s)", source_key, cfg["tipo_entidad"])
                         df = parse_fn(zip_path, EXTRACT_DIR, cfg["tipo_entidad"])
@@ -132,7 +151,10 @@ def load_years(
 
 
 def load_seps(
-    years: list[int], base_dir: Path = SEPS_DIR, descargar: bool = True
+    years: list[int],
+    base_dir: Path = SEPS_DIR,
+    descargar: bool = True,
+    reprocesar: bool = False,
 ) -> None:
     """SEPS (cooperativas S1-S3 + mutualistas): descarga directa + 3 reportes por año que
     conforman contra tablas ya existentes (docs/fuentes_datos.md sección 4).
@@ -156,8 +178,7 @@ def load_seps(
                 for zip_path in zips:
                     source_key = f"seps/{year}/{zip_path.name}"
                     source_hash = sha256_file(zip_path)
-                    if is_source_loaded(conn, source_key, source_hash):
-                        log.info("Ya cargado, se omite: %s", source_key)
+                    if _omitir_ya_cargado(conn, source_key, source_hash, reprocesar):
                         continue
                     log.info("Procesando %s", source_key)
                     if reporte == "eeff":
@@ -199,7 +220,7 @@ def load_seps(
         conn.close()
 
 
-def load_bce(base_dir: Path = BCE_DIR) -> None:
+def load_bce(base_dir: Path = BCE_DIR, reprocesar: bool = False) -> None:
     """BCE tsp/tsa: descarga directa (sin Playwright), un solo archivo cada uno con todo
     el histórico semanal (2008-actualidad) -- no hay noción de 'año' para iterar como en
     CAPCOL, se procesa el archivo completo de una vez.
@@ -229,8 +250,7 @@ def load_bce(base_dir: Path = BCE_DIR) -> None:
         ):
             zip_path = files[clave]
             source_hash = sha256_file(zip_path)
-            if is_source_loaded(conn, zip_path.name, source_hash):
-                log.info("Ya cargado, se omite: %s", zip_path.name)
+            if _omitir_ya_cargado(conn, zip_path.name, source_hash, reprocesar):
                 continue
             log.info("Procesando %s (sin filtrar tipo_entidad)", zip_path.name)
             df_raw = read_raw_bce(zip_path)
@@ -304,7 +324,7 @@ def _log_segmentos_tasas_sin_catalogo(conn) -> None:
             )
 
 
-def load_tasas_historicas() -> None:
+def load_tasas_historicas(reprocesar: bool = False) -> None:
     """TasasHistorico.htm: a diferencia de tsp/tsa (un solo archivo acumulativo), acá
     cada mes es un archivo HTML separado -- se procesa uno por uno, cada uno con su
     propio source_hash/idempotencia (mismo patrón que CAPCOL)."""
@@ -334,8 +354,7 @@ def load_tasas_historicas() -> None:
                 continue
 
             source_hash = sha256_file(path)
-            if is_source_loaded(conn, path.name, source_hash):
-                log.info("Ya cargado, se omite: %s", path.name)
+            if _omitir_ya_cargado(conn, path.name, source_hash, reprocesar):
                 continue
             log.info("Procesando %s", path.name)
             try:
@@ -402,7 +421,9 @@ def parse_fecha_from_boletin_filename(name: str) -> datetime.date:
     return datetime.date(anio, mes, calendar.monthrange(anio, mes)[1])
 
 
-def load_boletin(years: list[int], base_dir: Path = RAW_DIR) -> None:
+def load_boletin(
+    years: list[int], base_dir: Path = RAW_DIR, reprocesar: bool = False
+) -> None:
     """Boletín Financiero Mensual: un archivo .zip por mes (nombre con mes en español),
     Playwright para descargar (mismo plugin OneDrive que CAPCOL)."""
     scrape_boletin(years, base_dir)
@@ -421,8 +442,7 @@ def load_boletin(years: list[int], base_dir: Path = RAW_DIR) -> None:
                     continue
 
                 source_hash = sha256_file(zip_path)
-                if is_source_loaded(conn, zip_path.name, source_hash):
-                    log.info("Ya cargado, se omite: %s", zip_path.name)
+                if _omitir_ya_cargado(conn, zip_path.name, source_hash, reprocesar):
                     continue
                 log.info("Procesando %s", zip_path.name)
                 try:

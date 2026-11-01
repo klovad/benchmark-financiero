@@ -37,6 +37,26 @@ def test_exit_0_si_todo_ok(monkeypatch, sin_bloqueo):
     assert cli.main(["refresh"]) == 0
 
 
+def test_reprocesar_llega_a_la_carga(monkeypatch, sin_bloqueo):
+    llamadas = []
+    monkeypatch.setattr(
+        cli.pipeline,
+        "load_boletin",
+        lambda years, out, reprocesar: llamadas.append(reprocesar),
+    )
+    assert cli.main(["boletin", "--years", "2026", "--reprocesar"]) == 0
+    assert cli.main(["boletin", "--years", "2026"]) == 0
+    assert llamadas == [True, False]
+
+
+def test_reprocesar_salta_el_gate_de_archivo_ya_cargado(monkeypatch):
+    monkeypatch.setattr(cli.pipeline, "is_source_loaded", lambda conn, f, h: True)
+    assert cli.pipeline._omitir_ya_cargado(None, "a.zip", "h", reprocesar=False)
+    assert not cli.pipeline._omitir_ya_cargado(None, "a.zip", "h", reprocesar=True)
+    monkeypatch.setattr(cli.pipeline, "is_source_loaded", lambda conn, f, h: False)
+    assert not cli.pipeline._omitir_ya_cargado(None, "a.zip", "h", reprocesar=False)
+
+
 def test_exit_2_si_se_registraron_errores(monkeypatch, sin_bloqueo):
     monkeypatch.setattr(
         cli, "_ejecutar", lambda args: logging.getLogger("x").error("timeout")

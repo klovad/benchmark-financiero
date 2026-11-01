@@ -16,6 +16,7 @@ Uso (con uv):
     uv run benchmark-bancos seps --years 2021 2022 2023 2024 2025  # SEPS
     uv run benchmark-bancos refresh                                # solo marts (incremental)
     uv run benchmark-bancos refresh --full                         # solo marts (completo)
+    uv run benchmark-bancos boletin --years 2026 --reprocesar      # recargar ya cargados
 
 Equivalente sin el script instalado: `python -m benchmark_bancos <stage> ...`.
 
@@ -81,6 +82,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="refresh: recalcular marts desde todo staging en vez de solo lo cambiado",
     )
     parser.add_argument(
+        "--reprocesar",
+        action="store_true",
+        help="load/all/bce/tasas-historicas/boletin/seps: volver a cargar archivos ya "
+        "cargados (tras cambiar un parser o el crosswalk), sin borrar meta.source_files",
+    )
+    parser.add_argument(
         "--fuentes",
         nargs="+",
         choices=list(orquestacion.FUENTES),
@@ -137,15 +144,17 @@ def _ejecutar(args: argparse.Namespace) -> None:
         for portal in args.portales:
             scrape(years, args.out, portal=portal)
     if args.stage in ("load", "all"):
-        pipeline.load_years(years, args.out, tuple(args.portales))
+        pipeline.load_years(
+            years, args.out, tuple(args.portales), reprocesar=args.reprocesar
+        )
     if args.stage == "bce":
-        pipeline.load_bce()
+        pipeline.load_bce(reprocesar=args.reprocesar)
     if args.stage == "tasas-historicas":
-        pipeline.load_tasas_historicas()
+        pipeline.load_tasas_historicas(reprocesar=args.reprocesar)
     if args.stage == "boletin":
-        pipeline.load_boletin(years, args.out)
+        pipeline.load_boletin(years, args.out, reprocesar=args.reprocesar)
     if args.stage == "seps":
-        pipeline.load_seps(years)
+        pipeline.load_seps(years, reprocesar=args.reprocesar)
     if args.stage == "refresh":
         pipeline.refresh(full=args.full)
 

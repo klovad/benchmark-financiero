@@ -230,7 +230,7 @@ anteriores, decisión explícita de alcance, ver `docs/fuentes_datos.md`).
 ## 7. SEPS — Captaciones, Colocaciones (saldos) y Estados Financieros (2026-09-30)
 
 Fuente: portal `estadisticas.seps.gob.ec`, descarga directa por `download_id`
-(`src/benchmark_bancos/extract/download_seps.py`, ids en `src/benchmark_bancos/config/sources.py::SEPS_DOWNLOAD_IDS`). Un ZIP por
+(`src/benchmark_bancos/extract/download_seps.py`, ids en `src/benchmark_bancos/config/sources.py::SEPS_DOWNLOAD_IDS` o leídos del portal para un año nuevo). Un ZIP por
 año y reporte, con Deflate64 (se lee con `stream_unzip`). Cobertura: cooperativas de
 segmentos 1-3 y mutualistas. Los segmentos 4-5 publican trimestralmente y quedan fuera de
 alcance. Código: `src/benchmark_bancos/transform/parse_seps.py`, `src/benchmark_bancos/pipeline.py::load_seps`. **No hay

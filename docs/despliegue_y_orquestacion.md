@@ -530,7 +530,7 @@ uv run benchmark-bancos bce                                            # 1. tsp/
 uv run benchmark-bancos tasas-historicas                               # 2. techos/referenciales mensuales
 uv run benchmark-bancos all --years 2021 2022 2023 2024 2025 2026      # 3. CAPCOL privada + publica
 uv run benchmark-bancos boletin --years 2021 2022 2023 2024 2025 2026  # 4. Boletín
-uv run benchmark-bancos seps --years 2021 2022 2023 2024 2025 2026     # 5. SEPS (solo años con download_id)
+uv run benchmark-bancos seps --years 2021 2022 2023 2024 2025 2026     # 5. SEPS
 uv run benchmark-bancos refresh --full                                 # 6. red de seguridad: marts desde todo staging
 ```
 
@@ -568,7 +568,8 @@ uv run benchmark-bancos refresh --full
   `docs/gobernanza_datos.md`, "Huecos de gobernanza conocidos".
 - `--years` también se puede fijar con `SCRAPER_YEARS` en `.env` (no aplica a
   `actualizar`, cuyo default es el año en curso).
-- SEPS solo descarga años presentes en `SEPS_DOWNLOAD_IDS`
+- SEPS toma los `download_id` de `SEPS_DOWNLOAD_IDS`; un año que no está ahí se lee del
+  portal, y si el portal todavía no lo publica se omite con un INFO
   (`src/benchmark_bancos/config/sources.py:55-64`, hoy 2021-2026); otros años se omiten
   con un aviso.
 
@@ -664,10 +665,10 @@ el Boletín (brechas B7, B11).
 | BCE publicó una semana nueva | `bce` | la descarga condicional detecta la versión nueva y la reemplaza |
 | BCE publicó TasasHistorico de un mes nuevo | `tasas-historicas` | descarga solo meses faltantes |
 | Superbancos publicó un Boletín nuevo | `boletin --years <año>` | idem CAPCOL |
-| SEPS publicó un año nuevo | agregar el año en `SEPS_DOWNLOAD_IDS` (`config/sources.py`) + `seps --years <año>` | sin id no hay descarga |
+| SEPS publicó un año nuevo | nada: `actualizar` lee los ids del portal y el log los muestra; opcional, fijarlos en `SEPS_DOWNLOAD_IDS` (`config/sources.py`) | si el portal reordena sus secciones, el año se omite con INFO y hay que fijar los ids a mano |
 | SEPS publicó un mes más del año en curso | `seps --years <año>` | la descarga condicional detecta la versión nueva |
 | Se editó `seeds/banco_maestro.csv` (nombre o tipo de entidad) | `refresh` | el seed se re-siembra al inicio de cada refresh; `dim_entidad` se actualiza |
-| Se editó `seeds/banco_crosswalk.csv` o un `*_matching.py`/parser | reprocesar los archivos afectados: hoy exige borrar su fila en `meta.source_files` (operación destructiva, coordinar con `data-engineer`) y volver a correr la etapa | el gate por sha256 salta archivos ya cargados aunque el código cambie (brecha B8) |
+| Se editó `seeds/banco_crosswalk.csv` o un `*_matching.py`/parser | volver a correr la etapa afectada con `--reprocesar` (p. ej. `boletin --years 2025 2026 --reprocesar`; vale para `load`, `all`, `bce`, `tasas-historicas`, `boletin` y `seps`) | sin el flag, el gate por sha256 salta los archivos ya cargados. Es inocuo repetirlo: el upsert solo toca filas que cambian. Reprocesar todo dura lo que una reconstrucción (~70 min), así que acotar por etapa y años |
 | Se aplicó una migración que cambia la lógica de refresh | `refresh --full` | el incremental solo ve filas de staging con `fecha_actualizacion` nueva |
 | Se cargó CAPCOL `publica` antes que `bce` en una base nueva | `refresh --full` | ver regla 2 de 1.4 |
 | Un refresh se interrumpió (o hubo dos corridas simultáneas antes de 2026-10-09) | `refresh --full` | la marca de agua supone un solo escritor; desde 2026-10-09 el bloqueo impide corridas simultáneas |
@@ -1044,7 +1045,7 @@ timeouts, bancos o cantones no resueltos que se descartaron de marts).
 | `actualizar.ps1` termina con 1 aunque el log dice `todas las fuentes OK` | versión del script con `$ErrorActionPreference = 'Stop'` alrededor de la llamada a `uv` (PowerShell 5.1) | usar la versión actual del script (7.2) |
 | `No se encontró la carpeta 'Año AAAA'` | el portal aún no publica ese año o cambió el layout | normal en enero; si persiste, revisar selectores en `extract/scrape_*.py` |
 | Playwright: `Executable doesn't exist` o faltan librerías `.so` | Chromium no instalado o, en Linux, sin dependencias del sistema | `uv run --no-sync playwright install --with-deps chromium` |
-| `SEPS AAAA: sin download_id ..., se omite` | año no configurado | agregar ids en `config/sources.py:55` (cambio de código) |
+| `SEPS AAAA: el portal todavía no publica ..., se omite el año` (INFO) | año sin link en el portal (normal en enero-febrero) o el portal cambió de estructura | si el link ya está en el portal, fijar los ids en `SEPS_DOWNLOAD_IDS` (`config/sources.py`) |
 | `SEPS ...: la descarga ... no redirigió a un .zip` | el portal cambió el `download_id` | actualizar el id en `config/sources.py` |
 | `*NoResueltoError` (banco, segmento, categoría, plazo, cuenta) | valor nuevo en la fuente | `docs/mantenimiento_catalogos.md` |
 | Filas de Banca Pública faltan en marts; log dice bancos no resueltos | CAPCOL `publica` cargado antes que `bce` | `bce` y luego `refresh --full` |
@@ -1074,8 +1075,6 @@ las que tocan el modelo a `data-architect`.
 |---|---|---|---|---|
 | B4 | Archivos no parseables y carpetas de año faltantes quedan en `WARNING` y dan código 0 (los que significan dato perdido en TasasHistorico y el Boletín ya son `ERROR`) | importante | `pipeline.py`; `extract/scrape_superbancos.py`; `extract/scrape_boletin.py` | Subir a `ERROR` los "se omite" restantes que pierden dato; dejar en `WARNING` los esperables (año aún no publicado en enero) |
 | B7 | Sin modo "solo cargar" para el Boletín ni `--sin-descarga` para BCE/SEPS/TasasHistorico: no se puede reconstruir desde `data/raw` sin red en todas las fuentes | importante | `pipeline.py` (`scrape_boletin` siempre); `load_seps(descargar=)` existe pero el CLI no lo expone | Flag `--sin-descarga` que salte la extracción |
-| B8 | Reprocesar archivos tras un cambio de parser o crosswalk exige borrar filas de `meta.source_files` a mano | importante | gate por `source_file` + sha256 en `pipeline.py` | Flag `--reprocesar` que ignore el gate (el CDC ya hace la carga idempotente) |
-| B15 | `download_id` de SEPS fijos por año en código: cada año nuevo exige un cambio; en enero `actualizar` omite SEPS del año nuevo hasta agregarlos | importante | `config/sources.py` | Moverlos a un archivo versionado en `seeds/` o descubrirlos desde el portal |
 | B9 | El ETL no está contenerizado (solo Postgres) | mejora | `docker-compose.yml` (un solo servicio) | Dockerfile de 2.4 + servicio `etl` con `profiles: [etl]` |
 | B10 | Sin `sslmode` ni URL de conexión configurables | mejora (bloqueante en un Postgres gestionado con CA propia) | `config/settings.py` | Aceptar `DATABASE_URL` o `POSTGRES_SSLMODE`; psycopg ya respeta `PGSSLMODE`/`PGSSLROOTCERT` |
 | B11 | Sin `--dry-run`: no se sabe qué archivos se cargarían ni cuánto tocaría un refresh sin ejecutarlo | mejora | `cli.py` | Listar archivos nuevos (sha256 contra `meta.source_files`) y el alcance del refresh en una transacción con rollback |

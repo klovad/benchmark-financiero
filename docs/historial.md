@@ -50,3 +50,4 @@ propio encabezado con el motivo.
 
 - **11-01** — `graphify-out/` sale de git. Documentación condensada al estado vigente, con esta bitácora como único registro histórico. Se eliminó `docs/propuesta_escalabilidad_etl.md`: lo que seguía abierto pasó a las brechas del runbook (§11).
 - **11-01** — En la base reconstruida, los 21 plazos y las 1.902 cuentas habían quedado `AUTO_INGRESADO`: `sql/25` y `sql/27` solo confirmaban las filas existentes al migrar. Ahora el refresh confirma contra un universo curado (los sets de plazo de cada fuente y `seeds/cuenta_contable.csv`), igual que los cantones (`sql/45`).
+- **11-01** — Los `download_id` de la SEPS de un año nuevo se leen del portal (antes había que agregarlos en código cada enero). Flag `--reprocesar` para recargar archivos ya cargados tras cambiar un parser o el crosswalk, sin borrar `meta.source_files` a mano (brechas B15 y B8).

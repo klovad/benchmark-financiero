@@ -323,7 +323,8 @@ Por qué unos catálogos son fail-fast y otros two-tier: `docs/gobernanza_datos.
 Tres niveles, de grueso a fino:
 
 1. **Archivo**: `meta.source_files` registra cada archivo con su sha256. Un archivo con
-   el mismo hash no se vuelve a parsear (`is_source_loaded()`).
+   el mismo hash no se vuelve a parsear (`is_source_loaded()`), salvo con `--reprocesar`
+   después de cambiar un parser o el crosswalk.
 2. **Fila (CDC por columnas)**: `staging.*`, los `fact_*` y `dim_entidad` tienen
    `fecha_carga` (se pone una vez) y `fecha_actualizacion` (solo se mueve si el dato
    cambió). Carga por `COPY` a una tabla temporal y upsert con guard sobre las columnas

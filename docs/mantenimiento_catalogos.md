@@ -37,12 +37,15 @@ conformados"): `dim_entidad` (camino curado + camino auto-registrado), `dim_segm
 | `dim_categoria_deposito` (SEPS) | `CategoriaNoResueltaError` | `categoria_deposito_matching.py::resolver_categoria_deposito_seps` | Fail-fast absoluto; compara sin tildes contra `CATEGORIAS_VALIDAS` |
 | `dim_canton` (SEPS) | `CantonNoResueltoError` | reutiliza `resolver_canton_bce()` | Two-tier, igual que BCE |
 | `dim_cuenta_contable` (SEPS) | — | `load_postgres.py::insert_dim_cuenta_contable_seps` | Sin gate; `ON CONFLICT DO NOTHING` (no pisa descripciones de Superbancos) |
-| Extractor SEPS | `ValueError` ("no redirigió a un .zip") | `src/benchmark_bancos/extract/download_seps.py` | El `download_id` del portal cambió o el año no se publicó: actualizar `src/benchmark_bancos/config/sources.py::SEPS_DOWNLOAD_IDS` copiando el link del portal |
+| Extractor SEPS | `ValueError` ("no redirigió a un .zip") | `src/benchmark_bancos/extract/download_seps.py` | El `download_id` del portal cambió: actualizar `src/benchmark_bancos/config/sources.py::SEPS_DOWNLOAD_IDS` copiando el link del portal |
 
-**Año nuevo de SEPS**: agregar la fila del año a `SEPS_DOWNLOAD_IDS` (3 ids: Depósitos >
-Reportes; Cartera de crédito > Reportes, **segunda** fila, la del ZIP `YYYY-COL.zip`;
-Situación Financiera > Bases de Datos, primera fila) y correr
-`uv run benchmark-bancos seps --years YYYY`. Si el parser falla por un formato nuevo (hoja
+**Año nuevo de SEPS**: no hace falta tocar código. Si el año no está en
+`SEPS_DOWNLOAD_IDS`, `download_seps` lee sus 3 ids de la página del portal (Depósitos >
+Reportes > Captaciones mensuales; Cartera de crédito > Reportes > Colocaciones mensuales,
+la del ZIP `YYYY-COL.zip`; Situación Financiera > Bases de Datos > Estados Financieros
+Mensuales, primera fila) y los muestra en el log; se pueden fijar después en
+`SEPS_DOWNLOAD_IDS`. Si el portal cambia de estructura, el año se omite con un INFO: fijar
+los ids a mano y correr `uv run benchmark-bancos seps --years YYYY`. Si el parser falla por un formato nuevo (hoja
 partida, separador, encabezado), ver la lista de variaciones ya absorbidas en el docstring
 de `src/benchmark_bancos/transform/parse_seps.py`.
 

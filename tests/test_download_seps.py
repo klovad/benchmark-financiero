@@ -78,3 +78,53 @@ def test_zip_local_sin_meta_que_coincide_no_se_descarga(seps):
     ds.download_seps_file(2026, "captaciones", out)
     assert gets == []
     assert (carpeta / "_descarga.json").exists()
+
+
+# Estructura real del portal (2026-11-01), recortada: la sección de situación financiera
+# no tiene encabezado, EEFF aparece en Reportes y en Bases de Datos (vale el segundo) y
+# trae una fila extra de 2026; Volumen de crédito va antes de Colocaciones.
+_PORTAL = """
+<h4>Reportes</h4><h5>Estados Financieros Mensuales</h5>
+<a href="?sdm_process_download=1&amp;download_id=10">2027</a>
+<h4>Bases de Datos:</h4><p>Estados Financieros Mensuales</p>
+<a href="?smd_process_download=1&amp;download_id=11">2027</a>
+<a href="?sdm_process_download=1&amp;download_id=12">Años anteriores</a>
+<a href="?sdm_process_download=1&amp;download_id=13">2027</a>
+<p>Dep&oacute;sitos</p><h4>Reportes</h4><h5>Captaciones mensuales</h5>
+<a href="?sdm_process_download=1&amp;download_id=20">2027</a>
+<h4>Bases de Datos:</h4><h5>Captaciones mensuales</h5>
+<a href="?sdm_process_download=1&amp;download_id=21">2027</a>
+<p>Cartera de crédito</p><h4>Reportes</h4><h5>Volumen de crédito mensual</h5>
+<a href="?sdm_process_download=1&amp;download_id=30">2027</a>
+<h5>Colocaciones mensuales</h5>
+<a href="?sdm_process_download=1&amp;download_id=31">2027</a>
+<a href="?sdm_process_download=1&amp;download_id=32">2026</a>
+"""
+
+
+def test_descubrir_download_ids_del_portal():
+    ids = ds.descubrir_download_ids(_PORTAL)
+    assert ids[2027] == {"eeff": 11, "captaciones": 20, "colocaciones": 31}
+    assert ids[2026] == {"colocaciones": 32}
+
+
+def test_anio_sin_id_fijo_usa_el_portal_y_omite_si_falta(monkeypatch, tmp_path):
+    monkeypatch.setattr(ds, "SEPS_DOWNLOAD_IDS", {})
+    monkeypatch.setattr(
+        ds, "_ids_del_portal", lambda: ds.descubrir_download_ids(_PORTAL)
+    )
+    bajados = []
+    monkeypatch.setattr(
+        ds,
+        "download_seps_file",
+        lambda year, reporte, out_dir, ids: bajados.append(
+            (year, reporte, ids[reporte])
+        ),
+    )
+    resultado = ds.download_seps([2026, 2027], tmp_path)
+    assert list(resultado) == [2027]  # 2026 sin eeff ni captaciones en el portal
+    assert sorted(bajados) == [
+        (2027, "captaciones", 20),
+        (2027, "colocaciones", 31),
+        (2027, "eeff", 11),
+    ]

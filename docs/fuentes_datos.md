@@ -150,8 +150,9 @@ decisión.
 
 Fuente: `https://estadisticas.seps.gob.ec/index.php/estadisticas-sfps/`, descarga directa
 `?sdm_process_download=1&download_id=NNNN` (plugin "Simple Download Monitor", sin
-Playwright). Los `download_id` no siguen un patrón: se mantienen a mano en
-`config/sources.py` y **cada año nuevo hay que agregar los suyos**. Código:
+Playwright). Los `download_id` no siguen un patrón: los de 2021-2026 están fijos en
+`config/sources.py`, y los de un año nuevo se leen de la página del portal
+(`download_seps.descubrir_download_ids`). Código:
 `extract/download_seps.py`, `transform/parse_seps.py`, `pipeline.py::load_seps`; linaje
 en `docs/linaje_datos.md` §7.
 

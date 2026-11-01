@@ -8,12 +8,19 @@ download_bce.py). Destino: data/raw/seps/{año}/{reporte}/{nombre real del zip}.
 
 Los links de años viejos en el portal usan el parámetro con typo `smd_process_download`;
 el plugin acepta ambos, verificado 2026-09-30 para 2021-2025.
+
+Los download_id de un año que no está en `SEPS_DOWNLOAD_IDS` se descubren leyendo la
+página del portal (`descubrir_download_ids`), así que el año nuevo se descarga solo en
+cuanto la SEPS publica su link.
 """
 
 import argparse
+import html
 import json
 import logging
 import os
+import re
+import unicodedata
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -23,6 +30,7 @@ from benchmark_bancos.config import (
     SEPS_DIR,
     SEPS_DOWNLOAD_IDS,
     SEPS_DOWNLOAD_URL,
+    SEPS_PORTAL_URL,
 )
 from benchmark_bancos.extract.red import con_reintentos
 from benchmark_bancos.logging_utils import setup_logging
@@ -34,6 +42,78 @@ REPORTES_SEPS = ("eeff", "captaciones", "colocaciones")
 
 
 _META = "_descarga.json"
+
+# Dónde está cada reporte en la página del portal: (sección, bloque, título), sin tildes
+# ni mayúsculas. La sección "situacion financiera" es la primera de la página y no tiene
+# encabezado propio en el HTML (es una pestaña), por eso es el estado inicial.
+_UBICACION_PORTAL = {
+    ("situacion financiera", "bases de datos", "estados financieros mensuales"): "eeff",
+    ("depositos", "reportes", "captaciones mensuales"): "captaciones",
+    ("cartera de credito", "reportes", "colocaciones mensuales"): "colocaciones",
+}
+_SECCIONES = {
+    "depositos",
+    "cartera de credito",
+    "tasas de interes",
+    "inclusion financiera",
+}
+_BLOQUES = {
+    "reporte": "reportes",
+    "reportes": "reportes",
+    "bases de datos": "bases de datos",
+    "metodologia": "otro",
+    "documentacion adicional": "otro",
+}
+_TOKEN = re.compile(
+    r"<a\s[^>]*download_id=(\d+)[^>]*>(.*?)</a>|<(h[1-6]|p)\b[^>]*>(.*?)</\3>",
+    re.S | re.I,
+)
+
+
+def _normalizar(texto: str) -> str:
+    texto = html.unescape(re.sub(r"<[^>]+>", "", texto))
+    texto = "".join(
+        c for c in unicodedata.normalize("NFKD", texto) if not unicodedata.combining(c)
+    )
+    return re.sub(r"\s+", " ", texto).strip(" :").lower()
+
+
+def descubrir_download_ids(pagina: str) -> dict[int, dict[str, int]]:
+    """download_id por año y reporte leídos de la página del portal. Recorre en orden
+    los encabezados y los links de año: cada link pertenece al último título visto,
+    dentro del último bloque (Reportes / Bases de Datos) y sección. Si un año aparece dos
+    veces bajo el mismo título (EEFF trae una segunda fila de 2026), vale el primero, que
+    es la base de 6 dígitos."""
+    seccion, bloque, titulo = "situacion financiera", None, None
+    ids: dict[int, dict[str, int]] = {}
+    for m in _TOKEN.finditer(pagina):
+        if m.group(1):
+            anio = _normalizar(m.group(2))
+            reporte = _UBICACION_PORTAL.get((seccion, bloque, titulo))
+            if reporte and re.fullmatch(r"\d{4}", anio):
+                ids.setdefault(int(anio), {}).setdefault(reporte, int(m.group(1)))
+            continue
+        texto = _normalizar(m.group(4))
+        if not texto or len(texto) > 80:
+            continue
+        if texto in _SECCIONES:
+            seccion, bloque, titulo = texto, None, None
+        elif texto in _BLOQUES:
+            bloque, titulo = _BLOQUES[texto], None
+        else:
+            titulo = texto
+    return ids
+
+
+def _ids_del_portal() -> dict[int, dict[str, int]]:
+    def leer() -> str:
+        req = urllib.request.Request(
+            SEPS_PORTAL_URL, headers={"User-Agent": "Mozilla/5.0"}
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            return resp.read().decode(resp.headers.get_content_charset() or "utf-8")
+
+    return descubrir_download_ids(con_reintentos(leer, "SEPS (página del portal)"))
 
 
 def _version_publicada(url: str) -> dict:
@@ -60,7 +140,12 @@ def _nombre_zip(url_final: str, year: int, reporte: str, url: str) -> str:
     return nombre
 
 
-def download_seps_file(year: int, reporte: str, out_dir: Path = SEPS_DIR) -> Path:
+def download_seps_file(
+    year: int,
+    reporte: str,
+    out_dir: Path = SEPS_DIR,
+    ids: dict[str, int] | None = None,
+) -> Path:
     """Descarga solo si la SEPS publicó una versión distinta a la local.
 
     El año en curso se republica cada mes con el MISMO download_id (y a veces el mismo
@@ -70,8 +155,11 @@ def download_seps_file(year: int, reporte: str, out_dir: Path = SEPS_DIR) -> Pat
     cambio) se acepta el .zip local si coincide en nombre y tamaño. Al bajar una versión
     nueva se borra la anterior: la carpeta queda con un solo .zip. Después, el sha256 de
     `meta.source_files` decide si hay que recargar.
+
+    `ids`: download_id de ese año por reporte; por defecto, los de SEPS_DOWNLOAD_IDS.
     """
-    url = SEPS_DOWNLOAD_URL.format(id=SEPS_DOWNLOAD_IDS[year][reporte])
+    ids = ids or SEPS_DOWNLOAD_IDS[year]
+    url = SEPS_DOWNLOAD_URL.format(id=ids[reporte])
     dest_dir = out_dir / str(year) / reporte
     dest_dir.mkdir(parents=True, exist_ok=True)
     meta_path = dest_dir / _META
@@ -128,15 +216,30 @@ def download_seps(
     years: list[int], out_dir: Path = SEPS_DIR
 ) -> dict[int, dict[str, Path]]:
     resultado = {}
+    portal = None
     for year in years:
-        if year not in SEPS_DOWNLOAD_IDS:
-            log.warning(
-                "SEPS %s: sin download_id en benchmark_bancos.config.SEPS_DOWNLOAD_IDS, se omite",
+        ids = SEPS_DOWNLOAD_IDS.get(year)
+        if ids is None:
+            if portal is None:
+                portal = _ids_del_portal()
+            ids = portal.get(year, {})
+            faltan = [r for r in REPORTES_SEPS if r not in ids]
+            if faltan:
+                # Normal en enero-febrero: la SEPS publica el año nuevo con rezago.
+                log.info(
+                    "SEPS %s: el portal todavía no publica %s, se omite el año",
+                    year,
+                    ", ".join(faltan),
+                )
+                continue
+            log.info(
+                "SEPS %s: download_id leídos del portal %s (se pueden fijar en "
+                "config.SEPS_DOWNLOAD_IDS)",
                 year,
+                ids,
             )
-            continue
         resultado[year] = {
-            r: download_seps_file(year, r, out_dir) for r in REPORTES_SEPS
+            r: download_seps_file(year, r, out_dir, ids) for r in REPORTES_SEPS
         }
     return resultado
 

@@ -41,9 +41,10 @@ BCE_URLS = {
 
 # --- SEPS: cooperativas S1-S3 + mutualistas (descarga directa) ----------------------------
 # Plugin "Simple Download Monitor" de WordPress -- sin Playwright. Los download_id no
-# siguen ningún patrón derivable del año: se recolectaron a mano del portal
-# (estadisticas.seps.gob.ec/index.php/estadisticas-sfps/, 2026-09-30). Al agregar un año
-# nuevo, copiar el id del link del año en cada sección:
+# siguen ningún patrón derivable del año: los de SEPS_DOWNLOAD_IDS se recolectaron a mano
+# del portal (2026-09-30). Un año que no esté acá se descubre leyendo la página del portal
+# (download_seps.descubrir_download_ids, 2026-11-01), así que el año nuevo no exige
+# cambiar código; el log sugiere fijarlo acá. Ubicación de cada link en el portal:
 #   captaciones  -> Depósitos > Reportes (ZIP con Boletin_captaciones_*_{S1,S2,S3,Mut}.xlsm)
 #   colocaciones -> Cartera de crédito > Reportes, 2da fila (ZIP con
 #                   Reporte_colocaciones_*.xlsm = SALDOS de cartera, no volumen)
@@ -52,6 +53,7 @@ BCE_URLS = {
 SEPS_DOWNLOAD_URL = (
     "https://estadisticas.seps.gob.ec/?sdm_process_download=1&download_id={id}"
 )
+SEPS_PORTAL_URL = "https://estadisticas.seps.gob.ec/index.php/estadisticas-sfps/"
 SEPS_DOWNLOAD_IDS = {
     2021: {"captaciones": 906, "colocaciones": 1023, "eeff": 895},
     2022: {"captaciones": 1133, "colocaciones": 1129, "eeff": 1818},
