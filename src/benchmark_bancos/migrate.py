@@ -217,7 +217,7 @@ def migrar(
         if not est.aplicadas and est.esquema_existente:
             log.warning(
                 "La base tiene esquema pero el registro de migraciones está vacío: "
-                "`migrate` pedirá `--baseline` (ver docs/despliegue_y_orquestacion.md §3)"
+                "`migrate` pedirá `--baseline` (ver docs/despliegue_y_orquestacion.md, «Base de datos y migraciones»)"
             )
         log.info(
             "Migraciones: %d aplicadas, %d pendientes%s",
@@ -238,7 +238,7 @@ def migrar(
             raise MigracionError(
                 "No se pudo verificar el nivel de la base: ni la sonda de "
                 f"{next(iter(SONDAS))} pasa. Es anterior a 2026-09 o no es una base de "
-                "este proyecto; revisarla a mano (docs/despliegue_y_orquestacion.md §3)."
+                "este proyecto; revisarla a mano (docs/despliegue_y_orquestacion.md, «Base de datos y migraciones»)."
             )
         al_dia = nivel == archivos[-1].name
         if not baseline and not al_dia:

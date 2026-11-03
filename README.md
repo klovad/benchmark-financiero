@@ -29,7 +29,8 @@ BI. 5 fuentes oficiales:
 
 ## Quickstart
 
-Detalle por sistema operativo, con o sin Docker y para otro Postgres, en el runbook (§2-§4).
+Detalle por sistema operativo, con o sin Docker y para otro Postgres, en el runbook
+(`docs/despliegue_y_orquestacion.md`: instalación, migraciones y primera carga).
 
 ```powershell
 # 1. Entorno (uv: https://docs.astral.sh/uv/). Sin uv: `pip install -e .` en un venv.
@@ -65,7 +66,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\registrar_tarea.ps1
 ```
 
 Para analizar sin escribir en la base existe un rol de solo lectura
-(`sql/admin/rol_lectura.sql`, runbook §3.4). Sin Postgres, `data/samples/` trae una muestra
+(`sql/admin/rol_lectura.sql`, runbook, "Rol de solo lectura para análisis"). Sin Postgres, `data/samples/` trae una muestra
 de `marts.*` en Parquet (últimos 13 meses).
 
 ## Estructura
@@ -135,7 +136,7 @@ Cobertura al 2026-11-01. La vigente sale de `SELECT min(fecha_id), max(fecha_id)
   Antes de agregar, ponderar por monto.
 - **Balance y PyG** con el Catálogo Único de Cuentas, en USD (el Boletín reporta en miles).
 - `dim_entidad`: 36 entidades curadas y ~408 auto-registradas por RUC.
-- **Diferencias de criterio**, para leer antes de comparar (`docs/fuentes_datos.md` §4.0):
+- **Diferencias de criterio**, para leer antes de comparar (`docs/fuentes_datos.md`, "Diferencias de criterio y conciliación"):
   - la cartera de las mutualistas incluye la vendida al fideicomiso;
   - el consumo de las cooperativas emisoras de tarjetas excluye las tarjetas;
   - los depósitos de CAPCOL quedan ~0,7% por debajo del Boletín.
@@ -155,4 +156,4 @@ desde cero está probada en la CI y en una reconstrucción completa. Cronología
 - Probar contra un Postgres gestionado real.
 - Retomar Power BI (retirado del repo; recuperable desde el historial de git).
 
-Brechas técnicas abiertas en el runbook, §11.
+Brechas técnicas abiertas: runbook, sección "Brechas de portabilidad y orquestación".

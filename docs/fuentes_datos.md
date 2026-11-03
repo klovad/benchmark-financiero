@@ -52,7 +52,7 @@ fecha.
   BCE cargue primero. El Boletín cargado solo trae bancos privados: Banca Pública no
   tiene contra qué conciliarse.
 - **Identidad**: CAPCOL no trae RUC. El nombre crudo se resuelve con
-  `seeds/banco_crosswalk.csv` → `banco_codigo` (ver `docs/mantenimiento_catalogos.md` §1).
+  `seeds/banco_crosswalk.csv` → `banco_codigo` (ver `docs/mantenimiento_catalogos.md`, "`dim_entidad` — camino curado").
 
 ## 2. BCE — Tasas de interés
 
@@ -154,7 +154,7 @@ Playwright). Los `download_id` no siguen un patrón: los de 2021-2026 están fij
 `config/sources.py`, y los de un año nuevo se leen de la página del portal
 (`download_seps.descubrir_download_ids`). Código:
 `extract/download_seps.py`, `transform/parse_seps.py`, `pipeline.py::load_seps`; linaje
-en `docs/linaje_datos.md` §7.
+en `docs/linaje_datos.md`, sección "SEPS".
 
 ### 4.0 Diferencias de criterio y conciliación (leer antes de comparar)
 

@@ -772,8 +772,8 @@ dos pods coinciden.
 
 ### 7.5 Airflow / Prefect / Dagster (opcional) [no probado]
 
-No hacen falta a la cadencia actual (semanal, un solo responsable; ver §11,
-"Descartado a propósito"). Si se adopta uno, cada fuente es una tarea
+No hacen falta a la cadencia actual (semanal, un solo responsable; ver "Descartado a propósito"
+en la última sección). Si se adopta uno, cada fuente es una tarea
 que llama a `benchmark-bancos actualizar --fuentes <fuente>`, y el orquestador aporta
 reintentos, historial y alertas. Tratar `75` como "reintentar más tarde" y `1`/`2` como
 fallo de la tarea. Ejemplos mínimos:
@@ -1086,7 +1086,7 @@ las que tocan el modelo a `data-architect`.
 
 **Descartado a propósito** (sin un disparador real hoy): Airflow, Prefect o Dagster
 (cadencia semanal como máximo y un solo responsable: alcanza con `actualizar` + el
-scheduler del sistema, §7), GitHub Actions programado (no alcanza un Postgres local),
+scheduler del sistema, ver "Programación"), GitHub Actions programado (no alcanza un Postgres local),
 `sources.yml` declarativo (sin una fuente más con la forma de `load_years`), pre-commit
 (redundante con la CI para un solo colaborador) y scrapers en la CI (dependen de sitios de
 terceros; no son un control determinístico).
@@ -1099,11 +1099,10 @@ terceros; no son un control determinístico).
   `postgres:17` con un admin `NOSUPERUSER CREATEROLE CREATEDB` (`sql/00` desde bash y
   PowerShell, `migrate` sin superusuario, carga real y tests de integración).
 - La consulta de dueño de esquemas de 3.3 y la corrección de esquemas creados por el
-  superusuario (§10).
+  superusuario ("Problemas frecuentes").
 - `scripts/actualizar.sh` y cron en Linux/macOS; la tarea de Windows sin sesión iniciada;
-  Kubernetes y los orquestadores de §7.5.
+  Kubernetes y los orquestadores (Airflow, Prefect, Dagster).
 - `pg_restore` (solo se verificó que el dump se genera y se puede listar).
 
-Sí se probaron: la primera carga completa en una base nueva con `actualizar` (2026-10-10,
-§4), la instalación desde cero de las 44 migraciones con otro rol (2026-11-01) y
+Sí se probaron: la primera carga completa en una base nueva con `actualizar` (2026-10-10), la instalación desde cero de las 44 migraciones con otro rol (2026-11-01) y
 `migrate --aceptar-cambios`.

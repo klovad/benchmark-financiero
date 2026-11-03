@@ -197,7 +197,7 @@ sección/métrica, no ancha) — se ensancha a 4 tablas en `marts` dentro de `re
 
 **Llave natural** `staging.tasas_referenciales`: `(fecha, seccion, COALESCE(dimension_valor,''), COALESCE(plazo_dias_desde,-1), COALESCE(plazo_dias_hasta,-1), metrica)`.
 Código: `src/benchmark_bancos/transform/parse_tasas_historicas.py`. Cobertura: 2009-07 a 2026-09 (ampliada el
-2026-10-09, ver `docs/fuentes_datos.md` §2.3 para qué se corrigió y qué queda fuera).
+2026-10-09, ver `docs/fuentes_datos.md`, "Tasas máximas y referenciales", para qué se corrigió y qué queda fuera).
 
 ## 6. Boletín Financiero Mensual — BALANCE / PYG
 

@@ -88,7 +88,7 @@ def segmento_improductiva(fb14, keyword):
 
 def promedio_ytd(fact_balance, dim_fecha, codigo, entidad_id, fecha_id):
     """Promedio de saldos fin de mes de `codigo` (1=activo, 3=patrimonio), desde
-    diciembre del año anterior hasta fecha_id (inclusive) -- ver glosario_cuentas.md §5.
+    diciembre del año anterior hasta fecha_id (inclusive) -- ver glosario_cuentas.md, bloques de series de tiempo.
     """
     anio = fecha_id // 10000
     dic_anterior_id = int(f"{anio - 1}1231")
@@ -182,7 +182,7 @@ def main():
             mora_seg[seg] = improd / bruto if bruto else None
 
         # fact_pyg no trae fila para codigo='4' (TOTAL GASTOS) a nivel 1 -- ver
-        # glosario_cuentas.md §4.6. Workaround verificado: sumar las 8 cuentas nivel-2.
+        # glosario_cuentas.md, "Hueco de datos conocido: PyG código 4". Workaround verificado: sumar las 8 cuentas nivel-2.
         ingresos = cod(fp, "5")
         gastos_top = cod(fp, "4")
         if gastos_top == 0:

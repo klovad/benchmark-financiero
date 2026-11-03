@@ -86,7 +86,7 @@ Verificación cruzada adicional en BP PACÍFICO (mismo corte) para `IND_87`/`IND
    plazo"), **no** solo `2101 + 210310`.
 
 3. **`IND_45` (Morosidad) — el numerador no es una sola cuenta** (ej. `1425`). Es el bloque
-   `cartera_improductiva` del glosario (§2) — suma de **todas** las cuentas nivel-4 bajo
+   `cartera_improductiva` del glosario — suma de **todas** las cuentas nivel-4 bajo
    `14` (excluyendo `1499`) marcadas "QUE NO DEVENGA INTERESES" o "VENCIDA" y no "POR
    VENCER", a través de todos los segmentos y estados (normal, refinanciada,
    reestructurada, COVID). Implementado en `marts.vw_cartera_improductiva` — no depende de
@@ -102,7 +102,7 @@ Verificación cruzada adicional en BP PACÍFICO (mismo corte) para `IND_87`/`IND
    `IND_53`/`IND_54`/`IND_55`/`IND_55_1`/`IND_56` — el Excel tiene una variante
    "PROMEDIO DICIEMBRE" (que sí resta utilidad/pérdida del patrimonio) pero queda
    vestigial, sin conectar a ningún indicador activo. Bloque `activo_promedio_ytd` /
-   `patrimonio_promedio_ytd` del glosario (§5), implementado en
+   `patrimonio_promedio_ytd` del glosario, implementado en
    `marts.vw_activo_promedio_ytd` / `marts.vw_patrimonio_promedio_ytd`.
 
 5. **`IND_86` (Utilidad Anualizada)** = `IND_19 * (12 / mes_actual)`, donde `IND_19` es la

@@ -20,7 +20,7 @@ cuentas contables cada vez que se documenta un ratio nuevo.
   scoped a su propio universo de `cuenta_id`.
 - Una cuenta "padre" (ej. `14`) normalmente ya trae el saldo consolidado de sus hijas tal
   como lo entrega el boletín — no hay que sumar manualmente, salvo que el nivel padre
-  falte (caso documentado: PyG código `4`, ver §4.6).
+  falte (caso documentado: PyG código `4`, ver "Hueco de datos conocido: PyG código `4`").
 
 | Sección (1er dígito) | Nombre | Naturaleza |
 |---|---|---|
@@ -136,7 +136,7 @@ del hueco, qué fracción explican estas 5 cuentas) en `docs/gobernanza_datos.md
 | `3603` / `3604` | Utilidad / Pérdida del ejercicio | Resultado acumulado del año en curso, dentro de patrimonio |
 | `5` | TOTAL INGRESOS | Todo lo que el banco generó en el período |
 | `51` | Intereses y descuentos ganados | Ingreso financiero — el "core" del negocio bancario |
-| `4` | TOTAL GASTOS | Todo lo que el banco gastó — **ver nota de hueco de datos, §4.6** |
+| `4` | TOTAL GASTOS | Todo lo que el banco gastó — **ver la nota de hueco de datos más abajo** |
 | `41` | Intereses causados | Lo que el banco paga por captar (costo de fondeo) |
 | `44` | Provisiones (gasto) | Gasto por constituir provisión de cartera/contingentes ese período |
 | `4402` | Gasto provisión de cartera | Sub-cuenta específica de `44` |
@@ -214,4 +214,4 @@ cada vez que un documento nuevo necesita el mismo concepto.
 Catálogo Único de Cuentas), así que el consumidor **debe** unir contra
 `dim_entidad.tipo_entidad` para no mezclar sectores. Las vistas siguen siendo bloques puros,
 sin opinión de segmentación. Para mutualistas, la cartera de los reportes SEPS no es
-comparable con `vw_cartera_bruta` (ver `docs/fuentes_datos.md` §4.0).
+comparable con `vw_cartera_bruta` (ver `docs/fuentes_datos.md`, sección "Diferencias de criterio y conciliación").

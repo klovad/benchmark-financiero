@@ -5,7 +5,7 @@
 # en logs\actualizar_AAAAMMDD_HHMMSS.log (UTF-8), borra logs de más de 90 días y termina
 # con el mismo código que el CLI: 0 OK, 1 error que cortó la corrida, 2 terminó con
 # errores (ver log), 75 había otra corrida en curso. Pensado para el Programador de
-# tareas: registrar con scripts\registrar_tarea.ps1 (ver docs/despliegue_y_orquestacion.md §7).
+# tareas: registrar con scripts\registrar_tarea.ps1 (ver docs/despliegue_y_orquestacion.md, "Programación").
 
 param(
     [string[]]$Fuentes = @()

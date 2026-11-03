@@ -12,7 +12,7 @@ identidad antes de que el dato llegue a `staging.*` — ver `docs/architecture.m
 patrón de carga incremental). Para qué hacer cuando un valor crudo no resuelve o
 aparece una fila `estado_validacion='AUTO_INGRESADO'` pendiente de revisión, ver el runbook
 `docs/mantenimiento_catalogos.md`. La SEPS (cooperativas y mutualistas) no tiene tablas
-propias: carga en las mismas tablas que CAPCOL y el Boletín (`docs/fuentes_datos.md` §4).
+propias: carga en las mismas tablas que CAPCOL y el Boletín (`docs/fuentes_datos.md`, sección "SEPS").
 
 ## Dimensiones
 
@@ -77,7 +77,7 @@ conserva `banco_maestro`/`banco`/`banco_codigo` como espejo de las fuentes.
 ### marts.dim_categoria_deposito
 | categoria_deposito_id | serial | Llave sustituta |
 | categoria | text | 13 valores: 11 de CAPCOL/BCE + `DEPÓSITOS MONETARIOS` (agregado sin distinguir generan/no-generan intereses, encontrado en `TasasHistorico.htm`) + `DEPÓSITOS A LA VISTA` (SEPS, `sql/30`, 2026-09-30: taxonomía cooperativa vista/plazo/garantía/restringidos; no se asimila a ahorro ni a monetarios) |
-| **Hueco de alcance real frente al plan de cuentas regulatorio** (verificado 2026-08-30): este catálogo curado (`src/benchmark_bancos/transform/categoria_deposito_matching.py::CATEGORIAS_VALIDAS`, fail-fast) no tiene equivalente para 5 sub-cuentas nivel-6 de `marts.dim_cuenta_contable` bajo `codigo='21'` (BALANCE): `210120` EJECUCIÓN PRESUPUESTARIA, `210125` DEPÓSITOS DE OTRAS INSTITUCIONES PARA ENCAJE, `210130` CHEQUES CERTIFICADOS, `210131` CHEQUES DE EMERGENCIA, `210140` OTROS DEPÓSITOS — CAPCOL nunca reportó estas 5 como categoría de producto propia. Es la causa estructural de por qué `SUM(fact_saldo_depositos.saldo)` no reconcilia exactamente contra `fact_balance` `codigo='21'` (mediana −0,7376% por banco × fecha, explica ~48% del gap agregado del histórico). Detalle completo: `docs/gobernanza_datos.md` (tabla "Huecos de gobernanza conocidos") y `docs/glosario_cuentas.md` §3. | | |
+| **Hueco de alcance real frente al plan de cuentas regulatorio** (verificado 2026-08-30): este catálogo curado (`src/benchmark_bancos/transform/categoria_deposito_matching.py::CATEGORIAS_VALIDAS`, fail-fast) no tiene equivalente para 5 sub-cuentas nivel-6 de `marts.dim_cuenta_contable` bajo `codigo='21'` (BALANCE): `210120` EJECUCIÓN PRESUPUESTARIA, `210125` DEPÓSITOS DE OTRAS INSTITUCIONES PARA ENCAJE, `210130` CHEQUES CERTIFICADOS, `210131` CHEQUES DE EMERGENCIA, `210140` OTROS DEPÓSITOS — CAPCOL nunca reportó estas 5 como categoría de producto propia. Es la causa estructural de por qué `SUM(fact_saldo_depositos.saldo)` no reconcilia exactamente contra `fact_balance` `codigo='21'` (mediana −0,7376% por banco × fecha, explica ~48% del gap agregado del histórico). Detalle completo: `docs/gobernanza_datos.md` (tabla "Huecos de gobernanza conocidos") y `docs/glosario_cuentas.md`, sección "Cuentas clave — PASIVO". | | |
 
 ### marts.dim_plazo (catálogo por rango numérico, compartido entre fuentes)
 | plazo_id | serial | Llave sustituta |
@@ -108,7 +108,7 @@ entre paréntesis en cada tabla, para quien busque referencias viejas.
 
 ### marts.fact_saldo_cartera (antes `fact_cartera`) — grano: fecha × banco × cantón × segmento — CAPCOL + SEPS, mensual
 
-**Fuentes (2026-09-30)**: CAPCOL (bancos privados y públicos) y SEPS `Reporte_colocaciones` (cooperativas S1-S3, mutualistas y entidades de segundo piso). Para SEPS se suman fuera del grano el origen, el estado y la clase de la operación y la actividad económica, y se excluye `OPERACIONES CONTINGENTES`. Filtrar por `dim_entidad.tipo_entidad` para no mezclar sectores en un benchmark. **Mutualistas**: incluye cartera VIS/VIP vendida al fideicomiso y administrada por la entidad (fuera de la cuenta 14; en cuentas de orden `740170`/`740175`). Pichincha queda ~45% y Azuay ~34% por encima de su balance; ver `docs/fuentes_datos.md` §4.0. **Cooperativas emisoras de tarjetas** (JEP, OSCUS, Policía Nacional y otras con `210145`): el segmento CONSUMO de SEPS **excluye** la cartera de tarjetas de crédito, que sí está en la cuenta 1402 del EEFF y en el consumo de CAPCOL.
+**Fuentes (2026-09-30)**: CAPCOL (bancos privados y públicos) y SEPS `Reporte_colocaciones` (cooperativas S1-S3, mutualistas y entidades de segundo piso). Para SEPS se suman fuera del grano el origen, el estado y la clase de la operación y la actividad económica, y se excluye `OPERACIONES CONTINGENTES`. Filtrar por `dim_entidad.tipo_entidad` para no mezclar sectores en un benchmark. **Mutualistas**: incluye cartera VIS/VIP vendida al fideicomiso y administrada por la entidad (fuera de la cuenta 14; en cuentas de orden `740170`/`740175`). Pichincha queda ~45% y Azuay ~34% por encima de su balance; ver `docs/fuentes_datos.md`, sección "Diferencias de criterio y conciliación". **Cooperativas emisoras de tarjetas** (JEP, OSCUS, Policía Nacional y otras con `210145`): el segmento CONSUMO de SEPS **excluye** la cartera de tarjetas de crédito, que sí está en la cuenta 1402 del EEFF y en el consumo de CAPCOL.
 
 | segmento_id | int, FK | `dim_segmento_credito.segmento_id` (nivel grueso — CAPCOL nunca trae el sub-segmento fino de BCE). Hasta 2026-07-19 esta columna era `tipo_credito` (texto libre, sin FK); pasó a estar normalizada contra el mismo catálogo normativo que usan los hechos de BCE en vez de duplicar el nombre del segmento como texto suelto — ver `sql/16_dim_segmento_normativo.sql`. **Pendiente de implementación, diseño ya aprobado** (`docs/fuentes_datos.md` sección 1): el `INSERT` de `_REFRESH_MARTS_SQL` filtra hoy `WHERE s.tipo_entidad = 'BANCO PRIVADO'` — al integrar Banca Pública debe ampliarse a `IN ('BANCO PRIVADO', 'BANCO PUBLICO')`, y el segmento `INVERSIÓN PÚBLICA` (7ma fila de `dim_segmento_credito`, hoy poblada solo por BCE tsa) empezará a recibir filas de CAPCOL también |
 | saldo_por_vencer, saldo_no_devenga_intereses, saldo_vencida | numeric | Saldo en USD por estado de cartera. **2026-07-25** (`sql/21_fact_saldo_cartera_pivot.sql`): antes `estado_cartera` era una dimensión degenerada partiendo el saldo en 3 filas por combinación de `(fecha, banco, cantón, segmento)` — un antipatrón EAV, no una dimensión real (los 3 estados son medidas mutuamente excluyentes del mismo hecho, siempre presentes juntas). Pivotado a 3 columnas, mismo criterio que ya usaba `fact_tasas_referenciales_cartera` (2 columnas de medida en vez de "tipo_tasa"+"valor"). El grano pasó de 369.966 a 123.322 filas (÷3, exacto — no había combinaciones con menos de 3 estados) |
@@ -230,17 +230,17 @@ bloque y por qué) — cualquier catálogo de indicadores nuevo debería compone
 vez de recalcular la lógica de cuentas desde cero. Ver el glosario para el detalle de cada
 fórmula; aquí solo el mapeo vista → bloque:
 
-| Vista | Bloque (glosario §) |
+| Vista | Bloque del glosario |
 |---|---|
-| `marts.vw_cartera_bruta` | `cartera_bruta` (§2) |
-| `marts.vw_cartera_improductiva` | `cartera_improductiva`, total (§2) |
-| `marts.vw_cartera_improductiva_segmento` | `cartera_improductiva`, por segmento (§2) |
-| `marts.vw_cartera_bruta_segmento` | `cartera_bruta`, por segmento (§2) |
-| `marts.vw_depositos_corto_plazo` | `depositos_corto_plazo` (§3) |
-| `marts.vw_pyg_total_gastos` | `total_gastos` PyG, workaround del hueco `codigo='4'` (§4.6) |
-| `marts.vw_utilidad_acumulada` | `utilidad_acumulada` (§4) |
-| `marts.vw_utilidad_anualizada` | `utilidad_anualizada` (§4) |
-| `marts.vw_activo_promedio_ytd` / `marts.vw_patrimonio_promedio_ytd` | promedio YTD (§5) — ventana diciembre año anterior → fecha de corte |
+| `marts.vw_cartera_bruta` | `cartera_bruta` |
+| `marts.vw_cartera_improductiva` | `cartera_improductiva`, total |
+| `marts.vw_cartera_improductiva_segmento` | `cartera_improductiva`, por segmento |
+| `marts.vw_cartera_bruta_segmento` | `cartera_bruta`, por segmento |
+| `marts.vw_depositos_corto_plazo` | `depositos_corto_plazo` |
+| `marts.vw_pyg_total_gastos` | `total_gastos` PyG, workaround del hueco `codigo='4'` |
+| `marts.vw_utilidad_acumulada` | `utilidad_acumulada` |
+| `marts.vw_utilidad_anualizada` | `utilidad_anualizada` |
+| `marts.vw_activo_promedio_ytd` / `marts.vw_patrimonio_promedio_ytd` | promedio YTD — ventana diciembre año anterior → fecha de corte |
 
 No filtran por `tipo_entidad`, y **desde 2026-09-30 sí hace falta filtrar en el
 consumidor**: `fact_balance`/`fact_pyg` traen bancos privados (Boletín) y cooperativas y

@@ -27,7 +27,7 @@ vez de repetirla. La historia de cada decisión está en `docs/historial.md`.
 - **Acceso**: el ETL escribe con el rol de la aplicación (dueño de los esquemas); el
   análisis lee con el rol de solo lectura (`marts_lectura` / `analista`, solo `marts`,
   sesiones `read_only`), creado por `sql/admin/rol_lectura.sql` + `sql/42`. Ver
-  `docs/despliegue_y_orquestacion.md` §3.4.
+  `docs/despliegue_y_orquestacion.md`, "Rol de solo lectura para análisis".
 - **Retención**: sin purga. El valor está en el histórico completo. Los archivos de
   `data/raw/**` se conservan como fuente de verdad para reprocesar; staging y marts se
   actualizan en el lugar vía CDC.
@@ -138,14 +138,14 @@ quien analice tiene que conocerlas.
 
 | Hueco | Detalle | Referencia |
 |---|---|---|
-| Cartera de mutualistas incluye la vendida al fideicomiso | +34% a +45% sobre `14 − 1499`. Para contabilidad usar `14 − 1499 + 7401{70,75}` | `fuentes_datos.md` §4.0 |
-| Consumo de cooperativas emisoras excluye tarjetas | JEP -13,3%, OSCUS -10,0%, Policía -8,4% contra EEFF; los bancos sí las incluyen | `fuentes_datos.md` §4.0 |
-| CAPCOL depósitos no cubre 5 sub-cuentas de `21` | Ejecución presupuestaria, encaje, cheques certificados y de emergencia, otros depósitos. Explican ~48% del faltante (CAPCOL ~0,7% por debajo del Boletín) | `glosario_cuentas.md` §3 |
+| Cartera de mutualistas incluye la vendida al fideicomiso | +34% a +45% sobre `14 − 1499`. Para contabilidad usar `14 − 1499 + 7401{70,75}` | `fuentes_datos.md`, "Diferencias de criterio" |
+| Consumo de cooperativas emisoras excluye tarjetas | JEP -13,3%, OSCUS -10,0%, Policía -8,4% contra EEFF; los bancos sí las incluyen | `fuentes_datos.md`, "Diferencias de criterio" |
+| CAPCOL depósitos no cubre 5 sub-cuentas de `21` | Ejecución presupuestaria, encaje, cheques certificados y de emergencia, otros depósitos. Explican ~48% del faltante (CAPCOL ~0,7% por debajo del Boletín) | `glosario_cuentas.md`, "PASIVO" |
 | 4 bancos con desvío de 2-6% entre CAPCOL y el Boletín en ventanas acotadas | AMIBANK (2023), ATLANTIDA (2025-26), PACIFICO (2022-24), FINCA (2022-12); siempre CAPCOL por debajo. Sin causa investigada | `metricas_financieras.md` |
 | Entidades que comparten RUC | 7 pares (cooperativa o financiera que pasa a banco con el mismo RUC). No se fusionan: el cambio de forma legal es real | `marts.vw_entidad_ruc_colisiones` (`sql/22`) |
 | PRODUBANCO y PROMERICA | RUC distintos, mismo grupo: Promerica (antes M.M. Jaramillo Arteaga) se fusionó en Produbanco en 2014-10. Solo aparecen juntos en BCE (2009-02 a 2014-10). No tratarlos como competidores en series largas | `dim_entidad` |
 | ~408 entidades auto-registradas sin curar | Nombre y tipo tal cual los da el BCE. Curarlas pasa a ser necesario si aparece una colisión de RUC entre dos auto-registradas | `banco_matching.py::resolver_entidad_bce` |
-| Republicación que hace desaparecer a una entidad de un mes | El refresh incremental borra huérfanos solo dentro de los (fecha, entidad) recalculados; si una entidad sale entera de un mes, su hecho solo se borra con `refresh --full` | `despliegue_y_orquestacion.md` §4 |
+| Republicación que hace desaparecer a una entidad de un mes | El refresh incremental borra huérfanos solo dentro de los (fecha, entidad) recalculados; si una entidad sale entera de un mes, su hecho solo se borra con `refresh --full` | `despliegue_y_orquestacion.md`, "Primera carga completa" |
 | `dim_cuenta_contable.grupo_met` no es partición | Un código puede caer en 2 o más grupos de `MET`; se guarda el primero | `metricas_financieras.md` |
 | EEFF SEPS sin ceros | Un "0 explícito" exige `COALESCE` sobre un `LEFT JOIN` | `data_dictionary.md` |
 | Alcance | Boletín y CAPCOL desde 2021; `TasasHistorico` desde 2009-07; SEPS sin segmentos 4-5 ni bases TSV sin RUC; `RK`/`INDICADORES` del Boletín no se cargan | `fuentes_datos.md` |
@@ -153,7 +153,7 @@ quien analice tiene que conocerlas.
 ## Gestión de cambios de esquema
 
 1. Cada cambio va en un `sql/NN_descripcion.sql` nuevo, nunca editando uno aplicado
-   (`migrate` lo detecta por checksum). Procedimiento en `docs/despliegue_y_orquestacion.md` §3.2.1.
+   (`migrate` lo detecta por checksum). Procedimiento en `docs/despliegue_y_orquestacion.md`, "Agregar una migración nueva".
 2. Un valor nuevo de catálogo entra primero al seed o al set validado en Python
    (`seeds/*.csv`, `SEGMENTOS_VALIDOS`, `CATEGORIAS_VALIDAS`). Nunca se relaja una
    validación para dejarlo pasar.

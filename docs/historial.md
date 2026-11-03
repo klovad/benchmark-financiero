@@ -34,7 +34,7 @@ propio encabezado con el motivo.
 
 ## 2026-10 — Operación desatendida y portabilidad
 
-- **10-01** — Banca Pública cargada. Mutualistas (cartera en fideicomiso) y emisoras de tarjetas (consumo sin tarjetas) explicadas y no corregidas (`docs/fuentes_datos.md` §4.0).
+- **10-01** — Banca Pública cargada. Mutualistas (cartera en fideicomiso) y emisoras de tarjetas (consumo sin tarjetas) explicadas y no corregidas (`docs/fuentes_datos.md`, "Diferencias de criterio y conciliación").
 - **10-02** — Las vistas de `sql/18` nunca se habían aplicado a la base viva. Se aplicaron con `sql/32` y se validaron contra el motor de referencia.
 - **10-05** — Se elimina la capa `raw` JSONB (12 GB sin lecturas; `sql/33`). CDC por columnas sin `row_hash`, refresh de marts incremental con marca de agua (`sql/34`) y proyecto empaquetado con uv. Los 3 bancos públicos se curan.
 - **10-09** — Códigos INEC y fusión de cantones duplicados (`sql/35`, `sql/36`). `dim_banco` → `dim_entidad` (`sql/37`).
@@ -48,6 +48,6 @@ propio encabezado con el motivo.
 
 ## 2026-11
 
-- **11-01** — `graphify-out/` sale de git. Documentación condensada al estado vigente, con esta bitácora como único registro histórico. Se eliminó `docs/propuesta_escalabilidad_etl.md`: lo que seguía abierto pasó a las brechas del runbook (§11).
+- **11-01** — `graphify-out/` sale de git. Documentación condensada al estado vigente, con esta bitácora como único registro histórico. Se eliminó `docs/propuesta_escalabilidad_etl.md`: lo que seguía abierto pasó a las brechas del runbook.
 - **11-01** — En la base reconstruida, los 21 plazos y las 1.902 cuentas habían quedado `AUTO_INGRESADO`: `sql/25` y `sql/27` solo confirmaban las filas existentes al migrar. Ahora el refresh confirma contra un universo curado (los sets de plazo de cada fuente y `seeds/cuenta_contable.csv`), igual que los cantones (`sql/45`).
 - **11-01** — Los `download_id` de la SEPS de un año nuevo se leen del portal (antes había que agregarlos en código cada enero). Flag `--reprocesar` para recargar archivos ya cargados tras cambiar un parser o el crosswalk, sin borrar `meta.source_files` a mano (brechas B15 y B8).

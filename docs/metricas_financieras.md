@@ -64,7 +64,7 @@ En el mismo espíritu que los 3 indicadores de arriba (recalcular desde los agre
 comparar contra el valor real antes de confiar en una cifra derivada), se verificó si el
 saldo de cartera que reporta CAPCOL (`marts.fact_saldo_cartera`, grano fecha × banco ×
 cantón × segmento) reconcilia contra la cartera bruta reconstruida desde el Boletín
-(`marts.vw_cartera_bruta` = `14 − 1499`, ver `docs/glosario_cuentas.md` §2). Son fuentes
+(`marts.vw_cartera_bruta` = `14 − 1499`, ver `docs/glosario_cuentas.md`, "Cuentas clave — ACTIVO"). Son fuentes
 independientes (Superbancos consolidado por cantón vs. Superbancos consolidado por plan
 de cuentas) que en teoría deberían describir el mismo universo de préstamos otorgados por
 bancos privados.

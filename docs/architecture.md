@@ -392,7 +392,7 @@ Detalles de formato de cada archivo (hojas, columnas, cambios entre años):
 - **El volumen no es el riesgo.** El BCE semanal domina (~3,2 M filas de captaciones y
   ~8 M de colocaciones); el resto de los hechos suma ~6 M filas, y la base pesa ~9-10 GB.
   Postgres lo maneja sin particiones ni tuning: `COPY` + upsert por tabla temporal, un
-  refresh completo en ~3 min y una reconstrucción total en ~70 min (runbook §4).
+  refresh completo en ~3 min y una reconstrucción total en ~70 min (runbook, "Primera carga completa").
 - **El riesgo real es el cambio de formato de la fuente**: carpetas renombradas en CAPCOL
   (2024), separadores, encabezados y hojas partidas en la SEPS, republicaciones con
   nombres cambiados. Mitigación: los archivos originales se conservan para reprocesar,
